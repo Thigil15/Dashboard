@@ -13,9 +13,9 @@
         body { background-color: #f1f5f9; /* slate-100 */ }
 
         /* Classes Utilitárias */
-        .hidden-view { display: none !important; opacity: 0; } /* Garante esconder e prepara para fade */
-        .visible-view { display: block; opacity: 1; transition: opacity 0.3s ease-out; } /* Controla visibilidade e fade */
-        /* Remove a necessidade de .main-content-section.active */
+        .hidden-view { display: none !important; opacity: 0; } /* Garante esconder */
+        .visible-view { display: block; opacity: 1; transition: opacity 0.3s ease-out; } /* Controla visibilidade */
+        /* Simplificação: não usamos mais .main-content-section.active */
 
         .highlight { background-color: #a5f3fc; border-radius: 2px; padding: 0 2px; color: #0e7490; font-weight: 500;}
         .student-group-header.hidden, .student-card.hidden { display: none; }
@@ -305,17 +305,18 @@
                 </nav>
             </div>
             <div id="student-tabs-content" class="mt-6 mb-16">
-                <div id="tab-info" class="tab-content active content-card p-6"></div>
-                <div id="tab-escala" class="tab-content"><div id="escala-heatmap-content" class="space-y-6"></div></div>
-                <div id="tab-faltas" class="tab-content content-card p-0 overflow-hidden">
+                 <!-- Os IDs precisam corresponder aos data-tab -->
+                <div id="tab-info" class="tab-content hidden-view content-card p-6"></div>
+                <div id="tab-escala" class="tab-content hidden-view"><div id="escala-heatmap-content" class="space-y-6"></div></div>
+                <div id="tab-faltas" class="tab-content hidden-view content-card p-0 overflow-hidden">
                      <h3 class="content-card-header p-5">Registro de Ausências e Reposições</h3>
                     <div id="faltas-content" class="max-h-[500px] overflow-y-auto"></div>
                 </div>
-                <div id="tab-notas-t" class="tab-content content-card p-6">
+                <div id="tab-notas-t" class="tab-content hidden-view content-card p-6">
                     <h3 class="content-card-header mb-5">Notas Teóricas</h3>
                     <div id="notas-t-barchart-content" class="space-y-3"></div>
                 </div>
-                <div id="tab-notas-p" class="tab-content"><div id="notas-p-radial-content" class="space-y-5"></div></div>
+                <div id="tab-notas-p" class="tab-content hidden-view"><div id="notas-p-radial-content" class="space-y-5"></div></div>
             </div>
         </div>
     </div>
@@ -339,39 +340,40 @@
              setTimeout(() => { overlay.style.display = show ? 'flex' : 'none'; }, show ? 0 : 600);
         }
         function showError(message) { /* ... (sem alterações) ... */
-             console.error(message);
+             console.error("ERRO:", message); // Adiciona prefixo ERRO
              const errorBox = document.getElementById('error-message');
-             document.getElementById('error-text').textContent = message;
+             document.getElementById('error-text').textContent = `Erro: ${message}`; // Adiciona prefixo Erro:
              errorBox.style.display = 'block';
              setTimeout(() => { errorBox.style.display = 'none'; }, 10000);
-             showLoading(false);
+             showLoading(false); // Garante que loading suma
         }
 
         // --- INICIALIZAÇÃO E CARGA ---
         async function init() {
-            console.log('Iniciando Dashboard PRO++ v7...'); // Nome atualizado
+            console.log('Iniciando Dashboard PRO++ v8...'); // Nome atualizado
             document.getElementById('current-date').textContent = appState.todayFullBR;
             setupSidebarNavigation();
-            document.getElementById('back-to-dashboard').addEventListener('click', showAlunosList); // Corrigido
+            document.getElementById('back-to-dashboard').addEventListener('click', showAlunosList);
             document.getElementById('search-student').addEventListener('input', filterStudentList);
             setupStudentTabNavigation();
             try {
-                showLoading(true); // Mostra loading no início
+                showLoading(true);
                 await fetchAllData();
-                await fetchPontoHoje(); // Busca inicial do ponto
-                // Renderiza após ter TODOS os dados iniciais
+                await fetchPontoHoje();
+                // Renderiza após ter TODOS os dados
                 renderStudentList(appState.alunos);
-                computeAndRenderFrequency(); // Renderiza frequência com base no ponto inicial
+                computeAndRenderFrequency();
                 renderAtAGlance();
                 renderRecentAbsences();
-                switchMainTab('dashboard'); // Define a aba inicial
-                document.querySelector('body > div.flex').style.opacity = '1'; // Mostra layout
-                showLoading(false); // Esconde loading após renderização inicial
-                setInterval(fetchPontoHoje, 30000); // Inicia atualizações periódicas SÓ do ponto
-                console.log("Live update da frequência iniciado.");
+                showView('content-dashboard'); // Mostra a view inicial explicitamente
+                document.querySelector('body > div.flex').style.opacity = '1';
+                showLoading(false);
+                setInterval(fetchPontoHoje, 30000);
+                console.log("Inicialização completa. Live update iniciado.");
             } catch (error) {
-                 showError(`Erro na inicialização: ${error.message}`);
-                 showLoading(false); // Garante que loading suma em caso de erro
+                 // Erro durante a inicialização é mais crítico
+                 showError(`Falha Crítica na Inicialização: ${error.message}. Recarregue a página.`);
+                 // Não esconde o loading para indicar falha total
             }
         }
         async function fetchAllData() { /* ... (sem alterações) ... */
@@ -403,27 +405,34 @@
              const sidebar = document.querySelector('aside nav'); sidebar.addEventListener('click', (e) => { const link = e.target.closest('.sidebar-link'); if (link) { e.preventDefault(); switchMainTab(link.getAttribute('data-tab')); } });
         }
         /**
-         * [CORRIGIDO v7] Centraliza a lógica de mostrar uma view principal e esconder as outras.
+         * [CORRIGIDO v8] Centraliza a lógica de mostrar uma view e esconder as outras.
          */
-         function showView(viewId) {
-             console.log(`Mostrando view: ${viewId}`);
+         function showView(viewIdToShow) {
+             console.log(`Tentando mostrar view: ${viewIdToShow}`);
              const allViews = document.querySelectorAll('.main-content-section, #student-detail-view');
+             let found = false;
              allViews.forEach(view => {
-                 if (view.id === viewId) {
-                     view.classList.remove('hidden-view'); // Remove hidden-view se existir
-                     view.classList.add('visible-view');   // Adiciona visible-view para fade-in
-                     view.style.display = 'block'; // Garante display block se necessário
+                 if (view.id === viewIdToShow) {
+                     view.classList.remove('hidden-view');
+                     view.classList.add('visible-view');
+                     view.style.display = 'block'; // Garante display block
+                     console.log(`Mostrando ${view.id}`);
+                     found = true;
                  } else {
                      view.classList.remove('visible-view');
                      view.classList.add('hidden-view');
-                      view.style.opacity = '0'; // Garante opacidade 0 para hidden
+                     view.style.opacity = '0'; // Garante opacidade 0
+                     // Não usa display none aqui, hidden-view deve cuidar disso
                  }
              });
+             if (!found) {
+                 console.error(`View com ID "${viewIdToShow}" não encontrada!`);
+             }
          }
 
 
         /**
-         * [CORRIGIDO v7] Troca a aba principal visível usando showView.
+         * [CORRIGIDO v8] Troca a aba principal visível usando showView.
          */
         function switchMainTab(tabName) {
             console.log("Trocando aba principal para:", tabName);
@@ -476,14 +485,14 @@
 
         // --- NAVEGAÇÃO E RENDERIZAÇÃO VIEW DETALHE ALUNO ---
         /**
-         * [CORRIGIDO v7] Mostra a view de detalhe e esconde as principais usando showView.
+         * [CORRIGIDO v8] Mostra a view de detalhe e esconde as principais usando showView.
          */
         function showStudentDetail(email) {
             console.log(`[showStudentDetail] Exibindo detalhes para: ${email}`);
             const info = appState.alunosMap.get(email);
             if (!info) return showError(`Aluno ${email} ñ encontrado.`);
 
-            // Busca dados relacionados... (lógica inalterada)
+            // Busca dados relacionados...
              const escalas = [];
              for (const n in appState.escalas) {
                  const e = appState.escalas[n];
@@ -507,24 +516,25 @@
             renderTabInfo(info);
             renderTabEscala(escalas);
             renderTabFaltas(faltas);
-            renderTabNotasTeoricas(notasT);
+            renderTabNotasTeoricas(notasT); // Passa o registro
             renderTabNotasPraticas(nP);
 
             // Mostra a view de detalhe usando a função centralizada
             showView('student-detail-view');
 
-            switchStudentTab('info');
-            window.scrollTo(0, 0);
+            switchStudentTab('info'); // Garante que a primeira aba esteja ativa
+            window.scrollTo(0, 0); // Rola para o topo
+            console.log("[showStudentDetail] View de detalhe exibida.");
         }
 
         /**
-         * [CORRIGIDO v7] Volta para a aba 'alunos' e esconde a view de detalhe usando showView.
+         * [CORRIGIDO v8] Volta para a aba 'alunos' e esconde a view de detalhe usando showView.
          */
          function showAlunosList() {
              console.log("[showAlunosList] Voltando para a lista de alunos.");
-             // Esconde a view de detalhe
-             showView('content-alunos'); // Mostra a view da lista de alunos
-             // Reativa a aba 'alunos' na sidebar (switchMainTab faz isso implicitamente, mas podemos garantir)
+             // Mostra a view da lista de alunos
+             showView('content-alunos');
+             // Reativa a aba 'alunos' na sidebar (switchMainTab faz isso se chamado, mas podemos forçar aqui tbm)
              document.querySelectorAll('.sidebar-link').forEach(l => l.classList.toggle('active', l.getAttribute('data-tab') === 'alunos'));
              window.scrollTo(0, 0);
         }
@@ -532,8 +542,20 @@
         function setupStudentTabNavigation() { /* ... (sem alterações) ... */
              const n=document.getElementById('student-tabs-nav'); n.addEventListener('click', (e)=>{ if(e.target.tagName==='BUTTON'){const t=e.target.getAttribute('data-tab'); switchStudentTab(t);}});
         }
-        function switchStudentTab(tabName) { /* ... (sem alterações) ... */
-            document.querySelectorAll('#student-tabs-nav .tab-button').forEach(b=>b.classList.toggle('active', b.getAttribute('data-tab')===tabName)); document.querySelectorAll('#student-tabs-content .tab-content').forEach(c=>c.classList.toggle('active', c.id===`tab-${tabName}`));
+        function switchStudentTab(tabName) { /* [CORRIGIDO v8] Usa IDs corretos */
+            console.log(`Trocando para aba de detalhe: ${tabName}`);
+            // Atualiza botões
+            document.querySelectorAll('#student-tabs-nav .tab-button').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-tab') === tabName);
+            });
+            // Mostra/Esconde conteúdo
+            document.querySelectorAll('#student-tabs-content .tab-content').forEach(content => {
+                 // Usa a classe visible-view / hidden-view para consistência
+                 const isActive = content.id === `tab-${tabName}`;
+                 content.classList.toggle('visible-view', isActive);
+                 content.classList.toggle('hidden-view', !isActive);
+                 if (isActive) content.style.display = 'block'; // Garante display block
+            });
         }
         function renderStudentHeader(info) { /* ... (sem alterações) ... */
              const p=document.getElementById('student-header'); const i=info.FotoID?`https://lh3.googleusercontent.com/d/${info.FotoID}=s160-c`:'https://placehold.co/80x80/e2e8f0/64748b?text=?'; const s=info.Status==='Ativo'?'badge-green':'badge-red'; p.innerHTML=`<img src="${i}" alt="Foto" class="w-20 h-20 rounded-full object-cover shadow-md bg-slate-200" onerror="this.src='https://placehold.co/80x80/e2e8f0/64748b?text=?'"><div class="flex-grow"><h2 class="text-2xl font-bold text-slate-800">${info.NomeCompleto}</h2><p class="text-base text-slate-500">${info.Curso}</p></div><div class="ml-auto flex-shrink-0"><span class="badge ${s}">${info.Status}</span></div>`;
@@ -551,7 +573,7 @@
              const c=document.getElementById('tab-faltas'); const h=`<h3 class="content-card-header p-5">Registro de Ausências e Reposições</h3>`; let p=document.getElementById('faltas-content'); if(!faltas||faltas.length===0){c.innerHTML=h+'<p class="text-slate-500 p-5 text-sm italic">Nenhum registro.</p>'; return;} if(!p){c.innerHTML=h+'<div id="faltas-content" class="max-h-[500px] overflow-y-auto"></div>'; p=document.getElementById('faltas-content');} p.innerHTML=`<table class="min-w-full text-sm"><thead class="bg-slate-50"><tr><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Ausência</th><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Reposição</th><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Local</th><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Motivo</th></tr></thead><tbody class="bg-white divide-y divide-slate-100">${faltas.map(f=>{const iP=!f.DataReposicaoISO; const sB=iP?'<span class="badge badge-yellow">Pendente</span>':'<span class="badge badge-green">Completa</span>'; const dA=f.DataAusenciaISO?new Date(f.DataAusenciaISO+'T00:00:00').toLocaleDateString('pt-BR'):'-'; const dR=f.DataReposicaoISO?new Date(f.DataReposicaoISO+'T00:00:00').toLocaleDateString('pt-BR'):'-'; const mS=f.Motivo?(f.Motivo.length>35?f.Motivo.substring(0,35)+'...':f.Motivo):'-'; return `<tr class="hover:bg-sky-50 transition-colors duration-150"><td class="px-4 py-3 text-slate-600 align-middle">${sB}</td><td class="px-4 py-3 text-slate-600 align-middle">${dA}</td><td class="px-4 py-3 text-slate-600 align-middle">${dR}</td><td class="px-4 py-3 text-slate-600 align-middle">${f.Local||'-'}</td><td class="px-4 py-3 text-slate-600 align-middle" title="${f.Motivo||''}">${mS}</td></tr>`;}).join('')}</tbody></table>`;
         }
         /**
-         * [CORRIGIDO v7] Renderiza a aba "Notas Teóricas" com verificações e logs aprimorados.
+         * [CORRIGIDO v8] Renderiza a aba "Notas Teóricas" com verificações e filtro de chaves explícito.
          */
         function renderTabNotasTeoricas(notas) {
              console.log('[renderTabNotasTeoricas] Dados recebidos:', notas);
@@ -563,34 +585,31 @@
                  return;
              }
 
-             const ignoreKeys = ['SerialNumber', 'NomeCompleto', 'EmailHC', 'Curso'];
-             // Filtra as chaves válidas ANTES de tentar acessar os valores
-             const validKeys = Object.keys(notas).filter(key =>
-                 key && key.trim() !== '' && !ignoreKeys.includes(key) &&
-                 notas[key] !== null && notas[key] !== undefined // Permite nota 0, mas não null/undefined
-                 //&& String(notas[key]).trim() !== '' // Não filtra string vazia aqui, parseNota trata
-             );
+             // Lista EXPLÍCITA de chaves que representam matérias ou médias
+             // Adapte esta lista se os nomes das colunas na sua planilha mudarem!
+             const knownSubjectKeys = [
+                'Anatomopatologia', 'Sub/Anatomopatologia', 'Bases', 'Sub/Bases',
+                'Doenças Pulmonares', 'Doenças Cardíacas', 'Proc. Cirurgico',
+                'Avaliação', 'Sub/Avaliacao', 'VM', 'Sub/VM', 'Média - Fisio1',
+                'Técnicas e Recursos', 'Diag. Imagem', 'Média - Fisio2',
+                'Fisio aplicada', 'UTI', 'Média - Fisio3', 'Pediatria',
+                'Mobilização', 'Reab. Pulmonar', 'Média - Fisio4',
+                'M. Cientifica', 'Saúde e politicas', 'Farmacoterapia', 'Bioética'
+             ];
 
-             console.log("[renderTabNotasTeoricas] Chaves válidas (pré-filtro de valor):", validKeys);
+             // Filtra o objeto 'notas' para conter apenas as chaves conhecidas e com valores não nulos/undefined
+             const materiasComNotas = knownSubjectKeys
+                .filter(key => notas.hasOwnProperty(key) && notas[key] !== null && notas[key] !== undefined)
+                .map(key => ({ materia: key, notaStr: notas[key], notaValue: parseNota(String(notas[key])) }))
+                // Opcional: filtrar matérias onde a nota parseada resultou em 0 (se não quiser exibir barras zeradas)
+                // .filter(item => item.notaValue > 0);
 
-             // Mapeia para objetos {materia, notaValue} e filtra notas inválidas (parseNota retorna 0 para inválidos)
-             const materiasComNotas = validKeys.map(key => {
-                 const notaStr = notas[key];
-                 const notaValue = parseNota(String(notaStr)); // Garante que é string
-                 console.log(`[renderTabNotasTeoricas] Processando: ${key}, Bruto: ${notaStr}, Parseado: ${notaValue}`);
-                 // Consideramos uma matéria válida se a chave é válida E a nota parseada é um número >= 0
-                 // (parseNota já retorna 0 para inválidos)
-                 // Se quiser ignorar matérias onde a nota original era vazia/null/undefined, adicione a condição original:
-                 // && notaStr !== null && notaStr !== undefined && String(notaStr).trim() !== ''
-                 return { materia: key, notaValue: notaValue };
-             }).filter(item => typeof item.notaValue === 'number'); // Garante que temos um número
-
-             console.log("[renderTabNotasTeoricas] Matérias com notas parseadas:", materiasComNotas);
+             console.log("[renderTabNotasTeoricas] Matérias válidas com notas parseadas:", materiasComNotas);
 
 
              if (materiasComNotas.length === 0) {
                  p.innerHTML = '<p class="text-slate-500 text-sm italic">Nenhuma nota válida encontrada neste registro.</p>';
-                 console.log("[renderTabNotasTeoricas] Nenhuma matéria com nota válida após parse/filtro.");
+                 console.log("[renderTabNotasTeoricas] Nenhuma matéria com nota válida após filtro e parse.");
                  return;
              }
 
@@ -598,6 +617,7 @@
              p.innerHTML = materiasComNotas.map(item => {
                  const x = item.materia;
                  const v = item.notaValue;
+                 console.log(`[renderTabNotasTeoricas] Renderizando: ${x}, Valor: ${v}`);
 
                  const iM = x.toUpperCase().includes('MÉDIA');
                  const bF = iM ? 'bar-fill-media' : 'bar-fill-normal';
@@ -607,6 +627,7 @@
              }).join('');
              console.log("[renderTabNotasTeoricas] Gráfico renderizado.");
         }
+
 
         function renderTabNotasPraticas(notas) { /* ... (sem alterações) ... */
              const p=document.getElementById('notas-p-radial-content'); if(!notas||notas.length===0){p.innerHTML='<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhum registro.</p></div>'; return;} p.innerHTML=notas.map((n,i)=>{const dH=n['Data/Hora']; const dF=dH?new Date(String(dH).replace(/-/g,'/')).toLocaleDateString('pt-BR'):'N/A'; const kM=Object.keys(n).find(k=>k.toUpperCase().includes('MÉDIA (NOTA FINAL)'))||'MÉDIA (NOTA FINAL):'; let mF=parseNota(n[kM]); const kC=Object.keys(n).find(k=>k.toUpperCase().includes('COMENTÁRIOS'))||'COMENTÁRIOS DO(A) SUPERVISOR(A):'; const c=n[kC]||'Sem comentários.'; return `<div class="content-card p-5 flex space-x-5 items-center"><div class="flex-shrink-0"><div class="radial-progress" style="--value:${mF*10};"><span class="radial-progress-value">${mF.toFixed(1)}</span></div></div><div class="flex-grow"><h4 class="text-sm font-semibold text-sky-700">${n.nomePratica} (Aval. ${i+1})</h4><div class="text-xs text-slate-500 mt-1 space-x-3"><span><strong>Data:</strong> ${dF}</span><span><strong>Unid:</strong> ${n.Unidade||'-'}</span><span><strong>Sup:</strong> ${n.Supervisor||'-'}</span></div><details class="mt-2 group"><summary class="text-xs text-slate-500 font-medium cursor-pointer list-none flex items-center group-hover:text-sky-600 transition-colors"><span class="mr-1">Ver comentário</span><svg class="h-4 w-4 transform transition-transform duration-200 group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></summary><p class="text-sm italic text-slate-600 mt-2 p-3 bg-slate-50 rounded-md border border-slate-200">${c}</p></details></div></div>`;}).join('');
