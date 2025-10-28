@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard de Alunos PRO++ Cards v2</title>
+    <title>Dashboard de Alunos PRO++ v3</title>
     <!-- Carrega o Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -17,7 +17,7 @@
         .main-content-section { display: none; opacity: 0; transition: opacity 0.4s ease-out; }
         .main-content-section.active { display: block; opacity: 1; }
         .highlight { background-color: #a5f3fc; border-radius: 2px; padding: 0 2px; color: #0e7490; }
-        .student-group-header.hidden, .student-card.hidden { display: none; } /* Filtro */
+        .student-group-header.hidden, .student-card.hidden { display: none; }
 
         /* --- Loader --- */
         #loading-overlay { position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.9); display: flex; justify-content: center; align-items: center; flex-direction: column; z-index: 9999; transition: opacity 0.5s ease-out; opacity: 1; }
@@ -38,6 +38,8 @@
         /* --- Main Content Cards --- */
         .content-card { background-color: #ffffff; border-radius: 0.5rem; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); border-top: 3px solid #22d3ee; transition: all 0.3s ease; }
         .content-card:hover { box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); transform: translateY(-2px); }
+        .content-card-header { font-size: 1rem; font-weight: 600; color: #334155; /* slate-700 */ margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #e2e8f0; /* slate-200 */ }
+
 
         /* --- KPI Cards --- */
         .kpi-card { background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 0.5rem; transition: all 0.2s ease-in-out; position: relative; overflow: hidden; }
@@ -48,9 +50,18 @@
         .kpi-card .kpi-label { font-size: 0.7rem; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; }
         .kpi-card .kpi-value { font-size: 1.75rem; font-weight: 700; color: #0f172a; line-height: 1.1; }
         .kpi-icon-blue { background-color: #dbeafe; color: #2563eb; } .kpi-icon-green { background-color: #dcfce7; color: #16a34a; } .kpi-icon-red { background-color: #fee2e2; color: #dc2626; } .kpi-icon-yellow { background-color: #fef9c3; color: #ca8a04; }
-         /* NOVO KPI Icon */
-         .kpi-icon-purple { background-color: #ede9fe; color: #7c3aed; } /* violet */
+         .kpi-icon-purple { background-color: #ede9fe; color: #7c3aed; }
+         .kpi-icon-cyan { background-color: #cffafe; color: #0891b2; } /* Novo */
+         .kpi-icon-orange { background-color: #ffedd5; color: #f97316; } /* Novo */
 
+
+        /* --- Gráfico Donut (Distribuição Cursos) --- */
+        .donut-chart-container { display: flex; align-items: center; justify-content: space-around; flex-wrap: wrap; gap: 1rem; }
+        .donut-chart { position: relative; width: 120px; height: 120px; border-radius: 50%; background: conic-gradient( var(--chart-segments) ); }
+        .donut-chart::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70%; height: 70%; background: #fff; border-radius: 50%; }
+        .donut-legend ul { list-style: none; padding: 0; margin: 0; font-size: 0.75rem; color: #475569; }
+        .donut-legend li { display: flex; align-items: center; margin-bottom: 0.4rem; }
+        .legend-color-box { width: 12px; height: 12px; border-radius: 3px; margin-right: 0.5rem; }
 
         /* --- Abas Detalhe Aluno --- */
         #student-tabs-nav { -ms-overflow-style: none; scrollbar-width: none; }
@@ -65,16 +76,13 @@
 
         /* --- Lista de Alunos - Cards Flutuantes --- */
         .student-group-header { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: #475569; background-color: #f1f5f9; padding: 0.5rem 1rem; margin-top: 1.5rem; margin-bottom: 0.75rem; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 5; }
-        .student-card { background-color: #ffffff; border-radius: 0.5rem; border: 1px solid #e2e8f0; padding: 1rem; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); transition: all 0.2s ease-in-out; cursor: pointer; position: relative; /* Para badge */ }
+        .student-card { background-color: #ffffff; border-radius: 0.5rem; border: 1px solid #e2e8f0; padding: 1rem; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); transition: all 0.2s ease-in-out; cursor: pointer; position: relative; }
         .student-card:hover { transform: translateY(-4px); box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); border-color: #cbd5e1; }
         .student-card img { width: 2.5rem; height: 2.5rem; border-radius: 9999px; object-cover; background-color: #e2e8f0; }
         .student-card .student-name { font-size: 0.875rem; font-weight: 500; color: #1e293b; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .student-card .student-course { font-size: 0.7rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .student-card.inactive-card { opacity: 0.75; /* background-color: #f8fafc; /* slate-50 */ */ } /* Adiciona opacidade */
-        .inactive-badge {
-            position: absolute; top: 0.5rem; right: 0.5rem;
-            transform: rotate(10deg); /* Angulo leve */
-        }
+        .student-card.inactive-card { opacity: 0.75; }
+        .inactive-badge { position: absolute; top: 0.5rem; right: 0.5rem; transform: rotate(10deg); }
 
 
         /* --- Tabelas (Faltas) --- */
@@ -99,9 +107,14 @@
         .heatmap-day[data-status="none"], .heatmap-day:not([data-status]) { background-color: #f8fafc; border-style: dotted; opacity: 0.7;} .heatmap-day[data-status="none"] .heatmap-day-status, .heatmap-day:not([data-status]) .heatmap-day-status { color: #94a3b8; font-weight: 400;}
 
         /* --- Gráfico de Barras --- */
-        #notas-t-barchart-content .bar-bg { background-color: #e2e8f0; }
-        #notas-t-barchart-content .bar-fill-normal { background-color: #7dd3fc; }
-        #notas-t-barchart-content .bar-fill-media { background: linear-gradient(to right, #0ea5e9, #22d3ee); }
+        .bar-chart-item { transition: background-color 0.2s ease; }
+        .bar-chart-item:hover { background-color: #f0f9ff; }
+        .bar-chart-item .bar-bg { background-color: #e2e8f0; }
+        .bar-chart-item .bar-fill-normal { background-color: #7dd3fc; } /* sky-300 */
+        .bar-chart-item .bar-fill-media { background: linear-gradient(to right, #0ea5e9, #22d3ee); } /* sky-500 to cyan-400 */
+        .bar-chart-item .bar-label { color: #475569; }
+        .bar-chart-item .bar-value { color: #1e293b; }
+
 
         /* --- Badges --- */
         .badge { font-size: 0.65rem; padding: 0.2em 0.6em; border: 1px solid transparent;}
@@ -124,6 +137,11 @@
         /* --- Input de Busca --- */
         #search-student { transition: all 0.3s ease; }
         #search-student:focus { box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.3); border-color: #22d3ee; }
+
+        /* --- Lista Ausências Recentes --- */
+        #recent-absences-list li { transition: background-color 0.2s ease; }
+        #recent-absences-list li:hover { background-color: #f8fafc; }
+
 
     </style>
     <!-- Importa a fonte Inter -->
@@ -178,52 +196,81 @@
                 <!-- View Principal: Dashboard -->
                 <div id="content-dashboard" class="main-content-section">
                     <h1 class="text-2xl font-semibold text-slate-800 mb-6">Dashboard Geral</h1>
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div class="lg:col-span-1 space-y-6">
+                    <!-- Layout de 3 Colunas -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                        <!-- Coluna 1: Frequência Diária -->
+                        <div class="md:col-span-1 space-y-6">
                              <div class="content-card p-5">
-                                 <div class="flex justify-between items-center mb-4 border-b border-slate-200 pb-3">
-                                     <h2 class="text-base font-semibold text-slate-700">Frequência Diária</h2>
-                                     <span id="current-date" class="text-sm font-medium text-slate-500"></span>
-                                 </div>
+                                 <h2 class="content-card-header">Frequência Diária (<span id="current-date" class="text-sm font-medium text-slate-500"></span>)</h2>
                                  <div class="grid grid-cols-3 gap-3 mb-4 text-center">
                                      <div class="kpi-card p-3"><span class="kpi-label text-blue-600">ESCALADOS</span><p id="kpi-scaled" class="kpi-value text-blue-800">-</p></div>
                                      <div class="kpi-card p-3"><span class="kpi-label text-green-600">PRESENTES</span><p id="kpi-present" class="kpi-value text-green-800">-</p></div>
                                      <div class="kpi-card p-3"><span class="kpi-label text-red-600">AUSENTES</span><p id="kpi-absent" class="kpi-value text-red-800">-</p></div>
                                  </div>
-                                 <div id="frequency-panel" class="space-y-4 max-h-[400px] overflow-y-auto text-sm">
-                                     <p class="text-slate-500 italic">Calculando frequência...</p>
+                                 <div id="frequency-panel" class="space-y-4 max-h-[350px] overflow-y-auto text-sm">
+                                     <p class="text-slate-500 italic">Calculando...</p>
                                  </div>
                              </div>
-                        </div>
-                        <div class="lg:col-span-2 space-y-6">
+                             <!-- [NOVO] Card Ausências Recentes -->
                              <div class="content-card p-5">
-                                 <h2 class="text-base font-semibold text-slate-700 mb-4 border-b border-slate-200 pb-3">Visão Geral</h2>
-                                 <!-- [ATUALIZADO] Grid agora tem 3 colunas para acomodar os 2 KPIs de alunos -->
-                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                 <h2 class="content-card-header">Registros Recentes</h2>
+                                 <ul id="recent-absences-list" class="space-y-3 text-xs max-h-[300px] overflow-y-auto">
+                                     <li class="text-slate-500 italic">Calculando...</li>
+                                     <!-- JS vai preencher -->
+                                 </ul>
+                             </div>
+                        </div>
+
+                        <!-- Coluna 2: Visão Geral e Desempenho -->
+                        <div class="md:col-span-1 space-y-6">
+                            <div class="content-card p-5">
+                                <h2 class="content-card-header">Visão Geral</h2>
+                                <div class="grid grid-cols-2 gap-4">
                                      <div class="kpi-card flex items-center p-4">
-                                         <div class="icon-bg kpi-icon-purple"> <!-- Novo Icon roxo -->
-                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-2.121M17 20v-2m0 2H5a2 2 0 01-2-2v-5a2 2 0 012-2h14a2 2 0 012 2v5a2 2 0 01-2 2h-5m-4-8a3 3 0 100-6 3 3 0 000 6z" />
-                                             </svg>
-                                         </div>
-                                         <div class="ml-4"><p class="kpi-label">Alunos Inscritos</p><p id="kpi-total-students" class="kpi-value">-</p></div>
+                                         <div class="icon-bg kpi-icon-purple"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M17 20h5v-2a3 3 0 00-5.356-2.121M17 20v-2m0 2H5a2 2 0 01-2-2v-5a2 2 0 012-2h14a2 2 0 012 2v5a2 2 0 01-2 2h-5m-4-8a3 3 0 100-6 3 3 0 000 6z" /></svg></div>
+                                         <div class="ml-3"><p class="kpi-label">Inscritos</p><p id="kpi-total-students" class="kpi-value">-</p></div>
                                      </div>
                                      <div class="kpi-card flex items-center p-4">
-                                          <div class="icon-bg kpi-icon-green"> <!-- Icon verde para ativos -->
-                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                             </svg>
-                                         </div>
-                                         <div class="ml-4"><p class="kpi-label">Alunos Ativos</p><p id="kpi-active-students" class="kpi-value">-</p></div>
+                                          <div class="icon-bg kpi-icon-green"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
+                                          <div class="ml-3"><p class="kpi-label">Ativos</p><p id="kpi-active-students" class="kpi-value">-</p></div>
+                                     </div>
+                                     <div class="kpi-card flex items-center p-4 col-span-2"> <!-- Span 2 para ocupar linha inteira -->
+                                          <div class="icon-bg kpi-icon-yellow"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></div>
+                                          <div class="ml-3"><p class="kpi-label">Reposições Pendentes</p><p id="kpi-pending-replacements" class="kpi-value">-</p></div>
+                                     </div>
+                                     <!-- [NOVO] KPIs de Médias -->
+                                     <div class="kpi-card flex items-center p-4">
+                                          <div class="icon-bg kpi-icon-orange"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></div>
+                                          <div class="ml-3"><p class="kpi-label">Média Teórica</p><p id="kpi-avg-theoretical" class="kpi-value">-</p></div>
                                      </div>
                                       <div class="kpi-card flex items-center p-4">
-                                          <div class="icon-bg kpi-icon-yellow"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></div>
-                                         <div class="ml-4"><p class="kpi-label">Reposições Pendentes</p><p id="kpi-pending-replacements" class="kpi-value">-</p></div>
+                                          <div class="icon-bg kpi-icon-cyan"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg></div>
+                                          <div class="ml-3"><p class="kpi-label">Média Prática</p><p id="kpi-avg-practical" class="kpi-value">-</p></div>
                                      </div>
-                                      <div class="md:col-span-3 text-xs text-center text-slate-400 pt-4 italic">(Mais estatísticas em breve)</div>
                                  </div>
-                             </div>
+                            </div>
+                             <!-- [NOVO] Card Distribuição Cursos -->
+                            <div class="content-card p-5">
+                                <h2 class="content-card-header">Distribuição por Curso (Ativos)</h2>
+                                <div id="course-distribution-chart" class="donut-chart-container min-h-[140px]">
+                                     <p class="text-slate-500 text-sm italic">Calculando...</p>
+                                     <!-- JS vai preencher -->
+                                </div>
+                            </div>
                         </div>
+
+                         <!-- Coluna 3: Desempenho Teórico -->
+                        <div class="md:col-span-1 space-y-6">
+                            <div class="content-card p-5">
+                                <h2 class="content-card-header">Desempenho Teórico (Médias Ativos)</h2>
+                                <div id="theoretical-avg-chart" class="space-y-2.5 max-h-[600px] overflow-y-auto pr-2">
+                                     <p class="text-slate-500 text-sm italic">Calculando...</p>
+                                    <!-- JS vai preencher com barras -->
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -233,10 +280,8 @@
                          <h1 class="text-2xl font-semibold text-slate-800">Alunos</h1>
                          <input type="text" id="search-student" placeholder="Buscar aluno..." class="border border-slate-300 rounded-lg px-4 py-2 text-sm w-full sm:w-auto max-w-xs focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition shadow-sm">
                      </div>
-                     <!-- Container para os cards -->
                      <div id="student-list-panel" class="max-h-[calc(100vh-200px)] overflow-y-auto">
-                         <!-- Cards agrupados serão renderizados aqui -->
-                         <p class="text-slate-500 p-4 text-center italic initial-message">Carregando lista de alunos...</p>
+                         <p class="text-slate-500 p-4 text-center italic initial-message">Carregando...</p>
                      </div>
                  </div>
 
@@ -245,7 +290,7 @@
                      <h1 class="text-2xl font-semibold text-slate-800 mb-6">Análise de Ponto</h1>
                      <div class="content-card p-6 text-center">
                          <p class="text-slate-500 italic">Em desenvolvimento...</p>
-                         <p class="mt-4 text-slate-600 text-sm">Aqui você poderá ver um calendário de frequência, gráficos de atraso, etc.</p>
+                         <p class="mt-4 text-slate-600 text-sm">Calendário de frequência, gráficos de atraso, etc.</p>
                      </div>
                  </div>
 
@@ -263,16 +308,10 @@
                 </button>
             </div>
         </header>
-
-        <!-- Header do Aluno -->
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
             <div id="student-header" class="content-card p-6 flex items-center space-x-5"></div>
         </div>
-
-        <!-- KPIs do Aluno -->
         <div id="student-kpi-header" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-5 grid grid-cols-2 md:grid-cols-4 gap-4"></div>
-
-        <!-- Abas de Navegação -->
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
             <div class="border-b border-slate-200">
                 <nav id="student-tabs-nav" class="flex space-x-1 sm:space-x-2 overflow-x-auto" aria-label="Tabs">
@@ -283,17 +322,15 @@
                     <button data-tab="notas-p" class="tab-button">Notas Práticas</button>
                 </nav>
             </div>
-
-            <!-- Conteúdo das Abas -->
             <div id="student-tabs-content" class="mt-6 mb-16">
                 <div id="tab-info" class="tab-content active content-card p-6"></div>
                 <div id="tab-escala" class="tab-content"><div id="escala-heatmap-content" class="space-y-6"></div></div>
                 <div id="tab-faltas" class="tab-content content-card p-0 overflow-hidden">
-                     <h3 class="text-base font-semibold text-slate-700 p-5 border-b border-slate-200">Registro de Ausências e Reposições</h3>
+                     <h3 class="content-card-header p-5">Registro de Ausências e Reposições</h3>
                     <div id="faltas-content" class="max-h-[500px] overflow-y-auto"></div>
                 </div>
                 <div id="tab-notas-t" class="tab-content content-card p-6">
-                    <h3 class="text-base font-semibold text-slate-700 mb-5">Notas Teóricas</h3>
+                    <h3 class="content-card-header mb-5">Notas Teóricas</h3>
                     <div id="notas-t-barchart-content" class="space-y-3"></div>
                 </div>
                 <div id="tab-notas-p" class="tab-content"><div id="notas-p-radial-content" class="space-y-5"></div></div>
@@ -307,7 +344,7 @@
         const API_URL = "https://script.google.com/macros/s/AKfycbxq7vepPQ6F6qxPvXbLnINZbMkoBiMVRMwlfw5_O_pZMoNp-XcJijoX6DWM6g9SQhd3/exec";
         console.log(`API_URL: ${API_URL}`);
 
-        const appState = {
+        const appState = { /* ... (sem alterações) ... */
              lastPontoUpdate: null, alunos: [], alunosMap: new Map(), pontoHojeMap: new Map(),
              escalas: {}, ausenciasReposicoes: [], notasTeoricas: {}, notasPraticas: {},
              todayBR: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
@@ -330,7 +367,7 @@
 
         // --- INICIALIZAÇÃO E CARGA ---
         async function init() {
-            console.log('Iniciando Dashboard PRO++ Cards v2...');
+            console.log('Iniciando Dashboard PRO++ v3...');
             document.getElementById('current-date').textContent = appState.todayFullBR;
             setupSidebarNavigation();
             document.getElementById('back-to-dashboard').addEventListener('click', showAlunosList);
@@ -339,14 +376,15 @@
             try {
                 await fetchAllData();
                 await fetchPontoHoje();
-                // [ATUALIZADO] Renderiza todos os alunos, incluindo inativos
+                // Renderiza após ter TODOS os dados iniciais
                 renderStudentList(appState.alunos);
                 computeAndRenderFrequency();
-                renderAtAGlance(); // [ATUALIZADO] Renderiza KPIs totais e ativos
+                renderAtAGlance(); // Renderiza KPIs e gráficos da dashboard
+                renderRecentAbsences(); // Renderiza lista de ausências recentes
                 showLoading(false);
                 switchMainTab('dashboard');
                 document.querySelector('body > div.flex').style.opacity = '1';
-                setInterval(fetchPontoHoje, 30000);
+                setInterval(fetchPontoHoje, 30000); // Atualiza só a frequência
                 console.log("Live update iniciado.");
             } catch (error) { showError(error.message); }
         }
@@ -368,131 +406,265 @@
             console.log("Trocando aba:", tabName); document.querySelectorAll('.sidebar-link').forEach(l=>l.classList.toggle('active', l.getAttribute('data-tab')===tabName)); document.querySelectorAll('.main-content-section').forEach(s=>s.classList.toggle('active', s.id===`content-${tabName}`)); if (!document.getElementById('student-detail-view').classList.contains('hidden-view')) {document.getElementById('student-detail-view').classList.add('hidden-view');} window.scrollTo(0,0);
         }
 
+        // --- CÁLCULOS AUXILIARES ---
+        /**
+         * Converte string de nota (ex: "7,5") para número float.
+         * Retorna 0 se inválido.
+         */
+        function parseNota(notaStr) {
+            if (typeof notaStr !== 'string' || notaStr.trim() === '') return 0;
+            const notaNum = parseFloat(notaStr.replace(',', '.'));
+            return isNaN(notaNum) ? 0 : notaNum;
+        }
+
+        /**
+         * [NOVO] Calcula médias teóricas, práticas e distribuição de cursos.
+         */
+        function calculateAveragesAndDistribution() {
+            const activeStudents = appState.alunos.filter(s => s.Status === 'Ativo');
+            const activeEmails = new Set(activeStudents.map(s => s.EmailHC));
+
+            let totalTheoreticalSum = 0;
+            let totalTheoreticalCount = 0;
+            const theoreticalSums = {}; // { materia: sum }
+            const theoreticalCounts = {}; // { materia: count }
+
+            // Calcula Médias Teóricas
+            if (appState.notasTeoricas && appState.notasTeoricas.registros) {
+                appState.notasTeoricas.registros.forEach(record => {
+                    if (activeEmails.has(record.EmailHC)) {
+                        Object.keys(record).forEach(key => {
+                            if (!['SerialNumber', 'NomeCompleto', 'EmailHC', 'Curso'].includes(key) && key.trim() !== '') {
+                                const nota = parseNota(record[key]);
+                                if (nota > 0) { // Considera apenas notas válidas > 0
+                                    theoreticalSums[key] = (theoreticalSums[key] || 0) + nota;
+                                    theoreticalCounts[key] = (theoreticalCounts[key] || 0) + 1;
+                                    totalTheoreticalSum += nota;
+                                    totalTheoreticalCount++;
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+            const theoreticalAverages = {};
+            Object.keys(theoreticalSums).forEach(key => {
+                theoreticalAverages[key] = theoreticalCounts[key] > 0 ? theoreticalSums[key] / theoreticalCounts[key] : 0;
+            });
+            const overallTheoreticalAvg = totalTheoreticalCount > 0 ? totalTheoreticalSum / totalTheoreticalCount : 0;
+
+            // Calcula Média Prática Geral
+            let totalPracticalSum = 0;
+            let totalPracticalCount = 0;
+            if (appState.notasPraticas) {
+                Object.values(appState.notasPraticas).forEach(pratica => {
+                    if (pratica.registros) {
+                        pratica.registros.forEach(record => {
+                            if (activeEmails.has(record.EmailHC)) {
+                                const keyMedia = Object.keys(record).find(k => k.toUpperCase().includes('MÉDIA (NOTA FINAL)')) || null;
+                                if (keyMedia) {
+                                    const nota = parseNota(record[keyMedia]);
+                                    if (nota > 0) {
+                                        totalPracticalSum += nota;
+                                        totalPracticalCount++;
+                                    }
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+            const overallPracticalAvg = totalPracticalCount > 0 ? totalPracticalSum / totalPracticalCount : 0;
+
+            // Calcula Distribuição de Cursos
+            const courseCounts = activeStudents.reduce((acc, student) => {
+                const course = student.Curso || 'Sem Curso';
+                acc[course] = (acc[course] || 0) + 1;
+                return acc;
+            }, {});
+            const totalActive = activeStudents.length;
+            const courseDistribution = Object.entries(courseCounts).map(([course, count]) => ({
+                course,
+                count,
+                percentage: totalActive > 0 ? (count / totalActive) * 100 : 0
+            })).sort((a, b) => b.count - a.count); // Ordena por contagem
+
+            return {
+                overallTheoreticalAvg,
+                theoreticalAverages, // { materia: avg }
+                overallPracticalAvg,
+                courseDistribution // [ { course, count, percentage } ]
+            };
+        }
+
         // --- RENDERIZAÇÃO VIEW PRINCIPAL ---
         /**
-         * [ATUALIZADO] Renderiza KPIs de Visão Geral (Total e Ativos).
+         * [ATUALIZADO] Renderiza todos os KPIs e gráficos da dashboard principal.
          */
         function renderAtAGlance() {
             const totalStudents = appState.alunos.length;
-            const activeStudents = appState.alunos.filter(s => s.Status === 'Ativo').length;
+            const activeStudentsCount = appState.alunos.filter(s => s.Status === 'Ativo').length;
             const pendingReplacements = appState.ausenciasReposicoes.filter(f => !f.DataReposicaoISO).length;
 
+            const {
+                overallTheoreticalAvg,
+                theoreticalAverages,
+                overallPracticalAvg,
+                courseDistribution
+            } = calculateAveragesAndDistribution();
+
+            // Atualiza KPIs
             document.getElementById('kpi-total-students').textContent = totalStudents;
-            document.getElementById('kpi-active-students').textContent = activeStudents;
+            document.getElementById('kpi-active-students').textContent = activeStudentsCount;
             document.getElementById('kpi-pending-replacements').textContent = pendingReplacements;
+            document.getElementById('kpi-avg-theoretical').textContent = overallTheoreticalAvg.toFixed(1);
+            document.getElementById('kpi-avg-practical').textContent = overallPracticalAvg.toFixed(1);
+
+            // Renderiza Gráfico Donut Cursos
+            renderCourseDistributionChart(courseDistribution);
+
+            // Renderiza Gráfico Barras Médias Teóricas
+            renderTheoreticalAvgChart(theoreticalAverages);
         }
+
+        /**
+         * [NOVO] Renderiza o gráfico de Donut para distribuição de cursos.
+         */
+        function renderCourseDistributionChart(distribution) {
+            const container = document.getElementById('course-distribution-chart');
+            if (!distribution || distribution.length === 0) {
+                container.innerHTML = '<p class="text-slate-500 text-sm italic">Não há dados de curso.</p>'; return;
+            }
+
+            const colors = ['#22d3ee', '#6366f1', '#f97316', '#10b981', '#f43f5e']; // cyan, indigo, orange, emerald, rose
+            let gradientString = '';
+            let cumulativePercentage = 0;
+            const legendItems = [];
+
+            distribution.forEach((item, index) => {
+                const color = colors[index % colors.length];
+                const startAngle = cumulativePercentage;
+                const endAngle = cumulativePercentage + item.percentage;
+                if (item.percentage > 0) { // Evita segmentos zerados
+                     gradientString += `, ${color} ${startAngle}% ${endAngle}%`;
+                }
+                cumulativePercentage = endAngle;
+
+                legendItems.push(`
+                    <li>
+                        <span class="legend-color-box" style="background-color: ${color};"></span>
+                        ${item.course} (${item.count}) - ${item.percentage.toFixed(0)}%
+                    </li>`);
+            });
+            // Completa o gradiente se não chegar a 100% (arredondamento)
+             if (cumulativePercentage < 100) {
+                gradientString += `, #e2e8f0 ${cumulativePercentage}% 100%`; // slate-200 para o resto
+             }
+
+
+            container.innerHTML = `
+                <div class="donut-chart" style="--chart-segments: ${gradientString.substring(1)};"></div>
+                <div class="donut-legend">
+                    <ul>${legendItems.join('')}</ul>
+                </div>`;
+        }
+
+         /**
+         * [NOVO] Renderiza o gráfico de barras para médias teóricas por matéria.
+         */
+        function renderTheoreticalAvgChart(averages) {
+            const panel = document.getElementById('theoretical-avg-chart');
+            const sortedSubjects = Object.entries(averages).sort(([, avgA], [, avgB]) => avgB - avgA); // Ordena por média desc
+
+            if (sortedSubjects.length === 0) {
+                panel.innerHTML = '<p class="text-slate-500 text-sm italic">Não há dados de notas teóricas.</p>'; return;
+            }
+
+            panel.innerHTML = sortedSubjects.map(([subject, avg]) => {
+                const isMediaGeral = subject.toUpperCase().includes('MÉDIA'); // Detecta se é uma média geral de módulo
+                const barFillClass = isMediaGeral ? 'bar-fill-media' : 'bar-fill-normal';
+                const labelClass = isMediaGeral ? 'text-cyan-700 font-semibold' : 'text-slate-600';
+                const valueClass = isMediaGeral ? 'text-cyan-800 font-bold' : 'text-slate-700 font-semibold';
+
+                return `
+                    <div class="bar-chart-item text-xs rounded p-1.5 ${isMediaGeral ? 'mt-2 pt-2 border-t border-slate-200': ''}">
+                        <div class="flex justify-between items-center mb-0.5">
+                            <span class="bar-label ${labelClass} truncate pr-2" title="${subject}">${subject}</span>
+                            <span class="bar-value ${valueClass} w-8 text-right">${avg.toFixed(1)}</span>
+                        </div>
+                        <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden bar-bg">
+                            <div class="h-full ${barFillClass} rounded-full transition-all duration-500 ease-out" style="width: ${avg * 10}%"></div>
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
+        /**
+         * [NOVO] Renderiza a lista de ausências/reposições recentes no dashboard.
+         */
+        function renderRecentAbsences() {
+             const list = document.getElementById('recent-absences-list');
+             if (!appState.ausenciasReposicoes || appState.ausenciasReposicoes.length === 0) {
+                 list.innerHTML = '<li class="text-slate-500 italic">Nenhum registro encontrado.</li>'; return;
+             }
+
+             // Ordena por data (mais recente primeiro), tratando ambas as datas
+             const sortedAbsences = [...appState.ausenciasReposicoes].sort((a, b) => {
+                const dateA = a.DataReposicaoISO || a.DataAusenciaISO;
+                const dateB = b.DataReposicaoISO || b.DataAusenciaISO;
+                // Coloca nulls (ausências sem data) no final se desejar, ou no início
+                if (!dateB) return -1; // b vem antes se não tiver data
+                if (!dateA) return 1;  // a vem antes se não tiver data
+                return new Date(dateB + 'T00:00:00') - new Date(dateA + 'T00:00:00'); // Mais recente primeiro
+             });
+
+
+             list.innerHTML = sortedAbsences.slice(0, 5).map(item => { // Pega os 5 mais recentes
+                 const aluno = appState.alunosMap.get(item.EmailHC);
+                 const nomeAluno = aluno ? aluno.NomeCompleto : item.EmailHC;
+                 const dataAusencia = item.DataAusenciaISO ? new Date(item.DataAusenciaISO+'T00:00:00').toLocaleDateString('pt-BR') : '-';
+                 const dataReposicao = item.DataReposicaoISO ? new Date(item.DataReposicaoISO+'T00:00:00').toLocaleDateString('pt-BR') : '-';
+                 const isPendente = !item.DataReposicaoISO;
+                 const statusBadge = isPendente ? '<span class="badge badge-yellow ml-2">Pendente</span>' : '<span class="badge badge-green ml-2">Reposto</span>';
+                 const dateToShow = item.DataReposicaoISO || item.DataAusenciaISO; // Data principal para display
+                 const formattedDate = dateToShow ? new Date(dateToShow+'T00:00:00').toLocaleDateString('pt-BR') : 'Data Indef.';
+
+                 return `
+                    <li class="border-b border-slate-100 last:border-b-0 py-2.5 px-1 rounded">
+                        <div class="flex justify-between items-center mb-0.5">
+                            <span class="font-medium text-slate-700 truncate pr-2" title="${nomeAluno}">${nomeAluno}</span>
+                            <span class="text-slate-500 text-[11px]">${formattedDate}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                             <span class="text-slate-500 truncate pr-2" title="${item.Motivo || ''}">
+                                 ${isPendente ? 'Ausência' : 'Reposição'} (${item.Local || 'Local N/A'})
+                             </span>
+                             ${statusBadge}
+                        </div>
+                    </li>
+                 `;
+             }).join('');
+        }
+
         function findActiveScale() { /* ... (sem alterações) ... */
              for(const n in appState.escalas){const e=appState.escalas[n]; if(e.headersDay?.includes(appState.todayBR))return e;} console.warn(`Nenhuma escala hoje (${appState.todayBR})`); return null;
         }
         function computeAndRenderFrequency() { /* ... (sem alterações) ... */
              const p=document.getElementById('frequency-panel'); const kS=document.getElementById('kpi-scaled'); const kP=document.getElementById('kpi-present'); const kA=document.getElementById('kpi-absent'); const s=findActiveScale(); if(!s){p.innerHTML=`<p class="text-slate-500 italic text-sm">Nenhuma escala hoje (${appState.todayBR}).</p>`; kS.textContent='0'; kP.textContent='0'; kA.textContent='0'; return;} const present=[]; const absent=[]; let scaled=0; s.alunos.forEach(ae=>{const d=ae.dias.find(x=>x.dataColuna===appState.todayBR); if(d?.status&&d.status!=='folga'&&d.status!=='ausencia'){scaled++; const ai=appState.alunosMap.get(ae.EmailHC)||ae; const pi=appState.pontoHojeMap.get(ae.EmailHC); if(pi)present.push({...ai,HoraEntrada:pi.HoraEntrada,StatusEscala:d.status}); else absent.push({...ai,StatusEscala:d.status});}}); kS.textContent=scaled; kP.textContent=present.length; kA.textContent=absent.length; p.innerHTML=`<div><h3 class="font-semibold text-green-600">Presentes (${present.length})</h3><ul class="mt-2 text-xs text-slate-600 space-y-1.5">${present.length>0?present.map(s=>`<li class="flex justify-between items-center"><span class="truncate pr-2" title="${s.NomeCompleto}">${s.NomeCompleto}</span><span class="badge badge-green flex-shrink-0">${s.HoraEntrada}</span></li>`).join(''):'<li class="text-slate-400 italic">Nenhum.</li>'}</ul></div> <div class="mt-4"><h3 class="font-semibold text-red-600">Ausentes (${absent.length})</h3><ul class="mt-2 text-xs text-slate-600 space-y-1.5">${absent.length>0?absent.map(s=>`<li class="flex justify-between items-center"><span class="truncate pr-2" title="${s.NomeCompleto}">${s.NomeCompleto}</span><span class="badge badge-gray flex-shrink-0" title="Escala: ${s.StatusEscala}">Ausente</span></li>`).join(''):'<li class="text-slate-400 italic">Nenhum.</li>'}</ul></div>`;
         }
-
-        /**
-         * [ATUALIZADO] Renderiza TODOS os alunos (ativos e inativos) como cards agrupados, com indicador visual para inativos.
-         */
-        function renderStudentList(students) { // Recebe todos os alunos
-            const panel = document.getElementById('student-list-panel');
-             const initialMsg = panel.querySelector('.initial-message');
-             if (initialMsg) initialMsg.remove();
-
-            if (!students || students.length === 0) {
-                panel.innerHTML = '<p class="text-slate-500 p-6 text-center">Nenhum aluno encontrado.</p>'; return;
-            }
-
-            // Agrupa por curso
-            const groupedStudents = students.reduce((acc, student) => {
-                const course = student.Curso || 'Sem Curso';
-                if (!acc[course]) acc[course] = [];
-                acc[course].push(student); // Adiciona todos
-                return acc;
-            }, {});
-            const sortedCourses = Object.keys(groupedStudents).sort();
-
-            let html = '';
-            sortedCourses.forEach(course => {
-                html += `<div class="student-group" data-course="${course}">
-                            <h3 class="student-group-header">${course} (${groupedStudents[course].length})</h3>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">`;
-                groupedStudents[course].forEach(student => {
-                    const imageUrl = student.FotoID ? `https://lh3.googleusercontent.com/d/${student.FotoID}=s96-c` : 'https://placehold.co/40x40/e2e8f0/64748b?text=?';
-                    const isInactive = student.Status !== 'Ativo';
-                    const inactiveClass = isInactive ? 'inactive-card' : '';
-                    const inactiveBadge = isInactive ? '<span class="badge badge-red inactive-badge">Inativo</span>' : '';
-
-                    html += `
-                        <div class="student-card flex flex-col items-center text-center ${inactiveClass}"
-                             onclick="showStudentDetail('${student.EmailHC}')"
-                             data-student-email="${student.EmailHC}"
-                             data-student-name="${student.NomeCompleto.toLowerCase()}">
-                             ${inactiveBadge}
-                            <img src="${imageUrl}" alt="Foto" class="mb-2 shadow-sm" onerror="this.src='https://placehold.co/40x40/e2e8f0/64748b?text=?'">
-                            <p class="student-name">${student.NomeCompleto}</p>
-                            <p class="student-course mt-0.5">${student.Curso}</p>
-                        </div>`;
-                });
-                html += `   </div></div>`;
-            });
-
-            panel.innerHTML = html;
+        function renderStudentList(students) { /* ... (sem alterações) ... */
+             const panel = document.getElementById('student-list-panel'); const initialMsg = panel.querySelector('.initial-message'); if (initialMsg) initialMsg.remove(); if (!students || students.length === 0) { panel.innerHTML = '<p class="text-slate-500 p-6 text-center">Nenhum aluno.</p>'; return; } const grouped = students.reduce((acc, s) => { const c = s.Curso || 'Sem Curso'; if (!acc[c]) acc[c] = []; acc[c].push(s); return acc; }, {}); const courses = Object.keys(grouped).sort(); let html = ''; courses.forEach(c => { html += `<div class="student-group" data-course="${c}"><h3 class="student-group-header">${c} (${grouped[c].length})</h3><div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">`; grouped[c].forEach(s => { const img = s.FotoID ? `https://lh3.googleusercontent.com/d/${s.FotoID}=s96-c` : 'https://placehold.co/40x40/e2e8f0/64748b?text=?'; const inactive = s.Status !== 'Ativo'; const inactiveClass = inactive ? 'inactive-card' : ''; const inactiveBadge = inactive ? '<span class="badge badge-red inactive-badge">Inativo</span>' : ''; html += `<div class="student-card flex flex-col items-center text-center ${inactiveClass}" onclick="showStudentDetail('${s.EmailHC}')" data-student-email="${s.EmailHC}" data-student-name="${s.NomeCompleto.toLowerCase()}">${inactiveBadge}<img src="${img}" alt="Foto" class="mb-2 shadow-sm" onerror="this.src='https://placehold.co/40x40/e2e8f0/64748b?text=?'"><p class="student-name">${s.NomeCompleto}</p><p class="student-course mt-0.5">${s.Curso}</p></div>`; }); html += `</div></div>`; }); panel.innerHTML = html;
         }
-
-        /**
-         * [ATUALIZADO] Filtro agora considera todos os cards (ativos e inativos).
-         */
-        function filterStudentList() {
-            const query = document.getElementById('search-student').value.toLowerCase().trim();
-            const groups = document.querySelectorAll('.student-group');
-            const noResultsMessage = document.getElementById('no-search-results');
-            let hasVisibleStudentsOverall = false;
-
-            if (noResultsMessage) noResultsMessage.remove();
-
-            groups.forEach(group => {
-                const cards = group.querySelectorAll('.student-card');
-                const header = group.querySelector('.student-group-header');
-                let groupHasVisibleCard = false;
-
-                cards.forEach(card => {
-                    const nameElement = card.querySelector('.student-name');
-                    const name = card.getAttribute('data-student-name');
-                    const originalName = nameElement.textContent;
-
-                    if (query === '' || name.includes(query)) {
-                        card.classList.remove('hidden');
-                        groupHasVisibleCard = true;
-                        hasVisibleStudentsOverall = true;
-                        if (query !== '') {
-                            const regex = new RegExp(`(${query.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi');
-                            nameElement.innerHTML = originalName.replace(regex, '<span class="highlight">$1</span>');
-                        } else { nameElement.innerHTML = originalName; }
-                    } else {
-                        card.classList.add('hidden');
-                        nameElement.innerHTML = originalName;
-                    }
-                });
-                header.classList.toggle('hidden', !groupHasVisibleCard);
-            });
-
-            if (!hasVisibleStudentsOverall && query !== '') {
-                const panel = document.getElementById('student-list-panel');
-                panel.insertAdjacentHTML('beforeend', '<p id="no-search-results" class="text-slate-500 p-6 text-center italic">Nenhum aluno encontrado para "' + query + '".</p>');
-            }
+        function filterStudentList() { /* ... (sem alterações) ... */
+            const q=document.getElementById('search-student').value.toLowerCase().trim(); const gs=document.querySelectorAll('.student-group'); const msg=document.getElementById('no-search-results'); let hasVisible=false; if(msg)msg.remove(); gs.forEach(g=>{const cs=g.querySelectorAll('.student-card'); const h=g.querySelector('.student-group-header'); let groupVisible=false; cs.forEach(c=>{const ne=c.querySelector('.student-name'); const n=c.getAttribute('data-student-name'); const oN=ne.textContent; if(q===''||n.includes(q)){c.classList.remove('hidden'); groupVisible=true; hasVisible=true; if(q!==''){const rgx=new RegExp(`(${q.replace(/[-\/\\^$*+?.()|[\]{}]/g,'\\$&')})`,'gi'); ne.innerHTML=oN.replace(rgx,'<span class="highlight">$1</span>');}else{ne.innerHTML=oN;}}else{c.classList.add('hidden'); ne.innerHTML=oN;}}); h.classList.toggle('hidden',!groupVisible);}); if(!hasVisible&&q!==''){document.getElementById('student-list-panel').insertAdjacentHTML('beforeend','<p id="no-search-results" class="text-slate-500 p-6 text-center italic">Nenhum aluno para "'+q+'".</p>');}
         }
-
 
         // --- NAVEGAÇÃO E RENDERIZAÇÃO VIEW DETALHE ALUNO ---
         function showAlunosList() { /* ... (sem alterações) ... */
              document.getElementById('student-detail-view').classList.add('hidden-view'); window.scrollTo(0,0);
         }
         function showStudentDetail(email) { /* ... (sem alterações) ... */
-            console.log(`Detalhes: ${email}`); const i=appState.alunosMap.get(email); if(!i) return showError(`Aluno ${email} ñ encontrado.`);
-            const es=[]; for(const n in appState.escalas){const e=appState.escalas[n]; const a=e.alunos.find(x=>x.EmailHC===email); if(a)es.push({...e,...a});}
-            const fa=appState.ausenciasReposicoes.filter(f=>f.EmailHC===email); const nT=(appState.notasTeoricas.registros||[]).find(n=>n.EmailHC===email);
-            const nP=[]; for(const n in appState.notasPraticas){const p=appState.notasPraticas[n]; const r=(p.registros||[]).filter(x=>x.EmailHC===email); nP.push(...r.map(i=>({nomePratica:p.nomePratica,...i})));}
-            renderStudentHeader(i); renderStudentDetailKPIs(fa,nP); renderTabInfo(i); renderTabEscala(es);
-            renderTabFaltas(fa); renderTabNotasTeoricas(nT); renderTabNotasPraticas(nP);
-            document.getElementById('student-detail-view').classList.remove('hidden-view'); switchStudentTab('info'); window.scrollTo(0,0);
+            console.log(`Detalhes: ${email}`); const i=appState.alunosMap.get(email); if(!i) return showError(`Aluno ${email} ñ encontrado.`); const es=[]; for(const n in appState.escalas){const e=appState.escalas[n]; const a=e.alunos.find(x=>x.EmailHC===email); if(a)es.push({...e,...a});} const fa=appState.ausenciasReposicoes.filter(f=>f.EmailHC===email); const nT=(appState.notasTeoricas.registros||[]).find(n=>n.EmailHC===email); const nP=[]; for(const n in appState.notasPraticas){const p=appState.notasPraticas[n]; const r=(p.registros||[]).filter(x=>x.EmailHC===email); nP.push(...r.map(i=>({nomePratica:p.nomePratica,...i})));} renderStudentHeader(i); renderStudentDetailKPIs(fa,nP); renderTabInfo(i); renderTabEscala(es); renderTabFaltas(fa); renderTabNotasTeoricas(nT); renderTabNotasPraticas(nP); document.getElementById('student-detail-view').classList.remove('hidden-view'); switchStudentTab('info'); window.scrollTo(0,0);
         }
         function setupStudentTabNavigation() { /* ... (sem alterações) ... */
              const n=document.getElementById('student-tabs-nav'); n.addEventListener('click', (e)=>{ if(e.target.tagName==='BUTTON'){const t=e.target.getAttribute('data-tab'); switchStudentTab(t);}});
@@ -504,7 +676,7 @@
              const p=document.getElementById('student-header'); const i=info.FotoID?`https://lh3.googleusercontent.com/d/${info.FotoID}=s160-c`:'https://placehold.co/80x80/e2e8f0/64748b?text=?'; const s=info.Status==='Ativo'?'badge-green':'badge-red'; p.innerHTML=`<img src="${i}" alt="Foto" class="w-20 h-20 rounded-full object-cover shadow-md bg-slate-200" onerror="this.src='https://placehold.co/80x80/e2e8f0/64748b?text=?'"><div class="flex-grow"><h2 class="text-2xl font-bold text-slate-800">${info.NomeCompleto}</h2><p class="text-base text-slate-500">${info.Curso}</p></div><div class="ml-auto flex-shrink-0"><span class="badge ${s}">${info.Status}</span></div>`;
         }
         function renderStudentDetailKPIs(faltas, notasP) { /* ... (sem alterações) ... */
-             const p=document.getElementById('student-kpi-header'); const tF=faltas.length; const pF=faltas.filter(f=>!f.DataReposicaoISO).length; let mP=0; if(notasP.length>0){let s=0; notasP.forEach(n=>{const k=Object.keys(n).find(x=>x.toUpperCase().includes('MÉDIA (NOTA FINAL)'))||'MÉDIA (NOTA FINAL):'; let v=parseFloat(String(n[k]||'0').replace(',','.')); if(!isNaN(v))s+=v;}); mP=s/notasP.length;} p.innerHTML=`<div class="kpi-card flex items-center p-4"><div class="icon-bg kpi-icon-red"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg></div><div class="ml-3"><p class="kpi-label">Total Faltas</p><p class="kpi-value">${tF}</p></div></div> <div class="kpi-card flex items-center p-4"><div class="icon-bg kpi-icon-yellow"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div><div class="ml-3"><p class="kpi-label">Reposições Pendentes</p><p class="kpi-value">${pF}</p></div></div> <div class="kpi-card flex items-center p-4"><div class="icon-bg kpi-icon-blue"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div><div class="ml-3"><p class="kpi-label">Média (Prática)</p><p class="kpi-value">${mP.toFixed(1)}</p></div></div> <div class="kpi-card flex items-center p-4"><div class="icon-bg kpi-icon-green"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 14l9-5-9-5-9 5 9 5z" /><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5zm0 0v6" /></svg></div><div class="ml-3"><p class="kpi-label">Módulos (Prática)</p><p class="kpi-value">${notasP.length}/${appState.notasPraticas?Object.keys(appState.notasPraticas).length:'?'}</p></div></div>`;
+             const p=document.getElementById('student-kpi-header'); const tF=faltas.length; const pF=faltas.filter(f=>!f.DataReposicaoISO).length; let mP=0; if(notasP.length>0){let s=0; notasP.forEach(n=>{const k=Object.keys(n).find(x=>x.toUpperCase().includes('MÉDIA (NOTA FINAL)'))||'MÉDIA (NOTA FINAL):'; let v=parseNota(n[k]); if(v>0)s+=v;}); mP=notasP.length>0?s/notasP.length:0;} p.innerHTML=`<div class="kpi-card flex items-center p-4"><div class="icon-bg kpi-icon-red"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg></div><div class="ml-3"><p class="kpi-label">Total Faltas</p><p class="kpi-value">${tF}</p></div></div> <div class="kpi-card flex items-center p-4"><div class="icon-bg kpi-icon-yellow"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div><div class="ml-3"><p class="kpi-label">Reposições Pendentes</p><p class="kpi-value">${pF}</p></div></div> <div class="kpi-card flex items-center p-4"><div class="icon-bg kpi-icon-blue"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div><div class="ml-3"><p class="kpi-label">Média (Prática)</p><p class="kpi-value">${mP.toFixed(1)}</p></div></div> <div class="kpi-card flex items-center p-4"><div class="icon-bg kpi-icon-green"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/><path d="M12 14l9-5-9-5-9 5 9 5zm0 0v6"/></svg></div><div class="ml-3"><p class="kpi-label">Módulos (Prática)</p><p class="kpi-value">${notasP.length}/${appState.notasPraticas?Object.keys(appState.notasPraticas).length:'?'}</p></div></div>`;
         }
         function renderTabInfo(info) { /* ... (sem alterações) ... */
              const p=document.getElementById('tab-info'); p.innerHTML=`<dl class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5 text-sm"><div class="border-b border-slate-100 pb-3"><dt class="font-medium text-slate-500">Email</dt><dd class="mt-1 font-semibold text-slate-700">${info.EmailHC||'N/A'}</dd></div><div class="border-b border-slate-100 pb-3"><dt class="font-medium text-slate-500">Nascimento</dt><dd class="mt-1 font-semibold text-slate-700">${info.DataNascimento||'N/A'}</dd></div><div class="border-b border-slate-100 pb-3"><dt class="font-medium text-slate-500">Sexo</dt><dd class="mt-1 font-semibold text-slate-700">${info.Sexo||'N/A'}</dd></div><div class="border-b border-slate-100 pb-3"><dt class="font-medium text-slate-500">Estado Civil</dt><dd class="mt-1 font-semibold text-slate-700">${info.EstadoCivil||'N/A'}</dd></div><div class="md:col-span-2 border-b border-slate-100 pb-3"><dt class="font-medium text-slate-500">CREFITO</dt><dd class="mt-1 font-semibold text-slate-700">${info.Crefito||'N/A'}</dd></div></dl>`;
@@ -513,13 +685,13 @@
              const p=document.getElementById('escala-heatmap-content'); if(!escalas||escalas.length===0){p.innerHTML='<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhum registro.</p></div>'; return;} p.innerHTML=escalas.map(e=>`<div class="content-card p-6"><h4 class="text-base font-semibold text-slate-800">${e.nomeEscala}</h4><p class="text-sm text-slate-500 mb-5"><strong>Unidade:</strong> ${e.Unidade} | <strong>Sup:</strong> ${e.Supervisor}</p><div class="flex flex-wrap gap-2">${e.dias.map(d=>`<div class="heatmap-day" data-status="${d.status||'none'}" title="${d.dataColuna}: ${d.status||'N/A'}"><span class="heatmap-day-date">${d.dataColuna}</span><span class="heatmap-day-status">${d.status||'N/A'}</span></div>`).join('')}</div></div>`).join('');
         }
         function renderTabFaltas(faltas) { /* ... (sem alterações) ... */
-             const c=document.getElementById('tab-faltas'); const h=`<h3 class="text-base font-semibold text-slate-700 p-5 border-b border-slate-200">Registro de Ausências e Reposições</h3>`; let p=document.getElementById('faltas-content'); if(!faltas||faltas.length===0){c.innerHTML=h+'<p class="text-slate-500 p-5 text-sm italic">Nenhum registro.</p>'; return;} if(!p){c.innerHTML=h+'<div id="faltas-content" class="max-h-[500px] overflow-y-auto"></div>'; p=document.getElementById('faltas-content');} p.innerHTML=`<table class="min-w-full text-sm"><thead class="bg-slate-50"><tr><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Ausência</th><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Reposição</th><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Local</th><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Motivo</th></tr></thead><tbody class="bg-white divide-y divide-slate-100">${faltas.map(f=>{const iP=!f.DataReposicaoISO; const sB=iP?'<span class="badge badge-yellow">Pendente</span>':'<span class="badge badge-green">Completa</span>'; const dA=f.DataAusenciaISO?new Date(f.DataAusenciaISO+'T00:00:00').toLocaleDateString('pt-BR'):'-'; const dR=f.DataReposicaoISO?new Date(f.DataReposicaoISO+'T00:00:00').toLocaleDateString('pt-BR'):'-'; const mS=f.Motivo?(f.Motivo.length>35?f.Motivo.substring(0,35)+'...':f.Motivo):'-'; return `<tr class="hover:bg-sky-50 transition-colors duration-150"><td class="px-4 py-3 text-slate-600 align-middle">${sB}</td><td class="px-4 py-3 text-slate-600 align-middle">${dA}</td><td class="px-4 py-3 text-slate-600 align-middle">${dR}</td><td class="px-4 py-3 text-slate-600 align-middle">${f.Local||'-'}</td><td class="px-4 py-3 text-slate-600 align-middle" title="${f.Motivo||''}">${mS}</td></tr>`;}).join('')}</tbody></table>`;
+             const c=document.getElementById('tab-faltas'); const h=`<h3 class="content-card-header p-5">Registro de Ausências e Reposições</h3>`; let p=document.getElementById('faltas-content'); if(!faltas||faltas.length===0){c.innerHTML=h+'<p class="text-slate-500 p-5 text-sm italic">Nenhum registro.</p>'; return;} if(!p){c.innerHTML=h+'<div id="faltas-content" class="max-h-[500px] overflow-y-auto"></div>'; p=document.getElementById('faltas-content');} p.innerHTML=`<table class="min-w-full text-sm"><thead class="bg-slate-50"><tr><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Ausência</th><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Reposição</th><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Local</th><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Motivo</th></tr></thead><tbody class="bg-white divide-y divide-slate-100">${faltas.map(f=>{const iP=!f.DataReposicaoISO; const sB=iP?'<span class="badge badge-yellow">Pendente</span>':'<span class="badge badge-green">Completa</span>'; const dA=f.DataAusenciaISO?new Date(f.DataAusenciaISO+'T00:00:00').toLocaleDateString('pt-BR'):'-'; const dR=f.DataReposicaoISO?new Date(f.DataReposicaoISO+'T00:00:00').toLocaleDateString('pt-BR'):'-'; const mS=f.Motivo?(f.Motivo.length>35?f.Motivo.substring(0,35)+'...':f.Motivo):'-'; return `<tr class="hover:bg-sky-50 transition-colors duration-150"><td class="px-4 py-3 text-slate-600 align-middle">${sB}</td><td class="px-4 py-3 text-slate-600 align-middle">${dA}</td><td class="px-4 py-3 text-slate-600 align-middle">${dR}</td><td class="px-4 py-3 text-slate-600 align-middle">${f.Local||'-'}</td><td class="px-4 py-3 text-slate-600 align-middle" title="${f.Motivo||''}">${mS}</td></tr>`;}).join('')}</tbody></table>`;
         }
         function renderTabNotasTeoricas(notas) { /* ... (sem alterações) ... */
-             const p=document.getElementById('notas-t-barchart-content'); if(!notas){p.innerHTML='<p class="text-slate-500 text-sm italic">Nenhum registro.</p>';return;} const k=Object.keys(notas).filter(x=>!['SerialNumber','NomeCompleto','EmailHC','Curso'].includes(x)&&x.trim()!==''); p.innerHTML=k.map(x=>{let v=parseFloat(String(notas[x]||'0').replace(',','.')); if(isNaN(v))v=0; const iM=x.toUpperCase().includes('MÉDIA'); const bF=iM?'bar-fill-media':'bar-fill-normal'; const lC=iM?'text-cyan-700 font-semibold':'text-slate-600'; const vC=iM?'text-cyan-800 font-bold':'text-slate-700 font-semibold'; return `<div class="text-sm ${iM?'pt-3 mt-3 border-t border-slate-100':''}"><div class="flex justify-between items-center mb-1"><span class="${lC}">${x}</span><span class="${vC} w-10 text-right">${v.toFixed(1)}</span></div><div class="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden bar-bg"><div class="h-full ${bF} rounded-full transition-all duration-500 ease-out" style="width:${v*10}%"></div></div></div>`;}).join('');
+             const p=document.getElementById('notas-t-barchart-content'); if(!notas){p.innerHTML='<p class="text-slate-500 text-sm italic">Nenhum registro.</p>';return;} const k=Object.keys(notas).filter(x=>!['SerialNumber','NomeCompleto','EmailHC','Curso'].includes(x)&&x.trim()!==''); p.innerHTML=k.map(x=>{let v=parseNota(notas[x]); const iM=x.toUpperCase().includes('MÉDIA'); const bF=iM?'bar-fill-media':'bar-fill-normal'; const lC=iM?'text-cyan-700 font-semibold':'text-slate-600'; const vC=iM?'text-cyan-800 font-bold':'text-slate-700 font-semibold'; return `<div class="bar-chart-item text-xs rounded p-1.5 ${iM?'pt-3 mt-3 border-t border-slate-100':''}"><div class="flex justify-between items-center mb-0.5"><span class="bar-label ${lC} truncate pr-2" title="${x}">${x}</span><span class="bar-value ${vC} w-8 text-right">${v.toFixed(1)}</span></div><div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden bar-bg"><div class="h-full ${bF} rounded-full transition-all duration-500 ease-out" style="width:${v*10}%"></div></div></div>`;}).join('');
         }
         function renderTabNotasPraticas(notas) { /* ... (sem alterações) ... */
-             const p=document.getElementById('notas-p-radial-content'); if(!notas||notas.length===0){p.innerHTML='<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhum registro.</p></div>'; return;} p.innerHTML=notas.map((n,i)=>{const dH=n['Data/Hora']; const dF=dH?new Date(String(dH).replace(/-/g,'/')).toLocaleDateString('pt-BR'):'N/A'; const kM=Object.keys(n).find(k=>k.toUpperCase().includes('MÉDIA (NOTA FINAL)'))||'MÉDIA (NOTA FINAL):'; let mF=parseFloat(String(n[kM]||'0').replace(',','.')); if(isNaN(mF))mF=0; const kC=Object.keys(n).find(k=>k.toUpperCase().includes('COMENTÁRIOS'))||'COMENTÁRIOS DO(A) SUPERVISOR(A):'; const c=n[kC]||'Sem comentários.'; return `<div class="content-card p-5 flex space-x-5 items-center"><div class="flex-shrink-0"><div class="radial-progress" style="--value:${mF*10};"><span class="radial-progress-value">${mF.toFixed(1)}</span></div></div><div class="flex-grow"><h4 class="text-sm font-semibold text-cyan-700">${n.nomePratica} (Aval. ${i+1})</h4><div class="text-xs text-slate-500 mt-1 space-x-3"><span><strong>Data:</strong> ${dF}</span><span><strong>Unid:</strong> ${n.Unidade||'-'}</span><span><strong>Sup:</strong> ${n.Supervisor||'-'}</span></div><details class="mt-2 group"><summary class="text-xs text-slate-500 font-medium cursor-pointer list-none flex items-center group-hover:text-cyan-600 transition-colors"><span class="mr-1">Ver comentário</span><svg class="h-4 w-4 transform transition-transform duration-200 group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg></summary><p class="text-sm italic text-slate-600 mt-2 p-3 bg-slate-50 rounded-md border border-slate-200">${c}</p></details></div></div>`;}).join('');
+             const p=document.getElementById('notas-p-radial-content'); if(!notas||notas.length===0){p.innerHTML='<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhum registro.</p></div>'; return;} p.innerHTML=notas.map((n,i)=>{const dH=n['Data/Hora']; const dF=dH?new Date(String(dH).replace(/-/g,'/')).toLocaleDateString('pt-BR'):'N/A'; const kM=Object.keys(n).find(k=>k.toUpperCase().includes('MÉDIA (NOTA FINAL)'))||'MÉDIA (NOTA FINAL):'; let mF=parseNota(n[kM]); const kC=Object.keys(n).find(k=>k.toUpperCase().includes('COMENTÁRIOS'))||'COMENTÁRIOS DO(A) SUPERVISOR(A):'; const c=n[kC]||'Sem comentários.'; return `<div class="content-card p-5 flex space-x-5 items-center"><div class="flex-shrink-0"><div class="radial-progress" style="--value:${mF*10};"><span class="radial-progress-value">${mF.toFixed(1)}</span></div></div><div class="flex-grow"><h4 class="text-sm font-semibold text-cyan-700">${n.nomePratica} (Aval. ${i+1})</h4><div class="text-xs text-slate-500 mt-1 space-x-3"><span><strong>Data:</strong> ${dF}</span><span><strong>Unid:</strong> ${n.Unidade||'-'}</span><span><strong>Sup:</strong> ${n.Supervisor||'-'}</span></div><details class="mt-2 group"><summary class="text-xs text-slate-500 font-medium cursor-pointer list-none flex items-center group-hover:text-cyan-600 transition-colors"><span class="mr-1">Ver comentário</span><svg class="h-4 w-4 transform transition-transform duration-200 group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></summary><p class="text-sm italic text-slate-600 mt-2 p-3 bg-slate-50 rounded-md border border-slate-200">${c}</p></details></div></div>`;}).join('');
         }
 
         // --- Inicia ---
