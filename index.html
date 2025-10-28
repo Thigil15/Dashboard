@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Alunos PRO++ v7</title>
+    <title>Dashboard Alunos PRO++ v8</title>
     <!-- Carrega o Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -13,9 +13,10 @@
         body { background-color: #f1f5f9; /* slate-100 */ }
 
         /* Classes Utilitárias */
-        .hidden-view { display: none !important; }
-        .main-content-section { display: none; opacity: 0; transition: opacity 0.5s ease-out; }
-        .main-content-section.active { display: block; opacity: 1; }
+        .hidden-view { display: none !important; opacity: 0; } /* Garante esconder e prepara para fade */
+        .visible-view { display: block; opacity: 1; transition: opacity 0.3s ease-out; } /* Controla visibilidade e fade */
+        /* Remove a necessidade de .main-content-section.active */
+
         .highlight { background-color: #a5f3fc; border-radius: 2px; padding: 0 2px; color: #0e7490; font-weight: 500;}
         .student-group-header.hidden, .student-card.hidden { display: none; }
 
@@ -194,112 +195,92 @@
         <div class="flex-1 flex flex-col overflow-hidden">
             <main class="flex-1 overflow-x-hidden overflow-y-auto bg-slate-100 p-6 lg:p-8">
 
-                <!-- View Principal: Dashboard -->
-                <div id="content-dashboard" class="main-content-section">
-                    <h1 class="text-2xl font-semibold text-slate-800 mb-6">Dashboard Geral</h1>
-                    <!-- Layout de 3 Colunas -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
-                        <!-- Coluna 1: Frequência Diária -->
-                        <div class="md:col-span-1 space-y-6">
+                 <!-- View Principal: Dashboard -->
+                 <div id="content-dashboard" class="main-content-section hidden-view">
+                     <h1 class="text-2xl font-semibold text-slate-800 mb-6">Dashboard Geral</h1>
+                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                         <div class="md:col-span-1 space-y-6">
+                              <div class="content-card p-5">
+                                  <div class="flex justify-between items-center">
+                                       <h2 class="content-card-header mb-0 pb-0 border-b-0">Frequência Diária</h2>
+                                       <span id="current-date" class="text-xs font-medium text-slate-500"></span>
+                                  </div>
+                                  <div class="grid grid-cols-3 gap-3 my-4 text-center">
+                                      <div class="kpi-card p-3"><span class="kpi-label text-blue-600">ESCALADOS</span><p id="kpi-scaled" class="kpi-value text-blue-800">-</p></div>
+                                      <div class="kpi-card p-3"><span class="kpi-label text-green-600">PRESENTES</span><p id="kpi-present" class="kpi-value text-green-800">-</p></div>
+                                      <div class="kpi-card p-3"><span class="kpi-label text-red-600">AUSENTES</span><p id="kpi-absent" class="kpi-value text-red-800">-</p></div>
+                                  </div>
+                                  <div id="frequency-panel" class="space-y-4 max-h-[350px] overflow-y-auto text-sm"></div>
+                                   <div id="last-update-timestamp" class="text-right mt-3"></div>
+                              </div>
+                              <div class="content-card p-5">
+                                  <h2 class="content-card-header">Registros Recentes</h2>
+                                  <ul id="recent-absences-list" class="space-y-2 text-xs max-h-[300px] overflow-y-auto"></ul>
+                              </div>
+                         </div>
+                         <div class="md:col-span-1 space-y-6">
                              <div class="content-card p-5">
-                                 <div class="flex justify-between items-center">
-                                      <h2 class="content-card-header mb-0 pb-0 border-b-0">Frequência Diária</h2>
-                                      <span id="current-date" class="text-xs font-medium text-slate-500"></span>
-                                 </div>
-                                 <div class="grid grid-cols-3 gap-3 my-4 text-center"> <!-- My em vez de Mb -->
-                                     <div class="kpi-card p-3"><span class="kpi-label text-blue-600">ESCALADOS</span><p id="kpi-scaled" class="kpi-value text-blue-800">-</p></div>
-                                     <div class="kpi-card p-3"><span class="kpi-label text-green-600">PRESENTES</span><p id="kpi-present" class="kpi-value text-green-800">-</p></div>
-                                     <div class="kpi-card p-3"><span class="kpi-label text-red-600">AUSENTES</span><p id="kpi-absent" class="kpi-value text-red-800">-</p></div>
-                                 </div>
-                                 <div id="frequency-panel" class="space-y-4 max-h-[350px] overflow-y-auto text-sm">
-                                     <p class="text-slate-500 italic">Calculando...</p>
-                                 </div>
-                                  <div id="last-update-timestamp" class="text-right mt-3"></div> <!-- Timestamp -->
+                                 <h2 class="content-card-header">Visão Geral</h2>
+                                 <div class="grid grid-cols-2 gap-4">
+                                      <div class="kpi-card flex items-center p-4">
+                                          <div class="icon-bg kpi-icon-purple"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M17 20h5v-2a3 3 0 00-5.356-2.121M17 20v-2m0 2H5a2 2 0 01-2-2v-5a2 2 0 012-2h14a2 2 0 012 2v5a2 2 0 01-2 2h-5m-4-8a3 3 0 100-6 3 3 0 000 6z" /></svg></div>
+                                          <div class="ml-3"><p class="kpi-label">Inscritos</p><p id="kpi-total-students" class="kpi-value">-</p></div>
+                                      </div>
+                                      <div class="kpi-card flex items-center p-4">
+                                           <div class="icon-bg kpi-icon-green"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
+                                           <div class="ml-3"><p class="kpi-label">Ativos</p><p id="kpi-active-students" class="kpi-value">-</p></div>
+                                      </div>
+                                       <div class="kpi-card flex items-center p-4">
+                                           <div class="icon-bg kpi-icon-orange"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></div>
+                                           <div class="ml-3"><p class="kpi-label">Média Teórica</p><p id="kpi-avg-theoretical" class="kpi-value">-</p></div>
+                                      </div>
+                                       <div class="kpi-card flex items-center p-4">
+                                           <div class="icon-bg kpi-icon-cyan"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg></div>
+                                           <div class="ml-3"><p class="kpi-label">Média Prática</p><p id="kpi-avg-practical" class="kpi-value">-</p></div>
+                                      </div>
+                                      <div class="kpi-card flex items-center p-4 col-span-2">
+                                           <div class="icon-bg kpi-icon-yellow"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></div>
+                                           <div class="ml-3"><p class="kpi-label">Reposições Pendentes</p><p id="kpi-pending-replacements" class="kpi-value">-</p></div>
+                                      </div>
+                                  </div>
                              </div>
-                             <!-- Card Ausências Recentes -->
                              <div class="content-card p-5">
-                                 <h2 class="content-card-header">Registros Recentes</h2>
-                                 <ul id="recent-absences-list" class="space-y-2 text-xs max-h-[300px] overflow-y-auto">
-                                     <li class="text-slate-500 italic">Calculando...</li>
-                                 </ul>
+                                 <h2 class="content-card-header">Distribuição por Curso (Ativos)</h2>
+                                 <div id="course-distribution-chart" class="donut-chart-container min-h-[140px]"></div>
                              </div>
-                        </div>
-
-                        <!-- Coluna 2: Visão Geral e Desempenho -->
-                        <div class="md:col-span-1 space-y-6">
-                            <div class="content-card p-5">
-                                <h2 class="content-card-header">Visão Geral</h2>
-                                <div class="grid grid-cols-2 gap-4">
-                                     <div class="kpi-card flex items-center p-4">
-                                         <div class="icon-bg kpi-icon-purple"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M17 20h5v-2a3 3 0 00-5.356-2.121M17 20v-2m0 2H5a2 2 0 01-2-2v-5a2 2 0 012-2h14a2 2 0 012 2v5a2 2 0 01-2 2h-5m-4-8a3 3 0 100-6 3 3 0 000 6z" /></svg></div>
-                                         <div class="ml-3"><p class="kpi-label">Inscritos</p><p id="kpi-total-students" class="kpi-value">-</p></div>
-                                     </div>
-                                     <div class="kpi-card flex items-center p-4">
-                                          <div class="icon-bg kpi-icon-green"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
-                                          <div class="ml-3"><p class="kpi-label">Ativos</p><p id="kpi-active-students" class="kpi-value">-</p></div>
-                                     </div>
-                                      <div class="kpi-card flex items-center p-4">
-                                          <div class="icon-bg kpi-icon-orange"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></div>
-                                          <div class="ml-3"><p class="kpi-label">Média Teórica</p><p id="kpi-avg-theoretical" class="kpi-value">-</p></div>
-                                     </div>
-                                      <div class="kpi-card flex items-center p-4">
-                                          <div class="icon-bg kpi-icon-cyan"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg></div>
-                                          <div class="ml-3"><p class="kpi-label">Média Prática</p><p id="kpi-avg-practical" class="kpi-value">-</p></div>
-                                     </div>
-                                     <div class="kpi-card flex items-center p-4 col-span-2">
-                                          <div class="icon-bg kpi-icon-yellow"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></div>
-                                          <div class="ml-3"><p class="kpi-label">Reposições Pendentes</p><p id="kpi-pending-replacements" class="kpi-value">-</p></div>
-                                     </div>
-                                 </div>
-                            </div>
-                             <!-- Card Distribuição Cursos -->
-                            <div class="content-card p-5">
-                                <h2 class="content-card-header">Distribuição por Curso (Ativos)</h2>
-                                <div id="course-distribution-chart" class="donut-chart-container min-h-[140px]">
-                                     <p class="text-slate-500 text-sm italic">Calculando...</p>
-                                </div>
-                            </div>
-                        </div>
-
-                         <!-- Coluna 3: Desempenho Teórico -->
-                        <div class="md:col-span-1 space-y-6">
-                            <div class="content-card p-5">
-                                <h2 class="content-card-header">Desempenho Teórico (Médias Ativos)</h2>
-                                <div id="theoretical-avg-chart" class="space-y-2 max-h-[600px] overflow-y-auto pr-2">
-                                     <p class="text-slate-500 text-sm italic">Calculando...</p>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-
-                <!-- View: Lista de Alunos -->
-                 <div id="content-alunos" class="main-content-section">
-                     <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-                         <h1 class="text-2xl font-semibold text-slate-800">Alunos</h1>
-                         <input type="text" id="search-student" placeholder="Buscar aluno..." class="border border-slate-300 rounded-lg px-4 py-2 text-sm w-full sm:w-auto max-w-xs focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition shadow-sm">
-                     </div>
-                     <div id="student-list-panel" class="max-h-[calc(100vh-200px)] overflow-y-auto">
-                         <p class="text-slate-500 p-4 text-center italic initial-message">Carregando...</p>
+                         </div>
+                          <div class="md:col-span-1 space-y-6">
+                             <div class="content-card p-5">
+                                 <h2 class="content-card-header">Desempenho Teórico (Médias Ativos)</h2>
+                                 <div id="theoretical-avg-chart" class="space-y-2 max-h-[600px] overflow-y-auto pr-2"></div>
+                             </div>
+                         </div>
                      </div>
                  </div>
 
-                 <!-- View: Ponto -->
-                 <div id="content-ponto" class="main-content-section">
-                     <h1 class="text-2xl font-semibold text-slate-800 mb-6">Análise de Ponto</h1>
-                     <div class="content-card p-6 text-center">
-                         <p class="text-slate-500 italic">Em desenvolvimento...</p>
-                         <p class="mt-4 text-slate-600 text-sm">Calendário de frequência, gráficos de atraso, etc.</p>
-                     </div>
-                 </div>
+                 <!-- View: Lista de Alunos -->
+                  <div id="content-alunos" class="main-content-section hidden-view">
+                      <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                          <h1 class="text-2xl font-semibold text-slate-800">Alunos</h1>
+                          <input type="text" id="search-student" placeholder="Buscar aluno..." class="border border-slate-300 rounded-lg px-4 py-2 text-sm w-full sm:w-auto max-w-xs focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition shadow-sm">
+                      </div>
+                      <div id="student-list-panel" class="max-h-[calc(100vh-200px)] overflow-y-auto"></div>
+                  </div>
+
+                  <!-- View: Ponto -->
+                  <div id="content-ponto" class="main-content-section hidden-view">
+                      <h1 class="text-2xl font-semibold text-slate-800 mb-6">Análise de Ponto</h1>
+                      <div class="content-card p-6 text-center">
+                          <p class="text-slate-500 italic">Em desenvolvimento...</p>
+                          <p class="mt-4 text-slate-600 text-sm">Calendário de frequência, gráficos de atraso, etc.</p>
+                      </div>
+                  </div>
 
             </main>
         </div>
     </div>
 
-    <!-- View: Detalhe do Aluno (Modal-like) -->
+    <!-- View: Detalhe do Aluno -->
     <div id="student-detail-view" class="hidden-view fixed inset-0 bg-slate-100 z-50 overflow-y-auto">
         <header class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-10">
             <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
@@ -375,6 +356,7 @@
             document.getElementById('search-student').addEventListener('input', filterStudentList);
             setupStudentTabNavigation();
             try {
+                showLoading(true); // Mostra loading no início
                 await fetchAllData();
                 await fetchPontoHoje(); // Busca inicial do ponto
                 // Renderiza após ter TODOS os dados iniciais
@@ -382,15 +364,18 @@
                 computeAndRenderFrequency(); // Renderiza frequência com base no ponto inicial
                 renderAtAGlance();
                 renderRecentAbsences();
-                showLoading(false);
-                switchMainTab('dashboard');
-                document.querySelector('body > div.flex').style.opacity = '1';
+                switchMainTab('dashboard'); // Define a aba inicial
+                document.querySelector('body > div.flex').style.opacity = '1'; // Mostra layout
+                showLoading(false); // Esconde loading após renderização inicial
                 setInterval(fetchPontoHoje, 30000); // Inicia atualizações periódicas SÓ do ponto
                 console.log("Live update da frequência iniciado.");
-            } catch (error) { showError(error.message); }
+            } catch (error) {
+                 showError(`Erro na inicialização: ${error.message}`);
+                 showLoading(false); // Garante que loading suma em caso de erro
+            }
         }
         async function fetchAllData() { /* ... (sem alterações) ... */
-             console.log("Buscando dados estáticos..."); try { const r=await fetch(`${API_URL}?action=getAll`); if (!r.ok) throw new Error(`Rede (getAll): ${r.statusText}`); const d=await r.json(); if (!d.success) throw new Error(`API (getAll): ${d.error}`); console.log("Dados estáticos:", d); onStaticDataLoaded(d); } catch (e) { throw new Error(`Falha dados estáticos: ${e.message}`); }
+             console.log("Buscando dados estáticos..."); try { const r=await fetch(`${API_URL}?action=getAll`); if (!r.ok) throw new Error(`Rede (getAll): ${r.statusText} (${r.status})`); const d=await r.json(); if (!d.success) throw new Error(`API (getAll): ${d.error || 'Erro desconhecido'}`); console.log("Dados estáticos:", d); onStaticDataLoaded(d); } catch (e) { console.error("Erro detalhado em fetchAllData:", e); throw new Error(`Falha ao buscar dados estáticos: ${e.message}`); }
         }
         function onStaticDataLoaded(data) { /* ... (sem alterações) ... */
             appState.alunos = data.alunos || []; appState.escalas = data.escalas || {}; appState.ausenciasReposicoes = data.ausenciasReposicoes || []; appState.notasTeoricas = data.notasTeoricas || { registros: [] }; /* Garante que registros exista */ appState.notasPraticas = data.notasPraticas || {}; appState.alunosMap.clear(); appState.alunos.forEach(a => { if(a.EmailHC) appState.alunosMap.set(a.EmailHC, a); }); console.log("Dados estáticos processados.");
@@ -401,9 +386,9 @@
              try{
                  let u=`${API_URL}?action=getPontoHoje`;
                  const r=await fetch(u);
-                 if(!r.ok) throw new Error(`Rede (getPontoHoje): ${r.statusText}`);
+                 if(!r.ok) throw new Error(`Rede (getPontoHoje): ${r.statusText} (${r.status})`);
                  const d=await r.json();
-                 if(!d.success) throw new Error(`API (getPontoHoje): ${d.error}`);
+                 if(!d.success) throw new Error(`API (getPontoHoje): ${d.error || 'Erro desconhecido'}`);
                  console.log('Ponto recebido:', d.hoje);
                  appState.lastPontoUpdate=d.lastUpdate;
                  appState.pontoHojeMap.clear();
@@ -418,15 +403,34 @@
              const sidebar = document.querySelector('aside nav'); sidebar.addEventListener('click', (e) => { const link = e.target.closest('.sidebar-link'); if (link) { e.preventDefault(); switchMainTab(link.getAttribute('data-tab')); } });
         }
         /**
-         * [CORRIGIDO v7] Troca a aba principal visível, SEM esconder a view de detalhe.
+         * [CORRIGIDO v7] Centraliza a lógica de mostrar uma view principal e esconder as outras.
+         */
+         function showView(viewId) {
+             console.log(`Mostrando view: ${viewId}`);
+             const allViews = document.querySelectorAll('.main-content-section, #student-detail-view');
+             allViews.forEach(view => {
+                 if (view.id === viewId) {
+                     view.classList.remove('hidden-view'); // Remove hidden-view se existir
+                     view.classList.add('visible-view');   // Adiciona visible-view para fade-in
+                     view.style.display = 'block'; // Garante display block se necessário
+                 } else {
+                     view.classList.remove('visible-view');
+                     view.classList.add('hidden-view');
+                      view.style.opacity = '0'; // Garante opacidade 0 para hidden
+                 }
+             });
+         }
+
+
+        /**
+         * [CORRIGIDO v7] Troca a aba principal visível usando showView.
          */
         function switchMainTab(tabName) {
             console.log("Trocando aba principal para:", tabName);
             // Atualiza sidebar
             document.querySelectorAll('.sidebar-link').forEach(l => l.classList.toggle('active', l.getAttribute('data-tab') === tabName));
-            // Mostra/Esconde conteúdo principal
-            document.querySelectorAll('.main-content-section').forEach(s => s.classList.toggle('active', s.id === `content-${tabName}`));
-            // NÃO esconde a view de detalhe aqui
+            // Mostra a view principal correta
+            showView(`content-${tabName}`);
             window.scrollTo(0, 0);
         }
 
@@ -472,36 +476,29 @@
 
         // --- NAVEGAÇÃO E RENDERIZAÇÃO VIEW DETALHE ALUNO ---
         /**
-         * [CORRIGIDO v7] Mostra a view de detalhe e esconde as principais.
+         * [CORRIGIDO v7] Mostra a view de detalhe e esconde as principais usando showView.
          */
         function showStudentDetail(email) {
             console.log(`[showStudentDetail] Exibindo detalhes para: ${email}`);
-            const detailView = document.getElementById('student-detail-view');
-            const mainSections = document.querySelectorAll('.main-content-section');
-
             const info = appState.alunosMap.get(email);
             if (!info) return showError(`Aluno ${email} ñ encontrado.`);
 
-            const escalas = [];
-            for (const n in appState.escalas) {
-                const e = appState.escalas[n];
-                const a = (e.alunos || []).find(x => x.EmailHC === email);
-                if (a) {
-                     escalas.push({ nomeEscala: e.nomeAba || n, Supervisor: a.Supervisor, Unidade: a.Unidade, dias: a.dias });
-                }
-            }
-            console.log("[showStudentDetail] Escalas encontradas:", escalas);
-
-            const faltas = appState.ausenciasReposicoes.filter(f => f.EmailHC === email);
-            const notasT = (appState.notasTeoricas.registros || []).find(n => n.EmailHC === email);
-            console.log("[showStudentDetail] Notas Teóricas encontradas:", notasT);
-
-            const notasP = [];
-            for (const n in appState.notasPraticas) {
-                const p = appState.notasPraticas[n];
-                const r = (p.registros || []).filter(x => x.EmailHC === email);
-                nP.push(...r.map(i => ({ nomePratica: p.nomeAba || n, ...i })));
-            }
+            // Busca dados relacionados... (lógica inalterada)
+             const escalas = [];
+             for (const n in appState.escalas) {
+                 const e = appState.escalas[n];
+                 const a = (e.alunos || []).find(x => x.EmailHC === email);
+                 if (a) { escalas.push({ nomeEscala: e.nomeAba || n, Supervisor: a.Supervisor, Unidade: a.Unidade, dias: a.dias });}
+             }
+             const faltas = appState.ausenciasReposicoes.filter(f => f.EmailHC === email);
+             const notasT = (appState.notasTeoricas.registros || []).find(n => n.EmailHC === email);
+             const notasP = [];
+             for (const n in appState.notasPraticas) {
+                 const p = appState.notasPraticas[n];
+                 const r = (p.registros || []).filter(x => x.EmailHC === email);
+                 nP.push(...r.map(i => ({ nomePratica: p.nomeAba || n, ...i })));
+             }
+             console.log("[showStudentDetail] Notas Teóricas encontradas:", notasT);
              console.log("[showStudentDetail] Notas Práticas encontradas:", notasP);
 
             // Renderiza conteúdo PRIMEIRO
@@ -510,43 +507,27 @@
             renderTabInfo(info);
             renderTabEscala(escalas);
             renderTabFaltas(faltas);
-            renderTabNotasTeoricas(notasT); // Passa o registro
+            renderTabNotasTeoricas(notasT);
             renderTabNotasPraticas(nP);
 
-            // Esconde todas as seções principais explicitamente
-            mainSections.forEach(s => {
-                s.classList.remove('active');
-                s.style.display = 'none'; // Garante que esteja escondido
-            });
-            // Mostra a view de detalhe
-            detailView.classList.remove('hidden-view');
-            detailView.style.display = 'block'; // Garante que esteja visível
-             // Força um reflow para garantir que a transição de opacidade funcione (se houver)
-            void detailView.offsetWidth;
-            detailView.style.opacity = '1';
-
-            console.log("[showStudentDetail] View de detalhe tornada visível.");
+            // Mostra a view de detalhe usando a função centralizada
+            showView('student-detail-view');
 
             switchStudentTab('info');
             window.scrollTo(0, 0);
         }
 
         /**
-         * [CORRIGIDO v7] Volta para a aba 'alunos' e esconde a view de detalhe.
+         * [CORRIGIDO v7] Volta para a aba 'alunos' e esconde a view de detalhe usando showView.
          */
          function showAlunosList() {
              console.log("[showAlunosList] Voltando para a lista de alunos.");
-             const detailView = document.getElementById('student-detail-view');
-            // Esconde a view de detalhe
-            detailView.style.opacity = '0'; // Começa a transição de fade out (se houver)
-            detailView.classList.add('hidden-view'); // Esconde após a transição
-            detailView.style.display = 'none'; // Garante esconder
-
-            // Reativa a aba 'alunos' na sidebar e mostra o conteúdo correspondente
-            switchMainTab('alunos'); // Isso vai cuidar de mostrar content-alunos
-            window.scrollTo(0, 0);
+             // Esconde a view de detalhe
+             showView('content-alunos'); // Mostra a view da lista de alunos
+             // Reativa a aba 'alunos' na sidebar (switchMainTab faz isso implicitamente, mas podemos garantir)
+             document.querySelectorAll('.sidebar-link').forEach(l => l.classList.toggle('active', l.getAttribute('data-tab') === 'alunos'));
+             window.scrollTo(0, 0);
         }
-
 
         function setupStudentTabNavigation() { /* ... (sem alterações) ... */
              const n=document.getElementById('student-tabs-nav'); n.addEventListener('click', (e)=>{ if(e.target.tagName==='BUTTON'){const t=e.target.getAttribute('data-tab'); switchStudentTab(t);}});
@@ -586,28 +567,43 @@
              // Filtra as chaves válidas ANTES de tentar acessar os valores
              const validKeys = Object.keys(notas).filter(key =>
                  key && key.trim() !== '' && !ignoreKeys.includes(key) &&
-                 notas[key] !== null && notas[key] !== undefined && String(notas[key]).trim() !== ''
+                 notas[key] !== null && notas[key] !== undefined // Permite nota 0, mas não null/undefined
+                 //&& String(notas[key]).trim() !== '' // Não filtra string vazia aqui, parseNota trata
              );
 
-             console.log("[renderTabNotasTeoricas] Chaves válidas com notas:", validKeys);
+             console.log("[renderTabNotasTeoricas] Chaves válidas (pré-filtro de valor):", validKeys);
 
-             if (validKeys.length === 0) {
+             // Mapeia para objetos {materia, notaValue} e filtra notas inválidas (parseNota retorna 0 para inválidos)
+             const materiasComNotas = validKeys.map(key => {
+                 const notaStr = notas[key];
+                 const notaValue = parseNota(String(notaStr)); // Garante que é string
+                 console.log(`[renderTabNotasTeoricas] Processando: ${key}, Bruto: ${notaStr}, Parseado: ${notaValue}`);
+                 // Consideramos uma matéria válida se a chave é válida E a nota parseada é um número >= 0
+                 // (parseNota já retorna 0 para inválidos)
+                 // Se quiser ignorar matérias onde a nota original era vazia/null/undefined, adicione a condição original:
+                 // && notaStr !== null && notaStr !== undefined && String(notaStr).trim() !== ''
+                 return { materia: key, notaValue: notaValue };
+             }).filter(item => typeof item.notaValue === 'number'); // Garante que temos um número
+
+             console.log("[renderTabNotasTeoricas] Matérias com notas parseadas:", materiasComNotas);
+
+
+             if (materiasComNotas.length === 0) {
                  p.innerHTML = '<p class="text-slate-500 text-sm italic">Nenhuma nota válida encontrada neste registro.</p>';
-                 console.log("[renderTabNotasTeoricas] Nenhuma chave com nota válida após filtro.");
+                 console.log("[renderTabNotasTeoricas] Nenhuma matéria com nota válida após parse/filtro.");
                  return;
              }
 
-             // Renderiza as barras usando as chaves validadas
-             p.innerHTML = validKeys.map(key => {
-                 const notaStr = notas[key]; // Pega a string original da nota
-                 const notaValue = parseNota(String(notaStr)); // Parseia a nota
-                 console.log(`[renderTabNotasTeoricas] Matéria: ${key}, Nota Bruta: ${notaStr}, Nota Parseada: ${notaValue}`);
+             // Renderiza as barras usando os dados filtrados e parseados
+             p.innerHTML = materiasComNotas.map(item => {
+                 const x = item.materia;
+                 const v = item.notaValue;
 
-                 const isMedia = key.toUpperCase().includes('MÉDIA');
-                 const barFillClass = isMedia ? 'bar-fill-media' : 'bar-fill-normal';
-                 const labelClass = isMedia ? 'text-sky-700 font-semibold' : 'text-slate-600';
-                 const valueClass = isMedia ? 'text-sky-800 font-bold' : 'text-slate-700 font-semibold';
-                 return `<div class="bar-chart-item text-xs rounded p-1.5 ${isMedia ? 'pt-3 mt-3 border-t border-slate-100' : ''}"><div class="flex justify-between items-center mb-0.5"><span class="bar-label ${labelClass} truncate pr-2" title="${key}">${key}</span><span class="bar-value ${valueClass} w-8 text-right">${notaValue.toFixed(1)}</span></div><div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden bar-bg"><div class="h-full ${barFillClass} rounded-full transition-all duration-500 ease-out" style="width:${notaValue * 10}%"></div></div></div>`;
+                 const iM = x.toUpperCase().includes('MÉDIA');
+                 const bF = iM ? 'bar-fill-media' : 'bar-fill-normal';
+                 const lC = iM ? 'text-sky-700 font-semibold' : 'text-slate-600';
+                 const vC = iM ? 'text-sky-800 font-bold' : 'text-slate-700 font-semibold';
+                 return `<div class="bar-chart-item text-xs rounded p-1.5 ${iM ? 'pt-3 mt-3 border-t border-slate-100' : ''}"><div class="flex justify-between items-center mb-0.5"><span class="bar-label ${lC} truncate pr-2" title="${x}">${x}</span><span class="bar-value ${vC} w-8 text-right">${v.toFixed(1)}</span></div><div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden bar-bg"><div class="h-full ${bF} rounded-full transition-all duration-500 ease-out" style="width:${v * 10}%"></div></div></div>`;
              }).join('');
              console.log("[renderTabNotasTeoricas] Gráfico renderizado.");
         }
