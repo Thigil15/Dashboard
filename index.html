@@ -368,7 +368,7 @@
 
         // --- INICIALIZAÇÃO E CARGA ---
         async function init() {
-            console.log('Iniciando Dashboard PRO++ v6...');
+            console.log('Iniciando Dashboard PRO++ v7...'); // Nome atualizado
             document.getElementById('current-date').textContent = appState.todayFullBR;
             setupSidebarNavigation();
             document.getElementById('back-to-dashboard').addEventListener('click', showAlunosList); // Corrigido
@@ -418,7 +418,7 @@
              const sidebar = document.querySelector('aside nav'); sidebar.addEventListener('click', (e) => { const link = e.target.closest('.sidebar-link'); if (link) { e.preventDefault(); switchMainTab(link.getAttribute('data-tab')); } });
         }
         /**
-         * [CORRIGIDO] Troca a aba principal visível, garantindo que a view de detalhe esteja escondida.
+         * [CORRIGIDO v7] Troca a aba principal visível, SEM esconder a view de detalhe.
          */
         function switchMainTab(tabName) {
             console.log("Trocando aba principal para:", tabName);
@@ -426,8 +426,7 @@
             document.querySelectorAll('.sidebar-link').forEach(l => l.classList.toggle('active', l.getAttribute('data-tab') === tabName));
             // Mostra/Esconde conteúdo principal
             document.querySelectorAll('.main-content-section').forEach(s => s.classList.toggle('active', s.id === `content-${tabName}`));
-            // Garante que a view de detalhe do aluno esteja escondida
-            document.getElementById('student-detail-view').classList.add('hidden-view');
+            // NÃO esconde a view de detalhe aqui
             window.scrollTo(0, 0);
         }
 
@@ -473,26 +472,22 @@
 
         // --- NAVEGAÇÃO E RENDERIZAÇÃO VIEW DETALHE ALUNO ---
         /**
-         * [CORRIGIDO] Mostra a view de detalhe e esconde as principais.
+         * [CORRIGIDO v7] Mostra a view de detalhe e esconde as principais.
          */
         function showStudentDetail(email) {
             console.log(`[showStudentDetail] Exibindo detalhes para: ${email}`);
+            const detailView = document.getElementById('student-detail-view');
+            const mainSections = document.querySelectorAll('.main-content-section');
+
             const info = appState.alunosMap.get(email);
             if (!info) return showError(`Aluno ${email} ñ encontrado.`);
 
             const escalas = [];
             for (const n in appState.escalas) {
                 const e = appState.escalas[n];
-                // Encontra o aluno DENTRO da estrutura de alunos da escala
                 const a = (e.alunos || []).find(x => x.EmailHC === email);
                 if (a) {
-                     // Combina informações da escala (Supervisor, Unidade) com as infos do aluno nessa escala (dias)
-                     escalas.push({
-                         nomeEscala: e.nomeAba || n, // Nome da escala
-                         Supervisor: a.Supervisor,   // Pega da linha do aluno na escala
-                         Unidade: a.Unidade,       // Pega da linha do aluno na escala
-                         dias: a.dias              // Array de dias do aluno
-                     });
+                     escalas.push({ nomeEscala: e.nomeAba || n, Supervisor: a.Supervisor, Unidade: a.Unidade, dias: a.dias });
                 }
             }
             console.log("[showStudentDetail] Escalas encontradas:", escalas);
@@ -509,7 +504,6 @@
             }
              console.log("[showStudentDetail] Notas Práticas encontradas:", notasP);
 
-
             // Renderiza conteúdo PRIMEIRO
             renderStudentHeader(info);
             renderStudentDetailKPIs(faltas, nP);
@@ -520,26 +514,34 @@
             renderTabNotasPraticas(nP);
 
             // Esconde todas as seções principais explicitamente
-            document.querySelectorAll('.main-content-section').forEach(s => {
-                s.classList.remove('active'); // Garante que estejam inativas
-                s.style.display = 'none'; // Força esconder
+            mainSections.forEach(s => {
+                s.classList.remove('active');
+                s.style.display = 'none'; // Garante que esteja escondido
             });
             // Mostra a view de detalhe
-            document.getElementById('student-detail-view').classList.remove('hidden-view');
-            console.log("[showStudentDetail] View de detalhe tornada visível.");
+            detailView.classList.remove('hidden-view');
+            detailView.style.display = 'block'; // Garante que esteja visível
+             // Força um reflow para garantir que a transição de opacidade funcione (se houver)
+            void detailView.offsetWidth;
+            detailView.style.opacity = '1';
 
+            console.log("[showStudentDetail] View de detalhe tornada visível.");
 
             switchStudentTab('info');
             window.scrollTo(0, 0);
         }
 
         /**
-         * [CORRIGIDO] Volta para a aba 'alunos' e esconde a view de detalhe.
+         * [CORRIGIDO v7] Volta para a aba 'alunos' e esconde a view de detalhe.
          */
          function showAlunosList() {
              console.log("[showAlunosList] Voltando para a lista de alunos.");
+             const detailView = document.getElementById('student-detail-view');
             // Esconde a view de detalhe
-            document.getElementById('student-detail-view').classList.add('hidden-view');
+            detailView.style.opacity = '0'; // Começa a transição de fade out (se houver)
+            detailView.classList.add('hidden-view'); // Esconde após a transição
+            detailView.style.display = 'none'; // Garante esconder
+
             // Reativa a aba 'alunos' na sidebar e mostra o conteúdo correspondente
             switchMainTab('alunos'); // Isso vai cuidar de mostrar content-alunos
             window.scrollTo(0, 0);
@@ -568,7 +570,7 @@
              const c=document.getElementById('tab-faltas'); const h=`<h3 class="content-card-header p-5">Registro de Ausências e Reposições</h3>`; let p=document.getElementById('faltas-content'); if(!faltas||faltas.length===0){c.innerHTML=h+'<p class="text-slate-500 p-5 text-sm italic">Nenhum registro.</p>'; return;} if(!p){c.innerHTML=h+'<div id="faltas-content" class="max-h-[500px] overflow-y-auto"></div>'; p=document.getElementById('faltas-content');} p.innerHTML=`<table class="min-w-full text-sm"><thead class="bg-slate-50"><tr><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Ausência</th><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Reposição</th><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Local</th><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Motivo</th></tr></thead><tbody class="bg-white divide-y divide-slate-100">${faltas.map(f=>{const iP=!f.DataReposicaoISO; const sB=iP?'<span class="badge badge-yellow">Pendente</span>':'<span class="badge badge-green">Completa</span>'; const dA=f.DataAusenciaISO?new Date(f.DataAusenciaISO+'T00:00:00').toLocaleDateString('pt-BR'):'-'; const dR=f.DataReposicaoISO?new Date(f.DataReposicaoISO+'T00:00:00').toLocaleDateString('pt-BR'):'-'; const mS=f.Motivo?(f.Motivo.length>35?f.Motivo.substring(0,35)+'...':f.Motivo):'-'; return `<tr class="hover:bg-sky-50 transition-colors duration-150"><td class="px-4 py-3 text-slate-600 align-middle">${sB}</td><td class="px-4 py-3 text-slate-600 align-middle">${dA}</td><td class="px-4 py-3 text-slate-600 align-middle">${dR}</td><td class="px-4 py-3 text-slate-600 align-middle">${f.Local||'-'}</td><td class="px-4 py-3 text-slate-600 align-middle" title="${f.Motivo||''}">${mS}</td></tr>`;}).join('')}</tbody></table>`;
         }
         /**
-         * [CORRIGIDO] Renderiza a aba "Notas Teóricas" com verificações e logs aprimorados.
+         * [CORRIGIDO v7] Renderiza a aba "Notas Teóricas" com verificações e logs aprimorados.
          */
         function renderTabNotasTeoricas(notas) {
              console.log('[renderTabNotasTeoricas] Dados recebidos:', notas);
@@ -581,30 +583,31 @@
              }
 
              const ignoreKeys = ['SerialNumber', 'NomeCompleto', 'EmailHC', 'Curso'];
-             const materias = Object.keys(notas)
-                 .filter(key => key && key.trim() !== '' && !ignoreKeys.includes(key)) // Garante que a chave existe e não está na lista de ignorados
-                 .map(key => ({ materia: key, notaStr: notas[key] }))
-                 .filter(item => item.notaStr !== null && item.notaStr !== undefined && String(item.notaStr).trim() !== ''); // Filtra matérias sem valor de nota
+             // Filtra as chaves válidas ANTES de tentar acessar os valores
+             const validKeys = Object.keys(notas).filter(key =>
+                 key && key.trim() !== '' && !ignoreKeys.includes(key) &&
+                 notas[key] !== null && notas[key] !== undefined && String(notas[key]).trim() !== ''
+             );
 
-             console.log("[renderTabNotasTeoricas] Matérias filtradas com notas:", materias);
+             console.log("[renderTabNotasTeoricas] Chaves válidas com notas:", validKeys);
 
-             if (materias.length === 0) {
+             if (validKeys.length === 0) {
                  p.innerHTML = '<p class="text-slate-500 text-sm italic">Nenhuma nota válida encontrada neste registro.</p>';
-                 console.log("[renderTabNotasTeoricas] Nenhuma matéria com nota válida após filtro.");
+                 console.log("[renderTabNotasTeoricas] Nenhuma chave com nota válida após filtro.");
                  return;
              }
 
-             p.innerHTML = materias.map(item => {
-                 const x = item.materia;
-                 // Adiciona verificação extra antes de parseNota
-                 const notaValue = (item.notaStr !== null && item.notaStr !== undefined) ? parseNota(String(item.notaStr)) : 0;
-                 console.log(`[renderTabNotasTeoricas] Matéria: ${x}, Nota Bruta: ${item.notaStr}, Nota Parseada: ${notaValue}`);
+             // Renderiza as barras usando as chaves validadas
+             p.innerHTML = validKeys.map(key => {
+                 const notaStr = notas[key]; // Pega a string original da nota
+                 const notaValue = parseNota(String(notaStr)); // Parseia a nota
+                 console.log(`[renderTabNotasTeoricas] Matéria: ${key}, Nota Bruta: ${notaStr}, Nota Parseada: ${notaValue}`);
 
-                 const iM = x.toUpperCase().includes('MÉDIA');
-                 const bF = iM ? 'bar-fill-media' : 'bar-fill-normal';
-                 const lC = iM ? 'text-sky-700 font-semibold' : 'text-slate-600';
-                 const vC = iM ? 'text-sky-800 font-bold' : 'text-slate-700 font-semibold';
-                 return `<div class="bar-chart-item text-xs rounded p-1.5 ${iM ? 'pt-3 mt-3 border-t border-slate-100' : ''}"><div class="flex justify-between items-center mb-0.5"><span class="bar-label ${lC} truncate pr-2" title="${x}">${x}</span><span class="bar-value ${vC} w-8 text-right">${notaValue.toFixed(1)}</span></div><div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden bar-bg"><div class="h-full ${bF} rounded-full transition-all duration-500 ease-out" style="width:${notaValue * 10}%"></div></div></div>`;
+                 const isMedia = key.toUpperCase().includes('MÉDIA');
+                 const barFillClass = isMedia ? 'bar-fill-media' : 'bar-fill-normal';
+                 const labelClass = isMedia ? 'text-sky-700 font-semibold' : 'text-slate-600';
+                 const valueClass = isMedia ? 'text-sky-800 font-bold' : 'text-slate-700 font-semibold';
+                 return `<div class="bar-chart-item text-xs rounded p-1.5 ${isMedia ? 'pt-3 mt-3 border-t border-slate-100' : ''}"><div class="flex justify-between items-center mb-0.5"><span class="bar-label ${labelClass} truncate pr-2" title="${key}">${key}</span><span class="bar-value ${valueClass} w-8 text-right">${notaValue.toFixed(1)}</span></div><div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden bar-bg"><div class="h-full ${barFillClass} rounded-full transition-all duration-500 ease-out" style="width:${notaValue * 10}%"></div></div></div>`;
              }).join('');
              console.log("[renderTabNotasTeoricas] Gráfico renderizado.");
         }
