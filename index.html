@@ -15,7 +15,9 @@
         }
         /* Classe para esconder/mostrar views */
         .hidden-view { display: none; }
-        
+        .main-content-section { display: none; } /* Esconde seções principais por padrão */
+        .main-content-section.active { display: block; } /* Mostra a seção ativa */
+
         /* --- Estilo do Loader --- */
         #loading-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -31,8 +33,28 @@
         @keyframes spin {
             0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); }
         }
+
+        /* --- Estilo da Sidebar --- */
+        .sidebar-link {
+             transition: all 0.2s ease-in-out;
+             border-left: 3px solid transparent;
+        }
+        .sidebar-link:hover {
+            background-color: #f3f4f6; /* gray-100 */
+            color: #1f2937; /* gray-800 */
+            border-left-color: #9ca3af; /* gray-400 */
+        }
+        .sidebar-link.active {
+            background-color: #eff6ff; /* blue-50 */
+            color: #2563eb; /* blue-600 */
+            border-left-color: #2563eb; /* blue-600 */
+            font-weight: 600;
+        }
+        .sidebar-link.active svg {
+             color: #2563eb; /* blue-600 */
+        }
         
-        /* --- Estilos das Abas --- */
+        /* --- Estilos das Abas (Detalhe Aluno) --- */
         .tab-button { transition: all 0.3s; }
         .tab-button.active {
             border-color: #3b82f6; color: #3b82f6; background-color: #eff6ff;
@@ -142,7 +164,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="bg-gray-50">
+<body class="bg-gray-100">
 
     <!-- Overlay de Loading -->
     <div id="loading-overlay">
@@ -156,111 +178,146 @@
         <button onclick="document.getElementById('error-message').style.display = 'none'" class="ml-4 font-bold">X</button>
     </div>
 
-    <!-- View Principal: Dashboard -->
-    <div id="main-dashboard-view" class="opacity-0 transition-opacity duration-500">
-        <header class="bg-white shadow-sm border-b border-gray-200">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between items-center h-16">
-                    <div class="flex items-center space-x-2">
-                        <!-- [SURPRESA] Ícone/Logo -->
-                        <svg class="w-8 h-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 0 1-.375 1.5-3 3 0 0 1-5.25 0 3 3 0 0 1-.375-1.5V17.25m10.5-11.25h.008v.008h-.008V6M12 21h.008v.008H12V21m0 0H9.75M12 21H7.5M12 21H3.375M12 21h-7.5M12 21h7.5m0 0h3.375m0 0h1.875m-5.25 0h.008v.008h-.008V21m-1.5-1.5h.008v.008h-.008V19.5m-3 0h.008v.008h-.008V19.5m0 0h1.875m-1.875 0h-7.5m11.25-3.375h.008v.008h-.008V16.125m-3 0h.008v.008h-.008V16.125m0 0h1.875m-1.875 0h-7.5m11.25 0h.008v.008h-.008V16.125m-3 0h.008v.008h-.008V16.125m0 0h1.875m-1.875 0h-7.5M9 3.75h6M9 3.75h-7.5M9 3.75v1.5M9 3.75v3M9 3.75v4.5M9 3.75v6M9 3.75v7.5M9 3.75v9M9 3.75v10.5M9 3.75v12M9 3.75v13.5M9 3.75v15M9 3.75v16.5m0 0h6m0 0h-7.5m7.5 0v-1.5m0 0v-3m0 0v-4.5m0 0v-6m0 0v-7.5m0 0v-9m0 0v-10.5m0 0v-12m0 0v-13.5m0 0v-15m0 0v-16.5" />
-                        </svg>
-                        <h1 class="text-2xl font-semibold text-gray-900">Ensino InCor - Dashboard</h1>
-                    </div>
-                </div>
+    <div class="flex h-screen bg-gray-100">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
+            <!-- Logo/Header da Sidebar -->
+            <div class="h-16 flex items-center justify-center px-4 border-b border-gray-200 flex-shrink-0">
+                 <div class="flex items-center space-x-2">
+                    <svg class="w-8 h-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 0 1-.375 1.5-3 3 0 0 1-5.25 0 3 3 0 0 1-.375-1.5V17.25m10.5-11.25h.008v.008h-.008V6M12 21h.008v.008H12V21m0 0H9.75M12 21H7.5M12 21H3.375M12 21h-7.5M12 21h7.5m0 0h3.375m0 0h1.875m-5.25 0h.008v.008h-.008V21m-1.5-1.5h.008v.008h-.008V19.5m-3 0h.008v.008h-.008V19.5m0 0h1.875m-1.875 0h-7.5m11.25-3.375h.008v.008h-.008V16.125m-3 0h.008v.008h-.008V16.125m0 0h1.875m-1.875 0h-7.5m11.25 0h.008v.008h-.008V16.125m-3 0h.008v.008h-.008V16.125m0 0h1.875m-1.875 0h-7.5M9 3.75h6M9 3.75h-7.5M9 3.75v1.5M9 3.75v3M9 3.75v4.5M9 3.75v6M9 3.75v7.5M9 3.75v9M9 3.75v10.5M9 3.75v12M9 3.75v13.5M9 3.75v15M9 3.75v16.5m0 0h6m0 0h-7.5m7.5 0v-1.5m0 0v-3m0 0v-4.5m0 0v-6m0 0v-7.5m0 0v-9m0 0v-10.5m0 0v-12m0 0v-13.5m0 0v-15m0 0v-16.5" />
+                     </svg>
+                     <h1 class="text-xl font-semibold text-gray-900">Ensino InCor</h1>
+                 </div>
             </div>
-        </header>
-        
-        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <!-- [SURPRESA] Layout de 3 colunas -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Navegação Principal -->
+            <nav class="flex-grow overflow-y-auto py-4 space-y-1">
+                <a href="#dashboard" data-tab="dashboard" class="sidebar-link active flex items-center px-4 py-2 text-sm font-medium text-gray-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17.5a.5.5 0 00.5.5h11a.5.5 0 00.5-.5V10.414l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                    </svg>
+                    Dashboard
+                </a>
+                <a href="#alunos" data-tab="alunos" class="sidebar-link flex items-center px-4 py-2 text-sm font-medium text-gray-600">
+                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                    </svg>
+                    Alunos
+                </a>
+                 <a href="#ponto" data-tab="ponto" class="sidebar-link flex items-center px-4 py-2 text-sm font-medium text-gray-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z" clip-rule="evenodd" />
+                    </svg>
+                    Ponto
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Conteúdo Principal -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Header (opcional, pode adicionar depois se quiser) -->
+            <!-- <header class="bg-white shadow-sm h-16 flex-shrink-0 border-b border-gray-200">
+                <div class="px-4 sm:px-6 lg:px-8 h-full flex items-center"> Header Content </div>
+            </header> -->
+
+            <!-- Área de Scroll Principal -->
+            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-4 sm:p-6 lg:p-8">
                 
-                <!-- Coluna 1: Frequência Diária -->
-                <div class="lg:order-1 space-y-6">
-                    <div class="bg-white p-5 rounded-xl shadow-lg">
-                        <div class="flex justify-between items-center mb-4 border-b border-gray-200 pb-3">
-                            <h2 class="text-lg font-bold text-gray-800">Frequência Diária</h2>
-                            <span id="current-date" class="text-sm font-medium text-gray-500"></span>
+                <!-- View Principal: Dashboard (Inicialmente ativa) -->
+                <div id="content-dashboard" class="main-content-section active">
+                    <h1 class="text-2xl font-semibold text-gray-900 mb-6">Dashboard Geral</h1>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Coluna 1: Frequência Diária -->
+                        <div class="lg:col-span-1 space-y-6">
+                             <div class="bg-white p-5 rounded-xl shadow-lg">
+                                 <div class="flex justify-between items-center mb-4 border-b border-gray-200 pb-3">
+                                     <h2 class="text-lg font-bold text-gray-800">Frequência Diária</h2>
+                                     <span id="current-date" class="text-sm font-medium text-gray-500"></span>
+                                 </div>
+                                 <div class="grid grid-cols-3 gap-3 mb-4 text-center">
+                                     <div class="bg-blue-50 p-3 rounded-lg">
+                                         <span class="text-xs font-semibold text-blue-700">ESCALADOS</span>
+                                         <p id="kpi-scaled" class="text-2xl font-bold text-blue-900">-</p>
+                                     </div>
+                                     <div class="bg-green-50 p-3 rounded-lg">
+                                         <span class="text-xs font-semibold text-green-700">PRESENTES</span>
+                                         <p id="kpi-present" class="text-2xl font-bold text-green-900">-</p>
+                                     </div>
+                                     <div class="bg-red-50 p-3 rounded-lg">
+                                         <span class="text-xs font-semibold text-red-700">AUSENTES</span>
+                                         <p id="kpi-absent" class="text-2xl font-bold text-red-900">-</p>
+                                     </div>
+                                 </div>
+                                 <div id="frequency-panel" class="space-y-4 max-h-[400px] overflow-y-auto">
+                                     <p class="text-gray-500 italic">Calculando frequência...</p>
+                                 </div>
+                             </div>
                         </div>
-                        
-                        <!-- [SURPRESA] KPI Cards de Frequência -->
-                        <div class="grid grid-cols-3 gap-3 mb-4 text-center">
-                            <div class="bg-blue-50 p-3 rounded-lg">
-                                <span class="text-xs font-semibold text-blue-700">ESCALADOS</span>
-                                <p id="kpi-scaled" class="text-2xl font-bold text-blue-900">-</p>
-                            </div>
-                            <div class="bg-green-50 p-3 rounded-lg">
-                                <span class="text-xs font-semibold text-green-700">PRESENTES</span>
-                                <p id="kpi-present" class="text-2xl font-bold text-green-900">-</p>
-                            </div>
-                            <div class="bg-red-50 p-3 rounded-lg">
-                                <span class="text-xs font-semibold text-red-700">AUSENTES</span>
-                                <p id="kpi-absent" class="text-2xl font-bold text-red-900">-</p>
-                            </div>
-                        </div>
-                        
-                        <!-- Listas de Presentes/Ausentes (como antes) -->
-                        <div id="frequency-panel" class="space-y-4 max-h-[400px] overflow-y-auto">
-                            <p class="text-gray-500 italic">Calculando frequência...</p>
+                        <!-- Coluna 2 e 3: Visão Geral (agora na mesma div) -->
+                        <div class="lg:col-span-2 space-y-6">
+                             <div class="bg-white p-5 rounded-xl shadow-lg">
+                                 <h2 class="text-lg font-bold text-gray-800 mb-4 border-b border-gray-200 pb-3">Visão Geral</h2>
+                                 <div class="space-y-4">
+                                     <div class="flex items-center bg-gray-50 p-4 rounded-lg">
+                                         <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-2.121M17 20v-2m0 2H5a2 2 0 01-2-2v-5a2 2 0 012-2h14a2 2 0 012 2v5a2 2 0 01-2 2h-5m-4-8a3 3 0 100-6 3 3 0 000 6z" /></svg>
+                                         </div>
+                                         <div class="ml-4">
+                                             <p class="text-sm font-medium text-gray-500">Alunos Ativos</p>
+                                             <p id="kpi-active-students" class="text-2xl font-bold text-gray-900">-</p>
+                                         </div>
+                                     </div>
+                                     <div class="flex items-center bg-gray-50 p-4 rounded-lg">
+                                         <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
+                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                         </div>
+                                         <div class="ml-4">
+                                             <p class="text-sm font-medium text-gray-500">Reposições Pendentes</p>
+                                             <p id="kpi-pending-replacements" class="text-2xl font-bold text-gray-900">-</p>
+                                         </div>
+                                     </div>
+                                     <div class="text-sm text-center text-gray-400 pt-4 italic">
+                                         (Mais estatísticas em breve)
+                                     </div>
+                                 </div>
+                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Coluna 2: Lista de Alunos (Central) -->
-                <div class="lg:order-2 bg-white p-5 rounded-xl shadow-lg">
-                    <div class="flex justify-between items-center mb-4 border-b border-gray-200 pb-3">
-                        <h2 class="text-lg font-bold text-gray-800">Alunos Ativos</h2>
-                        <input type="text" id="search-student" placeholder="Buscar aluno..." class="border border-gray-300 rounded-md px-3 py-2 text-sm w-full max-w-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-                    <div id="student-list-panel" class="max-h-[600px] overflow-y-auto divide-y divide-gray-100">
-                        <!-- Conteúdo será renderizado pelo JS (com novo layout) -->
-                    </div>
-                </div>
+                <!-- View: Lista de Alunos -->
+                 <div id="content-alunos" class="main-content-section">
+                     <div class="flex justify-between items-center mb-6">
+                         <h1 class="text-2xl font-semibold text-gray-900">Alunos</h1>
+                         <input type="text" id="search-student" placeholder="Buscar aluno..." class="border border-gray-300 rounded-md px-3 py-2 text-sm w-full max-w-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                     </div>
+                     <div class="bg-white p-5 rounded-xl shadow-lg">
+                         <div id="student-list-panel" class="max-h-[calc(100vh-200px)] overflow-y-auto divide-y divide-gray-100">
+                             <!-- Conteúdo será renderizado pelo JS -->
+                         </div>
+                     </div>
+                 </div>
 
-                <!-- Coluna 3: Visão Geral -->
-                <div class="lg:order-3 space-y-6">
-                    <div class="bg-white p-5 rounded-xl shadow-lg">
-                        <h2 class="text-lg font-bold text-gray-800 mb-4 border-b border-gray-200 pb-3">Visão Geral</h2>
-                        
-                        <!-- [SURPRESA] KPI Cards de Visão Geral -->
-                        <div class="space-y-4">
-                            <div class="flex items-center bg-gray-50 p-4 rounded-lg">
-                                <div class="p-3 rounded-full bg-blue-100 text-blue-600">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-2.121M17 20v-2m0 2H5a2 2 0 01-2-2v-5a2 2 0 012-2h14a2 2 0 012 2v5a2 2 0 01-2 2h-5m-4-8a3 3 0 100-6 3 3 0 000 6z" /></svg>
-                                </div>
-                                <div class="ml-4">
-                                    <p class="text-sm font-medium text-gray-500">Alunos Ativos</p>
-                                    <p id="kpi-active-students" class="text-2xl font-bold text-gray-900">-</p>
-                                </div>
-                            </div>
-                            <div class="flex items-center bg-gray-50 p-4 rounded-lg">
-                                <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                                </div>
-                                <div class="ml-4">
-                                    <p class="text-sm font-medium text-gray-500">Reposições Pendentes</p>
-                                    <p id="kpi-pending-replacements" class="text-2xl font-bold text-gray-900">-</p>
-                                </div>
-                            </div>
-                            <!-- Placeholder para mais KPIs -->
-                            <div class="text-sm text-center text-gray-400 pt-4 italic">
-                                (Mais estatísticas em breve)
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
+                 <!-- View: Ponto (Placeholder) -->
+                 <div id="content-ponto" class="main-content-section">
+                     <h1 class="text-2xl font-semibold text-gray-900 mb-6">Análise de Ponto</h1>
+                     <div class="bg-white p-6 rounded-xl shadow-lg text-center">
+                         <p class="text-gray-500 italic">Em desenvolvimento...</p>
+                         <p class="mt-4 text-gray-700">Aqui você poderá ver um calendário de frequência, gráficos de atraso, etc.</p>
+                     </div>
+                 </div>
+
+            </main>
+        </div>
     </div>
 
-    <!-- View 2: Detalhe do Aluno (Inicialmente oculta) -->
-    <div id="student-detail-view" class="hidden-view">
-        <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+    <!-- View: Detalhe do Aluno (Fora do fluxo principal, mostrado sob demanda) -->
+    <div id="student-detail-view" class="hidden-view fixed inset-0 bg-gray-100 z-50 overflow-y-auto">
+        <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
             <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
                 <button id="back-to-dashboard" class="flex items-center text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
-                    Voltar ao Dashboard
+                    Voltar para Alunos
                 </button>
             </div>
         </header>
@@ -272,7 +329,7 @@
             </div>
         </div>
 
-        <!-- [SURPRESA] KPIs do Aluno -->
+        <!-- KPIs do Aluno -->
         <div id="student-kpi-header" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
             <!-- Conteúdo renderizado pelo JS -->
         </div>
@@ -291,45 +348,17 @@
 
             <!-- Conteúdo das Abas -->
             <div id="student-tabs-content" class="mt-8 mb-16">
-                
-                <!-- Aba: Informações Pessoais -->
-                <div id="tab-info" class="tab-content active bg-white p-6 rounded-xl shadow-lg">
-                    <!-- [SURPRESA] Convertido para Definition List (DL) -->
-                </div>
-
-                <!-- Aba: Escala -->
-                <div id="tab-escala" class="tab-content">
-                    <!-- [SURPRESA] Conteúdo do Heatmap de Escala -->
-                    <div id="escala-heatmap-content" class="space-y-8">
-                        <!-- Conteúdo renderizado pelo JS -->
-                    </div>
-                </div>
-
-                <!-- Aba: Faltas e Reposições -->
+                <div id="tab-info" class="tab-content active bg-white p-6 rounded-xl shadow-lg"></div>
+                <div id="tab-escala" class="tab-content"><div id="escala-heatmap-content" class="space-y-8"></div></div>
                 <div id="tab-faltas" class="tab-content bg-white p-6 rounded-xl shadow-lg">
                      <h3 class="text-lg font-semibold text-gray-900 mb-4">Registro de Ausências e Reposições</h3>
-                    <div id="faltas-content" class="max-h-[500px] overflow-y-auto">
-                        <!-- Conteúdo renderizado pelo JS -->
-                    </div>
+                    <div id="faltas-content" class="max-h-[500px] overflow-y-auto"></div>
                 </div>
-
-                <!-- Aba: Notas Teóricas -->
                 <div id="tab-notas-t" class="tab-content bg-white p-6 rounded-xl shadow-lg">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">Notas Teóricas</h3>
-                    <!-- [SURPRESA] Conteúdo do Gráfico de Barras -->
-                    <div id="notas-t-barchart-content" class="space-y-4">
-                        <!-- Conteúdo renderizado pelo JS -->
-                    </div>
+                    <div id="notas-t-barchart-content" class="space-y-4"></div>
                 </div>
-
-                <!-- Aba: Notas Práticas -->
-                <div id="tab-notas-p" class="tab-content">
-                    <!-- [SURPRESA] Conteúdo do Gráfico Radial -->
-                    <div id="notas-p-radial-content" class="space-y-6">
-                        <!-- Conteúdo renderizado pelo JS -->
-                    </div>
-                </div>
-
+                <div id="tab-notas-p" class="tab-content"><div id="notas-p-radial-content" class="space-y-6"></div></div>
             </div>
         </div>
     </div>
@@ -337,13 +366,9 @@
 
     <!-- CLIENT-SIDE SCRIPT -->
     <script>
-        // *** [IMPORTANTE] URL ATUALIZADA ***
-        // Esta é a nova URL de API que você forneceu
         const API_URL = "https://script.google.com/macros/s/AKfycbxq7vepPQ6F6qxPvXbLnINZbMkoBiMVRMwlfw5_O_pZMoNp-XcJijoX6DWM6g9SQhd3/exec";
-
         console.log(`API_URL: ${API_URL}`);
 
-        // Estado global da aplicação
         const appState = {
             lastPontoUpdate: null,
             alunos: [],
@@ -353,74 +378,52 @@
             ausenciasReposicoes: [],
             notasTeoricas: {},
             notasPraticas: {},
-            todayBR: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }), // ex: "22/10"
-            todayFullBR: new Date().toLocaleDateString('pt-BR'), // ex: "22/10/2025"
+            todayBR: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+            todayFullBR: new Date().toLocaleDateString('pt-BR'),
         };
 
-        /**
-         * Mostra ou esconde o overlay de loading principal.
-         * @param {boolean} show - True para mostrar, false para esconder.
-         */
         function showLoading(show) {
             const overlay = document.getElementById('loading-overlay');
-            if (show) {
-                overlay.style.display = 'flex';
-                overlay.style.opacity = '1';
-            } else {
-                overlay.style.opacity = '0';
-                setTimeout(() => {
-                    overlay.style.display = 'none';
-                    document.getElementById('main-dashboard-view').style.opacity = '1';
-                }, 500);
-            }
+             overlay.style.opacity = show ? '1' : '0';
+             overlay.style.display = show ? 'flex' : 'none';
+             // Não mexe na opacidade do main aqui, controla no init
         }
 
-        /**
-         * Mostra uma mensagem de erro na tela.
-         * @param {string} message - A mensagem de erro.
-         */
         function showError(message) {
             console.error(message);
             const errorBox = document.getElementById('error-message');
             document.getElementById('error-text').textContent = message;
             errorBox.style.display = 'block';
-            showLoading(false);
+            showLoading(false); // Garante que o loading suma em caso de erro
         }
 
         // -------------------------------------------
         // INICIALIZAÇÃO E CARGA DE DADOS
         // -------------------------------------------
 
-        /**
-         * [ATUALIZADO] Função de inicialização agora é assíncrona
-         * para carregar os dados estáticos E o ponto de hoje antes
-         * de esconder o loading.
-         */
         async function init() {
-            console.log('Iniciando Dashboard PRO...');
+            console.log('Iniciando Dashboard PRO com Sidebar...');
             document.getElementById('current-date').textContent = appState.todayFullBR;
             
-            document.getElementById('back-to-dashboard').addEventListener('click', showMainDashboard);
+            setupSidebarNavigation(); // Configura a navegação da sidebar
+            document.getElementById('back-to-dashboard').addEventListener('click', showAlunosList); // Botão voltar agora volta pra lista
             document.getElementById('search-student').addEventListener('input', filterStudentList);
-            setupTabNavigation();
+            setupStudentTabNavigation(); // Configura tabs do detalhe do aluno
 
             try {
-                // 1. Busca os dados estáticos (Alunos, Escalas, Notas, etc)
                 await fetchAllData();
-                
-                // 2. Busca os dados dinâmicos (Ponto de Hoje)
                 await fetchPontoHoje();
 
-                // 3. Renderiza a UI com todos os dados
                 renderStudentList(appState.alunos.filter(s => s.Status === 'Ativo'));
-                computeAndRenderFrequency(); // Renderiza a frequência inicial
-                renderAtAGlance(); // Renderiza o painel "Visão Geral"
+                computeAndRenderFrequency();
+                renderAtAGlance();
                 
-                // 4. Esconde o loading
-                showLoading(false);
+                showLoading(false); // Esconde loading APÓS carregar tudo
+                // Mostra a view principal (Dashboard por padrão)
+                switchMainTab('dashboard'); // Ativa a aba inicial
+                document.querySelector('body > div.flex').style.opacity = '1'; // Mostra o layout principal suavemente
 
-                // 5. Inicia o "live update" da frequência (delta)
-                setInterval(fetchPontoHoje, 30000); // 30 segundos
+                setInterval(fetchPontoHoje, 30000);
                 console.log("Live update da frequência iniciado.");
 
             } catch (error) {
@@ -428,97 +431,105 @@
             }
         }
 
-        /**
-         * [ATUALIZADO] Busca apenas os dados estáticos.
-         * Não processa mais o Ponto aqui.
-         */
         async function fetchAllData() {
             console.log("Buscando dados estáticos (getAll)...");
             try {
                 const response = await fetch(`${API_URL}?action=getAll`);
                 if (!response.ok) throw new Error(`Erro de rede (getAll): ${response.statusText}`);
-                
                 const data = await response.json();
                 if (!data.success) throw new Error(`Erro na API (getAll): ${data.error}`);
-                
                 console.log("Dados estáticos recebidos:", data);
-                onStaticDataLoaded(data); // Chama a função de processamento
-
+                onStaticDataLoaded(data);
             } catch (error) {
-                // Erro fatal, joga para o init() tratar
                 throw new Error(`Falha ao carregar dados estáticos: ${error.message}`);
             }
         }
         
-        /**
-         * [ATUALIZADO] Processa apenas os dados estáticos.
-         */
         function onStaticDataLoaded(data) {
-            // 1. Armazena dados estáticos no estado global
             appState.alunos = data.alunos || [];
             appState.escalas = data.escalas || {};
             appState.ausenciasReposicoes = data.ausenciasReposicoes || [];
             appState.notasTeoricas = data.notasTeoricas || {};
             appState.notasPraticas = data.notasPraticas || {};
             
-            // 2. Cria o Map de Alunos
+            appState.alunosMap.clear(); // Limpa antes de preencher
             appState.alunos.forEach(aluno => {
                 if(aluno.EmailHC) appState.alunosMap.set(aluno.EmailHC, aluno);
             });
 
             console.log("Dados estáticos processados e armazenados no appState.");
-            // A renderização agora acontece no init()
         }
 
-        /**
-         * [ATUALIZADO] Busca os dados de ponto de hoje.
-         * Esta função agora também é chamada no init()
-         */
         async function fetchPontoHoje() {
             console.log(`Buscando dados de ponto (getPontoHoje) desde: ${appState.lastPontoUpdate || 'Início'}`);
             try {
                 let url = `${API_URL}?action=getPontoHoje`;
-                // (Otimização futura: enviar o 'since'
-                // if (appState.lastPontoUpdate) {
-                //     url += `&since=${appState.lastPontoUpdate}`;
-                // }
+                // Futuro: Passar o 'since' se lastPontoUpdate existir
                 
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`Erro de rede (getPontoHoje): ${response.statusText}`);
-                
                 const data = await response.json();
                 if (!data.success) throw new Error(`Erro na API (getPontoHoje): ${data.error}`);
 
                 console.log('Dados de ponto recebidos:', data.hoje);
-                
-                appState.lastPontoUpdate = data.lastUpdate; // Atualiza o timestamp
+                appState.lastPontoUpdate = data.lastUpdate;
 
-                // Limpa o map e preenche com os dados mais recentes
-                appState.pontoHojeMap.clear();
+                appState.pontoHojeMap.clear(); // Limpa antes de preencher
                 data.hoje.forEach(ponto => {
                     if (ponto.EmailHC) appState.pontoHojeMap.set(ponto.EmailHC, ponto);
                 });
 
-                // Re-renderiza a frequência, pois os dados de ponto mudaram
+                // Re-renderiza APENAS a frequência
                 computeAndRenderFrequency();
                 
             } catch (error) {
-                // Não é um erro fatal, apenas loga no console
                 console.warn('Não foi possível atualizar a frequência:', error.message);
+                // Não é fatal, não chama showError
             }
         }
 
         // -------------------------------------------
-        // RENDERIZAÇÃO: VIEW PRINCIPAL
+        // NAVEGAÇÃO PRINCIPAL (SIDEBAR)
+        // -------------------------------------------
+        function setupSidebarNavigation() {
+            const sidebar = document.querySelector('aside nav');
+            sidebar.addEventListener('click', (e) => {
+                const link = e.target.closest('.sidebar-link');
+                if (link) {
+                    e.preventDefault(); // Impede a navegação padrão de hash
+                    const tabName = link.getAttribute('data-tab');
+                    switchMainTab(tabName);
+                }
+            });
+        }
+
+        function switchMainTab(tabName) {
+            console.log("Trocando para a aba principal:", tabName);
+            // Atualiza o estado ativo na sidebar
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                link.classList.toggle('active', link.getAttribute('data-tab') === tabName);
+            });
+
+            // Mostra/Esconde as seções de conteúdo principal
+            document.querySelectorAll('.main-content-section').forEach(section => {
+                 section.classList.toggle('active', section.id === `content-${tabName}`);
+            });
+
+            // Garante que a view de detalhe do aluno esteja escondida ao trocar de aba principal
+             if (document.getElementById('student-detail-view').style.display !== 'none') {
+                 document.getElementById('student-detail-view').classList.add('hidden-view');
+             }
+
+             window.scrollTo(0, 0); // Rola para o topo ao trocar de aba
+        }
+
+
+        // -------------------------------------------
+        // RENDERIZAÇÃO: VIEW PRINCIPAL (DASHBOARD/ALUNOS/PONTO)
         // -------------------------------------------
 
-        /**
-         * Renderiza o painel "Visão Geral" com KPIs.
-         */
         function renderAtAGlance() {
             const activeStudents = appState.alunos.filter(s => s.Status === 'Ativo').length;
-            
-            // [ATUALIZADO] Agora usa o `DataReposicaoISO` fornecido pelo backend
             const pendingReplacements = appState.ausenciasReposicoes.filter(f => !f.DataReposicaoISO).length;
             
             document.getElementById('kpi-active-students').textContent = activeStudents;
@@ -526,10 +537,8 @@
         }
 
         function findActiveScale() {
-            // [ATUALIZADO] O backend agora fornece os dados processados.
             for (const nomeEscala in appState.escalas) {
                 const escala = appState.escalas[nomeEscala];
-                // O `headersDay` vem pronto do backend
                 if (escala.headersDay && escala.headersDay.includes(appState.todayBR)) {
                     return escala;
                 }
@@ -555,7 +564,6 @@
             let scaledToday = 0;
             
             activeScale.alunos.forEach(alunoEscala => {
-                // O array `dias` vem pronto do backend
                 const diaInfo = alunoEscala.dias.find(d => d.dataColuna === appState.todayBR);
                 
                 if (diaInfo && diaInfo.status && diaInfo.status !== 'folga' && diaInfo.status !== 'ausencia') {
@@ -564,16 +572,9 @@
                     
                     if (appState.pontoHojeMap.has(alunoEscala.EmailHC)) {
                         const pontoInfo = appState.pontoHojeMap.get(alunoEscala.EmailHC);
-                        present.push({
-                            ...alunoInfo,
-                            HoraEntrada: pontoInfo.HoraEntrada,
-                            StatusEscala: diaInfo.status
-                        });
+                        present.push({ ...alunoInfo, HoraEntrada: pontoInfo.HoraEntrada, StatusEscala: diaInfo.status });
                     } else {
-                        absent.push({
-                            ...alunoInfo,
-                            StatusEscala: diaInfo.status
-                        });
+                        absent.push({ ...alunoInfo, StatusEscala: diaInfo.status });
                     }
                 }
             });
@@ -590,8 +591,7 @@
                             <li class="flex justify-between items-center">
                                 <span class="truncate" title="${s.NomeCompleto}">${s.NomeCompleto}</span>
                                 <span class="badge badge-green flex-shrink-0">${s.HoraEntrada}</span>
-                            </li>
-                        `).join('') : '<li class="text-gray-500 italic text-xs">Nenhum aluno presente.</li>'}
+                            </li>`).join('') : '<li class="text-gray-500 italic text-xs">Nenhum aluno presente.</li>'}
                     </ul>
                 </div>
                 <div class="mt-4">
@@ -601,18 +601,16 @@
                             <li class="flex justify-between items-center">
                                 <span class="truncate" title="${s.NomeCompleto}">${s.NomeCompleto}</span>
                                 <span class="badge badge-gray flex-shrink-0" title="Escala: ${s.StatusEscala}">Ausente</span>
-                            </li>
-                        `).join('') : '<li class="text-gray-500 italic text-xs">Nenhum aluno ausente.</li>'}
+                            </li>`).join('') : '<li class="text-gray-500 italic text-xs">Nenhum aluno ausente.</li>'}
                     </ul>
-                </div>
-            `;
+                </div>`;
             panel.innerHTML = html;
         }
 
         function renderStudentList(students) {
             const panel = document.getElementById('student-list-panel');
             if (!students || students.length === 0) {
-                panel.innerHTML = '<p class="text-gray-500 p-4 text-center">Nenhum aluno encontrado.</p>';
+                panel.innerHTML = '<p class="text-gray-500 p-4 text-center">Nenhum aluno ativo encontrado.</p>';
                 return;
             }
 
@@ -620,7 +618,6 @@
                 const imageUrl = student.FotoID 
                     ? `https://lh3.googleusercontent.com/d/${student.FotoID}`
                     : 'https://placehold.co/48x48/e0e0e0/757575?text=?';
-                
                 return `
                     <div class="flex items-center justify-between p-3 hover:bg-gray-50 transition-colors" data-student-name="${student.NomeCompleto.toLowerCase()}">
                         <div class="flex items-center space-x-4">
@@ -630,13 +627,10 @@
                                 <p class="text-xs text-gray-600">${student.Curso}</p>
                             </div>
                         </div>
-                        <button 
-                            class="text-sm font-medium text-blue-600 hover:text-blue-800"
-                            onclick="showStudentDetail('${student.EmailHC}')">
+                        <button class="text-sm font-medium text-blue-600 hover:text-blue-800" onclick="showStudentDetail('${student.EmailHC}')">
                             Ver Perfil
                         </button>
-                    </div>
-                `;
+                    </div>`;
             }).join('');
             panel.innerHTML = html;
         }
@@ -644,46 +638,39 @@
         function filterStudentList() {
             const query = document.getElementById('search-student').value.toLowerCase();
             const items = document.querySelectorAll('#student-list-panel > div');
-            
             items.forEach(item => {
                 const name = item.getAttribute('data-student-name');
-                if (name.includes(query)) {
-                    item.style.display = 'flex';
-                } else {
-                    item.style.display = 'none';
-                }
+                item.style.display = name.includes(query) ? 'flex' : 'none';
             });
         }
 
         // -------------------------------------------
-        // RENDERIZAÇÃO: VIEW DE DETALHE DO ALUNO
+        // NAVEGAÇÃO E RENDERIZAÇÃO: VIEW DE DETALHE DO ALUNO
         // -------------------------------------------
 
-        function showMainDashboard() {
-            document.getElementById('main-dashboard-view').classList.remove('hidden-view');
+        /**
+         * [ATUALIZADO] O botão voltar agora esconde a view de detalhe e mostra a lista de alunos (content-alunos).
+         */
+        function showAlunosList() {
             document.getElementById('student-detail-view').classList.add('hidden-view');
-            window.scrollTo(0, 0);
+            // Não precisa mexer nas main-content-section aqui, pois a aba "Alunos" já deve estar ativa
+             window.scrollTo(0, 0);
         }
 
+        /**
+         * [ATUALIZADO] Mostra a view de detalhe do aluno.
+         */
         function showStudentDetail(email) {
             console.log(`Renderizando detalhes para: ${email}`);
-            
             const info = appState.alunosMap.get(email);
-            if (!info) {
-                showError(`Aluno com email ${email} não encontrado.`);
-                return;
-            }
+            if (!info) return showError(`Aluno com email ${email} não encontrado.`);
 
-            // 2. Encontra dados relacionados (agora vem pronto do backend)
             const escalas = [];
             for (const nomeEscala in appState.escalas) {
                 const escala = appState.escalas[nomeEscala];
                 const alunoNaEscala = escala.alunos.find(a => a.EmailHC === email);
-                if (alunoNaEscala) {
-                    escalas.push({ ...escala, ...alunoNaEscala }); // Combina info da escala e do aluno
-                }
+                if (alunoNaEscala) escalas.push({ ...escala, ...alunoNaEscala });
             }
-            
             const faltas = appState.ausenciasReposicoes.filter(f => f.EmailHC === email);
             const notasT = (appState.notasTeoricas.registros || []).find(n => n.EmailHC === email);
             const notasP = [];
@@ -692,7 +679,7 @@
                 notasP.push(...registros.map(r => ({ nomePratica: appState.notasPraticas[nomePratica].nomePratica, ...r })));
             }
             
-            // 3. Renderiza todas as seções
+            // Renderiza o conteúdo dentro da view de detalhe
             renderStudentHeader(info);
             renderStudentDetailKPIs(faltas, notasP);
             renderTabInfo(info);
@@ -701,66 +688,53 @@
             renderTabNotasTeoricas(notasT);
             renderTabNotasPraticas(notasP);
 
-            // 4. Troca as views
-            document.getElementById('main-dashboard-view').classList.add('hidden-view');
+            // Mostra a view de detalhe
             document.getElementById('student-detail-view').classList.remove('hidden-view');
             
-            // 5. Reseta para a primeira aba e rola para o topo
-            switchTab('info');
-            window.scrollTo(0, 0);
+            switchStudentTab('info'); // Reseta para a primeira aba
+            window.scrollTo(0, 0); // Rola para o topo
         }
 
-        function setupTabNavigation() {
+        function setupStudentTabNavigation() {
             const nav = document.getElementById('student-tabs-nav');
             nav.addEventListener('click', (e) => {
                 if (e.target.tagName === 'BUTTON') {
                     const tabName = e.target.getAttribute('data-tab');
-                    switchTab(tabName);
+                    switchStudentTab(tabName);
                 }
             });
         }
 
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab-button').forEach(btn => {
+        function switchStudentTab(tabName) {
+            // Atualiza botões das tabs de detalhe
+            document.querySelectorAll('#student-tabs-nav .tab-button').forEach(btn => {
                 btn.classList.toggle('active', btn.getAttribute('data-tab') === tabName);
                 btn.classList.toggle('border-transparent', btn.getAttribute('data-tab') !== tabName);
                 btn.classList.toggle('text-gray-500', btn.getAttribute('data-tab') !== tabName);
             });
-            document.querySelectorAll('.tab-content').forEach(content => {
+            // Mostra/Esconde conteúdo das tabs de detalhe
+            document.querySelectorAll('#student-tabs-content .tab-content').forEach(content => {
                 content.classList.toggle('active', content.id === `tab-${tabName}`);
             });
         }
 
         function renderStudentHeader(info) {
             const panel = document.getElementById('student-header');
-            const imageUrl = info.FotoID 
-                ? `https://lh3.googleusercontent.com/d/${info.FotoID}`
-                : 'https://placehold.co/80x80/e0e0e0/757575?text=?';
-            
+            const imageUrl = info.FotoID ? `https://lh3.googleusercontent.com/d/${info.FotoID}` : 'https://placehold.co/80x80/e0e0e0/757575?text=?';
             const statusClass = info.Status === 'Ativo' ? 'badge-green' : 'badge-red';
-
             panel.innerHTML = `
                 <img src="${imageUrl}" alt="Foto de ${info.NomeCompleto}" class="w-20 h-20 rounded-full object-cover shadow-md bg-gray-200" onerror="this.src='https://placehold.co/80x80/e0e0e0/757575?text=?'">
                 <div>
                     <h2 class="text-3xl font-bold text-gray-900">${info.NomeCompleto}</h2>
                     <p class="text-lg text-gray-600">${info.Curso}</p>
                 </div>
-                <div class="ml-auto">
-                    <span class="badge ${statusClass}">${info.Status}</span>
-                </div>
-            `;
+                <div class="ml-auto"><span class="badge ${statusClass}">${info.Status}</span></div>`;
         }
         
-        /**
-         * Renderiza os KPIs abaixo do header do aluno.
-         */
         function renderStudentDetailKPIs(faltas, notasP) {
             const panel = document.getElementById('student-kpi-header');
-            
             const totalFaltas = faltas.length;
-            // [ATUALIZADO] Usa `DataReposicaoISO` do backend
             const pendingFaltas = faltas.filter(f => !f.DataReposicaoISO).length;
-            
             let mediaGeralPratica = 0;
             if (notasP.length > 0) {
                 let soma = 0;
@@ -771,182 +745,99 @@
                 });
                 mediaGeralPratica = soma / notasP.length;
             }
-
             panel.innerHTML = `
                 <div class="bg-white p-4 rounded-xl shadow-lg flex items-center">
-                    <div class="p-3 rounded-full bg-red-100 text-red-600">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
-                    </div>
-                    <div class="ml-3">
-                        <p class="text-sm font-medium text-gray-500">Total de Faltas</p>
-                        <p class="text-2xl font-bold text-gray-900">${totalFaltas}</p>
-                    </div>
+                    <div class="p-3 rounded-full bg-red-100 text-red-600"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg></div>
+                    <div class="ml-3"><p class="text-sm font-medium text-gray-500">Total de Faltas</p><p class="text-2xl font-bold text-gray-900">${totalFaltas}</p></div>
                 </div>
                 <div class="bg-white p-4 rounded-xl shadow-lg flex items-center">
-                    <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
-                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    </div>
-                    <div class="ml-3">
-                        <p class="text-sm font-medium text-gray-500">Reposições Pendentes</p>
-                        <p class="text-2xl font-bold text-gray-900">${pendingFaltas}</p>
-                    </div>
+                    <div class="p-3 rounded-full bg-yellow-100 text-yellow-600"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
+                    <div class="ml-3"><p class="text-sm font-medium text-gray-500">Reposições Pendentes</p><p class="text-2xl font-bold text-gray-900">${pendingFaltas}</p></div>
                 </div>
                 <div class="bg-white p-4 rounded-xl shadow-lg flex items-center">
-                    <div class="p-3 rounded-full bg-blue-100 text-blue-600">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    </div>
-                    <div class="ml-3">
-                        <p class="text-sm font-medium text-gray-500">Média (Prática)</p>
-                        <p class="text-2xl font-bold text-gray-900">${mediaGeralPratica.toFixed(1)}</p>
-                    </div>
+                    <div class="p-3 rounded-full bg-blue-100 text-blue-600"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
+                    <div class="ml-3"><p class="text-sm font-medium text-gray-500">Média (Prática)</p><p class="text-2xl font-bold text-gray-900">${mediaGeralPratica.toFixed(1)}</p></div>
                 </div>
                  <div class="bg-white p-4 rounded-xl shadow-lg flex items-center">
-                    <div class="p-3 rounded-full bg-green-100 text-green-600">
-                       <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 14l9-5-9-5-9 5 9 5z" /><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5zm0 0v6" /></svg>
-                    </div>
-                    <div class="ml-3">
-                        <p class="text-sm font-medium text-gray-500">Módulos (Prática)</p>
-                        <p class="text-2xl font-bold text-gray-900">${notasP.length} / ${appState.notasPraticas ? Object.keys(appState.notasPraticas).length : '?'}</p>
-                    </div>
-                </div>
-            `;
+                    <div class="p-3 rounded-full bg-green-100 text-green-600"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 14l9-5-9-5-9 5 9 5z" /><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5zm0 0v6" /></svg></div>
+                    <div class="ml-3"><p class="text-sm font-medium text-gray-500">Módulos (Prática)</p><p class="text-2xl font-bold text-gray-900">${notasP.length} / ${appState.notasPraticas ? Object.keys(appState.notasPraticas).length : '?'}</p></div>
+                </div>`;
         }
 
-        /**
-         * Renderiza a aba "Informações Pessoais" como <dl>.
-         */
         function renderTabInfo(info) {
             const panel = document.getElementById('tab-info');
             panel.innerHTML = `
                 <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
-                    <div class="sm:col-span-1 border-b border-gray-100 pb-2">
-                        <dt class="font-medium text-gray-500">Email</dt>
-                        <dd class="mt-1 font-semibold text-gray-900">${info.EmailHC || 'N/A'}</dd>
-                    </div>
-                    <div class="sm:col-span-1 border-b border-gray-100 pb-2">
-                        <dt class="font-medium text-gray-500">Nascimento</dt>
-                        <dd class="mt-1 font-semibold text-gray-900">${info.DataNascimento || 'N/A'}</dd>
-                    </div>
-                    <div class="sm:col-span-1 border-b border-gray-100 pb-2">
-                        <dt class="font-medium text-gray-500">Sexo</dt>
-                        <dd class="mt-1 font-semibold text-gray-900">${info.Sexo || 'N/A'}</dd>
-                    </div>
-                    <div class="sm:col-span-1 border-b border-gray-100 pb-2">
-                        <dt class="font-medium text-gray-500">Estado Civil</dt>
-                        <dd class="mt-1 font-semibold text-gray-900">${info.EstadoCivil || 'N/A'}</dd>
-                    </div>
-                    <div class="sm:col-span-2 border-b border-gray-100 pb-2">
-                        <dt class="font-medium text-gray-500">CREFITO</dt>
-                        <dd class="mt-1 font-semibold text-gray-900">${info.Crefito || 'N/A'}</dd>
-                    </div>
-                </dl>
-            `;
+                    <div class="sm:col-span-1 border-b border-gray-100 pb-2"><dt class="font-medium text-gray-500">Email</dt><dd class="mt-1 font-semibold text-gray-900">${info.EmailHC || 'N/A'}</dd></div>
+                    <div class="sm:col-span-1 border-b border-gray-100 pb-2"><dt class="font-medium text-gray-500">Nascimento</dt><dd class="mt-1 font-semibold text-gray-900">${info.DataNascimento || 'N/A'}</dd></div>
+                    <div class="sm:col-span-1 border-b border-gray-100 pb-2"><dt class="font-medium text-gray-500">Sexo</dt><dd class="mt-1 font-semibold text-gray-900">${info.Sexo || 'N/A'}</dd></div>
+                    <div class="sm:col-span-1 border-b border-gray-100 pb-2"><dt class="font-medium text-gray-500">Estado Civil</dt><dd class="mt-1 font-semibold text-gray-900">${info.EstadoCivil || 'N/A'}</dd></div>
+                    <div class="sm:col-span-2 border-b border-gray-100 pb-2"><dt class="font-medium text-gray-500">CREFITO</dt><dd class="mt-1 font-semibold text-gray-900">${info.Crefito || 'N/A'}</dd></div>
+                </dl>`;
         }
 
-        /**
-         * Renderiza a aba "Escala" como um Heatmap.
-         */
         function renderTabEscala(escalas) {
             const panel = document.getElementById('escala-heatmap-content');
             if (!escalas || escalas.length === 0) {
-                panel.innerHTML = '<div class="bg-white p-6 rounded-xl shadow-lg"><p class="text-gray-500">Nenhum registro de escala encontrado.</p></div>';
-                return;
+                panel.innerHTML = '<div class="bg-white p-6 rounded-xl shadow-lg"><p class="text-gray-500">Nenhum registro de escala encontrado.</p></div>'; return;
             }
-
-            const html = escalas.map(escala => `
+            panel.innerHTML = escalas.map(escala => `
                 <div class="bg-white p-6 rounded-xl shadow-lg">
                     <h4 class="text-lg font-semibold text-gray-900">${escala.nomeEscala}</h4>
                     <p class="text-sm text-gray-600 mb-4"><strong>Unidade:</strong> ${escala.Unidade} | <strong>Supervisor:</strong> ${escala.Supervisor}</p>
-                    
                     <div class="flex flex-wrap gap-2">
                         ${escala.dias.map(dia => `
                             <div class="heatmap-day" data-status="${dia.status || 'none'}" title="${dia.dataColuna}: ${dia.status || 'N/A'}">
                                 <span class="heatmap-day-date">${dia.dataColuna}</span>
                                 <span class="heatmap-day-status">${dia.status || 'N/A'}</span>
-                            </div>
-                        `).join('')}
+                            </div>`).join('')}
                     </div>
-                </div>
-            `).join('');
-            panel.innerHTML = html;
+                </div>`).join('');
         }
 
-        /**
-         * Renderiza a aba "Faltas e Reposições" com badges.
-         */
         function renderTabFaltas(faltas) {
             const panel = document.getElementById('faltas-content');
             if (!faltas || faltas.length === 0) {
-                panel.innerHTML = '<p class="text-gray-500">Nenhum registro de ausência ou reposição encontrado.</p>';
-                return;
+                panel.innerHTML = '<p class="text-gray-500">Nenhum registro de ausência ou reposição encontrado.</p>'; return;
             }
-            
             panel.innerHTML = `
                 <table class="min-w-full divide-y divide-gray-200 text-sm">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-4 py-2 text-left font-medium text-gray-600">Status</th>
-                            <th class="px-4 py-2 text-left font-medium text-gray-600">Data Ausência</th>
-                            <th class="px-4 py-2 text-left font-medium text-gray-600">Data Reposição</th>
-                            <th class="px-4 py-2 text-left font-medium text-gray-600">Local</th>
-                            <th class="px-4 py-2 text-left font-medium text-gray-600">Motivo</th>
-                        </tr>
-                    </thead>
+                    <thead class="bg-gray-50"><tr>
+                        <th class="px-4 py-2 text-left font-medium text-gray-600">Status</th>
+                        <th class="px-4 py-2 text-left font-medium text-gray-600">Data Ausência</th>
+                        <th class="px-4 py-2 text-left font-medium text-gray-600">Data Reposição</th>
+                        <th class="px-4 py-2 text-left font-medium text-gray-600">Local</th>
+                        <th class="px-4 py-2 text-left font-medium text-gray-600">Motivo</th>
+                    </tr></thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         ${faltas.map(falta => {
-                            // [ATUALIZADO] Usa o `DataReposicaoISO` do backend
                             const isPendente = !falta.DataReposicaoISO;
-                            
-                            const statusBadge = isPendente 
-                                ? '<span class="badge badge-yellow">Pendente</span>' 
-                                : '<span class="badge badge-green">Completa</span>';
-                            
-                            // [ATUALIZADO] Formata as datas ISO
-                            // Adiciona 'T00:00:00' para evitar problemas de fuso horário (Timezone)
-                            const dataAusenciaFormatada = falta.DataAusenciaISO 
-                                ? new Date(falta.DataAusenciaISO + 'T00:00:00').toLocaleDateString('pt-BR') 
-                                : 'N/A';
-                            
-                            const dataReposicaoFormatada = falta.DataReposicaoISO 
-                                ? new Date(falta.DataReposicaoISO + 'T00:00:00').toLocaleDateString('pt-BR') 
-                                : 'N/A';
-
+                            const statusBadge = isPendente ? '<span class="badge badge-yellow">Pendente</span>' : '<span class="badge badge-green">Completa</span>';
+                            const dataAusenciaFormatada = falta.DataAusenciaISO ? new Date(falta.DataAusenciaISO + 'T00:00:00').toLocaleDateString('pt-BR') : 'N/A';
+                            const dataReposicaoFormatada = falta.DataReposicaoISO ? new Date(falta.DataReposicaoISO + 'T00:00:00').toLocaleDateString('pt-BR') : 'N/A';
+                            const motivoShort = falta.Motivo ? (falta.Motivo.length > 30 ? falta.Motivo.substring(0, 30) + '...' : falta.Motivo) : 'N/A';
                             return `
                                 <tr>
                                     <td class="px-4 py-3 text-gray-700">${statusBadge}</td>
                                     <td class="px-4 py-3 text-gray-700">${dataAusenciaFormatada}</td>
                                     <td class="px-4 py-3 text-gray-700">${dataReposicaoFormatada}</td>
                                     <td class="px-4 py-3 text-gray-700">${falta.Local || 'N/A'}</td>
-                                    <td class="px-4 py-3 text-gray-700" title="${falta.Motivo || ''}">${falta.Motivo ? (falta.Motivo.length > 30 ? falta.Motivo.substring(0, 30) + '...' : falta.Motivo) : 'N/A'}</td>
-                                </tr>
-                            `}).join('')}
-                    </tbody>
-                </table>
-            `;
+                                    <td class="px-4 py-3 text-gray-700" title="${falta.Motivo || ''}">${motivoShort}</td>
+                                </tr>`;
+                        }).join('')}
+                    </tbody></table>`;
         }
 
-        /**
-         * Renderiza a aba "Notas Teóricas" com gráficos de barra.
-         */
         function renderTabNotasTeoricas(notas) {
             const panel = document.getElementById('notas-t-barchart-content');
-            if (!notas) {
-                panel.innerHTML = '<p class="text-gray-500">Nenhum registro de notas teóricas encontrado.</p>';
-                return;
-            }
-
-            const chavesNotas = Object.keys(notas).filter(key => 
-                !['SerialNumber', 'NomeCompleto', 'EmailHC', 'Curso'].includes(key) && key.trim() !== ''
-            );
-
+            if (!notas) { panel.innerHTML = '<p class="text-gray-500">Nenhum registro de notas teóricas encontrado.</p>'; return; }
+            const chavesNotas = Object.keys(notas).filter(key => !['SerialNumber', 'NomeCompleto', 'EmailHC', 'Curso'].includes(key) && key.trim() !== '');
             panel.innerHTML = chavesNotas.map(chave => {
                 let notaVal = parseFloat(String(notas[chave] || '0').replace(',', '.'));
                 if (isNaN(notaVal)) notaVal = 0;
-                
                 const isMedia = chave.toUpperCase().includes('MÉDIA');
                 const barColor = isMedia ? 'bg-blue-700' : 'bg-blue-500';
                 const textColor = isMedia ? 'text-blue-800 font-bold' : 'text-gray-800';
-                
                 return `
                     <div class="text-sm ${isMedia ? 'pt-2 mt-2 border-t' : ''}">
                         <div class="flex justify-between items-center">
@@ -955,59 +846,32 @@
                         </div>
                         <div class="w-full h-2 bg-gray-200 rounded-full mt-1 overflow-hidden">
                             <div class="h-full ${barColor} rounded-full" style="width: ${notaVal * 10}%"></div>
-                        </div>
-                    </div>
-                `}).join('');
+                        </div></div>`;
+            }).join('');
         }
 
-        /**
-         * Renderiza a aba "Notas Práticas" com gráficos radiais.
-         */
         function renderTabNotasPraticas(notas) {
             const panel = document.getElementById('notas-p-radial-content');
-            if (!notas || notas.length === 0) {
-                panel.innerHTML = '<div class="bg-white p-6 rounded-xl shadow-lg"><p class="text-gray-500">Nenhum registro de notas práticas encontrado.</p></div>';
-                return;
-            }
-
-            const html = notas.map((nota, index) => {
+            if (!notas || notas.length === 0) { panel.innerHTML = '<div class="bg-white p-6 rounded-xl shadow-lg"><p class="text-gray-500">Nenhum registro de notas práticas encontrado.</p></div>'; return; }
+            panel.innerHTML = notas.map((nota, index) => {
                 const dataHora = nota['Data/Hora'];
-                // [FIX] Garante que a data seja tratada como string antes de criar o Date
                 const dataFormatada = dataHora ? new Date(String(dataHora).replace(/-/g, '/')).toLocaleDateString('pt-BR') : 'N/A';
-                
                 const chaveMedia = Object.keys(nota).find(k => k.toUpperCase().includes('MÉDIA (NOTA FINAL)')) || 'MÉDIA (NOTA FINAL):';
                 let mediaFinal = parseFloat(String(nota[chaveMedia] || '0').replace(',', '.'));
                 if (isNaN(mediaFinal)) mediaFinal = 0;
-
                 const chaveComentario = Object.keys(nota).find(k => k.toUpperCase().includes('COMENTÁRIOS')) || 'COMENTÁRIOS DO(A) SUPERVISOR(A):';
                 const comentario = nota[chaveComentario] || 'Sem comentários.';
-
                 return `
-                <div class="bg-white p-5 rounded-xl shadow-lg flex space-x-5">
-                    <div class="flex-shrink-0">
-                        <div class="radial-progress" style="--value:${mediaFinal * 10};">
-                            <span class="radial-progress-value">${mediaFinal.toFixed(1)}</span>
+                    <div class="bg-white p-5 rounded-xl shadow-lg flex space-x-5">
+                        <div class="flex-shrink-0">
+                            <div class="radial-progress" style="--value:${mediaFinal * 10};"><span class="radial-progress-value">${mediaFinal.toFixed(1)}</span></div>
                         </div>
-                    </div>
-                    <div class="flex-grow">
-                        <h4 class="text-md font-semibold text-blue-700">${nota.nomePratica} (Avaliação ${index + 1})</h4>
-                        <div class="text-xs text-gray-500 mt-1 space-x-4">
-                            <span><strong>Data:</strong> ${dataFormatada}</span>
-                            <span><strong>Unidade:</strong> ${nota.Unidade || 'N/A'}</span>
-                            <span><strong>Supervisor:</strong> ${nota.Supervisor || 'N/A'}</span>
-                        </div>
-                        <details class="mt-3">
-                            <summary class="text-xs text-gray-600 font-medium cursor-pointer hover:text-blue-600">
-                                Ver comentário do supervisor
-                            </summary>
-                            <p class="text-sm italic text-gray-700 mt-2 p-3 bg-gray-50 rounded-md border border-gray-200">
-                                ${comentario}
-                            </p>
-                        </details>
-                    </div>
-                </div>
-            `}).join('');
-            panel.innerHTML = html;
+                        <div class="flex-grow">
+                            <h4 class="text-md font-semibold text-blue-700">${nota.nomePratica} (Avaliação ${index + 1})</h4>
+                            <div class="text-xs text-gray-500 mt-1 space-x-4"><span><strong>Data:</strong> ${dataFormatada}</span><span><strong>Unidade:</strong> ${nota.Unidade || 'N/A'}</span><span><strong>Supervisor:</strong> ${nota.Supervisor || 'N/A'}</span></div>
+                            <details class="mt-3"><summary class="text-xs text-gray-600 font-medium cursor-pointer hover:text-blue-600">Ver comentário do supervisor</summary><p class="text-sm italic text-gray-700 mt-2 p-3 bg-gray-50 rounded-md border border-gray-200">${comentario}</p></details>
+                        </div></div>`;
+            }).join('');
         }
 
         // Inicia a aplicação
