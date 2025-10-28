@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Alunos PRO++ v4</title>
+    <title>Dashboard Alunos PRO++ v5</title>
     <!-- Carrega o Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -59,9 +59,9 @@
         .donut-chart { position: relative; width: 130px; height: 130px; border-radius: 50%; background: conic-gradient( var(--chart-segments) ); transition: transform 0.3s ease; }
         .donut-chart:hover { transform: scale(1.05); }
         .donut-chart::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 65%; height: 65%; background: #fff; border-radius: 50%; box-shadow: inset 0 0 5px rgba(0,0,0,0.05);}
-        .donut-legend ul { list-style: none; padding: 0; margin: 0; font-size: 0.7rem; color: #475569; }
-        .donut-legend li { display: flex; align-items: center; margin-bottom: 0.45rem; }
-        .legend-color-box { width: 10px; height: 10px; border-radius: 2px; margin-right: 0.6rem; }
+        .donut-legend ul { list-style: none; padding: 0; margin: 0; font-size: 0.7rem; color: #475569; max-width: 150px; /* Limita largura legenda */ }
+        .donut-legend li { display: flex; align-items: center; margin-bottom: 0.45rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; /* Evita quebra de linha */ }
+        .legend-color-box { width: 10px; height: 10px; border-radius: 2px; margin-right: 0.6rem; flex-shrink: 0; }
 
         /* --- Abas Detalhe Aluno --- */
         #student-tabs-nav { -ms-overflow-style: none; scrollbar-width: none; }
@@ -73,15 +73,15 @@
         .tab-button::after { content: none; } /* Remove ::after */
 
         /* --- Lista de Alunos - Cards Flutuantes --- */
-        .student-group-header { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #0f172a; /* slate-900 */ background-color: transparent; /* Remove bg */ padding: 0.5rem 0.25rem; margin-top: 1.75rem; margin-bottom: 1rem; border: none; border-bottom: 2px solid #38bdf8; /* sky-400 */ position: sticky; top: -1px; /* Ajuste para não cortar borda */ z-index: 5; background: linear-gradient(to bottom, rgba(241, 245, 249, 1) 80%, rgba(241, 245, 249, 0)); /* Fade background */ }
+        .student-group-header { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #0f172a; /* slate-900 */ background-color: transparent; padding: 0.5rem 0.25rem; margin-top: 1.75rem; margin-bottom: 1rem; border: none; border-bottom: 2px solid #38bdf8; /* sky-400 */ position: sticky; top: -1px; z-index: 5; background: linear-gradient(to bottom, rgba(241, 245, 249, 1) 80%, rgba(241, 245, 249, 0)); }
         .student-card { background-color: #ffffff; border-radius: 0.5rem; border: 1px solid #e2e8f0; padding: 0.8rem; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); transition: all 0.25s ease-in-out; cursor: pointer; position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; }
-        .student-card:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 6px 12px -2px rgb(0 0 0 / 0.1), 0 3px 7px -3px rgb(0 0 0 / 0.08); border-color: #7dd3fc; /* sky-300 */ z-index: 10; }
-        .student-card img { width: 3rem; height: 3rem; border-radius: 9999px; object-cover; background-color: #e2e8f0; border: 2px solid white; box-shadow: 0 0 0 1px #cbd5e1; /* slate-300 */ margin-bottom: 0.5rem; }
+        .student-card:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 6px 12px -2px rgb(0 0 0 / 0.1), 0 3px 7px -3px rgb(0 0 0 / 0.08); border-color: #7dd3fc; z-index: 10; }
+        .student-card img { width: 3rem; height: 3rem; border-radius: 9999px; object-cover; background-color: #e2e8f0; border: 2px solid white; box-shadow: 0 0 0 1px #cbd5e1; margin-bottom: 0.5rem; }
         .student-card .student-name { font-size: 0.8rem; font-weight: 600; color: #1e293b; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 0.1rem; }
         .student-card .student-course { font-size: 0.65rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-        .student-card.inactive-card { opacity: 0.65; background-color: #f8fafc; /* slate-50 */ border-style: dashed; }
-        .student-card.inactive-card:hover { opacity: 0.8; }
-        .inactive-badge { position: absolute; top: 0.4rem; right: 0.4rem; transform: rotate(0deg); } /* Sem rotação */
+        .student-card.inactive-card { opacity: 0.65; background-color: #f8fafc; border-style: dashed; }
+        .student-card.inactive-card:hover { opacity: 0.8; transform: translateY(-2px) scale(1.01); /* Hover mais sutil p/ inativos */ }
+        .inactive-badge { position: absolute; top: 0.4rem; right: 0.4rem; }
 
 
         /* --- Tabelas (Faltas) --- */
@@ -123,8 +123,8 @@
         .badge-red { background-color: #ffe4e6; color: #be123c; border-color: #fda4af;} /* Rose */
 
         /* --- Caixa de Erro --- */
-        #error-message { background-color: #be123c; color: white; padding: 0.8rem 1.5rem; border-radius: 0.5rem; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); font-weight: 500; border-left: 5px solid #831843; animation: fadeInDown 0.5s ease-out; }
-        @keyframes fadeInDown { from { opacity: 0; transform: translate(-50%, -20px); } to { opacity: 1; transform: translate(-50%, 0); } }
+        #error-message { background-color: #be123c; color: white; padding: 0.8rem 1.5rem; border-radius: 0.5rem; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); font-weight: 500; border-left: 5px solid #831843; animation: fadeInDown 0.5s ease-out; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 10000; } /* Fixado no rodapé */
+        @keyframes fadeInDown { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } } /* Animação de baixo */
         #error-message button { font-weight: 700; opacity: 0.7; transition: opacity 0.2s; } #error-message button:hover { opacity: 1; }
 
         /* --- Scrollbars --- */
@@ -135,11 +135,14 @@
 
         /* --- Input de Busca --- */
         #search-student { transition: all 0.3s ease; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); }
-        #search-student:focus { box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.3), 0 1px 2px 0 rgb(0 0 0 / 0.05); border-color: #0ea5e9; } /* sky-500 */
+        #search-student:focus { box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.3), 0 1px 2px 0 rgb(0 0 0 / 0.05); border-color: #0ea5e9; /* sky-500 */ }
 
         /* --- Lista Ausências Recentes --- */
         #recent-absences-list li { transition: background-color 0.25s ease; padding: 0.6rem 0.25rem; border-radius: 4px; }
         #recent-absences-list li:hover { background-color: #f8fafc; }
+
+        /* --- Timestamp --- */
+        #last-update-timestamp { font-size: 0.65rem; color: #64748b; /* slate-500 */ }
 
 
     </style>
@@ -201,8 +204,11 @@
                         <!-- Coluna 1: Frequência Diária -->
                         <div class="md:col-span-1 space-y-6">
                              <div class="content-card p-5">
-                                 <h2 class="content-card-header">Frequência Diária (<span id="current-date" class="text-sm font-medium text-slate-500"></span>)</h2>
-                                 <div class="grid grid-cols-3 gap-3 mb-4 text-center">
+                                 <div class="flex justify-between items-center">
+                                      <h2 class="content-card-header mb-0 pb-0 border-b-0">Frequência Diária</h2>
+                                      <span id="current-date" class="text-xs font-medium text-slate-500"></span>
+                                 </div>
+                                 <div class="grid grid-cols-3 gap-3 my-4 text-center"> <!-- My em vez de Mb -->
                                      <div class="kpi-card p-3"><span class="kpi-label text-blue-600">ESCALADOS</span><p id="kpi-scaled" class="kpi-value text-blue-800">-</p></div>
                                      <div class="kpi-card p-3"><span class="kpi-label text-green-600">PRESENTES</span><p id="kpi-present" class="kpi-value text-green-800">-</p></div>
                                      <div class="kpi-card p-3"><span class="kpi-label text-red-600">AUSENTES</span><p id="kpi-absent" class="kpi-value text-red-800">-</p></div>
@@ -210,6 +216,7 @@
                                  <div id="frequency-panel" class="space-y-4 max-h-[350px] overflow-y-auto text-sm">
                                      <p class="text-slate-500 italic">Calculando...</p>
                                  </div>
+                                  <div id="last-update-timestamp" class="text-right mt-3"></div> <!-- Timestamp -->
                              </div>
                              <!-- Card Ausências Recentes -->
                              <div class="content-card p-5">
@@ -349,7 +356,7 @@
         function showLoading(show) { /* ... (sem alterações) ... */
              const overlay = document.getElementById('loading-overlay');
              overlay.style.opacity = show ? '1' : '0';
-             setTimeout(() => { overlay.style.display = show ? 'flex' : 'none'; }, show ? 0 : 600); /* Delay aumentado */
+             setTimeout(() => { overlay.style.display = show ? 'flex' : 'none'; }, show ? 0 : 600);
         }
         function showError(message) { /* ... (sem alterações) ... */
              console.error(message);
@@ -362,7 +369,7 @@
 
         // --- INICIALIZAÇÃO E CARGA ---
         async function init() {
-            console.log('Iniciando Dashboard PRO++ v4...'); // Nome atualizado
+            console.log('Iniciando Dashboard PRO++ v5...'); // Nome atualizado
             document.getElementById('current-date').textContent = appState.todayFullBR;
             setupSidebarNavigation();
             document.getElementById('back-to-dashboard').addEventListener('click', showAlunosList);
@@ -370,27 +377,52 @@
             setupStudentTabNavigation();
             try {
                 await fetchAllData();
-                await fetchPontoHoje();
+                await fetchPontoHoje(); // Busca inicial do ponto
                 // Renderiza após ter TODOS os dados iniciais
                 renderStudentList(appState.alunos);
-                computeAndRenderFrequency();
-                renderAtAGlance(); // Renderiza KPIs e gráficos da dashboard
-                renderRecentAbsences(); // Renderiza lista de ausências recentes
+                computeAndRenderFrequency(); // Renderiza frequência com base no ponto inicial
+                renderAtAGlance();
+                renderRecentAbsences();
                 showLoading(false);
                 switchMainTab('dashboard');
                 document.querySelector('body > div.flex').style.opacity = '1';
-                setInterval(fetchPontoHoje, 30000); // Atualiza só a frequência
-                console.log("Live update iniciado.");
+                setInterval(fetchPontoHoje, 30000); // Inicia atualizações periódicas SÓ do ponto
+                console.log("Live update da frequência iniciado.");
             } catch (error) { showError(error.message); }
         }
         async function fetchAllData() { /* ... (sem alterações) ... */
              console.log("Buscando dados estáticos..."); try { const r=await fetch(`${API_URL}?action=getAll`); if (!r.ok) throw new Error(`Rede (getAll): ${r.statusText}`); const d=await r.json(); if (!d.success) throw new Error(`API (getAll): ${d.error}`); console.log("Dados estáticos:", d); onStaticDataLoaded(d); } catch (e) { throw new Error(`Falha dados estáticos: ${e.message}`); }
         }
         function onStaticDataLoaded(data) { /* ... (sem alterações) ... */
-            appState.alunos = data.alunos || []; appState.escalas = data.escalas || {}; appState.ausenciasReposicoes = data.ausenciasReposicoes || []; appState.notasTeoricas = data.notasTeoricas || {}; appState.notasPraticas = data.notasPraticas || {}; appState.alunosMap.clear(); appState.alunos.forEach(a => { if(a.EmailHC) appState.alunosMap.set(a.EmailHC, a); }); console.log("Dados estáticos processados.");
+            appState.alunos = data.alunos || []; appState.escalas = data.escalas || {}; appState.ausenciasReposicoes = data.ausenciasReposicoes || []; appState.notasTeoricas = data.notasTeoricas || { registros: [] }; /* Garante que registros exista */ appState.notasPraticas = data.notasPraticas || {}; appState.alunosMap.clear(); appState.alunos.forEach(a => { if(a.EmailHC) appState.alunosMap.set(a.EmailHC, a); }); console.log("Dados estáticos processados.");
         }
-        async function fetchPontoHoje() { /* ... (sem alterações) ... */
-            console.log(`Buscando ponto desde: ${appState.lastPontoUpdate||'Início'}`); try{ let u=`${API_URL}?action=getPontoHoje`; const r=await fetch(u); if(!r.ok) throw new Error(`Rede (getPontoHoje): ${r.statusText}`); const d=await r.json(); if(!d.success) throw new Error(`API (getPontoHoje): ${d.error}`); console.log('Ponto:', d.hoje); appState.lastPontoUpdate=d.lastUpdate; appState.pontoHojeMap.clear(); d.hoje.forEach(p=>{if(p.EmailHC)appState.pontoHojeMap.set(p.EmailHC,p);}); computeAndRenderFrequency();} catch(e){console.warn('Falha atualizar freq:', e.message);}
+        async function fetchPontoHoje() { /* [ATUALIZADO] Adiciona timestamp */
+            const timestampElem = document.getElementById('last-update-timestamp');
+            console.log(`Buscando ponto desde: ${appState.lastPontoUpdate||'Início'}`);
+             try{
+                 let u=`${API_URL}?action=getPontoHoje`;
+                 // Descomente se quiser enviar o 'since' (requer ajuste no backend)
+                 // if (appState.lastPontoUpdate) { u += `&since=${appState.lastPontoUpdate}`; }
+                 const r=await fetch(u);
+                 if(!r.ok) throw new Error(`Rede (getPontoHoje): ${r.statusText}`);
+                 const d=await r.json();
+                 if(!d.success) throw new Error(`API (getPontoHoje): ${d.error}`);
+
+                 console.log('Ponto recebido:', d.hoje);
+                 appState.lastPontoUpdate=d.lastUpdate; // Armazena o timestamp do servidor
+                 appState.pontoHojeMap.clear();
+                 d.hoje.forEach(p=>{if(p.EmailHC)appState.pontoHojeMap.set(p.EmailHC,p);});
+                 computeAndRenderFrequency(); // Atualiza painel de frequência
+                 // Atualiza timestamp na tela
+                 if (timestampElem) {
+                     timestampElem.textContent = `Última att: ${new Date().toLocaleTimeString('pt-BR')}`;
+                 }
+             } catch(e){
+                 console.warn('Falha atualizar freq:', e.message);
+                  if (timestampElem) {
+                     timestampElem.textContent = `Falha na att: ${new Date().toLocaleTimeString('pt-BR')}`;
+                 }
+             }
         }
 
         // --- NAVEGAÇÃO PRINCIPAL ---
@@ -405,10 +437,39 @@
         function parseNota(notaStr) { /* ... (sem alterações) ... */
             if (typeof notaStr !== 'string' || notaStr.trim() === '') return 0; const n=parseFloat(notaStr.replace(',', '.')); return isNaN(n)?0:n;
         }
-        function calculateAveragesAndDistribution() { /* ... (sem alterações) ... */
+        function calculateAveragesAndDistribution() { /* [VERIFICADO] Acesso correto a notasTeoricas.registros */
             const active=appState.alunos.filter(s=>s.Status==='Ativo'); const emails=new Set(active.map(s=>s.EmailHC)); let ttSum=0; let ttCount=0; const tSums={}; const tCounts={};
-            if(appState.notasTeoricas?.registros){appState.notasTeoricas.registros.forEach(r=>{if(emails.has(r.EmailHC)){Object.keys(r).forEach(k=>{if(!['SerialNumber','NomeCompleto','EmailHC','Curso'].includes(k)&&k.trim()!==''){const n=parseNota(r[k]); if(n>0){tSums[k]=(tSums[k]||0)+n; tCounts[k]=(tCounts[k]||0)+1; ttSum+=n; ttCount++;}}});}});}
-            const tAvgs={}; Object.keys(tSums).forEach(k=>{tAvgs[k]=tCounts[k]>0?tSums[k]/tCounts[k]:0;}); const oTAvg=ttCount>0?ttSum/ttCount:0;
+            // Verifica se appState.notasTeoricas e registros existem
+            if(appState.notasTeoricas && appState.notasTeoricas.registros){
+                appState.notasTeoricas.registros.forEach(r=>{
+                    if(emails.has(r.EmailHC)){
+                        Object.keys(r).forEach(k=>{
+                            if(!['SerialNumber','NomeCompleto','EmailHC','Curso'].includes(k)&&k.trim()!==''){
+                                const n=parseNota(r[k]);
+                                if(n>0){
+                                    tSums[k]=(tSums[k]||0)+n;
+                                    tCounts[k]=(tCounts[k]||0)+1;
+                                    // A média geral deve ser calculada por aluno, não por nota individual,
+                                    // mas para simplificar, calcularemos a média de todas as notas válidas.
+                                    // Para uma média por aluno, precisaríamos agrupar primeiro.
+                                    // Vamos manter a média geral de NOTAS por enquanto.
+                                }
+                            }
+                        });
+                    }
+                });
+                // Calcula a média geral baseado nas somas por matéria
+                Object.values(tSums).forEach(sum => ttSum += sum);
+                Object.values(tCounts).forEach(count => ttCount += count);
+            } else {
+                 console.warn("appState.notasTeoricas.registros não encontrado ou vazio.");
+            }
+            const tAvgs={}; Object.keys(tSums).forEach(k=>{tAvgs[k]=tCounts[k]>0?tSums[k]/tCounts[k]:0;});
+            const oTAvg=ttCount>0?ttSum/ttCount:0; // Média de todas as notas válidas encontradas
+            console.log("Médias Teóricas Calculadas:", tAvgs);
+            console.log("Média Teórica Geral (de notas):", oTAvg);
+
+
             let tpSum=0; let tpCount=0;
             if(appState.notasPraticas){Object.values(appState.notasPraticas).forEach(p=>{if(p.registros){p.registros.forEach(r=>{if(emails.has(r.EmailHC)){const kM=Object.keys(r).find(k=>k.toUpperCase().includes('MÉDIA (NOTA FINAL)'))||null; if(kM){const n=parseNota(r[kM]); if(n>0){tpSum+=n; tpCount++;}}}});}});}
             const oPAvg=tpCount>0?tpSum/tpCount:0;
@@ -424,7 +485,7 @@
             renderCourseDistributionChart(cDist); renderTheoreticalAvgChart(tAvgs);
         }
         function renderCourseDistributionChart(distribution) { /* ... (sem alterações) ... */
-             const c=document.getElementById('course-distribution-chart'); if(!distribution||distribution.length===0){c.innerHTML='<p class="text-slate-500 text-sm italic">S/ dados curso.</p>'; return;} const colors=['#22d3ee','#a5b4fc','#fb923c','#34d399','#f472b6']; let grad=''; let cum=0; const leg=[]; distribution.forEach((item,i)=>{const clr=colors[i%colors.length]; const s=cum; const e=cum+item.percentage; if(item.percentage>0){grad+=`, ${clr} ${s}% ${e}%`;} cum=e; leg.push(`<li><span class="legend-color-box" style="background-color:${clr};"></span>${item.course} (${item.count}) - ${item.percentage.toFixed(0)}%</li>`);}); if(cum<100){grad+=`, #e2e8f0 ${cum}% 100%`;} c.innerHTML=`<div class="donut-chart" style="--chart-segments:${grad.substring(1)};"></div><div class="donut-legend"><ul>${leg.join('')}</ul></div>`;
+             const c=document.getElementById('course-distribution-chart'); if(!distribution||distribution.length===0){c.innerHTML='<p class="text-slate-500 text-sm italic">S/ dados curso.</p>'; return;} const colors=['#22d3ee','#a5b4fc','#fb923c','#34d399','#f472b6', '#facc15', '#9ca3af']; let grad=''; let cum=0; const leg=[]; distribution.forEach((item,i)=>{const clr=colors[i%colors.length]; const s=cum; const e=cum+item.percentage; if(item.percentage>0){grad+=`, ${clr} ${s}% ${e}%`;} cum=e; leg.push(`<li><span class="legend-color-box" style="background-color:${clr};"></span>${item.course} (${item.count}) - ${item.percentage.toFixed(0)}%</li>`);}); if(cum<100){grad+=`, #e2e8f0 ${cum}% 100%`;} c.innerHTML=`<div class="donut-chart" style="--chart-segments:${grad.substring(1)};"></div><div class="donut-legend"><ul>${leg.join('')}</ul></div>`;
         }
         function renderTheoreticalAvgChart(averages) { /* ... (sem alterações) ... */
              const p=document.getElementById('theoretical-avg-chart'); const sorted=Object.entries(averages).sort(([,a],[,b])=>b-a); if(sorted.length===0){p.innerHTML='<p class="text-slate-500 text-sm italic">S/ dados notas T.</p>'; return;} p.innerHTML=sorted.map(([s,a])=>{const iM=s.toUpperCase().includes('MÉDIA'); const bF=iM?'bar-fill-media':'bar-fill-normal'; const lC=iM?'text-sky-700 font-semibold':'text-slate-600'; const vC=iM?'text-sky-800 font-bold':'text-slate-700 font-semibold'; return `<div class="bar-chart-item text-xs rounded p-1.5 ${iM?'mt-2 pt-2 border-t border-slate-200':''}"><div class="flex justify-between items-center mb-0.5"><span class="bar-label ${lC} truncate pr-2" title="${s}">${s}</span><span class="bar-value ${vC} w-8 text-right">${a.toFixed(1)}</span></div><div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden bar-bg"><div class="h-full ${bF} rounded-full transition-all duration-500 ease-out" style="width:${a*10}%"></div></div></div>`;}).join('');
@@ -449,9 +510,44 @@
         function showAlunosList() { /* ... (sem alterações) ... */
              document.getElementById('student-detail-view').classList.add('hidden-view'); window.scrollTo(0,0);
         }
-        function showStudentDetail(email) { /* ... (sem alterações) ... */
-            console.log(`Detalhes: ${email}`); const i=appState.alunosMap.get(email); if(!i) return showError(`Aluno ${email} ñ encontrado.`); const es=[]; for(const n in appState.escalas){const e=appState.escalas[n]; const a=e.alunos.find(x=>x.EmailHC===email); if(a)es.push({...e,...a});} const fa=appState.ausenciasReposicoes.filter(f=>f.EmailHC===email); const nT=(appState.notasTeoricas.registros||[]).find(n=>n.EmailHC===email); const nP=[]; for(const n in appState.notasPraticas){const p=appState.notasPraticas[n]; const r=(p.registros||[]).filter(x=>x.EmailHC===email); nP.push(...r.map(i=>({nomePratica:p.nomePratica,...i})));} renderStudentHeader(i); renderStudentDetailKPIs(fa,nP); renderTabInfo(i); renderTabEscala(es); renderTabFaltas(fa); renderTabNotasTeoricas(nT); renderTabNotasPraticas(nP); document.getElementById('student-detail-view').classList.remove('hidden-view'); switchStudentTab('info'); window.scrollTo(0,0);
+        function showStudentDetail(email) { /* [ATUALIZADO] Busca notasT corretamente */
+            console.log(`Detalhes: ${email}`);
+            const info = appState.alunosMap.get(email);
+            if (!info) return showError(`Aluno ${email} ñ encontrado.`);
+
+            const escalas = [];
+            for (const n in appState.escalas) {
+                const e = appState.escalas[n];
+                const a = e.alunos.find(x => x.EmailHC === email);
+                if (a) escalas.push({ ...e, ...a }); // Combina info da escala com info do aluno na escala
+            }
+            const faltas = appState.ausenciasReposicoes.filter(f => f.EmailHC === email);
+
+            // Busca correta do registro de notas teóricas
+            const notasT = (appState.notasTeoricas.registros || []).find(n => n.EmailHC === email);
+            console.log("Notas Teóricas encontradas para o aluno:", notasT); // Log para depuração
+
+            const notasP = [];
+            for (const n in appState.notasPraticas) {
+                const p = appState.notasPraticas[n];
+                const r = (p.registros || []).filter(x => x.EmailHC === email);
+                // Adiciona nome da prática ao registro
+                nP.push(...r.map(i => ({ nomePratica: p.nomeAba || n, ...i })));
+            }
+
+            renderStudentHeader(info);
+            renderStudentDetailKPIs(faltas, nP);
+            renderTabInfo(info);
+            renderTabEscala(escalas);
+            renderTabFaltas(faltas);
+            renderTabNotasTeoricas(notasT); // Passa o registro encontrado
+            renderTabNotasPraticas(nP);
+
+            document.getElementById('student-detail-view').classList.remove('hidden-view');
+            switchStudentTab('info');
+            window.scrollTo(0, 0);
         }
+
         function setupStudentTabNavigation() { /* ... (sem alterações) ... */
              const n=document.getElementById('student-tabs-nav'); n.addEventListener('click', (e)=>{ if(e.target.tagName==='BUTTON'){const t=e.target.getAttribute('data-tab'); switchStudentTab(t);}});
         }
@@ -473,8 +569,37 @@
         function renderTabFaltas(faltas) { /* ... (sem alterações) ... */
              const c=document.getElementById('tab-faltas'); const h=`<h3 class="content-card-header p-5">Registro de Ausências e Reposições</h3>`; let p=document.getElementById('faltas-content'); if(!faltas||faltas.length===0){c.innerHTML=h+'<p class="text-slate-500 p-5 text-sm italic">Nenhum registro.</p>'; return;} if(!p){c.innerHTML=h+'<div id="faltas-content" class="max-h-[500px] overflow-y-auto"></div>'; p=document.getElementById('faltas-content');} p.innerHTML=`<table class="min-w-full text-sm"><thead class="bg-slate-50"><tr><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Ausência</th><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Reposição</th><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Local</th><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Motivo</th></tr></thead><tbody class="bg-white divide-y divide-slate-100">${faltas.map(f=>{const iP=!f.DataReposicaoISO; const sB=iP?'<span class="badge badge-yellow">Pendente</span>':'<span class="badge badge-green">Completa</span>'; const dA=f.DataAusenciaISO?new Date(f.DataAusenciaISO+'T00:00:00').toLocaleDateString('pt-BR'):'-'; const dR=f.DataReposicaoISO?new Date(f.DataReposicaoISO+'T00:00:00').toLocaleDateString('pt-BR'):'-'; const mS=f.Motivo?(f.Motivo.length>35?f.Motivo.substring(0,35)+'...':f.Motivo):'-'; return `<tr class="hover:bg-sky-50 transition-colors duration-150"><td class="px-4 py-3 text-slate-600 align-middle">${sB}</td><td class="px-4 py-3 text-slate-600 align-middle">${dA}</td><td class="px-4 py-3 text-slate-600 align-middle">${dR}</td><td class="px-4 py-3 text-slate-600 align-middle">${f.Local||'-'}</td><td class="px-4 py-3 text-slate-600 align-middle" title="${f.Motivo||''}">${mS}</td></tr>`;}).join('')}</tbody></table>`;
         }
-        function renderTabNotasTeoricas(notas) { /* ... (sem alterações) ... */
-             const p=document.getElementById('notas-t-barchart-content'); if(!notas){p.innerHTML='<p class="text-slate-500 text-sm italic">Nenhum registro.</p>';return;} const k=Object.keys(notas).filter(x=>!['SerialNumber','NomeCompleto','EmailHC','Curso'].includes(x)&&x.trim()!==''); p.innerHTML=k.map(x=>{let v=parseNota(notas[x]); const iM=x.toUpperCase().includes('MÉDIA'); const bF=iM?'bar-fill-media':'bar-fill-normal'; const lC=iM?'text-sky-700 font-semibold':'text-slate-600'; const vC=iM?'text-sky-800 font-bold':'text-slate-700 font-semibold'; return `<div class="bar-chart-item text-xs rounded p-1.5 ${iM?'pt-3 mt-3 border-t border-slate-100':''}"><div class="flex justify-between items-center mb-0.5"><span class="bar-label ${lC} truncate pr-2" title="${x}">${x}</span><span class="bar-value ${vC} w-8 text-right">${v.toFixed(1)}</span></div><div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden bar-bg"><div class="h-full ${bF} rounded-full transition-all duration-500 ease-out" style="width:${v*10}%"></div></div></div>`;}).join('');
+        /**
+         * [ATUALIZADO] Renderiza a aba "Notas Teóricas" verificando se 'notas' existe.
+         */
+        function renderTabNotasTeoricas(notas) {
+             console.log('Dados recebidos por renderTabNotasTeoricas:', notas); // Log para depuração
+             const p=document.getElementById('notas-t-barchart-content');
+             // Verifica se o objeto 'notas' existe e não está vazio
+             if(!notas || Object.keys(notas).length === 0){
+                 p.innerHTML='<p class="text-slate-500 text-sm italic">Nenhum registro de notas teóricas encontrado para este aluno.</p>';
+                 console.log("Renderizando mensagem de 'Nenhum registro'.");
+                 return;
+             }
+             // Filtra chaves válidas (matérias)
+             const k=Object.keys(notas).filter(x=>!['SerialNumber','NomeCompleto','EmailHC','Curso'].includes(x)&&x.trim()!=='');
+             console.log("Matérias encontradas:", k); // Log para depuração
+             if (k.length === 0) {
+                  p.innerHTML='<p class="text-slate-500 text-sm italic">Nenhuma nota válida encontrada para este aluno.</p>';
+                  console.log("Renderizando mensagem de 'Nenhuma nota válida'.");
+                  return;
+             }
+             // Renderiza as barras
+             p.innerHTML=k.map(x=>{
+                 let v=parseNota(notas[x]);
+                 console.log(`Matéria: ${x}, Nota Bruta: ${notas[x]}, Nota Parseada: ${v}`); // Log detalhado
+                 const iM=x.toUpperCase().includes('MÉDIA');
+                 const bF=iM?'bar-fill-media':'bar-fill-normal';
+                 const lC=iM?'text-sky-700 font-semibold':'text-slate-600';
+                 const vC=iM?'text-sky-800 font-bold':'text-slate-700 font-semibold';
+                 return `<div class="bar-chart-item text-xs rounded p-1.5 ${iM?'pt-3 mt-3 border-t border-slate-100':''}"><div class="flex justify-between items-center mb-0.5"><span class="bar-label ${lC} truncate pr-2" title="${x}">${x}</span><span class="bar-value ${vC} w-8 text-right">${v.toFixed(1)}</span></div><div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden bar-bg"><div class="h-full ${bF} rounded-full transition-all duration-500 ease-out" style="width:${v*10}%"></div></div></div>`;
+             }).join('');
+             console.log("Gráfico de notas teóricas renderizado.");
         }
         function renderTabNotasPraticas(notas) { /* ... (sem alterações) ... */
              const p=document.getElementById('notas-p-radial-content'); if(!notas||notas.length===0){p.innerHTML='<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhum registro.</p></div>'; return;} p.innerHTML=notas.map((n,i)=>{const dH=n['Data/Hora']; const dF=dH?new Date(String(dH).replace(/-/g,'/')).toLocaleDateString('pt-BR'):'N/A'; const kM=Object.keys(n).find(k=>k.toUpperCase().includes('MÉDIA (NOTA FINAL)'))||'MÉDIA (NOTA FINAL):'; let mF=parseNota(n[kM]); const kC=Object.keys(n).find(k=>k.toUpperCase().includes('COMENTÁRIOS'))||'COMENTÁRIOS DO(A) SUPERVISOR(A):'; const c=n[kC]||'Sem comentários.'; return `<div class="content-card p-5 flex space-x-5 items-center"><div class="flex-shrink-0"><div class="radial-progress" style="--value:${mF*10};"><span class="radial-progress-value">${mF.toFixed(1)}</span></div></div><div class="flex-grow"><h4 class="text-sm font-semibold text-sky-700">${n.nomePratica} (Aval. ${i+1})</h4><div class="text-xs text-slate-500 mt-1 space-x-3"><span><strong>Data:</strong> ${dF}</span><span><strong>Unid:</strong> ${n.Unidade||'-'}</span><span><strong>Sup:</strong> ${n.Supervisor||'-'}</span></div><details class="mt-2 group"><summary class="text-xs text-slate-500 font-medium cursor-pointer list-none flex items-center group-hover:text-sky-600 transition-colors"><span class="mr-1">Ver comentário</span><svg class="h-4 w-4 transform transition-transform duration-200 group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></summary><p class="text-sm italic text-slate-600 mt-2 p-3 bg-slate-50 rounded-md border border-slate-200">${c}</p></details></div></div>`;}).join('');
