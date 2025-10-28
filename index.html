@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Alunos PRO++ v5</title>
+    <title>Dashboard Alunos PRO++ v6</title>
     <!-- Carrega o Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -14,7 +14,7 @@
 
         /* Classes Utilitárias */
         .hidden-view { display: none !important; }
-        .main-content-section { display: none; opacity: 0; transition: opacity 0.5s ease-out; } /* Fade mais suave */
+        .main-content-section { display: none; opacity: 0; transition: opacity 0.5s ease-out; }
         .main-content-section.active { display: block; opacity: 1; }
         .highlight { background-color: #a5f3fc; border-radius: 2px; padding: 0 2px; color: #0e7490; font-weight: 500;}
         .student-group-header.hidden, .student-card.hidden { display: none; }
@@ -26,26 +26,26 @@
         #loading-overlay p { color: #cbd5e1; margin-top: 1.5rem; font-weight: 500; }
 
         /* --- Sidebar - Tema Escuro --- */
-        aside { background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%); } /* slate-800 to slate-900 */
+        aside { background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%); }
         .sidebar-logo-text { color: #f8fafc; }
-        .sidebar-link { transition: all 0.25s ease-in-out; border-left: 4px solid transparent; padding: 0.75rem 1.25rem; color: #a1a1aa; /* zinc-400 */ display: flex; align-items: center; } /* Padding aumentado, cor ajustada */
-        .sidebar-link svg { color: #71717a; /* zinc-500 */ transition: all 0.25s ease-in-out; margin-right: 0.8rem; flex-shrink: 0; }
-        .sidebar-link:hover { background-color: rgba(51, 65, 85, 0.6); color: #f1f5f9; border-left-color: #52525b; /* zinc-600 */ }
-        .sidebar-link:hover svg { color: #e4e4e7; /* zinc-200 */}
-        .sidebar-link.active { background-color: rgba(14, 165, 233, 0.1); /* sky-500 com 10% opacidade */ color: #f8fafc; border-left-color: #0ea5e9; /* sky-500 */ font-weight: 600; }
-        .sidebar-link.active svg { color: #38bdf8; /* sky-400 */ }
+        .sidebar-link { transition: all 0.25s ease-in-out; border-left: 4px solid transparent; padding: 0.75rem 1.25rem; color: #a1a1aa; display: flex; align-items: center; }
+        .sidebar-link svg { color: #71717a; transition: all 0.25s ease-in-out; margin-right: 0.8rem; flex-shrink: 0; }
+        .sidebar-link:hover { background-color: rgba(51, 65, 85, 0.6); color: #f1f5f9; border-left-color: #52525b; }
+        .sidebar-link:hover svg { color: #e4e4e7; }
+        .sidebar-link.active { background-color: rgba(14, 165, 233, 0.1); color: #f8fafc; border-left-color: #0ea5e9; font-weight: 600; }
+        .sidebar-link.active svg { color: #38bdf8; }
 
         /* --- Main Content Cards --- */
-        .content-card { background-color: #ffffff; border-radius: 0.75rem; /* rounded-xl */ box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); /* shadow-sm mais sutil */ border: 1px solid #e2e8f0; /* slate-200 */ transition: all 0.3s ease-in-out; border-top: 4px solid #0ea5e9; /* sky-500 */ }
-        .content-card:hover { box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.07), 0 4px 6px -4px rgb(0 0 0 / 0.07); transform: translateY(-3px); border-top-color: #0284c7; /* sky-600 */}
-        .content-card-header { font-size: 0.95rem; font-weight: 600; color: #1e293b; /* slate-800 */ margin-bottom: 1rem; padding-bottom: 0.8rem; border-bottom: 1px solid #f1f5f9; /* slate-100 */ }
+        .content-card { background-color: #ffffff; border-radius: 0.75rem; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); border: 1px solid #e2e8f0; transition: all 0.3s ease-in-out; border-top: 4px solid #0ea5e9; }
+        .content-card:hover { box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.07), 0 4px 6px -4px rgb(0 0 0 / 0.07); transform: translateY(-3px); border-top-color: #0284c7; }
+        .content-card-header { font-size: 0.95rem; font-weight: 600; color: #1e293b; margin-bottom: 1rem; padding-bottom: 0.8rem; border-bottom: 1px solid #f1f5f9; }
 
 
         /* --- KPI Cards --- */
         .kpi-card { background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 0.75rem; transition: all 0.25s ease-in-out; position: relative; overflow: hidden; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.03); }
         .kpi-card:hover { transform: scale(1.03); box-shadow: 0 4px 10px -2px rgb(0 0 0 / 0.08); z-index: 5; }
         .kpi-card > * { position: relative; z-index: 1; }
-        .kpi-card .icon-bg { padding: 0.8rem; border-radius: 0.5rem; /* rounded-lg */ }
+        .kpi-card .icon-bg { padding: 0.8rem; border-radius: 0.5rem; }
         .kpi-card .kpi-label { font-size: 0.65rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.1rem; }
         .kpi-card .kpi-value { font-size: 1.8rem; font-weight: 700; color: #0f172a; line-height: 1; }
         .kpi-icon-blue { background-color: #eff6ff; color: #2563eb; } .kpi-icon-green { background-color: #f0fdf4; color: #16a34a; } .kpi-icon-red { background-color: #fff1f2; color: #e11d48; } .kpi-icon-yellow { background-color: #fefce8; color: #ca8a04; }
@@ -59,41 +59,40 @@
         .donut-chart { position: relative; width: 130px; height: 130px; border-radius: 50%; background: conic-gradient( var(--chart-segments) ); transition: transform 0.3s ease; }
         .donut-chart:hover { transform: scale(1.05); }
         .donut-chart::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 65%; height: 65%; background: #fff; border-radius: 50%; box-shadow: inset 0 0 5px rgba(0,0,0,0.05);}
-        .donut-legend ul { list-style: none; padding: 0; margin: 0; font-size: 0.7rem; color: #475569; max-width: 150px; /* Limita largura legenda */ }
-        .donut-legend li { display: flex; align-items: center; margin-bottom: 0.45rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; /* Evita quebra de linha */ }
+        .donut-legend ul { list-style: none; padding: 0; margin: 0; font-size: 0.7rem; color: #475569; max-width: 150px; }
+        .donut-legend li { display: flex; align-items: center; margin-bottom: 0.45rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .legend-color-box { width: 10px; height: 10px; border-radius: 2px; margin-right: 0.6rem; flex-shrink: 0; }
 
         /* --- Abas Detalhe Aluno --- */
         #student-tabs-nav { -ms-overflow-style: none; scrollbar-width: none; }
         #student-tabs-nav::-webkit-scrollbar { display: none; }
-        .tab-button { transition: all 0.25s ease-in-out; padding: 0.7rem 1.1rem; font-weight: 500; font-size: 0.8rem; white-space: nowrap; color: #4b5563; /* gray-600 */ border-bottom: 3px solid transparent; margin-bottom: -1px; position: relative; background: transparent; }
-        .tab-button:hover { color: #0ea5e9; /* sky-500 */ background-color: #f0f9ff; /* sky-50 */ border-bottom-color: #bae6fd; /* sky-200 */ }
-        .tab-button.active { color: #0369a1; /* sky-700 */ font-weight: 600; border-bottom-color: #0ea5e9; background-color: transparent; }
-        /* Remove estilo antigo */
-        .tab-button::after { content: none; } /* Remove ::after */
+        .tab-button { transition: all 0.25s ease-in-out; padding: 0.7rem 1.1rem; font-weight: 500; font-size: 0.8rem; white-space: nowrap; color: #4b5563; border-bottom: 3px solid transparent; margin-bottom: -1px; position: relative; background: transparent; }
+        .tab-button:hover { color: #0ea5e9; background-color: #f0f9ff; border-bottom-color: #bae6fd; }
+        .tab-button.active { color: #0369a1; font-weight: 600; border-bottom-color: #0ea5e9; background-color: transparent; }
+        .tab-button::after { content: none; }
 
         /* --- Lista de Alunos - Cards Flutuantes --- */
-        .student-group-header { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #0f172a; /* slate-900 */ background-color: transparent; padding: 0.5rem 0.25rem; margin-top: 1.75rem; margin-bottom: 1rem; border: none; border-bottom: 2px solid #38bdf8; /* sky-400 */ position: sticky; top: -1px; z-index: 5; background: linear-gradient(to bottom, rgba(241, 245, 249, 1) 80%, rgba(241, 245, 249, 0)); }
+        .student-group-header { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #0f172a; background-color: transparent; padding: 0.5rem 0.25rem; margin-top: 1.75rem; margin-bottom: 1rem; border: none; border-bottom: 2px solid #38bdf8; position: sticky; top: -1px; z-index: 5; background: linear-gradient(to bottom, rgba(241, 245, 249, 1) 80%, rgba(241, 245, 249, 0)); }
         .student-card { background-color: #ffffff; border-radius: 0.5rem; border: 1px solid #e2e8f0; padding: 0.8rem; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); transition: all 0.25s ease-in-out; cursor: pointer; position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; }
         .student-card:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 6px 12px -2px rgb(0 0 0 / 0.1), 0 3px 7px -3px rgb(0 0 0 / 0.08); border-color: #7dd3fc; z-index: 10; }
         .student-card img { width: 3rem; height: 3rem; border-radius: 9999px; object-cover; background-color: #e2e8f0; border: 2px solid white; box-shadow: 0 0 0 1px #cbd5e1; margin-bottom: 0.5rem; }
         .student-card .student-name { font-size: 0.8rem; font-weight: 600; color: #1e293b; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 0.1rem; }
         .student-card .student-course { font-size: 0.65rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
         .student-card.inactive-card { opacity: 0.65; background-color: #f8fafc; border-style: dashed; }
-        .student-card.inactive-card:hover { opacity: 0.8; transform: translateY(-2px) scale(1.01); /* Hover mais sutil p/ inativos */ }
+        .student-card.inactive-card:hover { opacity: 0.8; transform: translateY(-2px) scale(1.01); }
         .inactive-badge { position: absolute; top: 0.4rem; right: 0.4rem; }
 
 
         /* --- Tabelas (Faltas) --- */
         #faltas-content table thead { background-color: #f8fafc; }
-        #faltas-content table th { padding: 0.75rem 1rem; font-weight: 600; color: #334155; /* slate-700 */ text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.65rem; border-bottom: 2px solid #e2e8f0; }
+        #faltas-content table th { padding: 0.75rem 1rem; font-weight: 600; color: #334155; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.65rem; border-bottom: 2px solid #e2e8f0; }
         #faltas-content table tbody tr { border-bottom: 1px solid #f1f5f9; }
         #faltas-content table tbody tr:last-child { border-bottom: none; }
-        #faltas-content table tbody tr:hover { background-color: #f0f9ff; /* sky-50 */ }
-        #faltas-content table td { padding: 0.8rem 1rem; vertical-align: middle; color: #475569; /* slate-600 */}
+        #faltas-content table tbody tr:hover { background-color: #f0f9ff; }
+        #faltas-content table td { padding: 0.8rem 1rem; vertical-align: middle; color: #475569; }
 
         /* --- Gráfico Radial --- */
-        .radial-progress { background: conic-gradient(#0ea5e9 calc(var(--value) * 1%), #e2e8f0 calc(var(--value) * 1%) 100%); } /* sky-500 */
+        .radial-progress { background: conic-gradient(#0ea5e9 calc(var(--value) * 1%), #e2e8f0 calc(var(--value) * 1%) 100%); }
         .radial-progress::before { background: #ffffff; } .radial-progress-value { color: #0f172a; }
 
         /* --- Heatmap --- */
@@ -103,15 +102,15 @@
         .heatmap-day-status { color: #1e293b; font-weight: 600; font-size: 0.6rem; }
         .heatmap-day[data-status="ausencia"] { background-color: #fee2e2; border-color: #fca5a5; } .heatmap-day[data-status="ausencia"] .heatmap-day-status { color: #b91c1c; }
         .heatmap-day[data-status="folga"] { background-color: #f1f5f9; opacity: 0.7; border-style: dashed;}
-        .heatmap-day[data-status="reposicao"] { background-color: #ecfdf5; border-color: #a7f3d0; } /* emerald-100/300 */ .heatmap-day[data-status="reposicao"] .heatmap-day-status { color: #047857; } /* emerald-700 */
-        .heatmap-day[data-status="none"], .heatmap-day:not([data-status]) { background-color: #fafafa; /* neutral-50 */ border-style: dotted; opacity: 0.6;} .heatmap-day[data-status="none"] .heatmap-day-status, .heatmap-day:not([data-status]) .heatmap-day-status { color: #a1a1aa; font-weight: 400;}
+        .heatmap-day[data-status="reposicao"] { background-color: #ecfdf5; border-color: #a7f3d0; } .heatmap-day[data-status="reposicao"] .heatmap-day-status { color: #047857; }
+        .heatmap-day[data-status="none"], .heatmap-day:not([data-status]) { background-color: #fafafa; border-style: dotted; opacity: 0.6;} .heatmap-day[data-status="none"] .heatmap-day-status, .heatmap-day:not([data-status]) .heatmap-day-status { color: #a1a1aa; font-weight: 400;}
 
         /* --- Gráfico de Barras --- */
         .bar-chart-item { transition: background-color 0.25s ease; border-radius: 4px; padding: 0.3rem 0.5rem; }
         .bar-chart-item:hover { background-color: #f0f9ff; }
         .bar-chart-item .bar-bg { background-color: #e2e8f0; }
         .bar-chart-item .bar-fill-normal { background-color: #7dd3fc; }
-        .bar-chart-item .bar-fill-media { background: linear-gradient(90deg, #38bdf8 0%, #0ea5e9 100%); } /* sky-400 to sky-500 */
+        .bar-chart-item .bar-fill-media { background: linear-gradient(90deg, #38bdf8 0%, #0ea5e9 100%); }
         .bar-chart-item .bar-label { color: #475569; font-size: 0.7rem; }
         .bar-chart-item .bar-value { color: #1e293b; font-size: 0.7rem; }
 
@@ -123,8 +122,8 @@
         .badge-red { background-color: #ffe4e6; color: #be123c; border-color: #fda4af;} /* Rose */
 
         /* --- Caixa de Erro --- */
-        #error-message { background-color: #be123c; color: white; padding: 0.8rem 1.5rem; border-radius: 0.5rem; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); font-weight: 500; border-left: 5px solid #831843; animation: fadeInDown 0.5s ease-out; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 10000; } /* Fixado no rodapé */
-        @keyframes fadeInDown { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } } /* Animação de baixo */
+        #error-message { background-color: #be123c; color: white; padding: 0.8rem 1.5rem; border-radius: 0.5rem; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); font-weight: 500; border-left: 5px solid #831843; animation: fadeInDown 0.5s ease-out; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 10000; }
+        @keyframes fadeInDown { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
         #error-message button { font-weight: 700; opacity: 0.7; transition: opacity 0.2s; } #error-message button:hover { opacity: 1; }
 
         /* --- Scrollbars --- */
@@ -135,14 +134,14 @@
 
         /* --- Input de Busca --- */
         #search-student { transition: all 0.3s ease; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); }
-        #search-student:focus { box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.3), 0 1px 2px 0 rgb(0 0 0 / 0.05); border-color: #0ea5e9; /* sky-500 */ }
+        #search-student:focus { box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.3), 0 1px 2px 0 rgb(0 0 0 / 0.05); border-color: #0ea5e9; }
 
         /* --- Lista Ausências Recentes --- */
         #recent-absences-list li { transition: background-color 0.25s ease; padding: 0.6rem 0.25rem; border-radius: 4px; }
         #recent-absences-list li:hover { background-color: #f8fafc; }
 
         /* --- Timestamp --- */
-        #last-update-timestamp { font-size: 0.65rem; color: #64748b; /* slate-500 */ }
+        #last-update-timestamp { font-size: 0.65rem; color: #64748b; }
 
 
     </style>
@@ -369,10 +368,10 @@
 
         // --- INICIALIZAÇÃO E CARGA ---
         async function init() {
-            console.log('Iniciando Dashboard PRO++ v5...'); // Nome atualizado
+            console.log('Iniciando Dashboard PRO++ v6...'); // Nome atualizado
             document.getElementById('current-date').textContent = appState.todayFullBR;
             setupSidebarNavigation();
-            document.getElementById('back-to-dashboard').addEventListener('click', showAlunosList);
+            document.getElementById('back-to-dashboard').addEventListener('click', showAlunosList); // Corrigido
             document.getElementById('search-student').addEventListener('input', filterStudentList);
             setupStudentTabNavigation();
             try {
@@ -396,93 +395,52 @@
         function onStaticDataLoaded(data) { /* ... (sem alterações) ... */
             appState.alunos = data.alunos || []; appState.escalas = data.escalas || {}; appState.ausenciasReposicoes = data.ausenciasReposicoes || []; appState.notasTeoricas = data.notasTeoricas || { registros: [] }; /* Garante que registros exista */ appState.notasPraticas = data.notasPraticas || {}; appState.alunosMap.clear(); appState.alunos.forEach(a => { if(a.EmailHC) appState.alunosMap.set(a.EmailHC, a); }); console.log("Dados estáticos processados.");
         }
-        async function fetchPontoHoje() { /* [ATUALIZADO] Adiciona timestamp */
+        async function fetchPontoHoje() { /* ... (sem alterações) ... */
             const timestampElem = document.getElementById('last-update-timestamp');
             console.log(`Buscando ponto desde: ${appState.lastPontoUpdate||'Início'}`);
              try{
                  let u=`${API_URL}?action=getPontoHoje`;
-                 // Descomente se quiser enviar o 'since' (requer ajuste no backend)
-                 // if (appState.lastPontoUpdate) { u += `&since=${appState.lastPontoUpdate}`; }
                  const r=await fetch(u);
                  if(!r.ok) throw new Error(`Rede (getPontoHoje): ${r.statusText}`);
                  const d=await r.json();
                  if(!d.success) throw new Error(`API (getPontoHoje): ${d.error}`);
-
                  console.log('Ponto recebido:', d.hoje);
-                 appState.lastPontoUpdate=d.lastUpdate; // Armazena o timestamp do servidor
+                 appState.lastPontoUpdate=d.lastUpdate;
                  appState.pontoHojeMap.clear();
                  d.hoje.forEach(p=>{if(p.EmailHC)appState.pontoHojeMap.set(p.EmailHC,p);});
-                 computeAndRenderFrequency(); // Atualiza painel de frequência
-                 // Atualiza timestamp na tela
-                 if (timestampElem) {
-                     timestampElem.textContent = `Última att: ${new Date().toLocaleTimeString('pt-BR')}`;
-                 }
-             } catch(e){
-                 console.warn('Falha atualizar freq:', e.message);
-                  if (timestampElem) {
-                     timestampElem.textContent = `Falha na att: ${new Date().toLocaleTimeString('pt-BR')}`;
-                 }
-             }
+                 computeAndRenderFrequency();
+                 if (timestampElem) { timestampElem.textContent = `Última att: ${new Date().toLocaleTimeString('pt-BR')}`; }
+             } catch(e){ console.warn('Falha atualizar freq:', e.message); if (timestampElem) { timestampElem.textContent = `Falha na att: ${new Date().toLocaleTimeString('pt-BR')}`; } }
         }
 
         // --- NAVEGAÇÃO PRINCIPAL ---
         function setupSidebarNavigation() { /* ... (sem alterações) ... */
              const sidebar = document.querySelector('aside nav'); sidebar.addEventListener('click', (e) => { const link = e.target.closest('.sidebar-link'); if (link) { e.preventDefault(); switchMainTab(link.getAttribute('data-tab')); } });
         }
-        function switchMainTab(tabName) { /* ... (sem alterações) ... */
-            console.log("Trocando aba:", tabName); document.querySelectorAll('.sidebar-link').forEach(l=>l.classList.toggle('active', l.getAttribute('data-tab')===tabName)); document.querySelectorAll('.main-content-section').forEach(s=>s.classList.toggle('active', s.id===`content-${tabName}`)); if (!document.getElementById('student-detail-view').classList.contains('hidden-view')) {document.getElementById('student-detail-view').classList.add('hidden-view');} window.scrollTo(0,0);
+        /**
+         * [CORRIGIDO] Garante que a view de detalhe seja escondida ao trocar de aba principal.
+         */
+        function switchMainTab(tabName) {
+            console.log("Trocando aba:", tabName);
+            document.querySelectorAll('.sidebar-link').forEach(l => l.classList.toggle('active', l.getAttribute('data-tab') === tabName));
+            document.querySelectorAll('.main-content-section').forEach(s => s.classList.toggle('active', s.id === `content-${tabName}`));
+            // Esconde a view de detalhe do aluno explicitamente
+            document.getElementById('student-detail-view').classList.add('hidden-view');
+            window.scrollTo(0, 0);
         }
+
 
         // --- CÁLCULOS AUXILIARES ---
         function parseNota(notaStr) { /* ... (sem alterações) ... */
             if (typeof notaStr !== 'string' || notaStr.trim() === '') return 0; const n=parseFloat(notaStr.replace(',', '.')); return isNaN(n)?0:n;
         }
-        function calculateAveragesAndDistribution() { /* [VERIFICADO] Acesso correto a notasTeoricas.registros */
-            const active=appState.alunos.filter(s=>s.Status==='Ativo'); const emails=new Set(active.map(s=>s.EmailHC)); let ttSum=0; let ttCount=0; const tSums={}; const tCounts={};
-            // Verifica se appState.notasTeoricas e registros existem
-            if(appState.notasTeoricas && appState.notasTeoricas.registros){
-                appState.notasTeoricas.registros.forEach(r=>{
-                    if(emails.has(r.EmailHC)){
-                        Object.keys(r).forEach(k=>{
-                            if(!['SerialNumber','NomeCompleto','EmailHC','Curso'].includes(k)&&k.trim()!==''){
-                                const n=parseNota(r[k]);
-                                if(n>0){
-                                    tSums[k]=(tSums[k]||0)+n;
-                                    tCounts[k]=(tCounts[k]||0)+1;
-                                    // A média geral deve ser calculada por aluno, não por nota individual,
-                                    // mas para simplificar, calcularemos a média de todas as notas válidas.
-                                    // Para uma média por aluno, precisaríamos agrupar primeiro.
-                                    // Vamos manter a média geral de NOTAS por enquanto.
-                                }
-                            }
-                        });
-                    }
-                });
-                // Calcula a média geral baseado nas somas por matéria
-                Object.values(tSums).forEach(sum => ttSum += sum);
-                Object.values(tCounts).forEach(count => ttCount += count);
-            } else {
-                 console.warn("appState.notasTeoricas.registros não encontrado ou vazio.");
-            }
-            const tAvgs={}; Object.keys(tSums).forEach(k=>{tAvgs[k]=tCounts[k]>0?tSums[k]/tCounts[k]:0;});
-            const oTAvg=ttCount>0?ttSum/ttCount:0; // Média de todas as notas válidas encontradas
-            console.log("Médias Teóricas Calculadas:", tAvgs);
-            console.log("Média Teórica Geral (de notas):", oTAvg);
-
-
-            let tpSum=0; let tpCount=0;
-            if(appState.notasPraticas){Object.values(appState.notasPraticas).forEach(p=>{if(p.registros){p.registros.forEach(r=>{if(emails.has(r.EmailHC)){const kM=Object.keys(r).find(k=>k.toUpperCase().includes('MÉDIA (NOTA FINAL)'))||null; if(kM){const n=parseNota(r[kM]); if(n>0){tpSum+=n; tpCount++;}}}});}});}
-            const oPAvg=tpCount>0?tpSum/tpCount:0;
-            const cCounts=active.reduce((acc,s)=>{const c=s.Curso||'Sem Curso'; acc[c]=(acc[c]||0)+1; return acc;},{}); const tA=active.length;
-            const cDist=Object.entries(cCounts).map(([c,n])=>({course:c, count:n, percentage:tA>0?(n/tA)*100:0})).sort((a,b)=>b.count-a.count);
-            return {overallTheoreticalAvg: oTAvg, theoreticalAverages: tAvgs, overallPracticalAvg: oPAvg, courseDistribution: cDist};
+        function calculateAveragesAndDistribution() { /* ... (sem alterações) ... */
+            const active=appState.alunos.filter(s=>s.Status==='Ativo'); const emails=new Set(active.map(s=>s.EmailHC)); let ttSum=0; let ttCount=0; const tSums={}; const tCounts={}; if(appState.notasTeoricas?.registros){appState.notasTeoricas.registros.forEach(r=>{if(emails.has(r.EmailHC)){Object.keys(r).forEach(k=>{if(!['SerialNumber','NomeCompleto','EmailHC','Curso'].includes(k)&&k.trim()!==''){const n=parseNota(r[k]); if(n>0){tSums[k]=(tSums[k]||0)+n; tCounts[k]=(tCounts[k]||0)+1;}}});}});} else {console.warn("notasTeoricas.registros não encontrado.");} Object.values(tSums).forEach(s=>ttSum+=s); Object.values(tCounts).forEach(c=>ttCount+=c); const tAvgs={}; Object.keys(tSums).forEach(k=>{tAvgs[k]=tCounts[k]>0?tSums[k]/tCounts[k]:0;}); const oTAvg=ttCount>0?ttSum/ttCount:0; console.log("Médias T Calc:", tAvgs); console.log("Média T Geral:", oTAvg); let tpSum=0; let tpCount=0; if(appState.notasPraticas){Object.values(appState.notasPraticas).forEach(p=>{if(p.registros){p.registros.forEach(r=>{if(emails.has(r.EmailHC)){const kM=Object.keys(r).find(k=>k.toUpperCase().includes('MÉDIA (NOTA FINAL)'))||null; if(kM){const n=parseNota(r[kM]); if(n>0){tpSum+=n; tpCount++;}}}});}});} const oPAvg=tpCount>0?tpSum/tpCount:0; const cCounts=active.reduce((acc,s)=>{const c=s.Curso||'Sem Curso'; acc[c]=(acc[c]||0)+1; return acc;},{}); const tA=active.length; const cDist=Object.entries(cCounts).map(([c,n])=>({course:c, count:n, percentage:tA>0?(n/tA)*100:0})).sort((a,b)=>b.count-a.count); return {overallTheoreticalAvg: oTAvg, theoreticalAverages: tAvgs, overallPracticalAvg: oPAvg, courseDistribution: cDist};
         }
 
         // --- RENDERIZAÇÃO VIEW PRINCIPAL ---
         function renderAtAGlance() { /* ... (sem alterações) ... */
-            const tS=appState.alunos.length; const aS=appState.alunos.filter(s=>s.Status==='Ativo').length; const pR=appState.ausenciasReposicoes.filter(f=>!f.DataReposicaoISO).length; const {overallTheoreticalAvg:oTAvg, theoreticalAverages:tAvgs, overallPracticalAvg:oPAvg, courseDistribution:cDist} = calculateAveragesAndDistribution();
-            document.getElementById('kpi-total-students').textContent=tS; document.getElementById('kpi-active-students').textContent=aS; document.getElementById('kpi-pending-replacements').textContent=pR; document.getElementById('kpi-avg-theoretical').textContent=oTAvg.toFixed(1); document.getElementById('kpi-avg-practical').textContent=oPAvg.toFixed(1);
-            renderCourseDistributionChart(cDist); renderTheoreticalAvgChart(tAvgs);
+            const tS=appState.alunos.length; const aS=appState.alunos.filter(s=>s.Status==='Ativo').length; const pR=appState.ausenciasReposicoes.filter(f=>!f.DataReposicaoISO).length; const {overallTheoreticalAvg:oTAvg, theoreticalAverages:tAvgs, overallPracticalAvg:oPAvg, courseDistribution:cDist} = calculateAveragesAndDistribution(); document.getElementById('kpi-total-students').textContent=tS; document.getElementById('kpi-active-students').textContent=aS; document.getElementById('kpi-pending-replacements').textContent=pR; document.getElementById('kpi-avg-theoretical').textContent=oTAvg.toFixed(1); document.getElementById('kpi-avg-practical').textContent=oPAvg.toFixed(1); renderCourseDistributionChart(cDist); renderTheoreticalAvgChart(tAvgs);
         }
         function renderCourseDistributionChart(distribution) { /* ... (sem alterações) ... */
              const c=document.getElementById('course-distribution-chart'); if(!distribution||distribution.length===0){c.innerHTML='<p class="text-slate-500 text-sm italic">S/ dados curso.</p>'; return;} const colors=['#22d3ee','#a5b4fc','#fb923c','#34d399','#f472b6', '#facc15', '#9ca3af']; let grad=''; let cum=0; const leg=[]; distribution.forEach((item,i)=>{const clr=colors[i%colors.length]; const s=cum; const e=cum+item.percentage; if(item.percentage>0){grad+=`, ${clr} ${s}% ${e}%`;} cum=e; leg.push(`<li><span class="legend-color-box" style="background-color:${clr};"></span>${item.course} (${item.count}) - ${item.percentage.toFixed(0)}%</li>`);}); if(cum<100){grad+=`, #e2e8f0 ${cum}% 100%`;} c.innerHTML=`<div class="donut-chart" style="--chart-segments:${grad.substring(1)};"></div><div class="donut-legend"><ul>${leg.join('')}</ul></div>`;
@@ -507,10 +465,10 @@
         }
 
         // --- NAVEGAÇÃO E RENDERIZAÇÃO VIEW DETALHE ALUNO ---
-        function showAlunosList() { /* ... (sem alterações) ... */
-             document.getElementById('student-detail-view').classList.add('hidden-view'); window.scrollTo(0,0);
-        }
-        function showStudentDetail(email) { /* [ATUALIZADO] Busca notasT corretamente */
+        /**
+         * [CORRIGIDO] Esconde as seções principais e mostra a view de detalhe.
+         */
+        function showStudentDetail(email) {
             console.log(`Detalhes: ${email}`);
             const info = appState.alunosMap.get(email);
             if (!info) return showError(`Aluno ${email} ñ encontrado.`);
@@ -519,34 +477,46 @@
             for (const n in appState.escalas) {
                 const e = appState.escalas[n];
                 const a = e.alunos.find(x => x.EmailHC === email);
-                if (a) escalas.push({ ...e, ...a }); // Combina info da escala com info do aluno na escala
+                if (a) escalas.push({ ...e, ...a });
             }
             const faltas = appState.ausenciasReposicoes.filter(f => f.EmailHC === email);
-
-            // Busca correta do registro de notas teóricas
             const notasT = (appState.notasTeoricas.registros || []).find(n => n.EmailHC === email);
-            console.log("Notas Teóricas encontradas para o aluno:", notasT); // Log para depuração
-
+            console.log("Notas Teóricas encontradas para o aluno:", notasT);
             const notasP = [];
             for (const n in appState.notasPraticas) {
                 const p = appState.notasPraticas[n];
                 const r = (p.registros || []).filter(x => x.EmailHC === email);
-                // Adiciona nome da prática ao registro
                 nP.push(...r.map(i => ({ nomePratica: p.nomeAba || n, ...i })));
             }
 
+            // Renderiza conteúdo
             renderStudentHeader(info);
             renderStudentDetailKPIs(faltas, nP);
             renderTabInfo(info);
             renderTabEscala(escalas);
             renderTabFaltas(faltas);
-            renderTabNotasTeoricas(notasT); // Passa o registro encontrado
+            renderTabNotasTeoricas(notasT); // Passa o registro
             renderTabNotasPraticas(nP);
 
+            // Esconde todas as seções principais
+            document.querySelectorAll('.main-content-section').forEach(s => s.classList.remove('active'));
+            // Mostra a view de detalhe
             document.getElementById('student-detail-view').classList.remove('hidden-view');
+
             switchStudentTab('info');
             window.scrollTo(0, 0);
         }
+
+        /**
+         * [CORRIGIDO] Volta para a aba 'alunos' e esconde a view de detalhe.
+         */
+         function showAlunosList() {
+            document.getElementById('student-detail-view').classList.add('hidden-view');
+            // Reativa a aba 'alunos' na sidebar e mostra o conteúdo correspondente
+            switchMainTab('alunos');
+            window.scrollTo(0, 0);
+        }
+
 
         function setupStudentTabNavigation() { /* ... (sem alterações) ... */
              const n=document.getElementById('student-tabs-nav'); n.addEventListener('click', (e)=>{ if(e.target.tagName==='BUTTON'){const t=e.target.getAttribute('data-tab'); switchStudentTab(t);}});
@@ -570,37 +540,46 @@
              const c=document.getElementById('tab-faltas'); const h=`<h3 class="content-card-header p-5">Registro de Ausências e Reposições</h3>`; let p=document.getElementById('faltas-content'); if(!faltas||faltas.length===0){c.innerHTML=h+'<p class="text-slate-500 p-5 text-sm italic">Nenhum registro.</p>'; return;} if(!p){c.innerHTML=h+'<div id="faltas-content" class="max-h-[500px] overflow-y-auto"></div>'; p=document.getElementById('faltas-content');} p.innerHTML=`<table class="min-w-full text-sm"><thead class="bg-slate-50"><tr><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Ausência</th><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Reposição</th><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Local</th><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Motivo</th></tr></thead><tbody class="bg-white divide-y divide-slate-100">${faltas.map(f=>{const iP=!f.DataReposicaoISO; const sB=iP?'<span class="badge badge-yellow">Pendente</span>':'<span class="badge badge-green">Completa</span>'; const dA=f.DataAusenciaISO?new Date(f.DataAusenciaISO+'T00:00:00').toLocaleDateString('pt-BR'):'-'; const dR=f.DataReposicaoISO?new Date(f.DataReposicaoISO+'T00:00:00').toLocaleDateString('pt-BR'):'-'; const mS=f.Motivo?(f.Motivo.length>35?f.Motivo.substring(0,35)+'...':f.Motivo):'-'; return `<tr class="hover:bg-sky-50 transition-colors duration-150"><td class="px-4 py-3 text-slate-600 align-middle">${sB}</td><td class="px-4 py-3 text-slate-600 align-middle">${dA}</td><td class="px-4 py-3 text-slate-600 align-middle">${dR}</td><td class="px-4 py-3 text-slate-600 align-middle">${f.Local||'-'}</td><td class="px-4 py-3 text-slate-600 align-middle" title="${f.Motivo||''}">${mS}</td></tr>`;}).join('')}</tbody></table>`;
         }
         /**
-         * [ATUALIZADO] Renderiza a aba "Notas Teóricas" verificando se 'notas' existe.
+         * [CORRIGIDO] Renderiza a aba "Notas Teóricas" verificando se 'notas' existe e iterando corretamente.
          */
         function renderTabNotasTeoricas(notas) {
-             console.log('Dados recebidos por renderTabNotasTeoricas:', notas); // Log para depuração
+             console.log('[renderTabNotasTeoricas] Dados recebidos:', notas);
              const p=document.getElementById('notas-t-barchart-content');
-             // Verifica se o objeto 'notas' existe e não está vazio
-             if(!notas || Object.keys(notas).length === 0){
+             // Verifica se 'notas' é um objeto válido e não vazio
+             if(!notas || typeof notas !== 'object' || Object.keys(notas).length === 0){
                  p.innerHTML='<p class="text-slate-500 text-sm italic">Nenhum registro de notas teóricas encontrado para este aluno.</p>';
-                 console.log("Renderizando mensagem de 'Nenhum registro'.");
+                 console.log("[renderTabNotasTeoricas] Renderizando 'Nenhum registro'.");
                  return;
              }
-             // Filtra chaves válidas (matérias)
-             const k=Object.keys(notas).filter(x=>!['SerialNumber','NomeCompleto','EmailHC','Curso'].includes(x)&&x.trim()!=='');
-             console.log("Matérias encontradas:", k); // Log para depuração
-             if (k.length === 0) {
+             // Chaves a serem ignoradas
+             const ignoreKeys = ['SerialNumber','NomeCompleto','EmailHC','Curso'];
+             // Filtra e mapeia as chaves que são matérias/médias
+             const materias = Object.keys(notas)
+                .filter(key => key.trim() !== '' && !ignoreKeys.includes(key))
+                .map(key => ({ materia: key, notaStr: notas[key] })) // Cria um array de objetos
+                .filter(item => item.notaStr !== null && item.notaStr !== undefined && String(item.notaStr).trim() !== ''); // Filtra matérias sem nota
+
+             console.log("[renderTabNotasTeoricas] Matérias com notas encontradas:", materias);
+
+             if (materias.length === 0) {
                   p.innerHTML='<p class="text-slate-500 text-sm italic">Nenhuma nota válida encontrada para este aluno.</p>';
-                  console.log("Renderizando mensagem de 'Nenhuma nota válida'.");
+                  console.log("[renderTabNotasTeoricas] Renderizando 'Nenhuma nota válida'.");
                   return;
              }
              // Renderiza as barras
-             p.innerHTML=k.map(x=>{
-                 let v=parseNota(notas[x]);
-                 console.log(`Matéria: ${x}, Nota Bruta: ${notas[x]}, Nota Parseada: ${v}`); // Log detalhado
-                 const iM=x.toUpperCase().includes('MÉDIA');
-                 const bF=iM?'bar-fill-media':'bar-fill-normal';
-                 const lC=iM?'text-sky-700 font-semibold':'text-slate-600';
-                 const vC=iM?'text-sky-800 font-bold':'text-slate-700 font-semibold';
-                 return `<div class="bar-chart-item text-xs rounded p-1.5 ${iM?'pt-3 mt-3 border-t border-slate-100':''}"><div class="flex justify-between items-center mb-0.5"><span class="bar-label ${lC} truncate pr-2" title="${x}">${x}</span><span class="bar-value ${vC} w-8 text-right">${v.toFixed(1)}</span></div><div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden bar-bg"><div class="h-full ${bF} rounded-full transition-all duration-500 ease-out" style="width:${v*10}%"></div></div></div>`;
+             p.innerHTML=materias.map(item =>{
+                 const x = item.materia;
+                 let v = parseNota(String(item.notaStr)); // Garante que é string antes de parsear
+                 console.log(`[renderTabNotasTeoricas] Matéria: ${x}, Nota Bruta: ${item.notaStr}, Nota Parseada: ${v}`);
+                 const iM = x.toUpperCase().includes('MÉDIA');
+                 const bF = iM ? 'bar-fill-media' : 'bar-fill-normal';
+                 const lC = iM ? 'text-sky-700 font-semibold' : 'text-slate-600';
+                 const vC = iM ? 'text-sky-800 font-bold' : 'text-slate-700 font-semibold';
+                 return `<div class="bar-chart-item text-xs rounded p-1.5 ${iM ? 'pt-3 mt-3 border-t border-slate-100' : ''}"><div class="flex justify-between items-center mb-0.5"><span class="bar-label ${lC} truncate pr-2" title="${x}">${x}</span><span class="bar-value ${vC} w-8 text-right">${v.toFixed(1)}</span></div><div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden bar-bg"><div class="h-full ${bF} rounded-full transition-all duration-500 ease-out" style="width:${v * 10}%"></div></div></div>`;
              }).join('');
-             console.log("Gráfico de notas teóricas renderizado.");
+             console.log("[renderTabNotasTeoricas] Gráfico de notas teóricas renderizado.");
         }
+
         function renderTabNotasPraticas(notas) { /* ... (sem alterações) ... */
              const p=document.getElementById('notas-p-radial-content'); if(!notas||notas.length===0){p.innerHTML='<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhum registro.</p></div>'; return;} p.innerHTML=notas.map((n,i)=>{const dH=n['Data/Hora']; const dF=dH?new Date(String(dH).replace(/-/g,'/')).toLocaleDateString('pt-BR'):'N/A'; const kM=Object.keys(n).find(k=>k.toUpperCase().includes('MÉDIA (NOTA FINAL)'))||'MÉDIA (NOTA FINAL):'; let mF=parseNota(n[kM]); const kC=Object.keys(n).find(k=>k.toUpperCase().includes('COMENTÁRIOS'))||'COMENTÁRIOS DO(A) SUPERVISOR(A):'; const c=n[kC]||'Sem comentários.'; return `<div class="content-card p-5 flex space-x-5 items-center"><div class="flex-shrink-0"><div class="radial-progress" style="--value:${mF*10};"><span class="radial-progress-value">${mF.toFixed(1)}</span></div></div><div class="flex-grow"><h4 class="text-sm font-semibold text-sky-700">${n.nomePratica} (Aval. ${i+1})</h4><div class="text-xs text-slate-500 mt-1 space-x-3"><span><strong>Data:</strong> ${dF}</span><span><strong>Unid:</strong> ${n.Unidade||'-'}</span><span><strong>Sup:</strong> ${n.Supervisor||'-'}</span></div><details class="mt-2 group"><summary class="text-xs text-slate-500 font-medium cursor-pointer list-none flex items-center group-hover:text-sky-600 transition-colors"><span class="mr-1">Ver comentário</span><svg class="h-4 w-4 transform transition-transform duration-200 group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></summary><p class="text-sm italic text-slate-600 mt-2 p-3 bg-slate-50 rounded-md border border-slate-200">${c}</p></details></div></div>`;}).join('');
         }
