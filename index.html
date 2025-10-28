@@ -21,202 +21,142 @@
         }
 
         /* Classes Utilitárias */
-        .hidden-view { display: none !important; } /* Garante que está escondido */
+        .hidden-view { display: none !important; }
         .main-content-section { display: none; }
         .main-content-section.active { display: block; }
+        .student-group-header.hidden, .student-list-item.hidden { display: none; } /* Para filtro */
+        .highlight { background-color: #fef9c3; /* yellow-100 */ border-radius: 2px; padding: 0 2px; }
 
         /* --- Loader --- */
         #loading-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(248, 250, 252, 0.95); /* slate-50 com mais opacidade */
+            background-color: rgba(248, 250, 252, 0.95);
             display: flex; justify-content: center; align-items: center;
             z-index: 9999; transition: opacity 0.5s ease-out; opacity: 1;
         }
         .loader {
-            border: 6px solid #e2e8f0; /* slate-200 */
-            border-top: 6px solid #3b82f6; /* blue-500 */
+            border: 6px solid #e2e8f0; border-top: 6px solid #3b82f6;
             border-radius: 50%; width: 50px; height: 50px;
             animation: spin 0.8s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         /* --- Sidebar --- */
-        aside { background-color: #ffffff; } /* white */
+        aside { background-color: #ffffff; }
         .sidebar-link {
              transition: all 0.2s ease-in-out;
              border-left: 4px solid transparent;
-             padding-left: 1rem; padding-right: 1rem; /* Ajuste para pl-4 pr-4 */
+             padding-left: 1rem; padding-right: 1rem;
         }
         .sidebar-link:hover {
-            background-color: #f1f5f9; /* slate-100 */
-            color: #0f172a; /* slate-900 */
-            border-left-color: #94a3b8; /* slate-400 */
+            background-color: #f1f5f9; color: #0f172a; border-left-color: #94a3b8;
         }
         .sidebar-link.active {
-            background-color: #eff6ff; /* blue-50 */
-            color: #2563eb; /* blue-600 */
-            border-left-color: #2563eb; /* blue-600 */
-            font-weight: 600;
+            background-color: #eff6ff; color: #2563eb; border-left-color: #2563eb; font-weight: 600;
         }
         .sidebar-link svg { transition: color 0.2s ease-in-out; }
         .sidebar-link.active svg { color: #2563eb; }
 
         /* --- Main Content Cards --- */
         .content-card {
-            background-color: #ffffff; /* white */
-            border-radius: 0.75rem; /* rounded-xl */
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); /* shadow-md */
+            background-color: #ffffff; border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
             transition: box-shadow 0.3s ease;
         }
-        .content-card:hover { /* Leve elevação no hover */
-             box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); /* shadow-lg */
-        }
+        .content-card:hover { box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); }
 
-        /* --- KPI Cards (Geral e Aluno) --- */
+        /* --- KPI Cards --- */
         .kpi-card {
-            background-color: #f8fafc; /* slate-50 */
-            border: 1px solid #e2e8f0; /* slate-200 */
-            border-radius: 0.5rem; /* rounded-lg */
+            background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem;
             transition: all 0.2s ease-in-out;
         }
-        .kpi-card:hover {
-             transform: translateY(-2px);
-             box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); /* shadow-sm */
-        }
-        .kpi-card .icon-bg { /* Fundo do ícone */
-            padding: 0.75rem; /* p-3 */
-            border-radius: 9999px; /* rounded-full */
-        }
-        .kpi-card .kpi-label { /* Texto pequeno (ex: Alunos Ativos) */
-            font-size: 0.75rem; /* text-xs */
-            font-weight: 600; /* font-semibold */
-            color: #475569; /* slate-600 */
-            text-transform: uppercase;
-        }
-        .kpi-card .kpi-value { /* Número grande */
-            font-size: 1.875rem; /* text-3xl */
-            font-weight: 700; /* font-bold */
-            color: #0f172a; /* slate-900 */
-            line-height: 1.1;
-        }
-        /* Cores específicas para KPI Icons */
-        .kpi-icon-blue { background-color: #dbeafe; color: #2563eb; } /* blue-100 / blue-600 */
-        .kpi-icon-green { background-color: #dcfce7; color: #16a34a; } /* green-100 / green-600 */
-        .kpi-icon-red { background-color: #fee2e2; color: #dc2626; } /* red-100 / red-600 */
-        .kpi-icon-yellow { background-color: #fef9c3; color: #ca8a04; } /* yellow-100 / yellow-600 */
+        .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); }
+        .kpi-card .icon-bg { padding: 0.75rem; border-radius: 9999px; }
+        .kpi-card .kpi-label { font-size: 0.75rem; font-weight: 600; color: #475569; text-transform: uppercase; }
+        .kpi-card .kpi-value { font-size: 1.875rem; font-weight: 700; color: #0f172a; line-height: 1.1; }
+        .kpi-icon-blue { background-color: #dbeafe; color: #2563eb; }
+        .kpi-icon-green { background-color: #dcfce7; color: #16a34a; }
+        .kpi-icon-red { background-color: #fee2e2; color: #dc2626; }
+        .kpi-icon-yellow { background-color: #fef9c3; color: #ca8a04; }
 
-
-        /* --- Abas (Detalhe Aluno) --- */
-        #student-tabs-nav { /* Garante scroll suave em telas menores */
-            -ms-overflow-style: none;  /* IE and Edge */
-            scrollbar-width: none;  /* Firefox */
+        /* --- Abas Detalhe Aluno (NOVO ESTILO) --- */
+        #student-tabs-nav {
+            -ms-overflow-style: none; scrollbar-width: none;
         }
-        #student-tabs-nav::-webkit-scrollbar { display: none; } /* Chrome, Safari, Opera */
+        #student-tabs-nav::-webkit-scrollbar { display: none; }
 
-        .tab-button {
-             border-bottom-width: 2px;
+        .tab-button { /* Estilo base comum */
              transition: all 0.2s ease-in-out;
-             padding-top: 0.75rem; padding-bottom: 0.75rem; /* py-3 */
-             padding-left: 0.5rem; padding-right: 0.5rem; /* px-2 - Ajustado */
+             padding: 0.6rem 1rem; /* Ajuste fino do padding */
              font-weight: 500; /* medium */
              font-size: 0.875rem; /* text-sm */
              white-space: nowrap;
-             border-color: transparent;
              color: #475569; /* slate-600 */
+             border-bottom: 2px solid transparent; /* Indicador invisível */
+             margin-bottom: -1px; /* Alinha com a borda principal */
         }
         .tab-button:hover {
-            border-color: #cbd5e1; /* slate-300 */
             color: #1e293b; /* slate-800 */
+            background-color: #f1f5f9; /* slate-100 */
+             border-bottom-color: #cbd5e1; /* slate-300 - indicador sutil no hover */
         }
         .tab-button.active {
-            border-color: #2563eb; /* blue-600 */
             color: #2563eb; /* blue-600 */
-            background-color: transparent; /* Remove fundo azul */
+            border-bottom-color: #2563eb; /* Indicador ativo */
             font-weight: 600; /* semibold */
+            background-color: transparent; /* Garante fundo transparente no ativo */
         }
+         /* Remove o fundo azul antigo que estava causando conflito */
+        .tab-button.active { background-color: transparent !important; }
+
 
         /* --- Tabelas (Faltas) --- */
-        #faltas-content table thead { background-color: #f1f5f9; } /* slate-100 */
-        #faltas-content table th {
-             padding: 0.75rem 1rem; /* px-4 py-3 */
-             font-weight: 600; /* font-semibold */
-             color: #334155; /* slate-700 */
-             text-transform: uppercase;
-             letter-spacing: 0.05em;
-        }
-        #faltas-content table tbody tr:nth-child(even) { background-color: #f8fafc; } /* slate-50 */
-        #faltas-content table tbody tr:hover { background-color: #eff6ff; } /* blue-50 */
-        #faltas-content table td {
-            padding: 0.75rem 1rem; /* px-4 py-3 */
-            vertical-align: middle;
-             color: #334155; /* slate-700 */
-        }
+        #faltas-content table thead { background-color: #f1f5f9; }
+        #faltas-content table th { padding: 0.75rem 1rem; font-weight: 600; color: #334155; text-transform: uppercase; letter-spacing: 0.05em; }
+        #faltas-content table tbody tr:nth-child(even) { background-color: #f8fafc; }
+        #faltas-content table tbody tr:hover { background-color: #eff6ff; }
+        #faltas-content table td { padding: 0.75rem 1rem; vertical-align: middle; color: #334155; }
 
         /* --- Gráfico Radial --- */
-        .radial-progress {
-            background: conic-gradient(
-                #3b82f6 /* blue-500 */ calc(var(--value) * 1%),
-                #e2e8f0 /* slate-200 */ calc(var(--value) * 1%) 100%
-            );
-        }
-         .radial-progress::before { background: #ffffff; } /* white */
-         .radial-progress-value { color: #1e293b; } /* slate-800 */
+        .radial-progress { background: conic-gradient(#3b82f6 calc(var(--value) * 1%), #e2e8f0 calc(var(--value) * 1%) 100%); }
+        .radial-progress::before { background: #ffffff; }
+        .radial-progress-value { color: #1e293b; }
 
         /* --- Heatmap --- */
-        .heatmap-day {
-            border-color: #e2e8f0; /* slate-200 */
-            background-color: #f8fafc; /* slate-50 */
-            transition: all 0.2s ease-in-out;
-        }
-         .heatmap-day:hover {
-             transform: scale(1.03);
-             box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); /* shadow-sm */
-         }
-        .heatmap-day-date { color: #475569; /* slate-600 */ border-color: #e2e8f0; }
-        .heatmap-day-status { color: #334155; /* slate-700 */ }
-        /* Cores */
-        .heatmap-day[data-status="ausencia"] { background-color: #fee2e2; border-color: #fecaca; } /* red-100 / red-200 */
-        .heatmap-day[data-status="ausencia"] .heatmap-day-status { color: #b91c1c; } /* red-700 */
-        .heatmap-day[data-status="folga"] { background-color: #f1f5f9; opacity: 0.8; } /* slate-100 */
-        .heatmap-day[data-status="reposicao"] { background-color: #dbeafe; border-color: #bfdbfe; } /* blue-100 / blue-200 */
-        .heatmap-day[data-status="reposicao"] .heatmap-day-status { color: #1d4ed8; } /* blue-700 */
-        .heatmap-day[data-status="none"], .heatmap-day:not([data-status]) { /* Estilo para dias sem status */
-            background-color: #f8fafc; /* slate-50 */
-        }
-        .heatmap-day[data-status="none"] .heatmap-day-status, .heatmap-day:not([data-status]) .heatmap-day-status {
-             color: #94a3b8; /* slate-400 */
-        }
+        .heatmap-day { border-color: #e2e8f0; background-color: #f8fafc; transition: all 0.2s ease-in-out; }
+        .heatmap-day:hover { transform: scale(1.03); box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); }
+        .heatmap-day-date { color: #475569; border-color: #e2e8f0; }
+        .heatmap-day-status { color: #334155; }
+        .heatmap-day[data-status="ausencia"] { background-color: #fee2e2; border-color: #fecaca; }
+        .heatmap-day[data-status="ausencia"] .heatmap-day-status { color: #b91c1c; }
+        .heatmap-day[data-status="folga"] { background-color: #f1f5f9; opacity: 0.8; }
+        .heatmap-day[data-status="reposicao"] { background-color: #dbeafe; border-color: #bfdbfe; }
+        .heatmap-day[data-status="reposicao"] .heatmap-day-status { color: #1d4ed8; }
+        .heatmap-day[data-status="none"], .heatmap-day:not([data-status]) { background-color: #f8fafc; }
+        .heatmap-day[data-status="none"] .heatmap-day-status, .heatmap-day:not([data-status]) .heatmap-day-status { color: #94a3b8; }
 
-
-        /* --- Gráfico de Barras (Notas Teóricas) --- */
-        #notas-t-barchart-content .bar-bg { background-color: #e2e8f0; } /* slate-200 */
-        #notas-t-barchart-content .bar-fill-normal { background-color: #60a5fa; } /* blue-400 */
-        #notas-t-barchart-content .bar-fill-media { background-color: #2563eb; } /* blue-600 */
+        /* --- Gráfico de Barras --- */
+        #notas-t-barchart-content .bar-bg { background-color: #e2e8f0; }
+        #notas-t-barchart-content .bar-fill-normal { background-color: #60a5fa; }
+        #notas-t-barchart-content .bar-fill-media { background-color: #2563eb; }
 
         /* --- Badges --- */
-        .badge { font-size: 0.7rem; padding: 0.2em 0.6em; } /* Menor e mais sutil */
-        .badge-green { background-color: #dcfce7; color: #15803d; } /* green-100 / green-700 */
-        .badge-yellow { background-color: #fef9c3; color: #a16207; } /* yellow-100 / yellow-700 */
-        .badge-gray { background-color: #f3f4f6; color: #4b5563; } /* gray-100 / gray-600 */
-        .badge-red { background-color: #fee2e2; color: #b91c1c; } /* red-100 / red-700 */
+        .badge { font-size: 0.7rem; padding: 0.2em 0.6em; }
+        .badge-green { background-color: #dcfce7; color: #15803d; }
+        .badge-yellow { background-color: #fef9c3; color: #a16207; }
+        .badge-gray { background-color: #f3f4f6; color: #4b5563; }
+        .badge-red { background-color: #fee2e2; color: #b91c1c; }
 
         /* --- Caixa de Erro --- */
-        #error-message {
-            background-color: #dc2626; /* red-600 */
-            color: white;
-            padding: 0.75rem 1.5rem; /* py-3 px-6 */
-            border-radius: 0.5rem; /* rounded-lg */
-            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); /* shadow-lg */
-            font-weight: 500; /* medium */
-        }
-         #error-message button { font-weight: 700; opacity: 0.8; transition: opacity 0.2s; }
-         #error-message button:hover { opacity: 1; }
+        #error-message { background-color: #dc2626; color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); font-weight: 500; }
+        #error-message button { font-weight: 700; opacity: 0.8; transition: opacity 0.2s; }
+        #error-message button:hover { opacity: 1; }
 
-         /* --- Scrollbars (Opcional, mas melhora o visual) --- */
+        /* --- Scrollbars --- */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; } /* slate-100 */
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; } /* slate-300 */
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; } /* slate-400 */
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
     </style>
     <!-- Importa a fonte Inter -->
@@ -224,12 +164,12 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="bg-slate-50"> <!-- Fundo mais suave -->
+<body class="bg-slate-50">
 
     <!-- Overlay de Loading -->
     <div id="loading-overlay">
         <div class="loader"></div>
-        <p class="ml-4 text-lg font-semibold text-slate-700">Carregando dados...</p> <!-- Texto mais escuro -->
+        <p class="ml-4 text-lg font-semibold text-slate-700">Carregando dados...</p>
     </div>
 
     <!-- Caixa de Erro -->
@@ -239,36 +179,26 @@
     </div>
 
     <!-- Layout Principal com Sidebar -->
-    <div class="flex h-screen bg-slate-50 opacity-0 transition-opacity duration-500"> <!-- Opacidade inicial 0 -->
+    <div class="flex h-screen bg-slate-50 opacity-0 transition-opacity duration-500">
         <!-- Sidebar -->
         <aside class="w-64 bg-white border-r border-slate-200 flex flex-col flex-shrink-0">
-            <!-- Logo/Header da Sidebar -->
             <div class="h-16 flex items-center justify-center px-4 border-b border-slate-200 flex-shrink-0">
-                 <div class="flex items-center space-x-3"> <!-- Aumentei o espaço -->
-                    <svg class="w-7 h-7 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 0 1-.375 1.5-3 3 0 0 1-5.25 0 3 3 0 0 1-.375-1.5V17.25m10.5-11.25h.008v.008h-.008V6M12 21h.008v.008H12V21m0 0H9.75M12 21H7.5M12 21H3.375M12 21h-7.5M12 21h7.5m0 0h3.375m0 0h1.875m-5.25 0h.008v.008h-.008V21m-1.5-1.5h.008v.008h-.008V19.5m-3 0h.008v.008h-.008V19.5m0 0h1.875m-1.875 0h-7.5m11.25-3.375h.008v.008h-.008V16.125m-3 0h.008v.008h-.008V16.125m0 0h1.875m-1.875 0h-7.5m11.25 0h.008v.008h-.008V16.125m-3 0h.008v.008h-.008V16.125m0 0h1.875m-1.875 0h-7.5M9 3.75h6M9 3.75h-7.5M9 3.75v1.5M9 3.75v3M9 3.75v4.5M9 3.75v6M9 3.75v7.5M9 3.75v9M9 3.75v10.5M9 3.75v12M9 3.75v13.5M9 3.75v15M9 3.75v16.5m0 0h6m0 0h-7.5m7.5 0v-1.5m0 0v-3m0 0v-4.5m0 0v-6m0 0v-7.5m0 0v-9m0 0v-10.5m0 0v-12m0 0v-13.5m0 0v-15m0 0v-16.5" />
-                     </svg>
-                     <h1 class="text-lg font-semibold text-slate-900">Ensino InCor</h1> <!-- Tamanho ajustado -->
+                 <div class="flex items-center space-x-3">
+                    <svg class="w-7 h-7 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 0 1-.375 1.5-3 3 0 0 1-5.25 0 3 3 0 0 1-.375-1.5V17.25m10.5-11.25h.008v.008h-.008V6M12 21h.008v.008H12V21m0 0H9.75M12 21H7.5M12 21H3.375M12 21h-7.5M12 21h7.5m0 0h3.375m0 0h1.875m-5.25 0h.008v.008h-.008V21m-1.5-1.5h.008v.008h-.008V19.5m-3 0h.008v.008h-.008V19.5m0 0h1.875m-1.875 0h-7.5m11.25-3.375h.008v.008h-.008V16.125m-3 0h.008v.008h-.008V16.125m0 0h1.875m-1.875 0h-7.5m11.25 0h.008v.008h-.008V16.125m-3 0h.008v.008h-.008V16.125m0 0h1.875m-1.875 0h-7.5M9 3.75h6M9 3.75h-7.5M9 3.75v1.5M9 3.75v3M9 3.75v4.5M9 3.75v6M9 3.75v7.5M9 3.75v9M9 3.75v10.5M9 3.75v12M9 3.75v13.5M9 3.75v15M9 3.75v16.5m0 0h6m0 0h-7.5m7.5 0v-1.5m0 0v-3m0 0v-4.5m0 0v-6m0 0v-7.5m0 0v-9m0 0v-10.5m0 0v-12m0 0v-13.5m0 0v-15m0 0v-16.5" /></svg>
+                     <h1 class="text-lg font-semibold text-slate-900">Ensino InCor</h1>
                  </div>
             </div>
-            <!-- Navegação Principal -->
-            <nav class="flex-grow overflow-y-auto py-6 space-y-2"> <!-- Aumentei py e space-y -->
-                <a href="#dashboard" data-tab="dashboard" class="sidebar-link active flex items-center px-4 py-2.5 text-sm text-slate-700"> <!-- Cor e padding ajustados -->
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17.5a.5.5 0 00.5.5h11a.5.5 0 00.5-.5V10.414l.293.293a1 1 0 001.414-1.414l-7-7z" />
-                    </svg>
+            <nav class="flex-grow overflow-y-auto py-6 space-y-2">
+                <a href="#dashboard" data-tab="dashboard" class="sidebar-link active flex items-center px-4 py-2.5 text-sm text-slate-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3 text-slate-400" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17.5a.5.5 0 00.5.5h11a.5.5 0 00.5-.5V10.414l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg>
                     Dashboard
                 </a>
                 <a href="#alunos" data-tab="alunos" class="sidebar-link flex items-center px-4 py-2.5 text-sm text-slate-700">
-                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
-                    </svg>
-                    Alunos
+                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3 text-slate-400" viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" /></svg>
+                     Alunos
                 </a>
                  <a href="#ponto" data-tab="ponto" class="sidebar-link flex items-center px-4 py-2.5 text-sm text-slate-700">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z" clip-rule="evenodd" />
-                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3 text-slate-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z" clip-rule="evenodd" /></svg>
                     Ponto
                 </a>
             </nav>
@@ -276,22 +206,19 @@
 
         <!-- Conteúdo Principal -->
         <div class="flex-1 flex flex-col overflow-hidden">
-            <!-- Área de Scroll Principal -->
-            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-slate-100 p-6 lg:p-8"> <!-- Fundo e padding ajustados -->
+            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-slate-100 p-6 lg:p-8">
                 
                 <!-- View Principal: Dashboard -->
                 <div id="content-dashboard" class="main-content-section">
                     <h1 class="text-2xl font-semibold text-slate-900 mb-6">Dashboard Geral</h1>
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <!-- Coluna 1: Frequência Diária -->
                         <div class="lg:col-span-1 space-y-6">
-                             <div class="content-card p-5"> <!-- Usa classe content-card -->
+                             <div class="content-card p-5">
                                  <div class="flex justify-between items-center mb-4 border-b border-slate-200 pb-3">
-                                     <h2 class="text-base font-semibold text-slate-800">Frequência Diária</h2> <!-- Ajuste semântico e visual -->
+                                     <h2 class="text-base font-semibold text-slate-800">Frequência Diária</h2>
                                      <span id="current-date" class="text-sm font-medium text-slate-500"></span>
                                  </div>
                                  <div class="grid grid-cols-3 gap-3 mb-4 text-center">
-                                     <!-- KPIs com classes kpi-card -->
                                      <div class="kpi-card p-3">
                                          <span class="kpi-label text-blue-700">ESCALADOS</span>
                                          <p id="kpi-scaled" class="kpi-value text-blue-900">-</p>
@@ -305,38 +232,24 @@
                                          <p id="kpi-absent" class="kpi-value text-red-900">-</p>
                                      </div>
                                  </div>
-                                 <div id="frequency-panel" class="space-y-4 max-h-[400px] overflow-y-auto text-sm"> <!-- Tamanho de fonte base -->
+                                 <div id="frequency-panel" class="space-y-4 max-h-[400px] overflow-y-auto text-sm">
                                      <p class="text-slate-500 italic">Calculando frequência...</p>
                                  </div>
                              </div>
                         </div>
-                        <!-- Coluna 2 e 3: Visão Geral -->
                         <div class="lg:col-span-2 space-y-6">
                              <div class="content-card p-5">
                                  <h2 class="text-base font-semibold text-slate-800 mb-4 border-b border-slate-200 pb-3">Visão Geral</h2>
-                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4"> <!-- Grid para KPIs -->
+                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                      <div class="kpi-card flex items-center p-4">
-                                         <div class="icon-bg kpi-icon-blue">
-                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-2.121M17 20v-2m0 2H5a2 2 0 01-2-2v-5a2 2 0 012-2h14a2 2 0 012 2v5a2 2 0 01-2 2h-5m-4-8a3 3 0 100-6 3 3 0 000 6z" /></svg>
-                                         </div>
-                                         <div class="ml-4">
-                                             <p class="kpi-label">Alunos Ativos</p>
-                                             <p id="kpi-active-students" class="kpi-value">-</p>
-                                         </div>
+                                         <div class="icon-bg kpi-icon-blue"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-2.121M17 20v-2m0 2H5a2 2 0 01-2-2v-5a2 2 0 012-2h14a2 2 0 012 2v5a2 2 0 01-2 2h-5m-4-8a3 3 0 100-6 3 3 0 000 6z" /></svg></div>
+                                         <div class="ml-4"><p class="kpi-label">Alunos Ativos</p><p id="kpi-active-students" class="kpi-value">-</p></div>
                                      </div>
                                      <div class="kpi-card flex items-center p-4">
-                                          <div class="icon-bg kpi-icon-yellow">
-                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                                         </div>
-                                         <div class="ml-4">
-                                             <p class="kpi-label">Reposições Pendentes</p>
-                                             <p id="kpi-pending-replacements" class="kpi-value">-</p>
-                                         </div>
+                                          <div class="icon-bg kpi-icon-yellow"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></div>
+                                         <div class="ml-4"><p class="kpi-label">Reposições Pendentes</p><p id="kpi-pending-replacements" class="kpi-value">-</p></div>
                                      </div>
-                                     <!-- Placeholder -->
-                                      <div class="md:col-span-2 text-xs text-center text-slate-400 pt-4 italic">
-                                         (Mais estatísticas em breve)
-                                     </div>
+                                      <div class="md:col-span-2 text-xs text-center text-slate-400 pt-4 italic">(Mais estatísticas em breve)</div>
                                  </div>
                              </div>
                         </div>
@@ -345,13 +258,13 @@
 
                 <!-- View: Lista de Alunos -->
                  <div id="content-alunos" class="main-content-section">
-                     <div class="flex justify-between items-center mb-6">
+                     <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
                          <h1 class="text-2xl font-semibold text-slate-900">Alunos</h1>
-                         <input type="text" id="search-student" placeholder="Buscar aluno..." class="border border-slate-300 rounded-md px-3 py-2 text-sm w-full max-w-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                         <input type="text" id="search-student" placeholder="Buscar aluno..." class="border border-slate-300 rounded-md px-3 py-2 text-sm w-full sm:w-auto max-w-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
                      </div>
-                     <div class="content-card p-5">
-                         <div id="student-list-panel" class="max-h-[calc(100vh-220px)] overflow-y-auto divide-y divide-slate-100"> <!-- Altura ajustada e divisor mais suave -->
-                             <!-- Conteúdo será renderizado pelo JS -->
+                     <div class="content-card"> <!-- Padding removido para lista ocupar tudo -->
+                         <div id="student-list-panel" class="max-h-[calc(100vh-200px)] overflow-y-auto"> <!-- Altura ajustada -->
+                             <!-- Conteúdo agrupado será renderizado pelo JS -->
                          </div>
                      </div>
                  </div>
@@ -372,7 +285,7 @@
     <!-- View: Detalhe do Aluno (Modal-like) -->
     <div id="student-detail-view" class="hidden-view fixed inset-0 bg-slate-100 z-50 overflow-y-auto">
         <header class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-10">
-            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3"> <!-- Padding Y reduzido -->
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
                 <button id="back-to-dashboard" class="flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
                     Voltar para Alunos
@@ -381,36 +294,36 @@
         </header>
 
         <!-- Header do Aluno -->
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-6"> <!-- Margin top reduzida -->
-            <div id="student-header" class="content-card p-6 flex items-center space-x-5">
-                <!-- Conteúdo renderizado -->
-            </div>
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+            <div id="student-header" class="content-card p-6 flex items-center space-x-5"></div>
         </div>
 
         <!-- KPIs do Aluno -->
-        <div id="student-kpi-header" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-5 grid grid-cols-2 md:grid-cols-4 gap-4">
-            <!-- Conteúdo renderizado -->
-        </div>
+        <div id="student-kpi-header" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-5 grid grid-cols-2 md:grid-cols-4 gap-4"></div>
 
         <!-- Abas de Navegação -->
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-6"> <!-- Margin top reduzida -->
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
             <div class="border-b border-slate-200">
-                <nav id="student-tabs-nav" class="-mb-px flex space-x-5" aria-label="Tabs"> <!-- Espaço aumentado -->
-                    <!-- Botões renderizados -->
+                <nav id="student-tabs-nav" class="flex space-x-1 sm:space-x-2 overflow-x-auto" aria-label="Tabs"> <!-- Espaço ajustado -->
+                    <button data-tab="info" class="tab-button active">Informações</button> <!-- Nomes abreviados -->
+                    <button data-tab="escala" class="tab-button">Escala</button>
+                    <button data-tab="faltas" class="tab-button">Faltas</button>
+                    <button data-tab="notas-t" class="tab-button">Notas Teóricas</button>
+                    <button data-tab="notas-p" class="tab-button">Notas Práticas</button>
                 </nav>
             </div>
 
             <!-- Conteúdo das Abas -->
-            <div id="student-tabs-content" class="mt-6 mb-16"> <!-- Margins ajustadas -->
+            <div id="student-tabs-content" class="mt-6 mb-16">
                 <div id="tab-info" class="tab-content active content-card p-6"></div>
                 <div id="tab-escala" class="tab-content"><div id="escala-heatmap-content" class="space-y-6"></div></div>
-                <div id="tab-faltas" class="tab-content content-card p-0 overflow-hidden"> <!-- Padding removido para tabela ocupar tudo -->
+                <div id="tab-faltas" class="tab-content content-card p-0 overflow-hidden">
                      <h3 class="text-base font-semibold text-slate-800 p-5 border-b border-slate-200">Registro de Ausências e Reposições</h3>
                     <div id="faltas-content" class="max-h-[500px] overflow-y-auto"></div>
                 </div>
                 <div id="tab-notas-t" class="tab-content content-card p-6">
                     <h3 class="text-base font-semibold text-slate-800 mb-5">Notas Teóricas</h3>
-                    <div id="notas-t-barchart-content" class="space-y-3"></div> <!-- Espaço reduzido -->
+                    <div id="notas-t-barchart-content" class="space-y-3"></div>
                 </div>
                 <div id="tab-notas-p" class="tab-content"><div id="notas-p-radial-content" class="space-y-5"></div></div>
             </div>
@@ -418,79 +331,55 @@
     </div>
 
 
-    <!-- CLIENT-SIDE SCRIPT (sem alterações na lógica, apenas comentários) -->
+    <!-- CLIENT-SIDE SCRIPT -->
     <script>
-        // *** Constante da API (mantida) ***
         const API_URL = "https://script.google.com/macros/s/AKfycbxq7vepPQ6F6qxPvXbLnINZbMkoBiMVRMwlfw5_O_pZMoNp-XcJijoX6DWM6g9SQhd3/exec";
         console.log(`API_URL: ${API_URL}`);
 
-        // *** Estado global (mantido) ***
-        const appState = { /* ... (sem alterações) ... */
-             lastPontoUpdate: null,
-            alunos: [],
-            alunosMap: new Map(),
-            pontoHojeMap: new Map(),
-            escalas: {},
-            ausenciasReposicoes: [],
-            notasTeoricas: {},
-            notasPraticas: {},
-            todayBR: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-            todayFullBR: new Date().toLocaleDateString('pt-BR'),
+        const appState = {
+             lastPontoUpdate: null, alunos: [], alunosMap: new Map(), pontoHojeMap: new Map(),
+             escalas: {}, ausenciasReposicoes: [], notasTeoricas: {}, notasPraticas: {},
+             todayBR: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+             todayFullBR: new Date().toLocaleDateString('pt-BR'),
         };
 
-        // *** Funções Utilitárias (showLoading, showError - mantidas) ***
-        function showLoading(show) {
-            const overlay = document.getElementById('loading-overlay');
+        function showLoading(show) { /* ... (sem alterações) ... */
+             const overlay = document.getElementById('loading-overlay');
              overlay.style.opacity = show ? '1' : '0';
-             // Delay para esconder e evitar flicker
-             setTimeout(() => {
-                 overlay.style.display = show ? 'flex' : 'none';
-             }, show ? 0 : 500);
+             setTimeout(() => { overlay.style.display = show ? 'flex' : 'none'; }, show ? 0 : 500);
         }
-
         function showError(message) { /* ... (sem alterações) ... */
              console.error(message);
-            const errorBox = document.getElementById('error-message');
-            document.getElementById('error-text').textContent = message;
-            errorBox.style.display = 'block';
-            showLoading(false);
+             const errorBox = document.getElementById('error-message');
+             document.getElementById('error-text').textContent = message;
+             errorBox.style.display = 'block';
+             showLoading(false);
         }
 
-        // -------------------------------------------
-        // INICIALIZAÇÃO E CARGA DE DADOS (lógica mantida)
-        // -------------------------------------------
+        // --- INICIALIZAÇÃO E CARGA ---
         async function init() {
             console.log('Iniciando Dashboard PRO+ Estilizado...');
             document.getElementById('current-date').textContent = appState.todayFullBR;
-            
             setupSidebarNavigation();
             document.getElementById('back-to-dashboard').addEventListener('click', showAlunosList);
             document.getElementById('search-student').addEventListener('input', filterStudentList);
             setupStudentTabNavigation();
-
             try {
                 await fetchAllData();
                 await fetchPontoHoje();
-
+                // Renderiza após ter TODOS os dados iniciais
                 renderStudentList(appState.alunos.filter(s => s.Status === 'Ativo'));
                 computeAndRenderFrequency();
                 renderAtAGlance();
-                
                 showLoading(false);
                 switchMainTab('dashboard'); // Ativa a aba inicial
-                // Revela o layout principal após o loading
                 document.querySelector('body > div.flex').style.opacity = '1';
-
-                setInterval(fetchPontoHoje, 30000);
+                setInterval(fetchPontoHoje, 30000); // Intervalo mantido
                 console.log("Live update da frequência iniciado.");
-
-            } catch (error) {
-                showError(error.message);
-            }
+            } catch (error) { showError(error.message); }
         }
-
         async function fetchAllData() { /* ... (sem alterações) ... */
-             console.log("Buscando dados estáticos (getAll)...");
+            console.log("Buscando dados estáticos (getAll)...");
             try {
                 const response = await fetch(`${API_URL}?action=getAll`);
                 if (!response.ok) throw new Error(`Erro de rede (getAll): ${response.statusText}`);
@@ -508,431 +397,267 @@
             appState.ausenciasReposicoes = data.ausenciasReposicoes || [];
             appState.notasTeoricas = data.notasTeoricas || {};
             appState.notasPraticas = data.notasPraticas || {};
-            
-            appState.alunosMap.clear(); // Limpa antes de preencher
-            appState.alunos.forEach(aluno => {
-                if(aluno.EmailHC) appState.alunosMap.set(aluno.EmailHC, aluno);
-            });
-
-            console.log("Dados estáticos processados e armazenados no appState.");
+            appState.alunosMap.clear();
+            appState.alunos.forEach(aluno => { if(aluno.EmailHC) appState.alunosMap.set(aluno.EmailHC, aluno); });
+            console.log("Dados estáticos processados.");
         }
         async function fetchPontoHoje() { /* ... (sem alterações) ... */
-             console.log(`Buscando dados de ponto (getPontoHoje) desde: ${appState.lastPontoUpdate || 'Início'}`);
+            console.log(`Buscando dados de ponto (getPontoHoje) desde: ${appState.lastPontoUpdate || 'Início'}`);
             try {
-                let url = `${API_URL}?action=getPontoHoje`;
-                // Futuro: Passar o 'since' se lastPontoUpdate existir
-                
+                let url = `${API_URL}?action=getPontoHoje`; // Futuro: &since=...
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`Erro de rede (getPontoHoje): ${response.statusText}`);
                 const data = await response.json();
                 if (!data.success) throw new Error(`Erro na API (getPontoHoje): ${data.error}`);
-
                 console.log('Dados de ponto recebidos:', data.hoje);
                 appState.lastPontoUpdate = data.lastUpdate;
-
-                appState.pontoHojeMap.clear(); // Limpa antes de preencher
-                data.hoje.forEach(ponto => {
-                    if (ponto.EmailHC) appState.pontoHojeMap.set(ponto.EmailHC, ponto);
-                });
-
-                // Re-renderiza APENAS a frequência
-                computeAndRenderFrequency();
-                
-            } catch (error) {
-                console.warn('Não foi possível atualizar a frequência:', error.message);
-                // Não é fatal, não chama showError
-            }
+                appState.pontoHojeMap.clear();
+                data.hoje.forEach(ponto => { if (ponto.EmailHC) appState.pontoHojeMap.set(ponto.EmailHC, ponto); });
+                computeAndRenderFrequency(); // Re-renderiza só a frequência
+            } catch (error) { console.warn('Não foi possível atualizar a frequência:', error.message); }
         }
 
-        // -------------------------------------------
-        // NAVEGAÇÃO PRINCIPAL (SIDEBAR - lógica mantida)
-        // -------------------------------------------
+        // --- NAVEGAÇÃO PRINCIPAL ---
         function setupSidebarNavigation() { /* ... (sem alterações) ... */
              const sidebar = document.querySelector('aside nav');
             sidebar.addEventListener('click', (e) => {
                 const link = e.target.closest('.sidebar-link');
                 if (link) {
-                    e.preventDefault(); // Impede a navegação padrão de hash
+                    e.preventDefault();
                     const tabName = link.getAttribute('data-tab');
                     switchMainTab(tabName);
                 }
             });
         }
         function switchMainTab(tabName) { /* ... (sem alterações) ... */
-             console.log("Trocando para a aba principal:", tabName);
-            // Atualiza o estado ativo na sidebar
-            document.querySelectorAll('.sidebar-link').forEach(link => {
-                link.classList.toggle('active', link.getAttribute('data-tab') === tabName);
-            });
-
-            // Mostra/Esconde as seções de conteúdo principal
-            document.querySelectorAll('.main-content-section').forEach(section => {
-                 section.classList.toggle('active', section.id === `content-${tabName}`);
-            });
-
-            // Garante que a view de detalhe do aluno esteja escondida ao trocar de aba principal
-             if (!document.getElementById('student-detail-view').classList.contains('hidden-view')) {
-                  document.getElementById('student-detail-view').classList.add('hidden-view');
-             }
-
-             window.scrollTo(0, 0); // Rola para o topo ao trocar de aba
+            console.log("Trocando para a aba principal:", tabName);
+            document.querySelectorAll('.sidebar-link').forEach(link => { link.classList.toggle('active', link.getAttribute('data-tab') === tabName); });
+            document.querySelectorAll('.main-content-section').forEach(section => { section.classList.toggle('active', section.id === `content-${tabName}`); });
+            if (!document.getElementById('student-detail-view').classList.contains('hidden-view')) { document.getElementById('student-detail-view').classList.add('hidden-view'); }
+            window.scrollTo(0, 0);
         }
 
-        // -------------------------------------------
-        // RENDERIZAÇÃO: VIEW PRINCIPAL (lógica mantida, HTML gerado usa novas classes)
-        // -------------------------------------------
-        function renderAtAGlance() { /* ... (sem alterações na lógica) ... */
-             const activeStudents = appState.alunos.filter(s => s.Status === 'Ativo').length;
+        // --- RENDERIZAÇÃO VIEW PRINCIPAL ---
+        function renderAtAGlance() { /* ... (sem alterações) ... */
+            const activeStudents = appState.alunos.filter(s => s.Status === 'Ativo').length;
             const pendingReplacements = appState.ausenciasReposicoes.filter(f => !f.DataReposicaoISO).length;
-            
             document.getElementById('kpi-active-students').textContent = activeStudents;
             document.getElementById('kpi-pending-replacements').textContent = pendingReplacements;
         }
         function findActiveScale() { /* ... (sem alterações) ... */
              for (const nomeEscala in appState.escalas) {
                 const escala = appState.escalas[nomeEscala];
-                if (escala.headersDay && escala.headersDay.includes(appState.todayBR)) {
-                    return escala;
-                }
+                if (escala.headersDay && escala.headersDay.includes(appState.todayBR)) { return escala; }
             }
-            console.warn(`Nenhuma escala encontrada para hoje (${appState.todayBR})`);
-            return null;
+            console.warn(`Nenhuma escala encontrada para hoje (${appState.todayBR})`); return null;
         }
         function computeAndRenderFrequency() { /* ... (sem alterações na lógica) ... */
              const panel = document.getElementById('frequency-panel');
-            const activeScale = findActiveScale();
+             const kpiScaled = document.getElementById('kpi-scaled');
+             const kpiPresent = document.getElementById('kpi-present');
+             const kpiAbsent = document.getElementById('kpi-absent');
+             const activeScale = findActiveScale();
 
             if (!activeScale) {
                 panel.innerHTML = `<p class="text-slate-500 italic">Nenhuma escala encontrada para hoje (${appState.todayBR}).</p>`;
-                document.getElementById('kpi-scaled').textContent = '0';
-                document.getElementById('kpi-present').textContent = '0';
-                document.getElementById('kpi-absent').textContent = '0';
-                return;
+                kpiScaled.textContent = '0'; kpiPresent.textContent = '0'; kpiAbsent.textContent = '0'; return;
             }
 
-            const present = [];
-            const absent = [];
-            let scaledToday = 0;
-            
+            const present = []; const absent = []; let scaledToday = 0;
             activeScale.alunos.forEach(alunoEscala => {
                 const diaInfo = alunoEscala.dias.find(d => d.dataColuna === appState.todayBR);
-                
-                if (diaInfo && diaInfo.status && diaInfo.status !== 'folga' && diaInfo.status !== 'ausencia') {
+                if (diaInfo?.status && diaInfo.status !== 'folga' && diaInfo.status !== 'ausencia') {
                     scaledToday++;
                     const alunoInfo = appState.alunosMap.get(alunoEscala.EmailHC) || alunoEscala;
-                    
-                    if (appState.pontoHojeMap.has(alunoEscala.EmailHC)) {
-                        const pontoInfo = appState.pontoHojeMap.get(alunoEscala.EmailHC);
-                        present.push({ ...alunoInfo, HoraEntrada: pontoInfo.HoraEntrada, StatusEscala: diaInfo.status });
-                    } else {
-                        absent.push({ ...alunoInfo, StatusEscala: diaInfo.status });
-                    }
+                    const pontoInfo = appState.pontoHojeMap.get(alunoEscala.EmailHC);
+                    if (pontoInfo) present.push({ ...alunoInfo, HoraEntrada: pontoInfo.HoraEntrada, StatusEscala: diaInfo.status });
+                    else absent.push({ ...alunoInfo, StatusEscala: diaInfo.status });
                 }
             });
 
-            document.getElementById('kpi-scaled').textContent = scaledToday;
-            document.getElementById('kpi-present').textContent = present.length;
-            document.getElementById('kpi-absent').textContent = absent.length;
-
-            let html = `
-                <div>
-                    <h3 class="font-semibold text-green-700">Presentes (${present.length})</h3>
-                    <ul class="mt-2 text-sm text-slate-700 space-y-2">
-                        ${present.length > 0 ? present.map(s => `
-                            <li class="flex justify-between items-center">
-                                <span class="truncate pr-2" title="${s.NomeCompleto}">${s.NomeCompleto}</span>
-                                <span class="badge badge-green flex-shrink-0">${s.HoraEntrada}</span>
-                            </li>`).join('') : '<li class="text-slate-500 italic text-xs">Nenhum aluno presente.</li>'}
-                    </ul>
-                </div>
-                <div class="mt-4">
-                    <h3 class="font-semibold text-red-700">Ausentes (${absent.length})</h3>
-                    <ul class="mt-2 text-sm text-slate-700 space-y-2">
-                        ${absent.length > 0 ? absent.map(s => `
-                            <li class="flex justify-between items-center">
-                                <span class="truncate pr-2" title="${s.NomeCompleto}">${s.NomeCompleto}</span>
-                                <span class="badge badge-gray flex-shrink-0" title="Escala: ${s.StatusEscala}">Ausente</span>
-                            </li>`).join('') : '<li class="text-slate-500 italic text-xs">Nenhum aluno ausente.</li>'}
-                    </ul>
-                </div>`;
-            panel.innerHTML = html;
+            kpiScaled.textContent = scaledToday; kpiPresent.textContent = present.length; kpiAbsent.textContent = absent.length;
+            // HTML usa novas classes slate
+            panel.innerHTML = `
+                <div><h3 class="font-semibold text-green-700">Presentes (${present.length})</h3><ul class="mt-2 text-sm text-slate-700 space-y-2">
+                    ${present.length > 0 ? present.map(s => `<li class="flex justify-between items-center"><span class="truncate pr-2" title="${s.NomeCompleto}">${s.NomeCompleto}</span><span class="badge badge-green flex-shrink-0">${s.HoraEntrada}</span></li>`).join('') : '<li class="text-slate-500 italic text-xs">Nenhum aluno presente.</li>'}</ul></div>
+                <div class="mt-4"><h3 class="font-semibold text-red-700">Ausentes (${absent.length})</h3><ul class="mt-2 text-sm text-slate-700 space-y-2">
+                    ${absent.length > 0 ? absent.map(s => `<li class="flex justify-between items-center"><span class="truncate pr-2" title="${s.NomeCompleto}">${s.NomeCompleto}</span><span class="badge badge-gray flex-shrink-0" title="Escala: ${s.StatusEscala}">Ausente</span></li>`).join('') : '<li class="text-slate-500 italic text-xs">Nenhum aluno ausente.</li>'}</ul></div>`;
         }
-        function renderStudentList(students) { /* ... (sem alterações na lógica) ... */
-             const panel = document.getElementById('student-list-panel');
+
+        /**
+         * [ATUALIZADO] Renderiza a lista de alunos agrupada por curso.
+         */
+        function renderStudentList(students) {
+            const panel = document.getElementById('student-list-panel');
             if (!students || students.length === 0) {
-                panel.innerHTML = '<p class="text-slate-500 p-4 text-center">Nenhum aluno ativo encontrado.</p>';
-                return;
+                panel.innerHTML = '<p class="text-slate-500 p-4 text-center">Nenhum aluno ativo encontrado.</p>'; return;
             }
 
-            const html = students.map(student => {
-                const imageUrl = student.FotoID 
-                    ? `https://lh3.googleusercontent.com/d/${student.FotoID}` // Pode precisar ajustar o =sXX-c para tamanho
-                    : 'https://placehold.co/40x40/e2e8f0/64748b?text=?'; // Placeholder com cores slate
-                return `
-                    <div class="flex items-center justify-between p-3 hover:bg-slate-50 transition-colors duration-150" data-student-name="${student.NomeCompleto.toLowerCase()}">
-                        <div class="flex items-center space-x-3">
-                            <img src="${imageUrl}" alt="Foto de ${student.NomeCompleto}" class="w-10 h-10 rounded-full object-cover bg-slate-200" onerror="this.src='https://placehold.co/40x40/e2e8f0/64748b?text=?'">
-                            <div>
-                                <p class="text-sm font-medium text-slate-900">${student.NomeCompleto}</p>
-                                <p class="text-xs text-slate-500">${student.Curso}</p>
+            // 1. Agrupar por curso
+            const groupedStudents = students.reduce((acc, student) => {
+                const course = student.Curso || 'Sem Curso Definido';
+                if (!acc[course]) acc[course] = [];
+                acc[course].push(student);
+                return acc;
+            }, {});
+
+            // 2. Ordenar cursos (opcional, mas bom para consistência)
+            const sortedCourses = Object.keys(groupedStudents).sort();
+
+            // 3. Gerar HTML
+            let html = '';
+            sortedCourses.forEach(course => {
+                html += `
+                    <div class="student-group" data-course="${course}">
+                        <h3 class="student-group-header text-xs font-semibold uppercase text-slate-500 bg-slate-100 px-4 py-2 sticky top-0 border-b border-t border-slate-200">${course} (${groupedStudents[course].length})</h3>
+                        <div class="divide-y divide-slate-100">
+                `;
+                groupedStudents[course].forEach(student => {
+                    const imageUrl = student.FotoID ? `https://lh3.googleusercontent.com/d/${student.FotoID}` : 'https://placehold.co/40x40/e2e8f0/64748b?text=?';
+                    html += `
+                        <div class="student-list-item flex items-center justify-between p-3 hover:bg-slate-50 transition-colors duration-150" data-student-email="${student.EmailHC}" data-student-name="${student.NomeCompleto.toLowerCase()}">
+                            <div class="flex items-center space-x-3">
+                                <img src="${imageUrl}" alt="Foto" class="w-10 h-10 rounded-full object-cover bg-slate-200" onerror="this.src='https://placehold.co/40x40/e2e8f0/64748b?text=?'">
+                                <div>
+                                    <p class="student-name text-sm font-medium text-slate-900">${student.NomeCompleto}</p>
+                                    <p class="text-xs text-slate-500">${student.Curso}</p>
+                                </div>
                             </div>
-                        </div>
-                        <button class="text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline px-2 py-1 rounded transition" onclick="showStudentDetail('${student.EmailHC}')">
-                            Ver Perfil
-                        </button>
-                    </div>`;
-            }).join('');
+                            <button class="text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline px-2 py-1 rounded transition" onclick="showStudentDetail('${student.EmailHC}')">
+                                Ver Perfil
+                            </button>
+                        </div>`;
+                });
+                html += `</div></div>`; // Fecha div.divide-y e div.student-group
+            });
+
             panel.innerHTML = html;
         }
-        function filterStudentList() { /* ... (sem alterações) ... */
-             const query = document.getElementById('search-student').value.toLowerCase();
-            const items = document.querySelectorAll('#student-list-panel > div');
-            items.forEach(item => {
-                const name = item.getAttribute('data-student-name');
-                item.style.display = name.includes(query) ? 'flex' : 'none';
+
+        /**
+         * [ATUALIZADO] Filtra a lista agrupada e adiciona highlight.
+         */
+        function filterStudentList() {
+            const query = document.getElementById('search-student').value.toLowerCase().trim();
+            const groups = document.querySelectorAll('.student-group');
+            const noResultsMessage = document.getElementById('no-search-results'); // Elemento a ser criado se não houver resultados
+
+            let hasVisibleStudents = false;
+
+             // Remove mensagem de "sem resultados" anterior, se houver
+             if (noResultsMessage) noResultsMessage.remove();
+
+            groups.forEach(group => {
+                const items = group.querySelectorAll('.student-list-item');
+                const header = group.querySelector('.student-group-header');
+                let groupHasVisibleItem = false;
+
+                items.forEach(item => {
+                    const nameElement = item.querySelector('.student-name');
+                    const name = item.getAttribute('data-student-name');
+                    const originalName = nameElement.textContent; // Guarda o nome original
+
+                    if (query === '' || name.includes(query)) {
+                        item.classList.remove('hidden');
+                        groupHasVisibleItem = true;
+                        hasVisibleStudents = true;
+
+                        // Adiciona highlight
+                        if (query !== '') {
+                             const regex = new RegExp(`(${query.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi');
+                             nameElement.innerHTML = originalName.replace(regex, '<span class="highlight">$1</span>');
+                        } else {
+                            nameElement.innerHTML = originalName; // Remove highlight se query vazia
+                        }
+
+                    } else {
+                        item.classList.add('hidden');
+                        nameElement.innerHTML = originalName; // Garante que não haja highlight se escondido
+                    }
+                });
+
+                // Esconde o header do grupo se NENHUM item nele está visível
+                if (header) {
+                    header.classList.toggle('hidden', !groupHasVisibleItem);
+                }
             });
+
+             // Adiciona mensagem se NENHUM aluno foi encontrado em NENHUM grupo
+             if (!hasVisibleStudents && query !== '') {
+                 const panel = document.getElementById('student-list-panel');
+                 panel.insertAdjacentHTML('beforeend', '<p id="no-search-results" class="text-slate-500 p-4 text-center italic">Nenhum aluno encontrado para "' + query + '".</p>');
+             }
         }
 
-        // -------------------------------------------
-        // NAVEGAÇÃO E RENDERIZAÇÃO: VIEW DETALHE ALUNO (lógica mantida)
-        // -------------------------------------------
+
+        // --- NAVEGAÇÃO E RENDERIZAÇÃO VIEW DETALHE ALUNO ---
         function showAlunosList() { /* ... (sem alterações) ... */
              document.getElementById('student-detail-view').classList.add('hidden-view');
              window.scrollTo(0, 0);
         }
         function showStudentDetail(email) { /* ... (sem alterações na lógica) ... */
-             console.log(`Renderizando detalhes para: ${email}`);
-            const info = appState.alunosMap.get(email);
-            if (!info) return showError(`Aluno com email ${email} não encontrado.`);
-
+            console.log(`Renderizando detalhes para: ${email}`);
+            const info = appState.alunosMap.get(email); if (!info) return showError(`Aluno ${email} não encontrado.`);
             const escalas = [];
-            for (const nomeEscala in appState.escalas) {
-                const escala = appState.escalas[nomeEscala];
-                const alunoNaEscala = escala.alunos.find(a => a.EmailHC === email);
-                if (alunoNaEscala) escalas.push({ ...escala, ...alunoNaEscala });
-            }
+            for (const n in appState.escalas) { const e = appState.escalas[n]; const a = e.alunos.find(x => x.EmailHC === email); if (a) escalas.push({ ...e, ...a }); }
             const faltas = appState.ausenciasReposicoes.filter(f => f.EmailHC === email);
             const notasT = (appState.notasTeoricas.registros || []).find(n => n.EmailHC === email);
             const notasP = [];
-            for (const nomePratica in appState.notasPraticas) {
-                const registros = (appState.notasPraticas[nomePratica].registros || []).filter(n => n.EmailHC === email);
-                 // Adiciona nomePratica corretamente
-                notasP.push(...registros.map(r => ({ nomePratica: appState.notasPraticas[nomePratica].nomePratica, ...r })));
-            }
-            
-            // Renderiza o conteúdo dentro da view de detalhe
-            renderStudentHeader(info);
-            renderStudentDetailKPIs(faltas, notasP);
-            renderTabInfo(info);
-            renderTabEscala(escalas);
-            renderTabFaltas(faltas);
-            renderTabNotasTeoricas(notasT);
-            renderTabNotasPraticas(notasP);
-
-            // Mostra a view de detalhe
+            for (const n in appState.notasPraticas) { const p = appState.notasPraticas[n]; const r = (p.registros || []).filter(x => x.EmailHC === email); notasP.push(...r.map(i => ({ nomePratica: p.nomePratica, ...i }))); }
+            renderStudentHeader(info); renderStudentDetailKPIs(faltas, notasP); renderTabInfo(info);
+            renderTabEscala(escalas); renderTabFaltas(faltas); renderTabNotasTeoricas(notasT); renderTabNotasPraticas(notasP);
             document.getElementById('student-detail-view').classList.remove('hidden-view');
-            
-            switchStudentTab('info'); // Reseta para a primeira aba
-            window.scrollTo(0, 0); // Rola para o topo
+            switchStudentTab('info'); window.scrollTo(0, 0);
         }
         function setupStudentTabNavigation() { /* ... (sem alterações) ... */
              const nav = document.getElementById('student-tabs-nav');
-            nav.addEventListener('click', (e) => {
-                if (e.target.tagName === 'BUTTON') {
-                    const tabName = e.target.getAttribute('data-tab');
-                    switchStudentTab(tabName);
-                }
-            });
+             nav.addEventListener('click', (e) => { if (e.target.tagName === 'BUTTON') { const t = e.target.getAttribute('data-tab'); switchStudentTab(t); } });
         }
         function switchStudentTab(tabName) { /* ... (sem alterações) ... */
-             // Atualiza botões das tabs de detalhe
-            document.querySelectorAll('#student-tabs-nav .tab-button').forEach(btn => {
-                btn.classList.toggle('active', btn.getAttribute('data-tab') === tabName);
-                // Não precisa mexer nas outras classes aqui, o CSS cuida disso
-            });
-            // Mostra/Esconde conteúdo das tabs de detalhe
-            document.querySelectorAll('#student-tabs-content .tab-content').forEach(content => {
-                content.classList.toggle('active', content.id === `tab-${tabName}`);
-            });
+             document.querySelectorAll('#student-tabs-nav .tab-button').forEach(b => b.classList.toggle('active', b.getAttribute('data-tab') === tabName));
+             document.querySelectorAll('#student-tabs-content .tab-content').forEach(c => c.classList.toggle('active', c.id === `tab-${tabName}`));
         }
         function renderStudentHeader(info) { /* ... (sem alterações na lógica) ... */
              const panel = document.getElementById('student-header');
-            const imageUrl = info.FotoID ? `https://lh3.googleusercontent.com/d/${info.FotoID}=s160-c` : 'https://placehold.co/80x80/e2e8f0/64748b?text=?'; // Tamanho maior
+            const imageUrl = info.FotoID ? `https://lh3.googleusercontent.com/d/${info.FotoID}=s160-c` : 'https://placehold.co/80x80/e2e8f0/64748b?text=?';
             const statusClass = info.Status === 'Ativo' ? 'badge-green' : 'badge-red';
-            panel.innerHTML = `
-                <img src="${imageUrl}" alt="Foto de ${info.NomeCompleto}" class="w-20 h-20 rounded-full object-cover shadow-md bg-slate-200" onerror="this.src='https://placehold.co/80x80/e2e8f0/64748b?text=?'">
-                <div class="flex-grow">
-                    <h2 class="text-2xl font-bold text-slate-900">${info.NomeCompleto}</h2>
-                    <p class="text-base text-slate-600">${info.Curso}</p>
-                </div>
-                <div class="ml-auto flex-shrink-0"><span class="badge ${statusClass}">${info.Status}</span></div>`;
+            panel.innerHTML = `<img src="${imageUrl}" alt="Foto" class="w-20 h-20 rounded-full object-cover shadow-md bg-slate-200" onerror="this.src='https://placehold.co/80x80/e2e8f0/64748b?text=?'"><div class="flex-grow"><h2 class="text-2xl font-bold text-slate-900">${info.NomeCompleto}</h2><p class="text-base text-slate-600">${info.Curso}</p></div><div class="ml-auto flex-shrink-0"><span class="badge ${statusClass}">${info.Status}</span></div>`;
         }
         function renderStudentDetailKPIs(faltas, notasP) { /* ... (sem alterações na lógica) ... */
              const panel = document.getElementById('student-kpi-header');
-            const totalFaltas = faltas.length;
-            const pendingFaltas = faltas.filter(f => !f.DataReposicaoISO).length;
-            let mediaGeralPratica = 0;
-            if (notasP.length > 0) {
-                let soma = 0;
-                notasP.forEach(nota => {
-                    const chaveMedia = Object.keys(nota).find(k => k.toUpperCase().includes('MÉDIA (NOTA FINAL)')) || 'MÉDIA (NOTA FINAL):';
-                    let mediaVal = parseFloat(String(nota[chaveMedia] || '0').replace(',', '.'));
-                    if (!isNaN(mediaVal)) soma += mediaVal;
-                });
-                mediaGeralPratica = soma / notasP.length;
-            }
-            // Usa as classes de KPI card
-            panel.innerHTML = `
-                <div class="kpi-card flex items-center p-4">
-                    <div class="icon-bg kpi-icon-red"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg></div>
-                    <div class="ml-3"><p class="kpi-label">Total Faltas</p><p class="kpi-value">${totalFaltas}</p></div>
-                </div>
-                <div class="kpi-card flex items-center p-4">
-                    <div class="icon-bg kpi-icon-yellow"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
-                    <div class="ml-3"><p class="kpi-label">Reposições Pendentes</p><p class="kpi-value">${pendingFaltas}</p></div>
-                </div>
-                <div class="kpi-card flex items-center p-4">
-                    <div class="icon-bg kpi-icon-blue"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
-                    <div class="ml-3"><p class="kpi-label">Média (Prática)</p><p class="kpi-value">${mediaGeralPratica.toFixed(1)}</p></div>
-                </div>
-                 <div class="kpi-card flex items-center p-4">
-                    <div class="icon-bg kpi-icon-green"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 14l9-5-9-5-9 5 9 5z" /><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5zm0 0v6" /></svg></div>
-                    <div class="ml-3"><p class="kpi-label">Módulos (Prática)</p><p class="kpi-value">${notasP.length} / ${appState.notasPraticas ? Object.keys(appState.notasPraticas).length : '?'}</p></div>
-                </div>`;
+            const totalFaltas = faltas.length; const pendingFaltas = faltas.filter(f => !f.DataReposicaoISO).length; let mediaGeralPratica = 0;
+            if (notasP.length > 0) { let soma = 0; notasP.forEach(n => { const k = Object.keys(n).find(x => x.toUpperCase().includes('MÉDIA (NOTA FINAL)')) || 'MÉDIA (NOTA FINAL):'; let v = parseFloat(String(n[k] || '0').replace(',', '.')); if (!isNaN(v)) soma += v; }); mediaGeralPratica = soma / notasP.length; }
+            panel.innerHTML = `<div class="kpi-card flex items-center p-4"><div class="icon-bg kpi-icon-red"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg></div><div class="ml-3"><p class="kpi-label">Total Faltas</p><p class="kpi-value">${totalFaltas}</p></div></div> <div class="kpi-card flex items-center p-4"><div class="icon-bg kpi-icon-yellow"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div><div class="ml-3"><p class="kpi-label">Reposições Pendentes</p><p class="kpi-value">${pendingFaltas}</p></div></div> <div class="kpi-card flex items-center p-4"><div class="icon-bg kpi-icon-blue"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div><div class="ml-3"><p class="kpi-label">Média (Prática)</p><p class="kpi-value">${mediaGeralPratica.toFixed(1)}</p></div></div> <div class="kpi-card flex items-center p-4"><div class="icon-bg kpi-icon-green"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 14l9-5-9-5-9 5 9 5z" /><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5zm0 0v6" /></svg></div><div class="ml-3"><p class="kpi-label">Módulos (Prática)</p><p class="kpi-value">${notasP.length}/${appState.notasPraticas?Object.keys(appState.notasPraticas).length:'?'}</p></div></div>`;
         }
         function renderTabInfo(info) { /* ... (sem alterações na lógica) ... */
              const panel = document.getElementById('tab-info');
-            // Usando cores slate e espaçamento ligeiramente ajustado
-            panel.innerHTML = `
-                <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5 text-sm">
-                    <div class="sm:col-span-1 border-b border-slate-100 pb-3"><dt class="font-medium text-slate-500">Email</dt><dd class="mt-1 font-semibold text-slate-900">${info.EmailHC || 'N/A'}</dd></div>
-                    <div class="sm:col-span-1 border-b border-slate-100 pb-3"><dt class="font-medium text-slate-500">Nascimento</dt><dd class="mt-1 font-semibold text-slate-900">${info.DataNascimento || 'N/A'}</dd></div>
-                    <div class="sm:col-span-1 border-b border-slate-100 pb-3"><dt class="font-medium text-slate-500">Sexo</dt><dd class="mt-1 font-semibold text-slate-900">${info.Sexo || 'N/A'}</dd></div>
-                    <div class="sm:col-span-1 border-b border-slate-100 pb-3"><dt class="font-medium text-slate-500">Estado Civil</dt><dd class="mt-1 font-semibold text-slate-900">${info.EstadoCivil || 'N/A'}</dd></div>
-                    <div class="sm:col-span-2 border-b border-slate-100 pb-3"><dt class="font-medium text-slate-500">CREFITO</dt><dd class="mt-1 font-semibold text-slate-900">${info.Crefito || 'N/A'}</dd></div>
-                </dl>`;
+             panel.innerHTML = `<dl class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5 text-sm"><div class="sm:col-span-1 border-b border-slate-100 pb-3"><dt class="font-medium text-slate-500">Email</dt><dd class="mt-1 font-semibold text-slate-900">${info.EmailHC||'N/A'}</dd></div><div class="sm:col-span-1 border-b border-slate-100 pb-3"><dt class="font-medium text-slate-500">Nascimento</dt><dd class="mt-1 font-semibold text-slate-900">${info.DataNascimento||'N/A'}</dd></div><div class="sm:col-span-1 border-b border-slate-100 pb-3"><dt class="font-medium text-slate-500">Sexo</dt><dd class="mt-1 font-semibold text-slate-900">${info.Sexo||'N/A'}</dd></div><div class="sm:col-span-1 border-b border-slate-100 pb-3"><dt class="font-medium text-slate-500">Estado Civil</dt><dd class="mt-1 font-semibold text-slate-900">${info.EstadoCivil||'N/A'}</dd></div><div class="sm:col-span-2 border-b border-slate-100 pb-3"><dt class="font-medium text-slate-500">CREFITO</dt><dd class="mt-1 font-semibold text-slate-900">${info.Crefito||'N/A'}</dd></div></dl>`;
         }
         function renderTabEscala(escalas) { /* ... (sem alterações na lógica) ... */
              const panel = document.getElementById('escala-heatmap-content');
-            if (!escalas || escalas.length === 0) {
-                panel.innerHTML = '<div class="content-card p-6"><p class="text-slate-500">Nenhum registro de escala encontrado.</p></div>'; return;
-            }
-            // Usa content-card para cada escala
-            panel.innerHTML = escalas.map(escala => `
-                <div class="content-card p-6">
-                    <h4 class="text-base font-semibold text-slate-900">${escala.nomeEscala}</h4>
-                    <p class="text-sm text-slate-600 mb-5"><strong>Unidade:</strong> ${escala.Unidade} | <strong>Supervisor:</strong> ${escala.Supervisor}</p>
-                    <div class="flex flex-wrap gap-2">
-                        ${escala.dias.map(dia => `
-                            <div class="heatmap-day" data-status="${dia.status || 'none'}" title="${dia.dataColuna}: ${dia.status || 'N/A'}">
-                                <span class="heatmap-day-date">${dia.dataColuna}</span>
-                                <span class="heatmap-day-status">${dia.status || 'N/A'}</span>
-                            </div>`).join('')}
-                    </div>
-                </div>`).join('');
+             if (!escalas || escalas.length === 0) { panel.innerHTML = '<div class="content-card p-6"><p class="text-slate-500">Nenhum registro.</p></div>'; return; }
+             panel.innerHTML = escalas.map(e => `<div class="content-card p-6"><h4 class="text-base font-semibold text-slate-900">${e.nomeEscala}</h4><p class="text-sm text-slate-600 mb-5"><strong>Unidade:</strong> ${e.Unidade} | <strong>Sup:</strong> ${e.Supervisor}</p><div class="flex flex-wrap gap-2">${e.dias.map(d => `<div class="heatmap-day" data-status="${d.status||'none'}" title="${d.dataColuna}: ${d.status||'N/A'}"><span class="heatmap-day-date">${d.dataColuna}</span><span class="heatmap-day-status">${d.status||'N/A'}</span></div>`).join('')}</div></div>`).join('');
         }
         function renderTabFaltas(faltas) { /* ... (sem alterações na lógica) ... */
-             const panel = document.getElementById('faltas-content');
-            if (!faltas || faltas.length === 0) {
-                // Adiciona a mensagem dentro do container principal se vazio
-                document.getElementById('tab-faltas').innerHTML = `
-                    <h3 class="text-base font-semibold text-slate-800 p-5 border-b border-slate-200">Registro de Ausências e Reposições</h3>
-                    <p class="text-slate-500 p-5">Nenhum registro de ausência ou reposição encontrado.</p>`;
-                return;
-             }
-             // Recria a estrutura se havia mensagem de erro
-             if (!panel) {
-                 document.getElementById('tab-faltas').innerHTML = `
-                     <h3 class="text-base font-semibold text-slate-800 p-5 border-b border-slate-200">Registro de Ausências e Reposições</h3>
-                    <div id="faltas-content" class="max-h-[500px] overflow-y-auto"></div>`;
-                 panel = document.getElementById('faltas-content'); // Pega a referência novamente
-             }
-
-            panel.innerHTML = `
-                <table class="min-w-full text-sm">
-                    <thead class="bg-slate-50"><tr>
-                        <th class="px-4 py-2 text-left font-semibold text-slate-600 uppercase tracking-wider">Status</th>
-                        <th class="px-4 py-2 text-left font-semibold text-slate-600 uppercase tracking-wider">Data Ausência</th>
-                        <th class="px-4 py-2 text-left font-semibold text-slate-600 uppercase tracking-wider">Data Reposição</th>
-                        <th class="px-4 py-2 text-left font-semibold text-slate-600 uppercase tracking-wider">Local</th>
-                        <th class="px-4 py-2 text-left font-semibold text-slate-600 uppercase tracking-wider">Motivo</th>
-                    </tr></thead>
-                    <tbody class="bg-white divide-y divide-slate-100">
-                        ${faltas.map(falta => {
-                            const isPendente = !falta.DataReposicaoISO;
-                            const statusBadge = isPendente ? '<span class="badge badge-yellow">Pendente</span>' : '<span class="badge badge-green">Completa</span>';
-                            const dataAusenciaFormatada = falta.DataAusenciaISO ? new Date(falta.DataAusenciaISO + 'T00:00:00').toLocaleDateString('pt-BR') : 'N/A';
-                            const dataReposicaoFormatada = falta.DataReposicaoISO ? new Date(falta.DataReposicaoISO + 'T00:00:00').toLocaleDateString('pt-BR') : 'N/A';
-                            const motivoShort = falta.Motivo ? (falta.Motivo.length > 35 ? falta.Motivo.substring(0, 35) + '...' : falta.Motivo) : 'N/A'; // Um pouco mais longo
-                            return `
-                                <tr class="hover:bg-slate-50 transition-colors duration-150">
-                                    <td class="px-4 py-3 text-slate-700 align-middle">${statusBadge}</td>
-                                    <td class="px-4 py-3 text-slate-700 align-middle">${dataAusenciaFormatada}</td>
-                                    <td class="px-4 py-3 text-slate-700 align-middle">${dataReposicaoFormatada}</td>
-                                    <td class="px-4 py-3 text-slate-700 align-middle">${falta.Local || 'N/A'}</td>
-                                    <td class="px-4 py-3 text-slate-700 align-middle" title="${falta.Motivo || ''}">${motivoShort}</td>
-                                </tr>`;
-                        }).join('')}
-                    </tbody></table>`;
+             const container = document.getElementById('tab-faltas'); const headerHTML = `<h3 class="text-base font-semibold text-slate-800 p-5 border-b border-slate-200">Registro de Ausências e Reposições</h3>`; let panel = document.getElementById('faltas-content');
+             if (!faltas || faltas.length === 0) { container.innerHTML = headerHTML + '<p class="text-slate-500 p-5">Nenhum registro.</p>'; return; }
+             if (!panel) { container.innerHTML = headerHTML + '<div id="faltas-content" class="max-h-[500px] overflow-y-auto"></div>'; panel = document.getElementById('faltas-content'); }
+             panel.innerHTML = `<table class="min-w-full text-sm"><thead class="bg-slate-50"><tr><th class="px-4 py-2 text-left font-semibold text-slate-600 uppercase tracking-wider">Status</th><th class="px-4 py-2 text-left font-semibold text-slate-600 uppercase tracking-wider">Ausência</th><th class="px-4 py-2 text-left font-semibold text-slate-600 uppercase tracking-wider">Reposição</th><th class="px-4 py-2 text-left font-semibold text-slate-600 uppercase tracking-wider">Local</th><th class="px-4 py-2 text-left font-semibold text-slate-600 uppercase tracking-wider">Motivo</th></tr></thead><tbody class="bg-white divide-y divide-slate-100">${faltas.map(f => { const isP = !f.DataReposicaoISO; const sB = isP ? '<span class="badge badge-yellow">Pendente</span>':'<span class="badge badge-green">Completa</span>'; const dA = f.DataAusenciaISO ? new Date(f.DataAusenciaISO+'T00:00:00').toLocaleDateString('pt-BR'):'N/A'; const dR = f.DataReposicaoISO ? new Date(f.DataReposicaoISO+'T00:00:00').toLocaleDateString('pt-BR'):'N/A'; const mS = f.Motivo ? (f.Motivo.length > 35 ? f.Motivo.substring(0, 35)+'...':f.Motivo):'N/A'; return `<tr class="hover:bg-slate-50 transition-colors duration-150"><td class="px-4 py-3 text-slate-700 align-middle">${sB}</td><td class="px-4 py-3 text-slate-700 align-middle">${dA}</td><td class="px-4 py-3 text-slate-700 align-middle">${dR}</td><td class="px-4 py-3 text-slate-700 align-middle">${f.Local||'N/A'}</td><td class="px-4 py-3 text-slate-700 align-middle" title="${f.Motivo||''}">${mS}</td></tr>`; }).join('')}</tbody></table>`;
         }
         function renderTabNotasTeoricas(notas) { /* ... (sem alterações na lógica) ... */
              const panel = document.getElementById('notas-t-barchart-content');
-            if (!notas) { panel.innerHTML = '<p class="text-slate-500">Nenhum registro de notas teóricas encontrado.</p>'; return; }
-            const chavesNotas = Object.keys(notas).filter(key => !['SerialNumber', 'NomeCompleto', 'EmailHC', 'Curso'].includes(key) && key.trim() !== '');
-            panel.innerHTML = chavesNotas.map(chave => {
-                let notaVal = parseFloat(String(notas[chave] || '0').replace(',', '.'));
-                if (isNaN(notaVal)) notaVal = 0;
-                const isMedia = chave.toUpperCase().includes('MÉDIA');
-                const barFillClass = isMedia ? 'bar-fill-media' : 'bar-fill-normal';
-                const labelColor = isMedia ? 'text-blue-700 font-semibold' : 'text-slate-600';
-                const valueColor = isMedia ? 'text-blue-800 font-bold' : 'text-slate-800 font-semibold';
-                return `
-                    <div class="text-sm ${isMedia ? 'pt-3 mt-3 border-t border-slate-100' : ''}">
-                        <div class="flex justify-between items-center mb-1">
-                            <span class="${labelColor}">${chave}</span>
-                            <span class="${valueColor} w-10 text-right">${notaVal.toFixed(1)}</span>
-                        </div>
-                        <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden bar-bg">
-                            <div class="h-full ${barFillClass} rounded-full transition-all duration-300 ease-out" style="width: ${notaVal * 10}%"></div>
-                        </div></div>`;
-            }).join('');
+             if (!notas) { panel.innerHTML = '<p class="text-slate-500">Nenhum registro.</p>'; return; }
+             const keys = Object.keys(notas).filter(k => !['SerialNumber','NomeCompleto','EmailHC','Curso'].includes(k) && k.trim() !== '');
+             panel.innerHTML = keys.map(k => { let v = parseFloat(String(notas[k]||'0').replace(',','.')); if (isNaN(v)) v=0; const isM = k.toUpperCase().includes('MÉDIA'); const bF = isM ? 'bar-fill-media':'bar-fill-normal'; const lC = isM ? 'text-blue-700 font-semibold':'text-slate-600'; const vC = isM ? 'text-blue-800 font-bold':'text-slate-800 font-semibold'; return `<div class="text-sm ${isM?'pt-3 mt-3 border-t border-slate-100':''}"><div class="flex justify-between items-center mb-1"><span class="${lC}">${k}</span><span class="${vC} w-10 text-right">${v.toFixed(1)}</span></div><div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden bar-bg"><div class="h-full ${bF} rounded-full transition-all duration-300 ease-out" style="width:${v*10}%"></div></div></div>`; }).join('');
         }
         function renderTabNotasPraticas(notas) { /* ... (sem alterações na lógica) ... */
              const panel = document.getElementById('notas-p-radial-content');
-            if (!notas || notas.length === 0) { panel.innerHTML = '<div class="content-card p-6"><p class="text-slate-500">Nenhum registro de notas práticas encontrado.</p></div>'; return; }
-            // Usa content-card para cada nota
-            panel.innerHTML = notas.map((nota, index) => {
-                const dataHora = nota['Data/Hora'];
-                const dataFormatada = dataHora ? new Date(String(dataHora).replace(/-/g, '/')).toLocaleDateString('pt-BR') : 'N/A';
-                const chaveMedia = Object.keys(nota).find(k => k.toUpperCase().includes('MÉDIA (NOTA FINAL)')) || 'MÉDIA (NOTA FINAL):';
-                let mediaFinal = parseFloat(String(nota[chaveMedia] || '0').replace(',', '.'));
-                if (isNaN(mediaFinal)) mediaFinal = 0;
-                const chaveComentario = Object.keys(nota).find(k => k.toUpperCase().includes('COMENTÁRIOS')) || 'COMENTÁRIOS DO(A) SUPERVISOR(A):';
-                const comentario = nota[chaveComentario] || 'Sem comentários.';
-                return `
-                    <div class="content-card p-5 flex space-x-5 items-center">
-                        <div class="flex-shrink-0">
-                            <div class="radial-progress" style="--value:${mediaFinal * 10};"><span class="radial-progress-value">${mediaFinal.toFixed(1)}</span></div>
-                        </div>
-                        <div class="flex-grow">
-                            <h4 class="text-sm font-semibold text-blue-700">${nota.nomePratica} (Avaliação ${index + 1})</h4>
-                            <div class="text-xs text-slate-500 mt-1 space-x-3"><span><strong>Data:</strong> ${dataFormatada}</span><span><strong>Unidade:</strong> ${nota.Unidade || 'N/A'}</span><span><strong>Supervisor:</strong> ${nota.Supervisor || 'N/A'}</span></div>
-                            <details class="mt-2 group">
-                                <summary class="text-xs text-slate-500 font-medium cursor-pointer list-none flex items-center group-hover:text-blue-600 transition-colors">
-                                    <span class="mr-1">Ver comentário</span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transform transition-transform duration-200 group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"> <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /> </svg>
-                                </summary>
-                                <p class="text-sm italic text-slate-700 mt-2 p-3 bg-slate-50 rounded-md border border-slate-200">
-                                    ${comentario}
-                                </p>
-                            </details>
-                        </div></div>`;
-            }).join('');
+             if (!notas || notas.length === 0) { panel.innerHTML = '<div class="content-card p-6"><p class="text-slate-500">Nenhum registro.</p></div>'; return; }
+             panel.innerHTML = notas.map((n, i) => { const dH = n['Data/Hora']; const dF = dH ? new Date(String(dH).replace(/-/g,'/')).toLocaleDateString('pt-BR'):'N/A'; const kM = Object.keys(n).find(k => k.toUpperCase().includes('MÉDIA (NOTA FINAL)')) || 'MÉDIA (NOTA FINAL):'; let mF = parseFloat(String(n[kM]||'0').replace(',','.')); if(isNaN(mF)) mF=0; const kC = Object.keys(n).find(k => k.toUpperCase().includes('COMENTÁRIOS')) || 'COMENTÁRIOS DO(A) SUPERVISOR(A):'; const c = n[kC]||'Sem comentários.'; return `<div class="content-card p-5 flex space-x-5 items-center"><div class="flex-shrink-0"><div class="radial-progress" style="--value:${mF*10};"><span class="radial-progress-value">${mF.toFixed(1)}</span></div></div><div class="flex-grow"><h4 class="text-sm font-semibold text-blue-700">${n.nomePratica} (Avaliação ${i+1})</h4><div class="text-xs text-slate-500 mt-1 space-x-3"><span><strong>Data:</strong> ${dF}</span><span><strong>Unidade:</strong> ${n.Unidade||'N/A'}</span><span><strong>Sup:</strong> ${n.Supervisor||'N/A'}</span></div><details class="mt-2 group"><summary class="text-xs text-slate-500 font-medium cursor-pointer list-none flex items-center group-hover:text-blue-600 transition-colors"><span class="mr-1">Ver comentário</span><svg class="h-4 w-4 transform transition-transform duration-200 group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg></summary><p class="text-sm italic text-slate-700 mt-2 p-3 bg-slate-50 rounded-md border border-slate-200">${c}</p></details></div></div>`; }).join('');
         }
 
         // *** Inicia a aplicação ***
         document.addEventListener('DOMContentLoaded', init);
-
     </script>
 </body>
 </html>
