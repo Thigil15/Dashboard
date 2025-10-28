@@ -3,143 +3,142 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard de Alunos PRO++ v3</title>
+    <title>Dashboard Alunos PRO++ v4</title>
     <!-- Carrega o Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Estilos personalizados - Tema "Deep Ocean" */
+        /* Estilos personalizados - Tema "Deep Ocean" Refinado */
         :root { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
         html { scroll-behavior: smooth; }
         body { background-color: #f1f5f9; /* slate-100 */ }
 
         /* Classes Utilitárias */
         .hidden-view { display: none !important; }
-        .main-content-section { display: none; opacity: 0; transition: opacity 0.4s ease-out; }
+        .main-content-section { display: none; opacity: 0; transition: opacity 0.5s ease-out; } /* Fade mais suave */
         .main-content-section.active { display: block; opacity: 1; }
-        .highlight { background-color: #a5f3fc; border-radius: 2px; padding: 0 2px; color: #0e7490; }
+        .highlight { background-color: #a5f3fc; border-radius: 2px; padding: 0 2px; color: #0e7490; font-weight: 500;}
         .student-group-header.hidden, .student-card.hidden { display: none; }
 
         /* --- Loader --- */
-        #loading-overlay { position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.9); display: flex; justify-content: center; align-items: center; flex-direction: column; z-index: 9999; transition: opacity 0.5s ease-out; opacity: 1; }
-        .loader { width: 60px; height: 60px; border-radius: 50%; background-color: #22d3ee; box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.7); animation: pulse 1.5s infinite cubic-bezier(0.66, 0, 0, 1); }
-        @keyframes pulse { to { box-shadow: 0 0 0 45px rgba(34, 211, 238, 0); } }
-        #loading-overlay p { color: #cbd5e1; margin-top: 1.5rem; }
+        #loading-overlay { position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.95); display: flex; justify-content: center; align-items: center; flex-direction: column; z-index: 9999; transition: opacity 0.6s ease-out; opacity: 1; }
+        .loader { width: 50px; height: 50px; border-radius: 50%; border: 4px solid #38bdf8; /* sky-400 */ border-top-color: #0ea5e9; /* sky-500 */ animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #loading-overlay p { color: #cbd5e1; margin-top: 1.5rem; font-weight: 500; }
 
         /* --- Sidebar - Tema Escuro --- */
-        aside { background: linear-gradient(to bottom, #1e293b, #0f172a); }
+        aside { background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%); } /* slate-800 to slate-900 */
         .sidebar-logo-text { color: #f8fafc; }
-        .sidebar-link { transition: all 0.2s ease-in-out; border-left: 4px solid transparent; padding: 0.7rem 1rem; color: #94a3b8; }
-        .sidebar-link svg { color: #64748b; transition: all 0.2s ease-in-out; }
-        .sidebar-link:hover { background-color: rgba(51, 65, 85, 0.5); color: #f1f5f9; border-left-color: #64748b; }
-        .sidebar-link:hover svg { color: #cbd5e1; }
-        .sidebar-link.active { background-color: rgba(30, 41, 59, 0.7); color: #f8fafc; border-left-color: #22d3ee; font-weight: 600; }
-        .sidebar-link.active svg { color: #22d3ee; }
+        .sidebar-link { transition: all 0.25s ease-in-out; border-left: 4px solid transparent; padding: 0.75rem 1.25rem; color: #a1a1aa; /* zinc-400 */ display: flex; align-items: center; } /* Padding aumentado, cor ajustada */
+        .sidebar-link svg { color: #71717a; /* zinc-500 */ transition: all 0.25s ease-in-out; margin-right: 0.8rem; flex-shrink: 0; }
+        .sidebar-link:hover { background-color: rgba(51, 65, 85, 0.6); color: #f1f5f9; border-left-color: #52525b; /* zinc-600 */ }
+        .sidebar-link:hover svg { color: #e4e4e7; /* zinc-200 */}
+        .sidebar-link.active { background-color: rgba(14, 165, 233, 0.1); /* sky-500 com 10% opacidade */ color: #f8fafc; border-left-color: #0ea5e9; /* sky-500 */ font-weight: 600; }
+        .sidebar-link.active svg { color: #38bdf8; /* sky-400 */ }
 
         /* --- Main Content Cards --- */
-        .content-card { background-color: #ffffff; border-radius: 0.5rem; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); border-top: 3px solid #22d3ee; transition: all 0.3s ease; }
-        .content-card:hover { box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); transform: translateY(-2px); }
-        .content-card-header { font-size: 1rem; font-weight: 600; color: #334155; /* slate-700 */ margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #e2e8f0; /* slate-200 */ }
+        .content-card { background-color: #ffffff; border-radius: 0.75rem; /* rounded-xl */ box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); /* shadow-sm mais sutil */ border: 1px solid #e2e8f0; /* slate-200 */ transition: all 0.3s ease-in-out; border-top: 4px solid #0ea5e9; /* sky-500 */ }
+        .content-card:hover { box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.07), 0 4px 6px -4px rgb(0 0 0 / 0.07); transform: translateY(-3px); border-top-color: #0284c7; /* sky-600 */}
+        .content-card-header { font-size: 0.95rem; font-weight: 600; color: #1e293b; /* slate-800 */ margin-bottom: 1rem; padding-bottom: 0.8rem; border-bottom: 1px solid #f1f5f9; /* slate-100 */ }
 
 
         /* --- KPI Cards --- */
-        .kpi-card { background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 0.5rem; transition: all 0.2s ease-in-out; position: relative; overflow: hidden; }
-        .kpi-card::before { content:''; position: absolute; top:0; left:-100%; width:100%; height:100%; background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.08), transparent); transition: left 0.4s ease; z-index: 0;}
-        .kpi-card:hover::before { left: 100%; }
+        .kpi-card { background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 0.75rem; transition: all 0.25s ease-in-out; position: relative; overflow: hidden; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.03); }
+        .kpi-card:hover { transform: scale(1.03); box-shadow: 0 4px 10px -2px rgb(0 0 0 / 0.08); z-index: 5; }
         .kpi-card > * { position: relative; z-index: 1; }
-        .kpi-card .icon-bg { padding: 0.75rem; border-radius: 0.375rem; }
-        .kpi-card .kpi-label { font-size: 0.7rem; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; }
-        .kpi-card .kpi-value { font-size: 1.75rem; font-weight: 700; color: #0f172a; line-height: 1.1; }
-        .kpi-icon-blue { background-color: #dbeafe; color: #2563eb; } .kpi-icon-green { background-color: #dcfce7; color: #16a34a; } .kpi-icon-red { background-color: #fee2e2; color: #dc2626; } .kpi-icon-yellow { background-color: #fef9c3; color: #ca8a04; }
-         .kpi-icon-purple { background-color: #ede9fe; color: #7c3aed; }
-         .kpi-icon-cyan { background-color: #cffafe; color: #0891b2; } /* Novo */
-         .kpi-icon-orange { background-color: #ffedd5; color: #f97316; } /* Novo */
+        .kpi-card .icon-bg { padding: 0.8rem; border-radius: 0.5rem; /* rounded-lg */ }
+        .kpi-card .kpi-label { font-size: 0.65rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.1rem; }
+        .kpi-card .kpi-value { font-size: 1.8rem; font-weight: 700; color: #0f172a; line-height: 1; }
+        .kpi-icon-blue { background-color: #eff6ff; color: #2563eb; } .kpi-icon-green { background-color: #f0fdf4; color: #16a34a; } .kpi-icon-red { background-color: #fff1f2; color: #e11d48; } .kpi-icon-yellow { background-color: #fefce8; color: #ca8a04; }
+        .kpi-icon-purple { background-color: #faf5ff; color: #7c3aed; }
+        .kpi-icon-cyan { background-color: #ecfeff; color: #0891b2; }
+        .kpi-icon-orange { background-color: #fff7ed; color: #f97316; }
 
 
         /* --- Gráfico Donut (Distribuição Cursos) --- */
-        .donut-chart-container { display: flex; align-items: center; justify-content: space-around; flex-wrap: wrap; gap: 1rem; }
-        .donut-chart { position: relative; width: 120px; height: 120px; border-radius: 50%; background: conic-gradient( var(--chart-segments) ); }
-        .donut-chart::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70%; height: 70%; background: #fff; border-radius: 50%; }
-        .donut-legend ul { list-style: none; padding: 0; margin: 0; font-size: 0.75rem; color: #475569; }
-        .donut-legend li { display: flex; align-items: center; margin-bottom: 0.4rem; }
-        .legend-color-box { width: 12px; height: 12px; border-radius: 3px; margin-right: 0.5rem; }
+        .donut-chart-container { display: flex; align-items: center; justify-content: space-around; flex-wrap: wrap; gap: 1rem; padding: 0.5rem 0; }
+        .donut-chart { position: relative; width: 130px; height: 130px; border-radius: 50%; background: conic-gradient( var(--chart-segments) ); transition: transform 0.3s ease; }
+        .donut-chart:hover { transform: scale(1.05); }
+        .donut-chart::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 65%; height: 65%; background: #fff; border-radius: 50%; box-shadow: inset 0 0 5px rgba(0,0,0,0.05);}
+        .donut-legend ul { list-style: none; padding: 0; margin: 0; font-size: 0.7rem; color: #475569; }
+        .donut-legend li { display: flex; align-items: center; margin-bottom: 0.45rem; }
+        .legend-color-box { width: 10px; height: 10px; border-radius: 2px; margin-right: 0.6rem; }
 
         /* --- Abas Detalhe Aluno --- */
         #student-tabs-nav { -ms-overflow-style: none; scrollbar-width: none; }
         #student-tabs-nav::-webkit-scrollbar { display: none; }
-        .tab-button { transition: all 0.2s ease-in-out; padding: 0.6rem 1rem; font-weight: 500; font-size: 0.875rem; white-space: nowrap; color: #475569; border-bottom: 3px solid transparent; margin-bottom: -1px; position: relative; }
-        .tab-button::after { content:''; position: absolute; bottom: -1px; left: 50%; width: 0; height: 3px; background-color: #22d3ee; transition: all 0.3s ease; }
-        .tab-button:hover::after { width: 100%; left: 0; }
-        .tab-button:hover { color: #0f172a; }
-        .tab-button.active { color: #0f172a; font-weight: 600; }
-        .tab-button.active::after { width: 100%; left: 0; }
-        .tab-button.active { border-bottom-color: transparent !important; background-color: transparent !important; }
+        .tab-button { transition: all 0.25s ease-in-out; padding: 0.7rem 1.1rem; font-weight: 500; font-size: 0.8rem; white-space: nowrap; color: #4b5563; /* gray-600 */ border-bottom: 3px solid transparent; margin-bottom: -1px; position: relative; background: transparent; }
+        .tab-button:hover { color: #0ea5e9; /* sky-500 */ background-color: #f0f9ff; /* sky-50 */ border-bottom-color: #bae6fd; /* sky-200 */ }
+        .tab-button.active { color: #0369a1; /* sky-700 */ font-weight: 600; border-bottom-color: #0ea5e9; background-color: transparent; }
+        /* Remove estilo antigo */
+        .tab-button::after { content: none; } /* Remove ::after */
 
         /* --- Lista de Alunos - Cards Flutuantes --- */
-        .student-group-header { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: #475569; background-color: #f1f5f9; padding: 0.5rem 1rem; margin-top: 1.5rem; margin-bottom: 0.75rem; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 5; }
-        .student-card { background-color: #ffffff; border-radius: 0.5rem; border: 1px solid #e2e8f0; padding: 1rem; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); transition: all 0.2s ease-in-out; cursor: pointer; position: relative; }
-        .student-card:hover { transform: translateY(-4px); box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); border-color: #cbd5e1; }
-        .student-card img { width: 2.5rem; height: 2.5rem; border-radius: 9999px; object-cover; background-color: #e2e8f0; }
-        .student-card .student-name { font-size: 0.875rem; font-weight: 500; color: #1e293b; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .student-card .student-course { font-size: 0.7rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .student-card.inactive-card { opacity: 0.75; }
-        .inactive-badge { position: absolute; top: 0.5rem; right: 0.5rem; transform: rotate(10deg); }
+        .student-group-header { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #0f172a; /* slate-900 */ background-color: transparent; /* Remove bg */ padding: 0.5rem 0.25rem; margin-top: 1.75rem; margin-bottom: 1rem; border: none; border-bottom: 2px solid #38bdf8; /* sky-400 */ position: sticky; top: -1px; /* Ajuste para não cortar borda */ z-index: 5; background: linear-gradient(to bottom, rgba(241, 245, 249, 1) 80%, rgba(241, 245, 249, 0)); /* Fade background */ }
+        .student-card { background-color: #ffffff; border-radius: 0.5rem; border: 1px solid #e2e8f0; padding: 0.8rem; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); transition: all 0.25s ease-in-out; cursor: pointer; position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; }
+        .student-card:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 6px 12px -2px rgb(0 0 0 / 0.1), 0 3px 7px -3px rgb(0 0 0 / 0.08); border-color: #7dd3fc; /* sky-300 */ z-index: 10; }
+        .student-card img { width: 3rem; height: 3rem; border-radius: 9999px; object-cover; background-color: #e2e8f0; border: 2px solid white; box-shadow: 0 0 0 1px #cbd5e1; /* slate-300 */ margin-bottom: 0.5rem; }
+        .student-card .student-name { font-size: 0.8rem; font-weight: 600; color: #1e293b; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 0.1rem; }
+        .student-card .student-course { font-size: 0.65rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+        .student-card.inactive-card { opacity: 0.65; background-color: #f8fafc; /* slate-50 */ border-style: dashed; }
+        .student-card.inactive-card:hover { opacity: 0.8; }
+        .inactive-badge { position: absolute; top: 0.4rem; right: 0.4rem; transform: rotate(0deg); } /* Sem rotação */
 
 
         /* --- Tabelas (Faltas) --- */
         #faltas-content table thead { background-color: #f8fafc; }
-        #faltas-content table th { padding: 0.75rem 1rem; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.7rem; }
-        #faltas-content table tbody tr:nth-child(even) { background-color: #f8fafc; }
-        #faltas-content table tbody tr:hover { background-color: #e0f2fe; }
-        #faltas-content table td { padding: 0.75rem 1rem; vertical-align: middle; color: #334155; }
+        #faltas-content table th { padding: 0.75rem 1rem; font-weight: 600; color: #334155; /* slate-700 */ text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.65rem; border-bottom: 2px solid #e2e8f0; }
+        #faltas-content table tbody tr { border-bottom: 1px solid #f1f5f9; }
+        #faltas-content table tbody tr:last-child { border-bottom: none; }
+        #faltas-content table tbody tr:hover { background-color: #f0f9ff; /* sky-50 */ }
+        #faltas-content table td { padding: 0.8rem 1rem; vertical-align: middle; color: #475569; /* slate-600 */}
 
         /* --- Gráfico Radial --- */
-        .radial-progress { background: conic-gradient(#06b6d4 calc(var(--value) * 1%), #e2e8f0 calc(var(--value) * 1%) 100%); }
-        .radial-progress::before { background: #ffffff; } .radial-progress-value { color: #1e293b; }
+        .radial-progress { background: conic-gradient(#0ea5e9 calc(var(--value) * 1%), #e2e8f0 calc(var(--value) * 1%) 100%); } /* sky-500 */
+        .radial-progress::before { background: #ffffff; } .radial-progress-value { color: #0f172a; }
 
         /* --- Heatmap --- */
-        .heatmap-day { border-color: #e2e8f0; background-color: #ffffff; transition: all 0.2s ease-in-out; }
-        .heatmap-day:hover { transform: scale(1.05); box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); border-color: #cbd5e1; z-index: 10; position:relative; }
-        .heatmap-day-date { color: #64748b; border-color: #e2e8f0; background-color: #f8fafc; }
-        .heatmap-day-status { color: #334155; font-weight: 600;}
-        .heatmap-day[data-status="ausencia"] { background-color: #ffe4e6; border-color: #fda4af; } .heatmap-day[data-status="ausencia"] .heatmap-day-status { color: #be123c; }
-        .heatmap-day[data-status="folga"] { background-color: #f1f5f9; opacity: 0.8; border-style: dashed;}
-        .heatmap-day[data-status="reposicao"] { background-color: #cffafe; border-color: #67e8f9; } .heatmap-day[data-status="reposicao"] .heatmap-day-status { color: #0e7490; }
-        .heatmap-day[data-status="none"], .heatmap-day:not([data-status]) { background-color: #f8fafc; border-style: dotted; opacity: 0.7;} .heatmap-day[data-status="none"] .heatmap-day-status, .heatmap-day:not([data-status]) .heatmap-day-status { color: #94a3b8; font-weight: 400;}
+        .heatmap-day { border-color: #e2e8f0; background-color: #ffffff; transition: all 0.25s ease-in-out; }
+        .heatmap-day:hover { transform: scale(1.06); box-shadow: 0 5px 10px rgba(0,0,0,0.1); border-color: #94a3b8; z-index: 10; position:relative; }
+        .heatmap-day-date { color: #64748b; border-color: #e2e8f0; background-color: #f8fafc; font-size: 0.65rem; }
+        .heatmap-day-status { color: #1e293b; font-weight: 600; font-size: 0.6rem; }
+        .heatmap-day[data-status="ausencia"] { background-color: #fee2e2; border-color: #fca5a5; } .heatmap-day[data-status="ausencia"] .heatmap-day-status { color: #b91c1c; }
+        .heatmap-day[data-status="folga"] { background-color: #f1f5f9; opacity: 0.7; border-style: dashed;}
+        .heatmap-day[data-status="reposicao"] { background-color: #ecfdf5; border-color: #a7f3d0; } /* emerald-100/300 */ .heatmap-day[data-status="reposicao"] .heatmap-day-status { color: #047857; } /* emerald-700 */
+        .heatmap-day[data-status="none"], .heatmap-day:not([data-status]) { background-color: #fafafa; /* neutral-50 */ border-style: dotted; opacity: 0.6;} .heatmap-day[data-status="none"] .heatmap-day-status, .heatmap-day:not([data-status]) .heatmap-day-status { color: #a1a1aa; font-weight: 400;}
 
         /* --- Gráfico de Barras --- */
-        .bar-chart-item { transition: background-color 0.2s ease; }
+        .bar-chart-item { transition: background-color 0.25s ease; border-radius: 4px; padding: 0.3rem 0.5rem; }
         .bar-chart-item:hover { background-color: #f0f9ff; }
         .bar-chart-item .bar-bg { background-color: #e2e8f0; }
-        .bar-chart-item .bar-fill-normal { background-color: #7dd3fc; } /* sky-300 */
-        .bar-chart-item .bar-fill-media { background: linear-gradient(to right, #0ea5e9, #22d3ee); } /* sky-500 to cyan-400 */
-        .bar-chart-item .bar-label { color: #475569; }
-        .bar-chart-item .bar-value { color: #1e293b; }
-
+        .bar-chart-item .bar-fill-normal { background-color: #7dd3fc; }
+        .bar-chart-item .bar-fill-media { background: linear-gradient(90deg, #38bdf8 0%, #0ea5e9 100%); } /* sky-400 to sky-500 */
+        .bar-chart-item .bar-label { color: #475569; font-size: 0.7rem; }
+        .bar-chart-item .bar-value { color: #1e293b; font-size: 0.7rem; }
 
         /* --- Badges --- */
-        .badge { font-size: 0.65rem; padding: 0.2em 0.6em; border: 1px solid transparent;}
-        .badge-green { background-color: #ecfdf5; color: #059669; border-color: #a7f3d0;}
-        .badge-yellow { background-color: #fefce8; color: #ca8a04; border-color: #fde047;}
+        .badge { font-size: 0.6rem; padding: 0.2em 0.65em; border: 1px solid transparent; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;}
+        .badge-green { background-color: #dcfce7; color: #166534; border-color: #86efac;}
+        .badge-yellow { background-color: #fef9c3; color: #854d0e; border-color: #fde047;}
         .badge-gray { background-color: #f3f4f6; color: #4b5563; border-color: #d1d5db;}
-        .badge-red { background-color: #fff1f2; color: #e11d48; border-color: #fda4af;} /* Rose */
+        .badge-red { background-color: #ffe4e6; color: #be123c; border-color: #fda4af;} /* Rose */
 
         /* --- Caixa de Erro --- */
-        #error-message { background-color: #be123c; color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); font-weight: 500; border-left: 5px solid #831843 }
-        #error-message button { font-weight: 700; opacity: 0.8; transition: opacity 0.2s; }
-        #error-message button:hover { opacity: 1; }
+        #error-message { background-color: #be123c; color: white; padding: 0.8rem 1.5rem; border-radius: 0.5rem; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); font-weight: 500; border-left: 5px solid #831843; animation: fadeInDown 0.5s ease-out; }
+        @keyframes fadeInDown { from { opacity: 0; transform: translate(-50%, -20px); } to { opacity: 1; transform: translate(-50%, 0); } }
+        #error-message button { font-weight: 700; opacity: 0.7; transition: opacity 0.2s; } #error-message button:hover { opacity: 1; }
 
         /* --- Scrollbars --- */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; border: 2px solid #f1f5f9; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
         /* --- Input de Busca --- */
-        #search-student { transition: all 0.3s ease; }
-        #search-student:focus { box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.3); border-color: #22d3ee; }
+        #search-student { transition: all 0.3s ease; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); }
+        #search-student:focus { box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.3), 0 1px 2px 0 rgb(0 0 0 / 0.05); border-color: #0ea5e9; } /* sky-500 */
 
         /* --- Lista Ausências Recentes --- */
-        #recent-absences-list li { transition: background-color 0.2s ease; }
+        #recent-absences-list li { transition: background-color 0.25s ease; padding: 0.6rem 0.25rem; border-radius: 4px; }
         #recent-absences-list li:hover { background-color: #f8fafc; }
 
 
@@ -169,21 +168,21 @@
         <aside class="w-64 border-r border-slate-700 flex flex-col flex-shrink-0">
             <div class="h-16 flex items-center justify-center px-4 border-b border-slate-700 flex-shrink-0">
                  <div class="flex items-center space-x-3">
-                    <svg class="w-7 h-7 text-cyan-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 0 1-.375 1.5-3 3 0 0 1-5.25 0 3 3 0 0 1-.375-1.5V17.25m10.5-11.25h.008v.008h-.008V6M12 21h.008v.008H12V21m0 0H9.75M12 21H7.5M12 21H3.375M12 21h-7.5M12 21h7.5m0 0h3.375m0 0h1.875m-5.25 0h.008v.008h-.008V21m-1.5-1.5h.008v.008h-.008V19.5m-3 0h.008v.008h-.008V19.5m0 0h1.875m-1.875 0h-7.5m11.25-3.375h.008v.008h-.008V16.125m-3 0h.008v.008h-.008V16.125m0 0h1.875m-1.875 0h-7.5m11.25 0h.008v.008h-.008V16.125m-3 0h.008v.008h-.008V16.125m0 0h1.875m-1.875 0h-7.5M9 3.75h6M9 3.75h-7.5M9 3.75v1.5M9 3.75v3M9 3.75v4.5M9 3.75v6M9 3.75v7.5M9 3.75v9M9 3.75v10.5M9 3.75v12M9 3.75v13.5M9 3.75v15M9 3.75v16.5m0 0h6m0 0h-7.5m7.5 0v-1.5m0 0v-3m0 0v-4.5m0 0v-6m0 0v-7.5m0 0v-9m0 0v-10.5m0 0v-12m0 0v-13.5m0 0v-15m0 0v-16.5" /></svg>
+                    <svg class="w-7 h-7 text-sky-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 0 1-.375 1.5-3 3 0 0 1-5.25 0 3 3 0 0 1-.375-1.5V17.25m10.5-11.25h.008v.008h-.008V6M12 21h.008v.008H12V21m0 0H9.75M12 21H7.5M12 21H3.375M12 21h-7.5M12 21h7.5m0 0h3.375m0 0h1.875m-5.25 0h.008v.008h-.008V21m-1.5-1.5h.008v.008h-.008V19.5m-3 0h.008v.008h-.008V19.5m0 0h1.875m-1.875 0h-7.5m11.25-3.375h.008v.008h-.008V16.125m-3 0h.008v.008h-.008V16.125m0 0h1.875m-1.875 0h-7.5m11.25 0h.008v.008h-.008V16.125m-3 0h.008v.008h-.008V16.125m0 0h1.875m-1.875 0h-7.5M9 3.75h6M9 3.75h-7.5M9 3.75v1.5M9 3.75v3M9 3.75v4.5M9 3.75v6M9 3.75v7.5M9 3.75v9M9 3.75v10.5M9 3.75v12M9 3.75v13.5M9 3.75v15M9 3.75v16.5m0 0h6m0 0h-7.5m7.5 0v-1.5m0 0v-3m0 0v-4.5m0 0v-6m0 0v-7.5m0 0v-9m0 0v-10.5m0 0v-12m0 0v-13.5m0 0v-15m0 0v-16.5" /></svg>
                      <h1 class="text-lg font-semibold sidebar-logo-text">Ensino InCor</h1>
                  </div>
             </div>
-            <nav class="flex-grow overflow-y-auto py-6 space-y-2">
-                <a href="#dashboard" data-tab="dashboard" class="sidebar-link active flex items-center px-4 py-2.5 text-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17.5a.5.5 0 00.5.5h11a.5.5 0 00.5-.5V10.414l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg>
+            <nav class="flex-grow overflow-y-auto py-6 space-y-1.5"> <!-- Espaçamento links -->
+                <a href="#dashboard" data-tab="dashboard" class="sidebar-link active text-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17.5a.5.5 0 00.5.5h11a.5.5 0 00.5-.5V10.414l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg>
                     Dashboard
                 </a>
-                <a href="#alunos" data-tab="alunos" class="sidebar-link flex items-center px-4 py-2.5 text-sm">
-                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" /></svg>
+                <a href="#alunos" data-tab="alunos" class="sidebar-link text-sm">
+                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" /></svg>
                      Alunos
                 </a>
-                 <a href="#ponto" data-tab="ponto" class="sidebar-link flex items-center px-4 py-2.5 text-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z" clip-rule="evenodd" /></svg>
+                 <a href="#ponto" data-tab="ponto" class="sidebar-link text-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z" clip-rule="evenodd" /></svg>
                     Ponto
                 </a>
             </nav>
@@ -212,12 +211,11 @@
                                      <p class="text-slate-500 italic">Calculando...</p>
                                  </div>
                              </div>
-                             <!-- [NOVO] Card Ausências Recentes -->
+                             <!-- Card Ausências Recentes -->
                              <div class="content-card p-5">
                                  <h2 class="content-card-header">Registros Recentes</h2>
-                                 <ul id="recent-absences-list" class="space-y-3 text-xs max-h-[300px] overflow-y-auto">
+                                 <ul id="recent-absences-list" class="space-y-2 text-xs max-h-[300px] overflow-y-auto">
                                      <li class="text-slate-500 italic">Calculando...</li>
-                                     <!-- JS vai preencher -->
                                  </ul>
                              </div>
                         </div>
@@ -235,27 +233,25 @@
                                           <div class="icon-bg kpi-icon-green"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
                                           <div class="ml-3"><p class="kpi-label">Ativos</p><p id="kpi-active-students" class="kpi-value">-</p></div>
                                      </div>
-                                     <div class="kpi-card flex items-center p-4 col-span-2"> <!-- Span 2 para ocupar linha inteira -->
-                                          <div class="icon-bg kpi-icon-yellow"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></div>
-                                          <div class="ml-3"><p class="kpi-label">Reposições Pendentes</p><p id="kpi-pending-replacements" class="kpi-value">-</p></div>
-                                     </div>
-                                     <!-- [NOVO] KPIs de Médias -->
-                                     <div class="kpi-card flex items-center p-4">
-                                          <div class="icon-bg kpi-icon-orange"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></div>
+                                      <div class="kpi-card flex items-center p-4">
+                                          <div class="icon-bg kpi-icon-orange"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></div>
                                           <div class="ml-3"><p class="kpi-label">Média Teórica</p><p id="kpi-avg-theoretical" class="kpi-value">-</p></div>
                                      </div>
                                       <div class="kpi-card flex items-center p-4">
-                                          <div class="icon-bg kpi-icon-cyan"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg></div>
+                                          <div class="icon-bg kpi-icon-cyan"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg></div>
                                           <div class="ml-3"><p class="kpi-label">Média Prática</p><p id="kpi-avg-practical" class="kpi-value">-</p></div>
+                                     </div>
+                                     <div class="kpi-card flex items-center p-4 col-span-2">
+                                          <div class="icon-bg kpi-icon-yellow"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></div>
+                                          <div class="ml-3"><p class="kpi-label">Reposições Pendentes</p><p id="kpi-pending-replacements" class="kpi-value">-</p></div>
                                      </div>
                                  </div>
                             </div>
-                             <!-- [NOVO] Card Distribuição Cursos -->
+                             <!-- Card Distribuição Cursos -->
                             <div class="content-card p-5">
                                 <h2 class="content-card-header">Distribuição por Curso (Ativos)</h2>
                                 <div id="course-distribution-chart" class="donut-chart-container min-h-[140px]">
                                      <p class="text-slate-500 text-sm italic">Calculando...</p>
-                                     <!-- JS vai preencher -->
                                 </div>
                             </div>
                         </div>
@@ -264,9 +260,8 @@
                         <div class="md:col-span-1 space-y-6">
                             <div class="content-card p-5">
                                 <h2 class="content-card-header">Desempenho Teórico (Médias Ativos)</h2>
-                                <div id="theoretical-avg-chart" class="space-y-2.5 max-h-[600px] overflow-y-auto pr-2">
+                                <div id="theoretical-avg-chart" class="space-y-2 max-h-[600px] overflow-y-auto pr-2">
                                      <p class="text-slate-500 text-sm italic">Calculando...</p>
-                                    <!-- JS vai preencher com barras -->
                                 </div>
                             </div>
                         </div>
@@ -278,7 +273,7 @@
                  <div id="content-alunos" class="main-content-section">
                      <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
                          <h1 class="text-2xl font-semibold text-slate-800">Alunos</h1>
-                         <input type="text" id="search-student" placeholder="Buscar aluno..." class="border border-slate-300 rounded-lg px-4 py-2 text-sm w-full sm:w-auto max-w-xs focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition shadow-sm">
+                         <input type="text" id="search-student" placeholder="Buscar aluno..." class="border border-slate-300 rounded-lg px-4 py-2 text-sm w-full sm:w-auto max-w-xs focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition shadow-sm">
                      </div>
                      <div id="student-list-panel" class="max-h-[calc(100vh-200px)] overflow-y-auto">
                          <p class="text-slate-500 p-4 text-center italic initial-message">Carregando...</p>
@@ -302,7 +297,7 @@
     <div id="student-detail-view" class="hidden-view fixed inset-0 bg-slate-100 z-50 overflow-y-auto">
         <header class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-10">
             <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-                <button id="back-to-dashboard" class="flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors group">
+                <button id="back-to-dashboard" class="flex items-center text-sm font-medium text-sky-600 hover:text-sky-800 transition-colors group">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1 group-hover:-translate-x-1 transition-transform" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
                     Voltar para Alunos
                 </button>
@@ -354,7 +349,7 @@
         function showLoading(show) { /* ... (sem alterações) ... */
              const overlay = document.getElementById('loading-overlay');
              overlay.style.opacity = show ? '1' : '0';
-             setTimeout(() => { overlay.style.display = show ? 'flex' : 'none'; }, show ? 0 : 500);
+             setTimeout(() => { overlay.style.display = show ? 'flex' : 'none'; }, show ? 0 : 600); /* Delay aumentado */
         }
         function showError(message) { /* ... (sem alterações) ... */
              console.error(message);
@@ -367,7 +362,7 @@
 
         // --- INICIALIZAÇÃO E CARGA ---
         async function init() {
-            console.log('Iniciando Dashboard PRO++ v3...');
+            console.log('Iniciando Dashboard PRO++ v4...'); // Nome atualizado
             document.getElementById('current-date').textContent = appState.todayFullBR;
             setupSidebarNavigation();
             document.getElementById('back-to-dashboard').addEventListener('click', showAlunosList);
@@ -407,245 +402,36 @@
         }
 
         // --- CÁLCULOS AUXILIARES ---
-        /**
-         * Converte string de nota (ex: "7,5") para número float.
-         * Retorna 0 se inválido.
-         */
-        function parseNota(notaStr) {
-            if (typeof notaStr !== 'string' || notaStr.trim() === '') return 0;
-            const notaNum = parseFloat(notaStr.replace(',', '.'));
-            return isNaN(notaNum) ? 0 : notaNum;
+        function parseNota(notaStr) { /* ... (sem alterações) ... */
+            if (typeof notaStr !== 'string' || notaStr.trim() === '') return 0; const n=parseFloat(notaStr.replace(',', '.')); return isNaN(n)?0:n;
         }
-
-        /**
-         * [NOVO] Calcula médias teóricas, práticas e distribuição de cursos.
-         */
-        function calculateAveragesAndDistribution() {
-            const activeStudents = appState.alunos.filter(s => s.Status === 'Ativo');
-            const activeEmails = new Set(activeStudents.map(s => s.EmailHC));
-
-            let totalTheoreticalSum = 0;
-            let totalTheoreticalCount = 0;
-            const theoreticalSums = {}; // { materia: sum }
-            const theoreticalCounts = {}; // { materia: count }
-
-            // Calcula Médias Teóricas
-            if (appState.notasTeoricas && appState.notasTeoricas.registros) {
-                appState.notasTeoricas.registros.forEach(record => {
-                    if (activeEmails.has(record.EmailHC)) {
-                        Object.keys(record).forEach(key => {
-                            if (!['SerialNumber', 'NomeCompleto', 'EmailHC', 'Curso'].includes(key) && key.trim() !== '') {
-                                const nota = parseNota(record[key]);
-                                if (nota > 0) { // Considera apenas notas válidas > 0
-                                    theoreticalSums[key] = (theoreticalSums[key] || 0) + nota;
-                                    theoreticalCounts[key] = (theoreticalCounts[key] || 0) + 1;
-                                    totalTheoreticalSum += nota;
-                                    totalTheoreticalCount++;
-                                }
-                            }
-                        });
-                    }
-                });
-            }
-            const theoreticalAverages = {};
-            Object.keys(theoreticalSums).forEach(key => {
-                theoreticalAverages[key] = theoreticalCounts[key] > 0 ? theoreticalSums[key] / theoreticalCounts[key] : 0;
-            });
-            const overallTheoreticalAvg = totalTheoreticalCount > 0 ? totalTheoreticalSum / totalTheoreticalCount : 0;
-
-            // Calcula Média Prática Geral
-            let totalPracticalSum = 0;
-            let totalPracticalCount = 0;
-            if (appState.notasPraticas) {
-                Object.values(appState.notasPraticas).forEach(pratica => {
-                    if (pratica.registros) {
-                        pratica.registros.forEach(record => {
-                            if (activeEmails.has(record.EmailHC)) {
-                                const keyMedia = Object.keys(record).find(k => k.toUpperCase().includes('MÉDIA (NOTA FINAL)')) || null;
-                                if (keyMedia) {
-                                    const nota = parseNota(record[keyMedia]);
-                                    if (nota > 0) {
-                                        totalPracticalSum += nota;
-                                        totalPracticalCount++;
-                                    }
-                                }
-                            }
-                        });
-                    }
-                });
-            }
-            const overallPracticalAvg = totalPracticalCount > 0 ? totalPracticalSum / totalPracticalCount : 0;
-
-            // Calcula Distribuição de Cursos
-            const courseCounts = activeStudents.reduce((acc, student) => {
-                const course = student.Curso || 'Sem Curso';
-                acc[course] = (acc[course] || 0) + 1;
-                return acc;
-            }, {});
-            const totalActive = activeStudents.length;
-            const courseDistribution = Object.entries(courseCounts).map(([course, count]) => ({
-                course,
-                count,
-                percentage: totalActive > 0 ? (count / totalActive) * 100 : 0
-            })).sort((a, b) => b.count - a.count); // Ordena por contagem
-
-            return {
-                overallTheoreticalAvg,
-                theoreticalAverages, // { materia: avg }
-                overallPracticalAvg,
-                courseDistribution // [ { course, count, percentage } ]
-            };
+        function calculateAveragesAndDistribution() { /* ... (sem alterações) ... */
+            const active=appState.alunos.filter(s=>s.Status==='Ativo'); const emails=new Set(active.map(s=>s.EmailHC)); let ttSum=0; let ttCount=0; const tSums={}; const tCounts={};
+            if(appState.notasTeoricas?.registros){appState.notasTeoricas.registros.forEach(r=>{if(emails.has(r.EmailHC)){Object.keys(r).forEach(k=>{if(!['SerialNumber','NomeCompleto','EmailHC','Curso'].includes(k)&&k.trim()!==''){const n=parseNota(r[k]); if(n>0){tSums[k]=(tSums[k]||0)+n; tCounts[k]=(tCounts[k]||0)+1; ttSum+=n; ttCount++;}}});}});}
+            const tAvgs={}; Object.keys(tSums).forEach(k=>{tAvgs[k]=tCounts[k]>0?tSums[k]/tCounts[k]:0;}); const oTAvg=ttCount>0?ttSum/ttCount:0;
+            let tpSum=0; let tpCount=0;
+            if(appState.notasPraticas){Object.values(appState.notasPraticas).forEach(p=>{if(p.registros){p.registros.forEach(r=>{if(emails.has(r.EmailHC)){const kM=Object.keys(r).find(k=>k.toUpperCase().includes('MÉDIA (NOTA FINAL)'))||null; if(kM){const n=parseNota(r[kM]); if(n>0){tpSum+=n; tpCount++;}}}});}});}
+            const oPAvg=tpCount>0?tpSum/tpCount:0;
+            const cCounts=active.reduce((acc,s)=>{const c=s.Curso||'Sem Curso'; acc[c]=(acc[c]||0)+1; return acc;},{}); const tA=active.length;
+            const cDist=Object.entries(cCounts).map(([c,n])=>({course:c, count:n, percentage:tA>0?(n/tA)*100:0})).sort((a,b)=>b.count-a.count);
+            return {overallTheoreticalAvg: oTAvg, theoreticalAverages: tAvgs, overallPracticalAvg: oPAvg, courseDistribution: cDist};
         }
 
         // --- RENDERIZAÇÃO VIEW PRINCIPAL ---
-        /**
-         * [ATUALIZADO] Renderiza todos os KPIs e gráficos da dashboard principal.
-         */
-        function renderAtAGlance() {
-            const totalStudents = appState.alunos.length;
-            const activeStudentsCount = appState.alunos.filter(s => s.Status === 'Ativo').length;
-            const pendingReplacements = appState.ausenciasReposicoes.filter(f => !f.DataReposicaoISO).length;
-
-            const {
-                overallTheoreticalAvg,
-                theoreticalAverages,
-                overallPracticalAvg,
-                courseDistribution
-            } = calculateAveragesAndDistribution();
-
-            // Atualiza KPIs
-            document.getElementById('kpi-total-students').textContent = totalStudents;
-            document.getElementById('kpi-active-students').textContent = activeStudentsCount;
-            document.getElementById('kpi-pending-replacements').textContent = pendingReplacements;
-            document.getElementById('kpi-avg-theoretical').textContent = overallTheoreticalAvg.toFixed(1);
-            document.getElementById('kpi-avg-practical').textContent = overallPracticalAvg.toFixed(1);
-
-            // Renderiza Gráfico Donut Cursos
-            renderCourseDistributionChart(courseDistribution);
-
-            // Renderiza Gráfico Barras Médias Teóricas
-            renderTheoreticalAvgChart(theoreticalAverages);
+        function renderAtAGlance() { /* ... (sem alterações) ... */
+            const tS=appState.alunos.length; const aS=appState.alunos.filter(s=>s.Status==='Ativo').length; const pR=appState.ausenciasReposicoes.filter(f=>!f.DataReposicaoISO).length; const {overallTheoreticalAvg:oTAvg, theoreticalAverages:tAvgs, overallPracticalAvg:oPAvg, courseDistribution:cDist} = calculateAveragesAndDistribution();
+            document.getElementById('kpi-total-students').textContent=tS; document.getElementById('kpi-active-students').textContent=aS; document.getElementById('kpi-pending-replacements').textContent=pR; document.getElementById('kpi-avg-theoretical').textContent=oTAvg.toFixed(1); document.getElementById('kpi-avg-practical').textContent=oPAvg.toFixed(1);
+            renderCourseDistributionChart(cDist); renderTheoreticalAvgChart(tAvgs);
         }
-
-        /**
-         * [NOVO] Renderiza o gráfico de Donut para distribuição de cursos.
-         */
-        function renderCourseDistributionChart(distribution) {
-            const container = document.getElementById('course-distribution-chart');
-            if (!distribution || distribution.length === 0) {
-                container.innerHTML = '<p class="text-slate-500 text-sm italic">Não há dados de curso.</p>'; return;
-            }
-
-            const colors = ['#22d3ee', '#6366f1', '#f97316', '#10b981', '#f43f5e']; // cyan, indigo, orange, emerald, rose
-            let gradientString = '';
-            let cumulativePercentage = 0;
-            const legendItems = [];
-
-            distribution.forEach((item, index) => {
-                const color = colors[index % colors.length];
-                const startAngle = cumulativePercentage;
-                const endAngle = cumulativePercentage + item.percentage;
-                if (item.percentage > 0) { // Evita segmentos zerados
-                     gradientString += `, ${color} ${startAngle}% ${endAngle}%`;
-                }
-                cumulativePercentage = endAngle;
-
-                legendItems.push(`
-                    <li>
-                        <span class="legend-color-box" style="background-color: ${color};"></span>
-                        ${item.course} (${item.count}) - ${item.percentage.toFixed(0)}%
-                    </li>`);
-            });
-            // Completa o gradiente se não chegar a 100% (arredondamento)
-             if (cumulativePercentage < 100) {
-                gradientString += `, #e2e8f0 ${cumulativePercentage}% 100%`; // slate-200 para o resto
-             }
-
-
-            container.innerHTML = `
-                <div class="donut-chart" style="--chart-segments: ${gradientString.substring(1)};"></div>
-                <div class="donut-legend">
-                    <ul>${legendItems.join('')}</ul>
-                </div>`;
+        function renderCourseDistributionChart(distribution) { /* ... (sem alterações) ... */
+             const c=document.getElementById('course-distribution-chart'); if(!distribution||distribution.length===0){c.innerHTML='<p class="text-slate-500 text-sm italic">S/ dados curso.</p>'; return;} const colors=['#22d3ee','#a5b4fc','#fb923c','#34d399','#f472b6']; let grad=''; let cum=0; const leg=[]; distribution.forEach((item,i)=>{const clr=colors[i%colors.length]; const s=cum; const e=cum+item.percentage; if(item.percentage>0){grad+=`, ${clr} ${s}% ${e}%`;} cum=e; leg.push(`<li><span class="legend-color-box" style="background-color:${clr};"></span>${item.course} (${item.count}) - ${item.percentage.toFixed(0)}%</li>`);}); if(cum<100){grad+=`, #e2e8f0 ${cum}% 100%`;} c.innerHTML=`<div class="donut-chart" style="--chart-segments:${grad.substring(1)};"></div><div class="donut-legend"><ul>${leg.join('')}</ul></div>`;
         }
-
-         /**
-         * [NOVO] Renderiza o gráfico de barras para médias teóricas por matéria.
-         */
-        function renderTheoreticalAvgChart(averages) {
-            const panel = document.getElementById('theoretical-avg-chart');
-            const sortedSubjects = Object.entries(averages).sort(([, avgA], [, avgB]) => avgB - avgA); // Ordena por média desc
-
-            if (sortedSubjects.length === 0) {
-                panel.innerHTML = '<p class="text-slate-500 text-sm italic">Não há dados de notas teóricas.</p>'; return;
-            }
-
-            panel.innerHTML = sortedSubjects.map(([subject, avg]) => {
-                const isMediaGeral = subject.toUpperCase().includes('MÉDIA'); // Detecta se é uma média geral de módulo
-                const barFillClass = isMediaGeral ? 'bar-fill-media' : 'bar-fill-normal';
-                const labelClass = isMediaGeral ? 'text-cyan-700 font-semibold' : 'text-slate-600';
-                const valueClass = isMediaGeral ? 'text-cyan-800 font-bold' : 'text-slate-700 font-semibold';
-
-                return `
-                    <div class="bar-chart-item text-xs rounded p-1.5 ${isMediaGeral ? 'mt-2 pt-2 border-t border-slate-200': ''}">
-                        <div class="flex justify-between items-center mb-0.5">
-                            <span class="bar-label ${labelClass} truncate pr-2" title="${subject}">${subject}</span>
-                            <span class="bar-value ${valueClass} w-8 text-right">${avg.toFixed(1)}</span>
-                        </div>
-                        <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden bar-bg">
-                            <div class="h-full ${barFillClass} rounded-full transition-all duration-500 ease-out" style="width: ${avg * 10}%"></div>
-                        </div>
-                    </div>`;
-            }).join('');
+        function renderTheoreticalAvgChart(averages) { /* ... (sem alterações) ... */
+             const p=document.getElementById('theoretical-avg-chart'); const sorted=Object.entries(averages).sort(([,a],[,b])=>b-a); if(sorted.length===0){p.innerHTML='<p class="text-slate-500 text-sm italic">S/ dados notas T.</p>'; return;} p.innerHTML=sorted.map(([s,a])=>{const iM=s.toUpperCase().includes('MÉDIA'); const bF=iM?'bar-fill-media':'bar-fill-normal'; const lC=iM?'text-sky-700 font-semibold':'text-slate-600'; const vC=iM?'text-sky-800 font-bold':'text-slate-700 font-semibold'; return `<div class="bar-chart-item text-xs rounded p-1.5 ${iM?'mt-2 pt-2 border-t border-slate-200':''}"><div class="flex justify-between items-center mb-0.5"><span class="bar-label ${lC} truncate pr-2" title="${s}">${s}</span><span class="bar-value ${vC} w-8 text-right">${a.toFixed(1)}</span></div><div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden bar-bg"><div class="h-full ${bF} rounded-full transition-all duration-500 ease-out" style="width:${a*10}%"></div></div></div>`;}).join('');
         }
-
-        /**
-         * [NOVO] Renderiza a lista de ausências/reposições recentes no dashboard.
-         */
-        function renderRecentAbsences() {
-             const list = document.getElementById('recent-absences-list');
-             if (!appState.ausenciasReposicoes || appState.ausenciasReposicoes.length === 0) {
-                 list.innerHTML = '<li class="text-slate-500 italic">Nenhum registro encontrado.</li>'; return;
-             }
-
-             // Ordena por data (mais recente primeiro), tratando ambas as datas
-             const sortedAbsences = [...appState.ausenciasReposicoes].sort((a, b) => {
-                const dateA = a.DataReposicaoISO || a.DataAusenciaISO;
-                const dateB = b.DataReposicaoISO || b.DataAusenciaISO;
-                // Coloca nulls (ausências sem data) no final se desejar, ou no início
-                if (!dateB) return -1; // b vem antes se não tiver data
-                if (!dateA) return 1;  // a vem antes se não tiver data
-                return new Date(dateB + 'T00:00:00') - new Date(dateA + 'T00:00:00'); // Mais recente primeiro
-             });
-
-
-             list.innerHTML = sortedAbsences.slice(0, 5).map(item => { // Pega os 5 mais recentes
-                 const aluno = appState.alunosMap.get(item.EmailHC);
-                 const nomeAluno = aluno ? aluno.NomeCompleto : item.EmailHC;
-                 const dataAusencia = item.DataAusenciaISO ? new Date(item.DataAusenciaISO+'T00:00:00').toLocaleDateString('pt-BR') : '-';
-                 const dataReposicao = item.DataReposicaoISO ? new Date(item.DataReposicaoISO+'T00:00:00').toLocaleDateString('pt-BR') : '-';
-                 const isPendente = !item.DataReposicaoISO;
-                 const statusBadge = isPendente ? '<span class="badge badge-yellow ml-2">Pendente</span>' : '<span class="badge badge-green ml-2">Reposto</span>';
-                 const dateToShow = item.DataReposicaoISO || item.DataAusenciaISO; // Data principal para display
-                 const formattedDate = dateToShow ? new Date(dateToShow+'T00:00:00').toLocaleDateString('pt-BR') : 'Data Indef.';
-
-                 return `
-                    <li class="border-b border-slate-100 last:border-b-0 py-2.5 px-1 rounded">
-                        <div class="flex justify-between items-center mb-0.5">
-                            <span class="font-medium text-slate-700 truncate pr-2" title="${nomeAluno}">${nomeAluno}</span>
-                            <span class="text-slate-500 text-[11px]">${formattedDate}</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                             <span class="text-slate-500 truncate pr-2" title="${item.Motivo || ''}">
-                                 ${isPendente ? 'Ausência' : 'Reposição'} (${item.Local || 'Local N/A'})
-                             </span>
-                             ${statusBadge}
-                        </div>
-                    </li>
-                 `;
-             }).join('');
+        function renderRecentAbsences() { /* ... (sem alterações) ... */
+             const l=document.getElementById('recent-absences-list'); if(!appState.ausenciasReposicoes||appState.ausenciasReposicoes.length===0){l.innerHTML='<li class="text-slate-500 italic">Nenhum registro.</li>'; return;} const sorted=[...appState.ausenciasReposicoes].sort((a,b)=>{const dA=a.DataReposicaoISO||a.DataAusenciaISO; const dB=b.DataReposicaoISO||b.DataAusenciaISO; if(!dB)return -1; if(!dA)return 1; return new Date(dB+'T00:00:00')-new Date(dA+'T00:00:00');}); l.innerHTML=sorted.slice(0,5).map(i=>{const al=appState.alunosMap.get(i.EmailHC); const n=al?al.NomeCompleto:i.EmailHC; const iP=!i.DataReposicaoISO; const sB=iP?'<span class="badge badge-yellow ml-2">Pendente</span>':'<span class="badge badge-green ml-2">Reposto</span>'; const dT=i.DataReposicaoISO||i.DataAusenciaISO; const fD=dT?new Date(dT+'T00:00:00').toLocaleDateString('pt-BR'):'Data Indef.'; return `<li class="border-b border-slate-100 last:border-b-0 py-2.5 px-1 rounded"><div class="flex justify-between items-center mb-0.5"><span class="font-medium text-slate-700 truncate pr-2" title="${n}">${n}</span><span class="text-slate-500 text-[11px]">${fD}</span></div><div class="flex justify-between items-center"><span class="text-slate-500 truncate pr-2" title="${i.Motivo||''}">${iP?'Ausência':'Reposição'} (${i.Local||'N/A'})</span>${sB}</div></li>`;}).join('');
         }
-
         function findActiveScale() { /* ... (sem alterações) ... */
              for(const n in appState.escalas){const e=appState.escalas[n]; if(e.headersDay?.includes(appState.todayBR))return e;} console.warn(`Nenhuma escala hoje (${appState.todayBR})`); return null;
         }
@@ -688,10 +474,10 @@
              const c=document.getElementById('tab-faltas'); const h=`<h3 class="content-card-header p-5">Registro de Ausências e Reposições</h3>`; let p=document.getElementById('faltas-content'); if(!faltas||faltas.length===0){c.innerHTML=h+'<p class="text-slate-500 p-5 text-sm italic">Nenhum registro.</p>'; return;} if(!p){c.innerHTML=h+'<div id="faltas-content" class="max-h-[500px] overflow-y-auto"></div>'; p=document.getElementById('faltas-content');} p.innerHTML=`<table class="min-w-full text-sm"><thead class="bg-slate-50"><tr><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Ausência</th><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Reposição</th><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Local</th><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Motivo</th></tr></thead><tbody class="bg-white divide-y divide-slate-100">${faltas.map(f=>{const iP=!f.DataReposicaoISO; const sB=iP?'<span class="badge badge-yellow">Pendente</span>':'<span class="badge badge-green">Completa</span>'; const dA=f.DataAusenciaISO?new Date(f.DataAusenciaISO+'T00:00:00').toLocaleDateString('pt-BR'):'-'; const dR=f.DataReposicaoISO?new Date(f.DataReposicaoISO+'T00:00:00').toLocaleDateString('pt-BR'):'-'; const mS=f.Motivo?(f.Motivo.length>35?f.Motivo.substring(0,35)+'...':f.Motivo):'-'; return `<tr class="hover:bg-sky-50 transition-colors duration-150"><td class="px-4 py-3 text-slate-600 align-middle">${sB}</td><td class="px-4 py-3 text-slate-600 align-middle">${dA}</td><td class="px-4 py-3 text-slate-600 align-middle">${dR}</td><td class="px-4 py-3 text-slate-600 align-middle">${f.Local||'-'}</td><td class="px-4 py-3 text-slate-600 align-middle" title="${f.Motivo||''}">${mS}</td></tr>`;}).join('')}</tbody></table>`;
         }
         function renderTabNotasTeoricas(notas) { /* ... (sem alterações) ... */
-             const p=document.getElementById('notas-t-barchart-content'); if(!notas){p.innerHTML='<p class="text-slate-500 text-sm italic">Nenhum registro.</p>';return;} const k=Object.keys(notas).filter(x=>!['SerialNumber','NomeCompleto','EmailHC','Curso'].includes(x)&&x.trim()!==''); p.innerHTML=k.map(x=>{let v=parseNota(notas[x]); const iM=x.toUpperCase().includes('MÉDIA'); const bF=iM?'bar-fill-media':'bar-fill-normal'; const lC=iM?'text-cyan-700 font-semibold':'text-slate-600'; const vC=iM?'text-cyan-800 font-bold':'text-slate-700 font-semibold'; return `<div class="bar-chart-item text-xs rounded p-1.5 ${iM?'pt-3 mt-3 border-t border-slate-100':''}"><div class="flex justify-between items-center mb-0.5"><span class="bar-label ${lC} truncate pr-2" title="${x}">${x}</span><span class="bar-value ${vC} w-8 text-right">${v.toFixed(1)}</span></div><div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden bar-bg"><div class="h-full ${bF} rounded-full transition-all duration-500 ease-out" style="width:${v*10}%"></div></div></div>`;}).join('');
+             const p=document.getElementById('notas-t-barchart-content'); if(!notas){p.innerHTML='<p class="text-slate-500 text-sm italic">Nenhum registro.</p>';return;} const k=Object.keys(notas).filter(x=>!['SerialNumber','NomeCompleto','EmailHC','Curso'].includes(x)&&x.trim()!==''); p.innerHTML=k.map(x=>{let v=parseNota(notas[x]); const iM=x.toUpperCase().includes('MÉDIA'); const bF=iM?'bar-fill-media':'bar-fill-normal'; const lC=iM?'text-sky-700 font-semibold':'text-slate-600'; const vC=iM?'text-sky-800 font-bold':'text-slate-700 font-semibold'; return `<div class="bar-chart-item text-xs rounded p-1.5 ${iM?'pt-3 mt-3 border-t border-slate-100':''}"><div class="flex justify-between items-center mb-0.5"><span class="bar-label ${lC} truncate pr-2" title="${x}">${x}</span><span class="bar-value ${vC} w-8 text-right">${v.toFixed(1)}</span></div><div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden bar-bg"><div class="h-full ${bF} rounded-full transition-all duration-500 ease-out" style="width:${v*10}%"></div></div></div>`;}).join('');
         }
         function renderTabNotasPraticas(notas) { /* ... (sem alterações) ... */
-             const p=document.getElementById('notas-p-radial-content'); if(!notas||notas.length===0){p.innerHTML='<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhum registro.</p></div>'; return;} p.innerHTML=notas.map((n,i)=>{const dH=n['Data/Hora']; const dF=dH?new Date(String(dH).replace(/-/g,'/')).toLocaleDateString('pt-BR'):'N/A'; const kM=Object.keys(n).find(k=>k.toUpperCase().includes('MÉDIA (NOTA FINAL)'))||'MÉDIA (NOTA FINAL):'; let mF=parseNota(n[kM]); const kC=Object.keys(n).find(k=>k.toUpperCase().includes('COMENTÁRIOS'))||'COMENTÁRIOS DO(A) SUPERVISOR(A):'; const c=n[kC]||'Sem comentários.'; return `<div class="content-card p-5 flex space-x-5 items-center"><div class="flex-shrink-0"><div class="radial-progress" style="--value:${mF*10};"><span class="radial-progress-value">${mF.toFixed(1)}</span></div></div><div class="flex-grow"><h4 class="text-sm font-semibold text-cyan-700">${n.nomePratica} (Aval. ${i+1})</h4><div class="text-xs text-slate-500 mt-1 space-x-3"><span><strong>Data:</strong> ${dF}</span><span><strong>Unid:</strong> ${n.Unidade||'-'}</span><span><strong>Sup:</strong> ${n.Supervisor||'-'}</span></div><details class="mt-2 group"><summary class="text-xs text-slate-500 font-medium cursor-pointer list-none flex items-center group-hover:text-cyan-600 transition-colors"><span class="mr-1">Ver comentário</span><svg class="h-4 w-4 transform transition-transform duration-200 group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></summary><p class="text-sm italic text-slate-600 mt-2 p-3 bg-slate-50 rounded-md border border-slate-200">${c}</p></details></div></div>`;}).join('');
+             const p=document.getElementById('notas-p-radial-content'); if(!notas||notas.length===0){p.innerHTML='<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhum registro.</p></div>'; return;} p.innerHTML=notas.map((n,i)=>{const dH=n['Data/Hora']; const dF=dH?new Date(String(dH).replace(/-/g,'/')).toLocaleDateString('pt-BR'):'N/A'; const kM=Object.keys(n).find(k=>k.toUpperCase().includes('MÉDIA (NOTA FINAL)'))||'MÉDIA (NOTA FINAL):'; let mF=parseNota(n[kM]); const kC=Object.keys(n).find(k=>k.toUpperCase().includes('COMENTÁRIOS'))||'COMENTÁRIOS DO(A) SUPERVISOR(A):'; const c=n[kC]||'Sem comentários.'; return `<div class="content-card p-5 flex space-x-5 items-center"><div class="flex-shrink-0"><div class="radial-progress" style="--value:${mF*10};"><span class="radial-progress-value">${mF.toFixed(1)}</span></div></div><div class="flex-grow"><h4 class="text-sm font-semibold text-sky-700">${n.nomePratica} (Aval. ${i+1})</h4><div class="text-xs text-slate-500 mt-1 space-x-3"><span><strong>Data:</strong> ${dF}</span><span><strong>Unid:</strong> ${n.Unidade||'-'}</span><span><strong>Sup:</strong> ${n.Supervisor||'-'}</span></div><details class="mt-2 group"><summary class="text-xs text-slate-500 font-medium cursor-pointer list-none flex items-center group-hover:text-sky-600 transition-colors"><span class="mr-1">Ver comentário</span><svg class="h-4 w-4 transform transition-transform duration-200 group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></summary><p class="text-sm italic text-slate-600 mt-2 p-3 bg-slate-50 rounded-md border border-slate-200">${c}</p></details></div></div>`;}).join('');
         }
 
         // --- Inicia ---
