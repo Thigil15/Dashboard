@@ -3,679 +3,983 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal do Ensino - Dashboard v15 (Premium)</title>
+    <title>Portal do Ensino - Dashboard v26 (Gemini)</title>
     <!-- Carrega o Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- [NOVO v15] Importa as fontes 'Inter' (corpo) e 'Poppins' (títulos) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
-
-    <!-- [TEMA NOVO v15] Estilos Premium Glassmorphism -->
     <style>
-        /* --- [TEMA v15] Variáveis Globais de Design --- */
+        /* --- [NOVO v23] Paleta de Cores "InCor Institucional" --- */
         :root {
-            /* Tipografia */
-            --font-body: 'Inter', sans-serif;
-            --font-heading: 'Poppins', sans-serif;
+            /* Fontes */
+            --font-main: 'Inter', sans-serif;
+            --font-display: 'Poppins', sans-serif;
 
-            /* Cores de Fundo */
-            --bg-main-start: hsl(220, 20%, 97%); /* Cinza-azulado muito claro */
-            --bg-main-end: hsl(220, 20%, 99%);   /* Quase branco */
-            --bg-gradient: linear-gradient(180deg, var(--bg-main-start) 0%, var(--bg-main-end) 100vh);
+            /* [CORREÇÃO v24] Cores Base (Tema InCor) com Sidebar Branca */
+            --body-bg: #F7F9FB; /* Cinza Neutro (Fundo) */
+            --sidebar-bg: #ffffff; /* Fundo Branco */
+            --sidebar-text: var(--content-text-secondary); /* Texto Cinza */
+            --sidebar-text-active: var(--accent-blue); /* Texto Azul */
+            --content-text-primary: #334155; /* Cinza Escuro (Títulos) */
+            --content-text-secondary: #475569; /* Cinza Médio (Texto) */
             
-            /* Sidebar */
-            --sidebar-bg: hsl(224, 25%, 12%); /* Azul petróleo/cinza escuro */
-            --sidebar-border: hsl(224, 25%, 20%);
-            --sidebar-text: hsl(220, 14%, 75%);
-            --sidebar-text-hover: hsl(0, 0%, 100%);
-            --sidebar-accent: hsl(190, 80%, 55%); /* Ciano vibrante */
-            --sidebar-accent-glow: hsla(190, 80%, 55%, 0.15);
-
-            /* Cards (Glassmorphism) */
-            --card-bg: rgba(255, 255, 255, 0.7);
-            --card-border: rgba(255, 255, 255, 0.9);
-            --card-shadow: 0 10px 30px -15px rgba(100, 116, 139, 0.15);
-            --card-shadow-hover: 0 15px 35px -15px rgba(100, 116, 139, 0.25);
+            /* Cores de Destaque Vibrantes (InCor) */
+            --accent-blue: #0054B4; /* Azul Secundário InCor */
+            --accent-red: #E21E26;  /* Vermelho InCor */
+            --accent-green: #16a34a; /* Verde (Sucesso) */
+            --accent-yellow: #ca8a04; /* Amarelo (Atenção) */
             
-            /* Cores de Texto */
-            --text-primary: hsl(225, 25%, 20%);
-            --text-secondary: hsl(220, 15%, 45%);
-            --text-tertiary: hsl(220, 10%, 65%);
+            --card-bg: rgba(255, 255, 255, 0.7); /* Branco @ 70% */
+            --card-bg-darker: rgba(255, 255, 255, 0.9); /* Branco @ 90% */
+            --card-border: 1px solid #E5E9EF; /* Borda Cinza Clara */
+            --card-border-hover: 1px solid var(--accent-blue);
+            --card-shadow: 0 8px 32px 0 rgba(0, 51, 160, 0.08); /* Sombra Azulada Sutil */
             
-            /* Acentos Vibrantes */
-            --accent-purple: hsl(250, 70%, 65%);
-            --accent-cyan: hsl(190, 80%, 55%);
-            --accent-orange: hsl(30, 90%, 65%);
-            --accent-green: hsl(140, 60%, 50%);
-            --accent-red: hsl(0, 80%, 65%);
-            --accent-yellow: hsl(45, 90%, 60%);
+            /* Transições */
+            --transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-slow: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* --- [TEMA v15] Estilos Base --- */
-        html { 
-            scroll-behavior: smooth; 
+        /* --- Estilos Globais --- */
+        html { scroll-behavior: smooth; }
+        body { 
+            background-color: var(--body-bg);
+            font-family: var(--font-main); 
+            color: var(--content-text-secondary);
             -webkit-font-smoothing: antialiased; 
-            -moz-osx-font-smoothing: grayscale;
-        }
-        body {
-            font-family: var(--font-body);
-            background: var(--bg-gradient);
-            background-attachment: fixed; /* Gradiente fica fixo */
-            color: var(--text-primary);
+            -moz-osx-font-smoothing: grayscale; 
         }
         
-        /* Títulos principais (Dashboard, Alunos, etc) */
-        main h1.text-2xl {
-            font-family: var(--font-heading);
-            font-weight: 700;
-            color: var(--text-primary);
-            letter-spacing: -0.02em;
-        }
+        h1, h2, h3, h4, .font-display { font-family: var(--font-display); color: var(--content-text-primary); font-weight: 600; }
+        h1 { font-size: 1.75rem; line-height: 2.25rem; }
+        h2 { font-size: 1.25rem; line-height: 1.75rem; }
+        h3 { font-size: 1.125rem; line-height: 1.75rem; }
 
-        /* --- [TEMA v15] Animações --- */
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        /* --- Scrollbar Customizada --- */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #eef3f9; }
+        ::-webkit-scrollbar-thumb { background: #bfdbfe; } 
+        ::-webkit-scrollbar-thumb:hover { background: #93c5fd; } 
 
-        /* Aplica animação de fade-in às views (controlado pelo JS 'display: block') */
-        .view-container[style*="block"] {
-            animation: fadeInUp 0.4s ease-out both;
+        /* --- Efeito "Glassmorphism" Branco --- */
+        .content-card {
+            background: var(--card-bg);
+            border-radius: 1rem;
+            border: var(--card-border);
+            box-shadow: var(--card-shadow);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            transition: var(--transition-slow);
+            overflow: hidden;
+        }
+        .content-card:hover {
+            box-shadow: 0 12px 40px 0 rgba(0, 51, 160, 0.12);
+            transform: translateY(-4px);
+            border: var(--card-border-hover);
         }
         
-        /* --- [TEMA v15] Loader --- */
+        .content-card-header { 
+            font-family: var(--font-display);
+            font-size: 0.9rem;
+            font-weight: 600; 
+            color: var(--content-text-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding-bottom: 0.75rem; 
+            margin-bottom: 1rem; 
+            border-bottom: 1px solid var(--card-border); 
+        }
+
+        /* --- Loader --- */
         #loading-overlay { 
             position: fixed; inset: 0; 
-            background-color: hsla(220, 20%, 98%, 0.8); /* Fundo "frosted" */
-            backdrop-filter: blur(5px);
-            display: none;
-            opacity: 0;
-            justify-content: center; align-items: center; flex-direction: column; 
+            background-color: rgba(255, 255, 255, 0.8); 
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            display: none; opacity: 0; 
+            justify-content: center; align-items: center; 
             z-index: 9999; 
-            transition: opacity 0.3s ease-out;
+            transition: opacity 0.3s ease-out; 
         }
         .loader { 
-            width: 40px; height: 40px; border-radius: 50%; 
-            border: 4px solid var(--accent-cyan);
-            border-top-color: var(--text-primary);
+            width: 50px; height: 50px; 
+            border-radius: 50%; 
+            border: 4px solid var(--accent-blue); 
+            border-top-color: #0033A0; /* Azul Principal InCor */
             animation: spin 1s linear infinite; 
         }
-        #loading-overlay p { 
-            color: var(--text-primary); 
-            margin-top: 1.5rem; 
-            font-weight: 500;
-            font-family: var(--font-heading);
-        }
         @keyframes spin { to { transform: rotate(360deg); } }
+        #loading-overlay p { 
+            color: #0033A0; 
+            margin-top: 1.5rem; 
+            font-family: var(--font-display);
+            font-weight: 600; 
+            font-size: 1.125rem;
+        }
 
-        /* --- [TEMA v15] Tela de Login --- */
+        /* --- Tela de Login --- */
         #login-view {
-            align-items: center;
-            justify-content: center;
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
             min-height: 100vh;
-            background: var(--bg-gradient); /* Mesmo gradiente */
         }
         #login-card {
             background: var(--card-bg);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--card-border);
+            border-radius: 1.5rem;
+            border: var(--card-border);
             box-shadow: var(--card-shadow);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             padding: 2.5rem;
-            border-radius: 1rem; /* 16px */
             width: 100%;
-            max-width: 24rem;
-            animation: fadeInUp 0.5s ease-out both;
+            max-width: 26rem;
+            transition: var(--transition-slow);
         }
-        #login-card h1 {
-            font-family: var(--font-heading);
+        #login-card:hover { transform: none; box-shadow: 0 16px 50px 0 rgba(0, 51, 160, 0.15); border: var(--card-border-hover); }
+        #login-card h1 { font-family: var(--font-display); font-weight: 700; font-size: 2rem; color: #0033A0; }
+        #login-card label { color: var(--content-text-secondary); font-weight: 500; }
+        #login-card input {
+            background: #ffffff;
+            border: 1px solid #dde8f5;
+            transition: var(--transition-fast);
         }
-        /* Inputs do Login */
-        #login-form input {
-            background: hsl(220, 20%, 100%);
-            border: 1px solid hsl(220, 15%, 90%);
-            border-radius: 0.5rem;
-            transition: all 0.2s ease;
+        #login-card input:focus {
+            background: #ffffff;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(0, 84, 180, 0.2);
+            outline: none;
         }
-        #login-form input:focus {
-            border-color: var(--sidebar-accent);
-            box-shadow: 0 0 0 3px var(--sidebar-accent-glow);
-        }
-        /* Botão de Login */
-        #login-form button[type="submit"] {
-            font-family: var(--font-heading);
+        #login-card button[type="submit"] {
+            background-color: #0033A0;
+            font-family: var(--font-display);
             font-weight: 600;
-            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
-            border-radius: 0.5rem;
-            transition: all 0.25s ease;
-            box-shadow: 0 4px 15px -5px hsla(220, 70%, 60%, 0.4);
+            padding: 0.75rem;
+            transition: var(--transition-fast);
         }
-        #login-form button[type="submit"]:hover {
-            transform: scale(1.03);
-            box-shadow: 0 6px 20px -5px hsla(220, 70%, 60%, 0.6);
-        }
-        /* Erro do Login */
+        #login-card button[type="submit"]:hover { background-color: var(--accent-blue); } 
         #login-error {
-            display: none;
-            background-color: hsl(0, 100%, 98%);
-            color: hsl(0, 70%, 45%);
-            border: 1px solid hsl(0, 80%, 92%);
-            padding: 0.75rem 1rem;
-            border-radius: 0.5rem;
-            font-size: 0.875rem;
-            font-weight: 500;
+            display: none; 
+            background-color: rgba(226, 30, 38, 0.1); 
+            color: #991b1b; 
+            border: 1px solid rgba(226, 30, 38, 0.2); 
+            padding: 0.75rem 1rem; 
+            border-radius: 0.5rem; 
+            font-size: 0.875rem; 
+            font-weight: 500; 
             margin-top: 1rem;
         }
 
-        /* --- [TEMA v15] Sidebar --- */
-        #app-sidebar { 
-            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-            background-color: var(--sidebar-bg);
-            border-right: 1px solid var(--sidebar-border); 
+        /* --- [CORREÇÃO v24] Sidebar (Tema Branco) --- */
+        #app-sidebar {
+            width: 16rem;
+            background-color: var(--sidebar-bg); /* Fundo Branco */
+            border-right: 1px solid var(--card-border); /* Borda Cinza */
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        #app-sidebar .sidebar-logo-text { 
-            color: var(--sidebar-text-hover);
-            font-family: var(--font-heading);
-            font-weight: 600;
-            letter-spacing: -0.01em;
-        }
-        /* Links da Sidebar */
-        .sidebar-link { 
-            transition: all 0.2s ease-in-out; 
-            border-left: 4px solid transparent; 
-            padding: 0.75rem 1.25rem; 
-            color: var(--sidebar-text); 
-            display: flex; 
-            align-items: center; 
+        .sidebar-logo-text { color: #0033A0; } /* Azul Principal */
+        
+        .sidebar-link {
+            transition: var(--transition-fast);
+            border-left: 4px solid transparent;
+            padding: 0.75rem 1.5rem;
+            color: var(--sidebar-text); /* Texto Cinza */
+            display: flex;
+            align-items: center;
             font-weight: 500;
+            font-size: 0.9rem;
+            position: relative;
         }
-        .sidebar-link svg { 
-            margin-right: 0.8rem; 
-            flex-shrink: 0;
-            transition: all 0.2s ease-in-out;
+        .sidebar-link svg {
+            color: var(--sidebar-text);
+            opacity: 1;
+            transition: var(--transition-fast);
         }
-        /* Ícones Coloridos (Conforme Pedido) */
-        .sidebar-link[data-tab="dashboard"] svg { color: var(--accent-cyan); }
-        .sidebar-link[data-tab="alunos"] svg { color: var(--accent-purple); }
-        .sidebar-link[data-tab="ponto"] svg { color: var(--accent-orange); }
-
-        /* Hover: Efeito "Glow" */
-        .sidebar-link:hover { 
-            background-color: var(--sidebar-border); 
-            color: var(--sidebar-text-hover);
-            /* O "Glow" */
-            box-shadow: inset 4px 0 10px -5px var(--sidebar-accent-glow);
+        .sidebar-link:hover {
+            background-color: rgba(0, 84, 180, 0.05); /* Fundo Azul Sutil */
+            color: var(--accent-blue); /* Texto Azul */
         }
         .sidebar-link:hover svg { 
-            color: var(--sidebar-text-hover); /* Ícone fica branco no hover */
+            color: var(--accent-blue);
         }
-        /* Link Ativo */
-        .sidebar-link.active { 
-            background: linear-gradient(90deg, rgba(0,0,0,0.3), rgba(0,0,0,0.0));
-            color: var(--sidebar-text-hover); 
-            border-left-color: var(--sidebar-accent); 
+        .sidebar-link.active {
+            background-color: rgba(0, 84, 180, 0.1); /* Fundo Azul Claro */
+            color: var(--accent-blue); /* Texto Azul */
+            border-left-color: var(--accent-blue);
             font-weight: 600;
         }
         .sidebar-link.active svg { 
-            color: var(--sidebar-text-hover); /* Ícone fica branco no ativo */
+            color: var(--accent-blue);
+            opacity: 1;
         }
 
-        /* --- [TEMA v15] Sidebar Colapsada --- */
-        #app-sidebar.collapsed { width: 5.5rem; /* 88px */ }
+        /* Sidebar Colapsada */
+        #app-sidebar.collapsed { width: 5rem; }
         #app-sidebar.collapsed .sidebar-logo-text { display: none; }
         #app-sidebar.collapsed .sidebar-link { justify-content: center; padding-left: 0; padding-right: 0; }
         #app-sidebar.collapsed .sidebar-link svg { margin-right: 0; }
         #app-sidebar.collapsed .sidebar-link-text { display: none; }
-        #sidebar-toggle { transition: all 0.3s ease; }
+        
+        #sidebar-toggle { 
+            color: var(--sidebar-text); /* Cinza */
+            transition: var(--transition-fast); 
+        }
+        #sidebar-toggle:hover { color: var(--accent-blue); background-color: rgba(0, 84, 180, 0.1); }
         #app-sidebar.collapsed #sidebar-toggle { transform: rotate(180deg); }
 
-
-        /* --- [TEMA v15] Cards de Conteúdo (Glassmorphism) --- */
-        .content-card { 
-            background: var(--card-bg);
-            backdrop-filter: blur(20px); /* Efeito "Frosted Glass" */
-            border: 1px solid var(--card-border);
-            box-shadow: var(--card-shadow);
-            border-radius: 1rem; /* 16px */
-            transition: all 0.3s ease-in-out; 
-            animation: fadeInUp 0.4s ease-out both 0.1s; /* Leve delay */
-        }
-        .content-card:hover { 
-            box-shadow: var(--card-shadow-hover);
-            transform: translateY(-4px); /* Elevação sutil */
-        }
-        .content-card-header { 
-            font-family: var(--font-heading);
-            font-size: 0.8rem; /* 13px */
-            font-weight: 600; 
-            color: var(--text-secondary);
-            margin-bottom: 1rem; 
-            padding-bottom: 0.8rem; 
-            border-bottom: 1px solid hsl(220, 25%, 94%); /* Borda interna sutil */
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        /* --- [TEMA v15] KPI Cards (Premium) --- */
+        /* --- Conteúdo Principal (Layout) --- */
+        main { padding: 2rem; }
         
-        /* Estilo 1: Usado na "Visão Geral" (Layout v14) */
-        /* O ícone */
-        .kpi-card .icon-bg, .icon-bg { 
-            padding: 1rem; /* 16px */
-            border-radius: 0.75rem; /* 12px */
-            transition: all 0.3s ease;
+        .view-container { 
+            animation: fadeInUp 0.5s var(--transition-slow) both;
         }
-        /* O texto */
-        .kpi-card .kpi-label, .text-sm.font-medium.text-slate-500 {
-            font-size: 0.875rem; /* 14px */
-            font-weight: 500; 
-            color: var(--text-secondary); 
-            margin-bottom: 0;
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        .kpi-card .kpi-value, .text-2xl.font-bold.text-slate-800, .text-xl.font-bold.text-slate-800 { 
-            font-family: var(--font-heading);
-            font-size: 2rem; /* 32px (Grande) */
-            font-weight: 700; 
-            color: var(--text-primary);
+
+        /* --- Layout Dashboard Geral (Grid) --- */
+        #content-dashboard .grid {
+            gap: 1.5rem;
+        }
+        #content-dashboard .animated-card {
+            opacity: 0;
+            animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        #content-dashboard .delay-100 { animation-delay: 0.1s; }
+        #content-dashboard .delay-200 { animation-delay: 0.2s; }
+        #content-dashboard .delay-300 { animation-delay: 0.3s; }
+        #content-dashboard .delay-400 { animation-delay: 0.4s; }
+        #content-dashboard .delay-500 { animation-delay: 0.5s; }
+        #content-dashboard .delay-600 { animation-delay: 0.6s; }
+        #content-dashboard .delay-700 { animation-delay: 0.7s; }
+
+        /* --- KPIs (Cards Hero e Secundários) --- */
+        .kpi-base-card {
+            background: var(--card-bg-darker);
+            border-radius: 1rem;
+            border: 1px solid #ffffff;
+            box-shadow: none;
+            transition: var(--transition-fast);
+        }
+        .kpi-base-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--card-shadow);
+            border-color: var(--accent-blue);
+        }
+        .kpi-hero-card {
+            padding: 1.25rem;
+            display: flex;
+            align-items: center;
+        }
+        .kpi-hero-card .icon-bg {
+            flex-shrink: 0;
+            padding: 0.9rem;
+            border-radius: 0.75rem;
+            margin-right: 1rem;
+        }
+        .kpi-hero-card .icon-bg svg {
+            width: 1.75rem;
+            height: 1.75rem;
+        }
+        .kpi-hero-card .kpi-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--content-text-secondary);
+            margin-bottom: 0.15rem;
+        }
+        .kpi-hero-card .kpi-value {
+            font-family: var(--font-display);
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: var(--content-text-primary);
             line-height: 1.1;
         }
-        /* Ajuste para médias (menores) */
-        .grid .text-xl.font-bold.text-slate-800 {
-             font-size: 1.75rem; /* 28px */
+        .kpi-secondary-card {
+            padding: 0.75rem 1rem;
+            text-align: center;
         }
-        .grid .text-xs.font-medium.text-slate-500 {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-        }
-        .grid .icon-bg {
-            padding: 0.8rem;
-        }
-
-        /* Estilo 2: Usado na "Frequência Diária" (Layout antigo) */
-        .kpi-card {
-            background: hsla(220, 20%, 98%, 0.7);
-            border: 1px solid hsl(220, 25%, 94%);
-            border-radius: 0.75rem;
-            transition: all 0.25s ease-in-out;
-            position: relative;
-            overflow: hidden;
-        }
-        .kpi-card:hover { 
-            transform: scale(1.02); 
-            box-shadow: 0 4px 10px -2px rgb(0 0 0 / 0.05); 
-            z-index: 5; 
-            border-color: var(--sidebar-accent);
-        }
-        .kpi-card .kpi-label {
-            font-size: 0.65rem; 
-            font-weight: 600; 
-            color: var(--text-tertiary);
-            text-transform: uppercase;
-        }
-        .kpi-card .kpi-value {
-            font-size: 1.5rem; /* 24px */
+        .kpi-secondary-card .kpi-label {
+            font-size: 0.65rem;
             font-weight: 700;
-            color: var(--text-primary);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-bottom: 0.25rem;
         }
-
-        /* Cores dos Ícones (Mantidas, mas com vars) */
-        .kpi-icon-blue { background-color: #dbeafe; color: #2563eb; } 
-        .kpi-icon-green { background-color: #dcfce7; color: #16a34a; } 
-        .kpi-icon-red { background-color: #fee2e2; color: #dc2626; } 
-        .kpi-icon-yellow { background-color: #fef9c3; color: #ca8a04; }
-        .kpi-icon-purple { background-color: #ede9fe; color: #7c3aed; }
-        .kpi-icon-cyan { background-color: #ecfeff; color: #0891b2; }
-        .kpi-icon-orange { background-color: #fff7ed; color: #f97316; }
-
-        /* --- [TEMA v15] Gráficos --- */
-        .donut-chart { 
-            position: relative; width: 140px; height: 140px; border-radius: 50%; 
-            background: conic-gradient( var(--chart-segments) ); 
-            transition: transform 0.3s ease; 
+        .kpi-secondary-card .kpi-value {
+            font-family: var(--font-display);
+            font-size: 1.75rem;
+            font-weight: 700;
+            line-height: 1.2;
         }
+        #kpi-scaled-label { color: var(--accent-blue); }
+        #kpi-scaled { color: #0033A0; } 
+        #kpi-present-label { color: var(--accent-green); }
+        #kpi-present { color: #15803d; } 
+        #kpi-absent-label { color: var(--accent-red); }
+        #kpi-absent { color: #991b1b; } 
+
+        .kpi-icon-blue { background-color: rgba(0, 84, 180, 0.15); color: var(--accent-blue); }
+        .kpi-icon-green { background-color: rgba(22, 163, 74, 0.15); color: var(--accent-green); }
+        .kpi-icon-red { background-color: rgba(226, 30, 38, 0.1); color: var(--accent-red); }
+        .kpi-icon-orange { background-color: rgba(249, 115, 22, 0.15); color: #f97316; } 
+
+
+        /* --- Lista Frequência Diária --- */
+        #frequency-panel h3 {
+            font-family: var(--font-display);
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        #frequency-panel ul li {
+            padding: 0.5rem 0.25rem;
+            border-bottom: 1px solid var(--card-border);
+            transition: var(--transition-fast);
+        }
+        #frequency-panel ul li:last-child { border-bottom: none; }
+        #frequency-panel ul li:hover { background-color: rgba(239, 246, 255, 0.7); }
+
+        /* --- Gráfico Donut (Distribuição Cursos) --- */
+        .donut-chart-container { display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 1.5rem; padding: 1rem 0; }
+        .donut-chart { position: relative; width: 150px; height: 150px; border-radius: 50%; background: conic-gradient( var(--chart-segments) ); transition: transform 0.3s ease; }
         .donut-chart:hover { transform: scale(1.05); }
-        .donut-chart::before { 
-            content: ''; position: absolute; top: 50%; left: 50%; 
-            transform: translate(-50%, -50%); width: 60%; height: 60%; 
-            background: var(--card-bg); /* Furo do Donut */
-            border-radius: 50%; 
-            box-shadow: inset 0 0 5px rgba(0,0,0,0.05);
+        .donut-chart::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 60%; height: 60%; background: var(--card-bg-darker); border-radius: 50%; box-shadow: inset 0 0 8px rgba(0,0,0,0.05);}
+        .donut-legend ul { list-style: none; padding: 0; margin: 0; font-size: 0.75rem; color: var(--content-text-secondary); width: 100%; }
+        .donut-legend li { display: flex; align-items: center; margin-bottom: 0.5rem; }
+        .legend-color-box { width: 12px; height: 12px; border-radius: 3px; margin-right: 0.75rem; flex-shrink: 0; }
+
+        /* --- Gráfico de Barras (Desempenho Teórico) --- */
+        .bar-chart-item { transition: var(--transition-fast); border-radius: 6px; padding: 0.4rem 0.5rem; }
+        .bar-chart-item:hover { background-color: rgba(238, 242, 255, 0.8); }
+        .bar-chart-item .bar-bg { background-color: #E5E9EF; height: 0.6rem; border-radius: 0.3rem; }
+        .bar-chart-item .bar-fill { height: 100%; border-radius: 0.3rem; transition: width 0.8s ease-out; }
+        .bar-fill-normal { background: var(--accent-blue); opacity: 0.6; } 
+        .bar-fill-media { background: var(--accent-blue); }
+        .bar-chart-item .bar-label { color: var(--content-text-secondary); font-size: 0.8rem; font-weight: 500;}
+        .bar-chart-item .bar-value { color: var(--content-text-primary); font-size: 0.8rem; font-weight: 600; }
+        
+        /* --- Lista Ausências Recentes --- */
+        #recent-absences-list li { transition: var(--transition-fast); padding: 0.8rem 0.5rem; border-bottom: 1px solid var(--card-border); }
+        #recent-absences-list li:last-child { border-bottom: none; }
+        #recent-absences-list li:hover { background-color: rgba(248, 250, 252, 0.8); }
+        #last-update-timestamp { font-size: 0.7rem; color: var(--content-text-secondary); opacity: 0.7; }
+
+        /* --- Badges --- */
+        .badge { font-size: 0.65rem; padding: 0.25em 0.75em; border: 1px solid transparent; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; border-radius: 99px;}
+        .badge-green { background-color: #dcfce7; color: #166534; border-color: #86efac;}
+        .badge-yellow { background-color: #fef9c3; color: #854d0e; border-color: #fde047;}
+        .badge-gray { background-color: #f1f5f9; color: #475569; border-color: #e2e8f0;}
+        .badge-red { background-color: rgba(226, 30, 38, 0.1); color: #991b1b; border-color: rgba(226, 30, 38, 0.2);}
+
+        /* --- Lista de Alunos (View Alunos) --- */
+        #search-student { 
+            background: #ffffff;
+            border: 1px solid var(--card-border);
+            transition: var(--transition-fast); 
         }
-        .donut-legend ul { font-size: 0.75rem; color: var(--text-secondary); }
-        .legend-color-box { border-radius: 4px; }
-
-        /* Gráfico de Barras */
-        .bar-chart-item { border-radius: 6px; padding: 0.4rem 0.6rem; }
-        .bar-chart-item:hover { background-color: hsl(220, 30%, 96%); }
-        .bar-chart-item .bar-bg { background-color: hsl(220, 25%, 94%); border-radius: 4px; }
-        .bar-chart-item .bar-fill-normal { background-color: var(--accent-cyan); border-radius: 4px; }
-        .bar-chart-item .bar-fill-media { background: linear-gradient(90deg, var(--accent-purple), var(--sidebar-accent)); border-radius: 4px; }
-        .bar-chart-item .bar-label { color: var(--text-secondary); font-size: 0.75rem; font-weight: 500; }
-        .bar-chart-item .bar-value { color: var(--text-primary); font-size: 0.75rem; font-weight: 600; }
-
-        /* --- [TEMA v15] Lista de Alunos --- */
+        #search-student:focus {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(0, 84, 180, 0.2);
+            outline: none;
+        }
+        
         .student-group-header { 
-            font-family: var(--font-heading);
-            font-size: 0.75rem; 
+            font-family: var(--font-display);
+            font-size: 0.8rem; 
             font-weight: 600; 
-            text-transform: uppercase; 
-            color: var(--text-primary); 
+            color: #0033A0; /* Azul Principal */
+            background-color: transparent; 
             padding: 0.5rem 0.25rem; 
             margin-top: 1.75rem; margin-bottom: 1rem; 
             border: none; 
-            border-bottom: 2px solid var(--sidebar-accent); 
+            border-bottom: 2px solid var(--accent-blue); 
             position: sticky; top: -1px; z-index: 5; 
-            /* Header "Frosted" */
-            background: linear-gradient(to bottom, hsla(220, 20%, 98%, 0.9) 80%, hsla(220, 20%, 98%, 0));
-            backdrop-filter: blur(5px);
+            background: linear-gradient(to bottom, var(--body-bg) 80%, rgba(247, 249, 251, 0)); 
         }
+        
         .student-card { 
             background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            box-shadow: none; /* Mais limpo */
             border-radius: 0.75rem; 
+            border: var(--card-border);
             padding: 1rem; 
-            transition: all 0.25s ease-in-out; 
+            box-shadow: 0 1px 3px 0 rgba(0, 51, 160, 0.03); 
+            transition: var(--transition-fast); 
             cursor: pointer; position: relative; 
-            display: flex; flex-direction: column; align-items: center; text-align: center; 
+            display: flex; flex-direction: column; 
+            align-items: center; text-align: center; 
         }
         .student-card:hover { 
             transform: translateY(-5px) scale(1.02); 
             box-shadow: var(--card-shadow);
-            border-color: var(--sidebar-accent); 
+            border-color: var(--accent-blue); 
             z-index: 10; 
         }
+        
         .student-card img { 
-            width: 3.5rem; height: 3.5rem; border-radius: 9999px; 
+            width: 3.5rem; height: 3.5rem; 
+            border-radius: 9999px; 
             object-fit: cover; 
-            background-color: #e2e8f0; 
+            background-color: #E5E9EF; 
+            border: 2px solid white; 
+            box-shadow: 0 0 0 2px white, 0 0 0 4px rgba(0, 84, 180, 0.5); 
             margin-bottom: 0.75rem; 
-            /* Efeito de anel */
-            border: none;
-            box-shadow: 0 0 0 3px var(--card-bg), 0 0 0 5px var(--accent-cyan);
+            transition: var(--transition-fast);
         }
-        .student-card .student-name { 
-            font-size: 0.875rem; font-weight: 600; color: var(--text-primary); 
-            line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; 
-            -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 0.25rem; 
-        }
-        .student-card .student-course { 
-            font-size: 0.7rem; color: var(--text-secondary); 
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; 
-        }
-        /* Card Inativo */
-        .student-card.inactive-card { 
-            opacity: 0.8; 
-            background: rgba(248, 250, 252, 0.7); 
-            border-style: dashed; 
-            border-color: hsl(220, 15%, 85%);
-        }
-        .student-card.inactive-card img {
-            box-shadow: 0 0 0 3px var(--card-bg), 0 0 0 5px hsl(220, 15%, 85%);
-        }
-        .student-card.inactive-card:hover { 
-            opacity: 1; 
-            transform: translateY(-2px) scale(1.01); 
-            border-color: var(--accent-red);
-        }
+        .student-card:hover img { box-shadow: 0 0 0 2px white, 0 0 0 4px var(--accent-blue); }
+        
+        .student-card .student-name { font-size: 0.875rem; font-weight: 600; color: var(--content-text-primary); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 0.25rem; }
+        .student-card .student-course { font-size: 0.75rem; color: var(--content-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+        .student-card.inactive-card { opacity: 0.7; background: rgba(248, 250, 252, 0.7); border-style: dashed; border-color: var(--card-border); }
+        .student-card.inactive-card:hover { opacity: 0.9; transform: translateY(-2px) scale(1.01); }
         .inactive-badge { position: absolute; top: 0.5rem; right: 0.5rem; }
-        .highlight { background-color: var(--accent-yellow); border-radius: 2px; padding: 0 2px; color: var(--text-primary); font-weight: 500;}
+        .highlight { background-color: rgba(0, 84, 180, 0.2); border-radius: 2px; padding: 0 2px; color: #0033A0; font-weight: 600;}
 
-        /* --- [TEMA v15] Detalhe Aluno (Abas, Tabelas) --- */
+
+        /* --- View Detalhe do Aluno --- */
         #student-detail-view {
-            background: var(--bg-gradient);
-            background-attachment: fixed;
+            position: fixed; inset: 0; 
+            background: var(--body-bg);
+            z-index: 50; overflow-y: auto;
         }
-        /* Header Fixo Detalhe Aluno */
-        #student-detail-view > header {
-            background: var(--card-bg);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid var(--card-border);
-            box-shadow: 0 4px 10px rgba(100, 116, 139, 0.05);
+        #student-detail-view header {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            box-shadow: 0 2px 10px 0 rgba(0, 51, 160, 0.05);
+            border-bottom: 1px solid #ffffff;
+            position: sticky; top: 0; z-index: 10;
         }
-        #student-detail-view #back-to-dashboard {
-            font-family: var(--font-heading);
+        #back-to-dashboard {
+            color: var(--accent-blue);
+            font-family: var(--font-display);
             font-weight: 600;
-            color: var(--sidebar-accent);
         }
-        #student-detail-view #back-to-dashboard:hover {
-            color: var(--accent-purple);
-        }
-        /* Header do Aluno (Nome/Foto) */
-        #student-header {
-            border-radius: 1rem;
-        }
-        #student-header h2 {
-            font-family: var(--font-heading);
-            font-weight: 700;
-        }
+        #back-to-dashboard:hover { color: #0033A0; } 
+        
         #student-header img {
+            width: 5rem; height: 5rem;
+            object-fit: cover;
+            border-radius: 9999px;
             border: 4px solid white;
-            box-shadow: 0 0 0 1px hsl(220, 15%, 85%);
+            box-shadow: 0 0 0 4px var(--accent-blue);
         }
-
-        /* KPIs do Aluno */
+        
         #student-kpi-header .kpi-card {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            backdrop-filter: blur(10px);
+            background: var(--card-bg-darker);
+            border: 1px solid #ffffff;
+            box-shadow: none;
         }
         #student-kpi-header .kpi-card:hover {
-            border-color: var(--sidebar-accent);
+             transform: scale(1.03); 
+             box-shadow: var(--card-shadow); 
+             border-color: var(--accent-blue);
+             z-index: 5;
         }
-        #student-kpi-header .kpi-card .kpi-label { font-size: 0.7rem; color: var(--text-secondary); }
-        #student-kpi-header .kpi-card .kpi-value { font-size: 1.75rem; color: var(--text-primary); }
+        #student-kpi-header .kpi-label { font-size: 0.7rem; font-weight: 600; color: var(--content-text-secondary); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.1rem; }
+        #student-kpi-header .kpi-value { font-family: var(--font-display); font-size: 1.8rem; font-weight: 700; color: var(--content-text-primary); line-height: 1.1; }
+        #student-kpi-header .icon-bg { padding: 0.8rem; border-radius: 0.75rem; }
 
-        /* Abas (Tabs) */
+
+        /* --- Abas (Tabs) --- */
         #student-tabs-nav { 
+            border-bottom: 2px solid var(--card-border); 
             -ms-overflow-style: none; scrollbar-width: none; 
-            border-bottom: 1px solid hsl(220, 25%, 90%);
         }
         #student-tabs-nav::-webkit-scrollbar { display: none; }
+        
         .tab-button { 
-            transition: all 0.2s ease-in-out; 
-            padding: 0.7rem 1.1rem; 
+            transition: var(--transition-fast); 
+            padding: 0.8rem 1.25rem; 
+            font-family: var(--font-display);
             font-weight: 600; 
-            font-size: 0.8rem; 
+            font-size: 0.85rem; 
             white-space: nowrap; 
-            color: var(--text-secondary);
+            color: var(--content-text-secondary); 
             border-bottom: 3px solid transparent; 
-            margin-bottom: -1px; 
+            margin-bottom: -2px;
         }
         .tab-button:hover { 
-            color: var(--text-primary); 
-            background: transparent;
-            border-bottom-color: hsl(220, 15%, 85%);
+            color: var(--content-text-primary); 
+            background-color: rgba(0, 84, 180, 0.05); 
         }
         .tab-button.active { 
-            color: var(--sidebar-accent); 
-            font-weight: 600; 
-            border-bottom-color: var(--sidebar-accent);
-            background-color: transparent; 
+            color: var(--accent-blue); 
+            font-weight: 700; 
+            border-bottom-color: var(--accent-blue); 
         }
-        .tab-content { display: none; }
+        .tab-content { display: none; animation: fadeInUp 0.4s var(--transition-slow) both; }
         .tab-content.active { display: block; }
-
-        /* --- [TEMA v15] Outros Elementos --- */
         
-        /* Tabela de Faltas */
-        #faltas-content table thead { background-color: hsl(220, 30%, 98%); }
-        #faltas-content table th { 
-            font-family: var(--font-heading);
-            font-weight: 600; color: var(--text-tertiary); 
-            font-size: 0.65rem; 
-            border-bottom: 2px solid hsl(220, 25%, 90%);
+        /* --- Sub-Abas (Notas Práticas) --- */
+        .subnav-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            padding: 0.75rem 1.25rem;
+            background-color: var(--card-bg-darker);
+            border-radius: 0.75rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #ffffff;
         }
-        #faltas-content table tbody tr { border-bottom: 1px solid hsl(220, 25%, 96%); }
-        #faltas-content table tbody tr:last-child { border-bottom: none; }
-        #faltas-content table tbody tr:hover { background-color: hsla(190, 80%, 96%, 0.5); }
-        #faltas-content table td { color: var(--text-secondary); }
+        .subnav-button {
+            font-family: var(--font-display);
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--content-text-secondary);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: var(--transition-fast);
+            cursor: pointer;
+        }
+        .subnav-button:hover {
+            background-color: #ffffff;
+            color: var(--content-text-primary);
+        }
+        .subnav-button.active {
+            background-color: #0033A0; /* Azul Principal */
+            color: #ffffff;
+            box-shadow: 0 4px 10px rgba(0, 51, 160, 0.1);
+        }
+        .sub-tab-content {
+            display: none;
+            animation: fadeInUp 0.4s var(--transition-slow) both;
+        }
+        .sub-tab-content.active {
+            display: block;
+        }
 
-        /* Gráfico Radial */
+        /* --- Layout Detalhado (Formulário de Notas) --- */
+        .evaluation-layout {
+            display: grid;
+            grid-template-columns: repeat(1, 1fr);
+            gap: 1.5rem;
+        }
+        @media (min-width: 1024px) { 
+            .evaluation-layout {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        .evaluation-header {
+            grid-column: 1 / -1; 
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--card-border);
+        }
+        .evaluation-header .kpi-value {
+             font-family: var(--font-display);
+             font-size: 3rem; 
+             font-weight: 800;
+             color: var(--accent-blue); 
+             line-height: 1;
+        }
+        .evaluation-details dl {
+            display: grid;
+            grid-template-columns: repeat(1, 1fr);
+            gap: 0.75rem 1.5rem;
+        }
+         @media (min-width: 640px) { 
+            .evaluation-details dl {
+                grid-template-columns: repeat(2, 1fr);
+            }
+         }
+        .evaluation-details dt {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--content-text-secondary);
+        }
+        .evaluation-details dd {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--content-text-primary);
+        }
+        .evaluation-scores {
+            lg:col-span-2; 
+        }
+        .evaluation-scores h4, .evaluation-comments h4 {
+            font-family: var(--font-display);
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--content-text-primary);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--card-border);
+        }
+        .scores-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0.5rem;
+            font-size: 0.85rem;
+            border-bottom: 1px solid rgba(229, 233, 239, 0.6);
+            transition: var(--transition-fast);
+        }
+        .scores-list li:hover {
+            background-color: rgba(239, 246, 255, 0.7);
+        }
+        .scores-list li:last-child {
+            border-bottom: none;
+        }
+        .scores-list .score-label {
+            color: var(--content-text-secondary);
+            font-weight: 500;
+            padding-right: 1rem;
+        }
+        .scores-list .score-value {
+            font-weight: 600;
+            color: var(--content-text-primary);
+            text-align: right;
+            flex-shrink: 0;
+        }
+        .evaluation-comments p {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: var(--content-text-secondary);
+            padding: 1rem;
+            background-color: var(--body-bg);
+            border-radius: 0.75rem;
+            border: 1px solid var(--card-border);
+            font-style: italic;
+        }
+
+        /* --- Aba Informações (dl list) --- */
+        #tab-info dl dt { font-weight: 500; color: var(--content-text-secondary); }
+        #tab-info dl dd { font-weight: 600; color: var(--content-text-primary); margin-top: 0.15rem; }
+
+        /* --- Aba Escala (Heatmap) --- */
+        .heatmap-day { 
+            border: 2px solid transparent; 
+            background-color: var(--card-bg-darker); 
+            transition: var(--transition-fast);
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+            width: 5rem; 
+            text-align: center;
+        }
+        .heatmap-day:hover { transform: scale(1.06); box-shadow: var(--card-shadow); border-color: var(--accent-blue); z-index: 10; position:relative; }
+        .heatmap-day-date { font-family: var(--font-display); color: var(--content-text-secondary); border-color: #e2e8f0; background-color: transparent; font-size: 0.7rem; font-weight: 600; }
+        .heatmap-day-status { color: var(--content-text-primary); font-weight: 600; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem; }
+        
+        .heatmap-day[data-status="ausencia"] { background-color: rgba(226, 30, 38, 0.1); } .heatmap-day[data-status="ausencia"] .heatmap-day-status { color: #991b1b; }
+        .heatmap-day[data-status="folga"] { background-color: rgba(241, 245, 249, 0.8); opacity: 0.7; border-style: dashed; border-color: #E5E9EF; }
+        .heatmap-day[data-status="reposicao"] { background-color: #dcfce7; } .heatmap-day[data-status="reposicao"] .heatmap-day-status { color: #15803d; }
+        .heatmap-day[data-status="none"], .heatmap-day:not([data-status]) { background-color: rgba(241, 245, 249, 0.5); border-style: dotted; border-color: #E5E9EF; opacity: 0.6;} .heatmap-day[data-status="none"] .heatmap-day-status, .heatmap-day:not([data-status]) .heatmap-day-status { color: #a1a1aa; font-weight: 400;}
+
+        /* --- Aba Faltas (Tabela) --- */
+        #faltas-content table { border-collapse: separate; border-spacing: 0; width: 100%; }
+        #faltas-content table thead { background-color: rgba(248, 250, 252, 0.8); }
+        #faltas-content table th { padding: 0.75rem 1rem; font-weight: 600; color: var(--content-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.7rem; border-bottom: 2px solid var(--card-border); }
+        #faltas-content table th:first-child { border-top-left-radius: 0.75rem; }
+        #faltas-content table th:last-child { border-top-right-radius: 0.75rem; }
+        #faltas-content table tbody tr { border-bottom: 1px solid var(--card-border); }
+        #faltas-content table tbody tr:last-child { border-bottom: none; }
+        #faltas-content table tbody tr:hover { background-color: rgba(0, 84, 180, 0.05); } 
+        #faltas-content table td { padding: 0.8rem 1rem; vertical-align: middle; color: var(--content-text-secondary); font-weight: 500; font-size: 0.85rem; }
+        #faltas-content table tbody tr:last-child td:first-child { border-bottom-left-radius: 0.75rem; }
+        #faltas-content table tbody tr:last-child td:last-child { border-bottom-right-radius: 0.75rem; }
+        
+        /* --- Gráfico Radial (Notas Teóricas) --- */
+        .radial-progress-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        @media (min-width: 768px) {
+            .radial-progress-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        .radial-card {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
         .radial-progress { 
-            width: 100px; height: 100px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
             position: relative;
-            background: conic-gradient(var(--accent-purple) calc(var(--value) * 1%), hsl(220, 25%, 94%) calc(var(--value) * 1%) 100%); 
+            width: 100px; height: 100px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            flex-shrink: 0;
+            background: conic-gradient(var(--accent-blue) calc(var(--value) * 1%), #E5E9EF calc(var(--value) * 1%) 100%); 
         }
         .radial-progress::before { 
-            content: '';
+            content: ''; 
             position: absolute;
             width: 75%; height: 75%;
-            background: var(--card-bg); 
+            background: var(--card-bg-darker); 
             border-radius: 50%;
-        } 
+        }
         .radial-progress-value { 
             position: relative;
-            color: var(--text-primary);
-            font-family: var(--font-heading);
-            font-size: 1.5rem;
+            font-family: var(--font-display);
+            color: var(--accent-blue); 
+            font-size: 1.75rem;
             font-weight: 700;
         }
 
-        /* Heatmap (Escala) */
-        .heatmap-day { 
-            border: 1px solid hsl(220, 25%, 90%);
-            background-color: #ffffff; 
-            transition: all 0.25s ease-in-out; 
-            border-radius: 4px; padding: 4px;
-            width: 70px; text-align: center;
+        /* --- Detalhes Expansíveis (Notas) --- */
+        .details-toggle {
+            font-family: var(--font-display);
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--accent-blue);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            transition: var(--transition-fast);
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
         }
-        .heatmap-day:hover { 
-            transform: scale(1.05); 
-            box-shadow: var(--card-shadow); 
-            border-color: var(--text-secondary); 
-            z-index: 10; position:relative; 
+        .details-toggle:hover {
+            background-color: rgba(0, 84, 180, 0.1);
+            color: #0033A0;
         }
-        .heatmap-day-date { 
-            display: block;
-            color: var(--text-tertiary); 
-            border-bottom: 1px solid hsl(220, 25%, 94%); 
-            background-color: transparent; 
-            font-size: 0.7rem; font-weight: 500;
-            padding-bottom: 2px; margin-bottom: 3px;
+        .details-toggle svg {
+            width: 0.9rem; height: 0.9rem;
+            margin-left: 0.25rem;
+            transition: transform 0.2s ease-in-out;
         }
-        .heatmap-day-status { 
-            color: var(--text-primary); 
-            font-weight: 600; font-size: 0.65rem; 
-            text-transform: uppercase;
+        details[open] .details-toggle svg {
+            transform: rotate(90deg);
         }
-        .heatmap-day[data-status="ausencia"] { background-color: hsl(0, 100%, 98%); border-color: hsl(0, 80%, 92%); } 
-        .heatmap-day[data-status="ausencia"] .heatmap-day-status { color: hsl(0, 70%, 45%); }
-        .heatmap-day[data-status="folga"] { background-color: hsl(220, 25%, 96%); opacity: 0.8; border-style: dashed;}
-        .heatmap-day[data-status="reposicao"] { background-color: hsl(140, 90%, 97%); border-color: hsl(140, 70%, 88%); } 
-        .heatmap-day[data-status="reposicao"] .heatmap-day-status { color: hsl(140, 60%, 35%); }
-        .heatmap-day[data-status="none"], .heatmap-day:not([data-status]) { background-color: hsl(220, 25%, 98%); border-style: dotted; opacity: 0.7;} 
-        .heatmap-day[data-status="none"] .heatmap-day-status, .heatmap-day:not([data-status]) .heatmap-day-status { color: var(--text-tertiary); font-weight: 400;}
-
-        /* Badges */
-        .badge { 
-            font-size: 0.65rem; padding: 0.25em 0.75em; border: 1px solid transparent; 
-            font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
-            border-radius: 99px; /* Pill shape */
+        .details-content {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--card-border);
         }
-        .badge-green { background-color: hsl(140, 80%, 96%); color: hsl(140, 70%, 30%); }
-        .badge-yellow { background-color: hsl(40, 100%, 96%); color: hsl(30, 70%, 35%); }
-        .badge-gray { background-color: hsl(220, 20%, 96%); color: hsl(220, 10%, 40%); }
-        .badge-red { background-color: hsl(0, 100%, 97%); color: hsl(0, 70%, 40%); } 
-
-        /* Caixa de Erro */
-        #error-message { 
-            background: var(--accent-red); 
-            color: white; padding: 1rem 1.5rem; border-radius: 0.5rem; 
-            box-shadow: 0 10px 25px -5px hsla(0, 80%, 65%, 0.3);
-            font-weight: 600; border-left: 0; border-bottom: 4px solid hsla(0, 60%, 35%, 0.5);
-            animation: fadeInDown 0.5s ease-out; 
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 10000; 
-            font-family: var(--font-heading);
+        .details-scores-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 1rem 0;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.75rem 1.5rem;
         }
-        @keyframes fadeInDown { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
-        #error-message button { font-weight: 700; opacity: 0.8; transition: opacity 0.2s; } 
-        #error-message button:hover { opacity: 1; }
-
-        /* Scrollbars */
-        ::-webkit-scrollbar { width: 10px; height: 10px; }
-        ::-webkit-scrollbar-track { background: var(--bg-main-end); }
-        ::-webkit-scrollbar-thumb { 
-            background: hsl(220, 15%, 85%); 
-            border-radius: 10px; 
-            border: 2px solid var(--bg-main-end); 
+        @media (min-width: 768px) {
+            .details-scores-list {
+                 grid-template-columns: 1fr 1fr;
+            }
         }
-        ::-webkit-scrollbar-thumb:hover { background: hsl(220, 15%, 75%); }
-
-        /* Input de Busca */
-        #search-student { 
-            transition: all 0.3s ease; 
-            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            background: white;
-            border-radius: 0.5rem; /* 8px */
-            border-color: hsl(220, 15%, 90%);
+        .details-scores-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            padding: 0.5rem 0.75rem;
+            background-color: var(--body-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 0.375rem;
         }
-        #search-student:focus { 
-            box-shadow: 0 0 0 3px var(--sidebar-accent-glow);
-            border-color: var(--sidebar-accent);
+        .details-scores-list .score-label {
+            color: var(--content-text-secondary);
+            font-weight: 500;
+            padding-right: 1rem;
         }
-
-        /* Lista Ausências Recentes */
-        #recent-absences-list li { 
-            transition: background-color 0.2s ease; 
-            padding: 0.75rem 0.25rem; 
-            border-radius: 6px; 
-            border-bottom: 1px solid hsl(220, 25%, 96%);
+        .details-scores-list .score-value {
+            font-weight: 700;
+            color: var(--content-text-primary);
+            font-size: 0.9rem;
         }
-        #recent-absences-list li:last-child { border-bottom: none; }
-        #recent-absences-list li:hover { background-color: hsl(220, 30%, 98%); }
-        #recent-absences-list .font-medium { font-weight: 600; color: var(--text-secondary); }
-
-        /* Timestamp */
-        #last-update-timestamp { 
-            font-size: 0.7rem; 
-            color: var(--text-tertiary); 
+        .details-comment {
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: var(--content-text-secondary);
+            padding: 0.75rem 1rem;
+            background-color: var(--body-bg);
+            border-radius: 0.5rem;
+            border: 1px solid var(--card-border);
             font-style: italic;
         }
+        
+        /* --- [CORREÇÃO v24] Rodapé (Tema Branco) --- */
+        #app-footer {
+            background-color: #ffffff;
+            color: var(--content-text-secondary);
+            padding: 2rem;
+            text-align: center;
+            font-size: 0.8rem;
+            border-top: 1px solid var(--card-border);
+            margin-top: auto; 
+        }
+        #app-footer a {
+            color: var(--accent-blue);
+            font-weight: 600;
+            transition: var(--transition-fast);
+        }
+        #app-footer a:hover {
+            color: #0033A0; /* Azul Principal */
+        }
+        /* Ícones do rodapé */
+        #app-footer svg {
+            color: var(--content-text-secondary);
+            transition: var(--transition-fast);
+        }
+        #app-footer a:hover svg {
+            color: #0033A0;
+        }
+
+        /* --- [NOVO v26] Modal da API Gemini --- */
+        #gemini-modal {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 10000;
+            display: none; /* Começa escondido */
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .gemini-modal-box {
+            background-color: #ffffff;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            width: 100%;
+            max-width: 40rem;
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+        #gemini-modal.show {
+            opacity: 1;
+        }
+        #gemini-modal.show .gemini-modal-box {
+            transform: scale(1);
+        }
+        .gemini-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        .gemini-modal-header h2 {
+            font-family: var(--font-display);
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+        }
+        #gemini-modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--content-text-secondary);
+            cursor: pointer;
+            transition: var(--transition-fast);
+        }
+        #gemini-modal-close:hover {
+            color: var(--accent-red);
+        }
+        #gemini-modal-content {
+            max-height: 60vh;
+            overflow-y: auto;
+            padding-right: 0.5rem; /* Espaço para scrollbar */
+        }
+        /* Estilos para o conteúdo da análise */
+        #gemini-modal-content h3 {
+            font-family: var(--font-display);
+            font-size: 1rem;
+            font-weight: 700;
+            color: #0033A0;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 0.25rem;
+        }
+        #gemini-modal-content ul {
+            list-style-type: disc;
+            padding-left: 1.25rem;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        #gemini-modal-content ul li {
+            margin-bottom: 0.25rem;
+        }
+        #gemini-modal-content p {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            font-style: italic;
+        }
+        .gemini-loader {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 3px solid var(--accent-blue);
+            border-top-color: transparent;
+            animation: spin 0.8s linear infinite;
+            margin: 2rem auto;
+        }
+
+        /* --- [NOVO v26] Botão de Análise --- */
+        .gemini-analysis-button {
+            font-family: var(--font-display);
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--accent-blue);
+            background-color: rgba(0, 84, 180, 0.1);
+            border: 1px solid rgba(0, 84, 180, 0.2);
+            border-radius: 0.5rem;
+            padding: 0.4rem 0.8rem;
+            transition: var(--transition-fast);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            margin-left: 1rem; /* Espaço ao lado do <h4> */
+        }
+        .gemini-analysis-button:hover {
+            background-color: rgba(0, 84, 180, 0.2);
+            color: #0033A0;
+        }
+        .gemini-analysis-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background-color: rgba(100, 116, 139, 0.1);
+            color: var(--content-text-secondary);
+        }
+
     </style>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
 </head>
-<!-- [ALTERADO v15] Removida a classe 'bg-slate-100' para permitir o gradiente do body -->
+
 <body>
 
-    <!-- Overlay de Loading (Começa escondido) -->
+    <!-- Overlay de Loading -->
     <div id="loading-overlay">
         <div class="loader"></div>
         <p>Carregando dados...</p>
     </div>
 
-    <!-- Caixa de Erro -->
-    <div id="error-message" style="display: none;">
+    <!-- Caixa de Erro (Usada pelo JS) -->
+    <div id="error-message" style="display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 10000; background-color: var(--accent-red); color: white; padding: 1rem 1.5rem; border-radius: 0.75rem; box-shadow: var(--card-shadow); font-family: var(--font-display); font-weight: 600;">
         <span id="error-text">Ocorreu um erro!</span>
-        <button onclick="document.getElementById('error-message').style.display = 'none'" class="ml-4">X</button>
+        <button onclick="document.getElementById('error-message').style.display = 'none'" class="ml-4 font-bold opacity-70 hover:opacity-100 transition-opacity">X</button>
     </div>
 
-    <!-- [NOVO v12] Tela de Login -->
-    <div id="login-view" class="view-container" style="display: flex;"> <!-- Começa visível -->
+    <!-- Tela de Login -->
+    <div id="login-view" class="view-container" style="display: flex;">
         <div id="login-card">
             <div class="flex flex-col items-center mb-6">
-                <!-- [REMOVIDO v14] Ícone de globo removido -->
-                <h1 class="text-2xl font-bold text-slate-800 mb-2">Portal do Ensino</h1>
-                <p class="text-sm text-slate-600">Acesso restrito a funcionários.</p>
+                <h1 class="text-3xl font-bold">Portal do Ensino</h1>
+                <p class="text-base text-slate-600 mt-1">Acesso restrito.</p>
             </div>
             <form id="login-form">
                 <div class="space-y-4">
                     <div>
-                        <label for="email" class="block text-sm font-medium text-slate-700">Email</label>
-                        <!-- [CORRIGIDO v13] Removido 'value' e adicionado 'placeholder' -->
-                        <input type="email" id="login-email" placeholder="seu.email@exemplo.com" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required>
+                        <label for="email" class="block text-sm font-medium mb-1">Email</label>
+                        <input type="email" id="login-email" placeholder="seu.email@hc.fm.usp.br" class="mt-1 block w-full px-4 py-3 border rounded-lg shadow-sm placeholder-slate-400 focus:outline-none sm:text-sm" required>
                     </div>
                     <div>
-                        <label for="password" class="block text-sm font-medium text-slate-700">Senha</label>
-                        <!-- [CORRIGIDO v13] Removido 'value' e adicionado 'placeholder' -->
-                        <input type="password" id="login-password" placeholder="Sua senha" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required>
+                        <label for="password" class="block text-sm font-medium mb-1">Senha</label>
+                        <input type="password" id="login-password" placeholder="Sua senha" class="mt-1 block w-full px-4 py-3 border rounded-lg shadow-sm placeholder-slate-400 focus:outline-none sm:text-sm" required>
                     </div>
-                    <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150">
+                    <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white focus:outline-none transition duration-150">
                         Entrar
                     </button>
                 </div>
@@ -685,182 +989,231 @@
     </div>
 
 
-    <!-- [NOVO v12] View do Dashboard Principal (Começa escondida) -->
+    <!-- View do Dashboard Principal (Começa escondida) -->
     <div id="dashboard-view" class="view-container flex h-screen opacity-0 transition-opacity duration-500">
-        <!-- Sidebar -->
-        <!-- [ALTERADO v14] Removidas classes de cor inline (bg-white, etc) pois agora são controladas pelo CSS -->
-        <aside id="app-sidebar" class="w-64 flex flex-col flex-shrink-0 transition-all duration-300 ease-in-out">
-            <!-- Header da Sidebar com Toggle -->
-            <!-- [ALTERADO v14] Cor do border alterada para tema escuro -->
-            <div class="h-16 flex items-center justify-between px-4 border-b border-slate-700 flex-shrink-0">
-                 <div class="flex items-center space-x-3 overflow-hidden">
-                     <!-- [NOVO v12] Logo de Texto Estilizado -->
-                     <!-- [ALTERADO v14] Removida classe 'text-blue-800' -->
-                     <h1 class="text-xl font-bold sidebar-logo-text whitespace-nowrap ml-2">Portal do Ensino</h1>
-                 </div>
-                 <!-- Botão de Toggle -->
-                 <!-- [ALTERADO v14] Classes de cor alteradas para tema escuro -->
-                 <button id="sidebar-toggle" title="Recolher menu" class="p-1 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-                     </svg>
-                 </button>
+        
+        <!-- [CORREÇÃO v24] Sidebar (Tema Branco) -->
+        <aside id="app-sidebar" class="flex flex-col flex-shrink-0">
+            <div class="h-20 flex items-center justify-between px-6 border-b border-gray-200 flex-shrink-0">
+                <div class="flex items-center space-x-3 overflow-hidden">
+                    <h1 class="text-xl font-bold sidebar-logo-text whitespace-nowrap">Ensino Fisio</h1>
+                </div>
+                <button id="sidebar-toggle" title="Recolher menu" class="p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </button>
             </div>
-            <nav class="flex-grow overflow-y-auto py-6 space-y-1.5">
-                <a href="#dashboard" data-tab="dashboard" class="sidebar-link active text-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17.5a.5.5 0 00.5.5h11a.5.5 0 00.5-.5V10.414l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg>
+            
+            <nav class="flex-grow overflow-y-auto py-6 space-y-2">
+                <a href="#dashboard" data-tab="dashboard" class="sidebar-link active">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17.5a.5.5 0 00.5.5h11a.5.5 0 00.5-.5V10.414l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg>
                     <span class="sidebar-link-text whitespace-nowrap">Dashboard</span>
                 </a>
-                <a href="#alunos" data-tab="alunos" class="sidebar-link text-sm">
-                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" /></svg>
-                     <span class="sidebar-link-text whitespace-nowrap">Alunos</span>
+                <a href="#alunos" data-tab="alunos" class="sidebar-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-4" viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" /></svg>
+                    <span class="sidebar-link-text whitespace-nowrap">Alunos</span>
                 </a>
-                 <a href="#ponto" data-tab="ponto" class="sidebar-link text-sm">
-                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z" clip-rule="evenodd" /></svg>
-                     <span class="sidebar-link-text whitespace-nowrap">Ponto</span>
-                 </a>
+                <a href="#ponto" data-tab="ponto" class="sidebar-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z" clip-rule="evenodd" /></svg>
+                    <span class="sidebar-link-text whitespace-nowrap">Ponto</span>
+                </a>
             </nav>
         </aside>
 
         <!-- Conteúdo Principal -->
         <div class="flex-1 flex flex-col overflow-hidden">
-            <!-- [ALTERADO v15] Removida classe 'bg-slate-100' -->
             <main class="flex-1 overflow-x-hidden overflow-y-auto p-6 lg:p-8">
 
                 <!-- View Principal: Dashboard -->
-                <!-- IDs aqui (content-dashboard, etc) são as "sub-views" -->
-                <div id="content-dashboard" class="view-container"> <!-- Usa view-container -->
-                    <h1 class="text-2xl font-semibold text-slate-800 mb-6">Dashboard Geral</h1>
-                    <!-- [NOVO v12] Grid agora é lg:grid-cols-3 -->
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div id="content-dashboard" class="view-container">
+                    <h1 class="text-3xl font-bold text-slate-900 mb-8">Dashboard Geral</h1>
+                    
+                    <div class="grid grid-cols-12 gap-6">
                         
-                        <!-- Coluna 1: Visão Geral (Layout v14) -->
-                        <div class="lg:col-span-1 space-y-6">
-                            <!-- [LAYOUT ALTERADO v14] Card de Visão Geral (KPIs) redesenhado -->
-                            <div class="content-card p-5">
-                                <h2 class="content-card-header">Visão Geral</h2>
-                                <div class="mt-4 space-y-5">
-                                    <!-- KPI Item 1 -->
-                                    <div class="flex items-center">
-                                        <div class="icon-bg kpi-icon-purple flex-shrink-0"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M17 20h5v-2a3 3 0 00-5.356-2.121M17 20v-2m0 2H5a2 2 0 01-2-2v-5a2 2 0 012-2h14a2 2 0 012 2v5a2 2 0 01-2 2h-5m-4-8a3 3 0 100-6 3 3 0 000 6z" /></svg></div>
-                                        <div class="ml-4 flex-grow">
-                                            <p class="text-sm font-medium text-slate-500">Total de Inscritos</p>
-                                            <p id="kpi-total-students" class="text-2xl font-bold text-slate-800">-</p>
-                                        </div>
+                        <div class="col-span-12 lg:col-span-8 space-y-6">
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="kpi-base-card kpi-hero-card animated-card delay-100">
+                                    <div class="icon-bg kpi-icon-blue">
+                                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M17 20h5v-2a3 3 0 00-5.356-2.121M17 20v-2m0 2H5a2 2 0 01-2-2v-5a2 2 0 012-2h14a2 2 0 012 2v5a2 2 0 01-2 2h-5m-4-8a3 3 0 100-6 3 3 0 000 6z" /></svg>
                                     </div>
-                                    <!-- KPI Item 2 -->
-                                    <div class="flex items-center">
-                                        <div class="icon-bg kpi-icon-green flex-shrink-0"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
-                                        <div class="ml-4 flex-grow">
-                                            <p class="text-sm font-medium text-slate-500">Alunos Ativos</p>
-                                            <p id="kpi-active-students" class="text-2xl font-bold text-slate-800">-</p>
-                                        </div>
+                                    <div>
+                                        <p class="kpi-label">Total de Inscritos</p>
+                                        <p id="kpi-total-students" class="kpi-value">-</p>
                                     </div>
-                                    <!-- KPI Item 3 -->
-                                    <div class="flex items-center">
-                                        <div class="icon-bg kpi-icon-yellow flex-shrink-0"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></div>
-                                        <div class="ml-4 flex-grow">
-                                            <p class="text-sm font-medium text-slate-500">Reposições Pendentes</p>
-                                            <p id="kpi-pending-replacements" class="text-2xl font-bold text-slate-800">-</p>
-                                        </div>
+                                </div>
+                                <div class="kpi-base-card kpi-hero-card animated-card delay-200">
+                                    <div class="icon-bg kpi-icon-green">
+                                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                     </div>
-                                    <!-- KPI Médias (Grid 2 col) -->
-                                    <div class="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
-                                        <div class="flex items-center">
-                                            <div class="icon-bg kpi-icon-orange flex-shrink-0"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></div>
-                                            <div class="ml-3">
-                                                <p class="text-xs font-medium text-slate-500">Média Teórica</p>
-                                                <p id="kpi-avg-theoretical" class="text-xl font-bold text-slate-800">-</p>
-                                            </div>
-                                        </div>
-                                         <div class="flex items-center">
-                                            <div class="icon-bg kpi-icon-cyan flex-shrink-0"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg></div>
-                                            <div class="ml-3">
-                                                <p class="text-xs font-medium text-slate-500">Média Prática</p>
-                                                <p id="kpi-avg-practical" class="text-xl font-bold text-slate-800">-</p>
-                                            </div>
-                                        </div>
+                                    <div>
+                                        <p class="kpi-label">Alunos Ativos</p>
+                                        <p id="kpi-active-students" class="kpi-value">-</p>
+                                    </div>
+                                </div>
+                                <div class="kpi-base-card kpi-hero-card animated-card delay-300">
+                                    <div class="icon-bg kpi-icon-orange">
+                                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                    </div>
+                                    <div>
+                                        <p class="kpi-label">Média Teórica (Geral)</p>
+                                        <p id="kpi-avg-theoretical" class="kpi-value">-</p>
+                                    </div>
+                                </div>
+                                <div class="kpi-base-card kpi-hero-card animated-card delay-400">
+                                    <div class="icon-bg kpi-icon-blue">
+                                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                                    </div>
+                                    <div>
+                                        <p class="kpi-label">Média Prática (Geral)</p>
+                                        <p id="kpi-avg-practical" class="kpi-value">-</p>
                                     </div>
                                 </div>
                             </div>
+                            
+                            <div class="content-card p-6 animated-card delay-500">
+                                <div class="flex justify-between items-center mb-5">
+                                    <h2 class="content-card-header mb-0 pb-0 border-b-0">Frequência Diária</h2>
+                                    <span id="current-date" class="text-sm font-medium text-slate-500"></span>
+                                </div>
+                                <div class="grid grid-cols-3 gap-4 mb-6">
+                                    <div class="kpi-base-card kpi-secondary-card"><span id="kpi-scaled-label" class="kpi-label">Escalados</span><p id="kpi-scaled" class="kpi-value">-</p></div>
+                                    <div class="kpi-base-card kpi-secondary-card"><span id="kpi-present-label" class="kpi-label">Presentes</span><p id="kpi-present" class="kpi-value">-</p></div>
+                                    <div class="kpi-base-card kpi-secondary-card"><span id="kpi-absent-label" class="kpi-label">Ausentes</span><p id="kpi-absent" class="kpi-value">-</p></div>
+                                </div>
+                                <div id="frequency-panel" class="space-y-4 max-h-[300px] overflow-y-auto text-sm pr-2"></div>
+                                <div id="last-update-timestamp" class="text-right mt-4"></div>
+                            </div>
+
+                             <div class="content-card p-6 animated-card delay-600">
+                                <h2 class="content-card-header">Desempenho Teórico (Médias Ativos)</h2>
+                                <div id="theoretical-avg-chart" class="space-y-2 max-h-[400px] overflow-y-auto pr-2"></div>
+                            </div>
                         </div>
 
-                        <!-- Coluna 2: Frequência Diária -->
-                        <div class="lg:col-span-1 space-y-6">
-                             <div class="content-card p-5">
-                                 <div class="flex justify-between items-center">
-                                     <h2 class="content-card-header mb-0 pb-0 border-b-0">Frequência Diária</h2>
-                                     <span id="current-date" class="text-xs font-medium text-slate-500"></span>
-                                 </div>
-                                 <div class="grid grid-cols-3 gap-3 my-4 text-center">
-                                     <div class="kpi-card p-3"><span class="kpi-label text-blue-600">ESCALADOS</span><p id="kpi-scaled" class="kpi-value text-blue-800">-</p></div>
-                                     <div class="kpi-card p-3"><span class="kpi-label text-green-600">PRESENTES</span><p id="kpi-present" class="kpi-value text-green-800">-</p></div>
-                                     <div class="kpi-card p-3"><span class="kpi-label text-red-600">AUSENTES</span><p id="kpi-absent" class="kpi-value text-red-800">-</p></div>
-                                 </div>
-                                 <div id="frequency-panel" class="space-y-4 max-h-[350px] overflow-y-auto text-sm"></div>
-                                  <div id="last-update-timestamp" class="text-right mt-3"></div>
-                             </div>
-                             
-                        </div>
-                        
-                        <!-- Coluna 3: Desempenho Teórico e Cursos -->
-                        <div class="lg:col-span-1 space-y-6">
-                            <div class="content-card p-5">
-                                 <h2 class="content-card-header">Distribuição por Curso (Ativos)</h2>
-                                 <div id="course-distribution-chart" class="donut-chart-container min-h-[140px]"></div>
+                        <div class="col-span-12 lg:col-span-4 space-y-6">
+                            
+                            <div class="content-card p-6 animated-card delay-500">
+                                <h2 class="content-card-header">Distribuição por Curso (Ativos)</h2>
+                                <div id="course-distribution-chart" class="donut-chart-container min-h-[160px]"></div>
                             </div>
-                            <div class="content-card p-5">
-                                <h2 class="content-card-header">Desempenho Teórico (Médias Ativos)</h2>
-                                <div id="theoretical-avg-chart" class="space-y-2 max-h-[600px] overflow-y-auto pr-2"></div>
+                            
+                             <div class="kpi-base-card kpi-hero-card animated-card delay-600">
+                                <div class="icon-bg kpi-icon-red">
+                                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                </div>
+                                <div>
+                                    <p class="kpi-label">Reposições Pendentes</p>
+                                    <p id="kpi-pending-replacements" class="kpi-value">-</p>
+                                </div>
                             </div>
-                            <!-- [MOVIDO v15] Card de Registros Recentes movido para Col 2 -->
-                             <div class="content-card p-5">
-                                 <h2 class="content-card-header">Registros Recentes</h2>
-                                 <ul id="recent-absences-list" class="space-y-2 text-xs max-h-[300px] overflow-y-auto"></ul>
-                             </div>
+                            
+                            <div class="content-card p-6 animated-card delay-700">
+                                <h2 class="content-card-header">Registros Recentes</h2>
+                                <ul id="recent-absences-list" class="space-y-2 text-sm max-h-[400px] overflow-y-auto"></ul>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- View: Lista de Alunos -->
-                 <div id="content-alunos" class="view-container"> <!-- Usa view-container -->
+                 <div id="content-alunos" class="view-container">
                      <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-                         <h1 class="text-2xl font-semibold text-slate-800">Alunos</h1>
-                         <input type="text" id="search-student" placeholder="Buscar aluno..." class="border border-slate-300 rounded-lg px-4 py-2 text-sm w-full sm:w-auto max-w-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm">
+                         <h1 class="text-3xl font-bold text-slate-900">Alunos</h1>
+                         <input type="text" id="search-student" placeholder="Buscar aluno pelo nome..." class="border border-slate-300 rounded-lg px-4 py-2.5 text-sm w-full sm:w-auto max-w-xs transition shadow-sm">
                      </div>
                      <div id="student-list-panel" class="max-h-[calc(100vh-200px)] overflow-y-auto"></div>
                  </div>
 
-                 <!-- View: Ponto -->
-                 <div id="content-ponto" class="view-container"> <!-- Usa view-container -->
-                     <h1 class="text-2xl font-semibold text-slate-800 mb-6">Análise de Ponto</h1>
-                     <div class="content-card p-6 text-center">
-                         <p class="text-slate-500 italic">Em desenvolvimento...</p>
-                         <p class="mt-4 text-slate-600 text-sm">Calendário de frequência, gráficos de atraso, etc.</p>
+                <!-- View: Ponto -->
+                 <div id="content-ponto" class="view-container">
+                     <h1 class="text-3xl font-bold text-slate-900 mb-6">Análise de Ponto</h1>
+                     <div class="content-card p-10 text-center">
+                         <h3 class="font-display text-lg text-slate-700">Em Desenvolvimento</h3>
+                         <p class="mt-2 text-slate-500">Esta seção abrigará futuros relatórios de frequência e pontualidade.</p>
                      </div>
                  </div>
 
             </main>
+
+            <!-- [CORREÇÃO v24] Rodapé (Tema Branco) -->
+            <footer id="app-footer">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                        <div class="text-center md:text-left">
+                            <h4 class="font-display font-bold text-gray-800 text-lg">ENSINO FISIO INCOR - 2025</h4>
+                        </div>
+                        <div class="text-center md:text-left space-y-1">
+                            <p class="font-semibold">
+                                <a href="mailto:ensinofisioincor@hc.fm.usp.br">ensinofisioincor@hc.fm.usp.br</a>
+                            </p>
+                            <p>Tel: (11) 2661-5319</p>
+                        </div>
+                        <div class="flex justify-center md:justify-end space-x-5">
+                            <a href="https://api.whatsapp.com/message/Y65LMDURGD74D1?autoload=1&app_absent=0" target="_blank" rel="noopener noreferrer" title="WhatsApp">
+                                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M12.04 2C6.58 2 2.13 6.45 2.13 12c0 1.76.46 3.43 1.25 4.9L2.04 22l5.3-1.34c1.42.75 3.03 1.2 4.7 1.2 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2m.01 1.63c4.56 0 8.28 3.72 8.28 8.28 0 4.56-3.72 8.28-8.28 8.28-1.5 0-2.91-.4-4.14-1.1l-.3-.18-3.07.78.79-3 .19-.31c-.77-1.28-1.21-2.74-1.21-4.28 0-4.56 3.72-8.28 8.28-8.28m4.52 10.15c-.24-.12-1.44-.71-1.66-.79-.22-.08-.38-.12-.54.12-.16.24-.63.79-.77.95-.14.16-.28.18-.52.06-.24-.12-1.02-.38-1.94-1.2-.72-.64-1.2-1.43-1.34-1.67-.14-.24-.02-.37.1-.49.11-.11.24-.28.37-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.29-.74-1.77-.2-.48-.4-.41-.54-.42-.14 0-.3 0-.46 0-.16 0-.42.06-.64.3s-.85.83-.85 2.02c0 1.19.87 2.34 1 2.5.12.16 1.71 2.59 4.14 3.63.59.26 1.05.41 1.41.52.53.17.99.15 1.36.09.42-.06 1.44-.59 1.64-1.15.2-.56.2-.94.14-1.06-.06-.11-.22-.18-.46-.3z"></path>
+                                </svg>
+                            </a>
+                            <a href="https://www.instagram.com/fisioterapiaincor/" target="_blank" rel="noopener noreferrer" title="Instagram">
+                                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2m-.2 2A3.6 3.6 0 0 0 4 7.6v8.8C4 18.39 5.61 20 7.6 20h8.8c1.99 0 3.6-1.61 3.6-3.6V7.6C20 5.61 18.39 4 16.4 4H7.6m9.65 1.5a1.25 1.25 0 0 1 1.25 1.25A1.25 1.25 0 0 1 17.25 8 1.25 1.25 0 0 1 16 6.75a1.25 1.25 0 0 1 1.25-1.25M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3z"></path>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+            
         </div>
     </div>
 
     <!-- View: Detalhe do Aluno -->
-    <div id="student-detail-view" class="view-container fixed inset-0 z-50 overflow-y-auto"> <!-- Usa view-container -->
-        <header class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-10">
-            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-                <button id="back-to-dashboard" class="flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors group">
+    <div id="student-detail-view" class="view-container">
+        <header>
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <button id="back-to-dashboard" class="flex items-center text-sm font-medium group">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1 group-hover:-translate-x-1 transition-transform" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
                     Voltar para Alunos
                 </button>
             </div>
         </header>
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
-            <div id="student-header" class="content-card p-6 flex items-center space-x-5"></div>
+        
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+            <div id="student-header" class="content-card p-6 flex flex-col sm:flex-row items-center sm:space-x-6"></div>
         </div>
-        <div id="student-kpi-header" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-5 grid grid-cols-2 md:grid-cols-4 gap-4"></div>
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
-            <div class="border-b border-slate-200">
-                <nav id="student-tabs-nav" class="flex space-x-1 sm:space-x-2 overflow-x-auto" aria-label="Tabs">
+        
+        <div id="student-kpi-header" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 grid grid-cols-2 md:grid-cols-4 gap-5">
+            <div class="kpi-card flex items-center p-4">
+                <div class="icon-bg kpi-icon-red">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                </div>
+                <div class="ml-3"><p class="kpi-label">Total Faltas</p><p id="kpi-total-faltas" class="kpi-value">-</p></div>
+            </div>
+            <div class="kpi-card flex items-center p-4">
+                <div class="icon-bg kpi-icon-red"> 
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+                <div class="ml-3"><p class="kpi-label">Pendentes</p><p id="kpi-pendentes" class="kpi-value">-</p></div>
+            </div>
+            <div class="kpi-card flex items-center p-4">
+                <div class="icon-bg kpi-icon-blue">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+                <div class="ml-3"><p class="kpi-label">Média (Prática)</p><p id="kpi-media-pratica" class="kpi-value">-</p></div>
+            </div>
+            <div class="kpi-card flex items-center p-4">
+                <div class="icon-bg kpi-icon-blue">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/><path d="M12 14l9-5-9-5-9 5 9 5zm0 0v6"/></svg>
+                </div>
+                <div class="ml-3"><p class="kpi-label">Módulos (Prática)</p><p id="kpi-modulos" class="kpi-value">-</p></div>
+            </div>
+        </div>
+        
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+            <div>
+                <nav id="student-tabs-nav" class="flex" aria-label="Tabs">
                     <button data-tab="info" class="tab-button active">Informações</button>
                     <button data-tab="escala" class="tab-button">Escala</button>
                     <button data-tab="faltas" class="tab-button">Faltas</button>
@@ -868,30 +1221,68 @@
                     <button data-tab="notas-p" class="tab-button">Notas Práticas</button>
                 </nav>
             </div>
-            <div id="student-tabs-content" class="mt-6 mb-16">
-                 <!-- Os IDs precisam corresponder aos data-tab -->
-                <div id="tab-info" class="tab-content content-card p-6"></div> <!-- Removido active inicial -->
-                <div id="tab-escala" class="tab-content"><div id="escala-heatmap-content" class="space-y-6"></div></div>
+            
+            <div id="student-tabs-content" class="mt-8 mb-16">
+                <!-- Informações -->
+                <div id="tab-info" class="tab-content content-card p-6 lg:p-8"></div>
+                
+                <!-- Escala -->
+                <div id="tab-escala" class="tab-content">
+                    <div id="escala-heatmap-content" class="space-y-6"></div>
+                </div>
+                
+                <!-- Faltas -->
                 <div id="tab-faltas" class="tab-content content-card p-0 overflow-hidden">
-                     <h3 class="content-card-header p-5">Registro de Ausências e Reposições</h3>
-                    <div id="faltas-content" class="max-h-[500px] overflow-y-auto"></div>
+                     <div class="p-6">
+                        <h3 class="content-card-header p-0 m-0 border-b-0">Registro de Ausências e Reposições</h3>
+                    </div>
+                    <div id="faltas-content" class="overflow-x-auto"></div>
                 </div>
-                <div id="tab-notas-t" class="tab-content content-card p-6">
-                     <h3 class="content-card-header mb-5">Notas Teóricas</h3>
-                     <div id="notas-t-barchart-content" class="space-y-3"></div>
+                
+                <!-- Notas Teóricas -->
+                <div id="tab-notas-t" class="tab-content">
+                    <h3 class="text-xl font-bold text-slate-800 mb-6">Notas Teóricas</h3>
+                    <div id="notas-t-content-wrapper" class="radial-progress-container">
+                        <!-- Conteúdo será renderizado pelo JS (renderTabNotasTeoricas) -->
+                    </div>
                 </div>
-                <div id="tab-notas-p" class="tab-content"><div id="notas-p-radial-content" class="space-y-5"></div></div>
+                
+                <!-- Notas Práticas -->
+                <div id="tab-notas-p" class="tab-content">
+                    <h3 class="text-xl font-bold text-slate-800 mb-6">Avaliações Práticas</h3>
+                    
+                    <div id="student-detail-subnav-container" class="subnav-container">
+                        <!-- Botões das sub-abas -->
+                    </div>
+
+                    <div id="student-detail-subnav-content">
+                        <!-- Conteúdo das sub-abas -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- [NOVO v26] Modal da API Gemini -->
+    <div id="gemini-modal">
+        <div class="gemini-modal-box">
+            <div class="gemini-modal-header">
+                <h2 id="gemini-modal-title">✨ Análise da Avaliação</h2>
+                <button id="gemini-modal-close" title="Fechar">&times;</button>
+            </div>
+            <div id="gemini-modal-content">
+                <!-- O conteúdo da análise será injetado aqui -->
+                <div class="gemini-loader"></div>
             </div>
         </div>
     </div>
 
 
-    <!-- CLIENT-SIDE SCRIPT (Inalterado) -->
+    <!-- CLIENT-SIDE SCRIPT -->
     <script>
-        // URL da API (use a sua URL de implantação)
+        // URL da API
         const API_URL = "https://script.google.com/macros/s/AKfycbxq7vepPQ6F6qxPvXbLnINZbMkoBiMVRMwlfw5_O_pZMoNp-XcJijoX6DWM6g9SQhd3/exec";
-        console.log(`API_URL: ${API_URL}`);
-
+        
         // Estado global da aplicação
         const appState = {
             lastPontoUpdate: null,
@@ -901,11 +1292,23 @@
             escalas: {},
             ausenciasReposicoes: [],
             notasTeoricas: {},
-            notasPraticas: {},
+            notasPraticas: {}, 
             todayBR: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
             todayFullBR: new Date().toLocaleDateString('pt-BR'),
-            isSidebarCollapsed: false // [NOVO v12] Estado da sidebar
+            isSidebarCollapsed: false
         };
+
+        // --- [NOVO v22] Função Helper para Normalização ---
+        /**
+         * Normaliza uma string para comparação, removendo acentos, espaços e convertendo para minúsculas.
+         * @param {string} str A string para normalizar.
+         * @returns {string} A string normalizada.
+         */
+        function normalizeString(str) {
+            if (!str) return '';
+            return str.trim().toLowerCase()
+                      .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        }
 
         // --- Funções Utilitárias (Loading/Erro) ---
 
@@ -913,168 +1316,162 @@
             const overlay = document.getElementById('loading-overlay');
             if (show) {
                 overlay.style.display = 'flex';
-                // Pequeno delay para forçar o reflow antes de mudar a opacidade
                 setTimeout(() => { overlay.style.opacity = '1'; }, 10);
             } else {
                 overlay.style.opacity = '0';
-                setTimeout(() => { overlay.style.display = 'none'; }, 300); // Sincroniza com a transição
+                setTimeout(() => { overlay.style.display = 'none'; }, 300); 
             }
         }
-
-        /**
-         * [CORRIGIDO v13] Descomentada a linha de erro principal.
-         */
+        
         function showError(message, isLoginError = false) {
             console.error("ERRO:", message);
             const errorBoxId = isLoginError ? 'login-error' : 'error-message';
             const errorBox = document.getElementById(errorBoxId);
             
-            if (!errorBox) { // Fallback se o erro ocorrer antes do DOM
+            if (!errorBox) { 
                 alert(`Erro: ${message}`);
                 return;
             }
             
             if (isLoginError) {
-               errorBox.textContent = message;
+                errorBox.textContent = message;
             } else {
-                // [CORREÇÃO] A caixa de erro principal existe, mas a linha que atualiza o texto estava comentada.
                 document.getElementById('error-text').textContent = `Erro: ${message}`;
             }
             
             errorBox.style.display = 'block';
             
             if (!isLoginError) {
-                setTimeout(() => { errorBox.style.display = 'none'; }, 10000); // Esconde após 10s
-                showLoading(false); // Garante que o loading suma
+                setTimeout(() => { errorBox.style.display = 'none'; }, 10000); 
+                showLoading(false); 
             }
         }
-       
-        // --- [NOVO v12] Gerenciador de Views Centralizado ---
-        /**
-         * [CORRIGIDO v12] Centraliza a lógica de mostrar uma view e esconder as outras.
-         */
-         function showView(viewIdToShow) {
-             console.log(`[showView] Tentando mostrar view: ${viewIdToShow}`);
-             // Lista de todos os containers de view
-             const allViewIds = ['login-view', 'dashboard-view', 'student-detail-view'];
-             let found = false;
-             
-             allViewIds.forEach(id => {
-                 const view = document.getElementById(id);
-                 if (view) {
-                     if (view.id === viewIdToShow) {
-                         // O 'dashboard-view' é o container flex, os outros são block
-                         view.style.display = (id === 'dashboard-view' || id === 'login-view') ? 'flex' : 'block';
-                         console.log(`[showView] View ${view.id} exibida.`);
-                         found = true;
-                     } else {
-                         view.style.display = 'none'; // Esconde as outras views
-                     }
-                 } else {
-                     console.warn(`[showView] View com ID "${id}" não encontrada no DOM!`);
-                 }
-             });
+        
+        // --- Gerenciador de Views Centralizado ---
 
-             if (!found) {
-                 console.error(`[showView] View com ID "${viewIdToShow}" não encontrada!`);
-             }
-         }
+        function showView(viewIdToShow) {
+            console.log(`[showView] Tentando mostrar view: ${viewIdToShow}`);
+            const allViewIds = ['login-view', 'dashboard-view', 'student-detail-view'];
+            let found = false;
+            
+            allViewIds.forEach(id => {
+                const view = document.getElementById(id);
+                if (view) {
+                    if (view.id === viewIdToShow) {
+                        view.style.display = (id === 'dashboard-view' || id === 'login-view') ? 'flex' : 'block';
+                        view.style.animation = 'none';
+                        view.offsetHeight;
+                        view.style.animation = null; 
+                        found = true;
+                    } else {
+                        view.style.display = 'none'; 
+                    }
+                }
+            });
+
+            if (!found) {
+                console.error(`[showView] View com ID "${viewIdToShow}" não encontrada!`);
+            }
+        }
 
 
         // --- INICIALIZAÇÃO E CARGA DE DADOS ---
 
-        /**
-         * Ponto de entrada principal da aplicação.
-         */
         async function initDashboard() {
             console.log('[initDashboard] Iniciando Dashboard...');
             try {
                 showLoading(true);
                 await fetchAllData();
-                await fetchPontoHoje(); // Busca inicial do ponto
+                await fetchPontoHoje(); 
 
                 console.log('[initDashboard] Dados carregados, iniciando renderização inicial...');
-                // Renderiza os dados no estado "invisível"
                 renderStudentList(appState.alunos);
                 computeAndRenderFrequency();
                 renderAtAGlance();
                 renderRecentAbsences();
-
                 console.log('[initDashboard] Renderização inicial completa.');
                 
-                // Mostra a aba inicial (Dashboard) dentro da view principal
-                // [IMPORTANTE] A view 'dashboard-view' já está visível (flex)
                 switchMainTab('dashboard'); 
                 
-                document.querySelector('#dashboard-view').style.opacity = '1'; // Fade-in do layout
+                document.querySelector('#dashboard-view').style.opacity = '1';
                 showLoading(false);
 
-                // Inicia live update APÓS tudo estar pronto
-                setInterval(fetchPontoHoje, 30000);
+                setInterval(fetchPontoHoje, 30000); 
                 console.log("[initDashboard] Inicialização completa. Live update iniciado.");
             } catch (error) {
-                 // [CORRIGIDO v13] Garante que o loading suma e volte ao login
-                 const errorMessage = error.message || "Erro desconhecido";
-                 showError(`Falha Crítica na Inicialização: ${errorMessage}. Verifique a API e recarregue a página.`);
-                 showLoading(false);
-                 showView('login-view'); // Volta para a tela de login
+                const errorMessage = error.message || "Erro desconhecido";
+                showError(`Falha Crítica na Inicialização: ${errorMessage}. Verifique a API e recarregue a página.`);
+                showLoading(false);
+                showView('login-view');
             }
-             console.log('[initDashboard] Fim.');
         }
-       
-        /**
-         * Configura todos os event listeners da página.
-         */
+        
         function setupEventHandlers() {
             console.log('[setupEventHandlers] Configurando listeners...');
             document.getElementById('login-form').addEventListener('submit', handleLogin);
             setupSidebarNavigation();
-            document.getElementById('sidebar-toggle').addEventListener('click', toggleSidebar); // [NOVO v12]
+            document.getElementById('sidebar-toggle').addEventListener('click', toggleSidebar); 
             document.getElementById('back-to-dashboard').addEventListener('click', showAlunosList);
             document.getElementById('search-student').addEventListener('input', filterStudentList);
             setupStudentTabNavigation();
+
+            // Listener para sub-abas de Notas Práticas
+            document.getElementById('student-detail-subnav-container').addEventListener('click', (e) => {
+                const button = e.target.closest('.subnav-button');
+                if (button && !button.classList.contains('active')) {
+                    const tabId = button.getAttribute('data-subtab-id');
+                    switchStudentSubTab(tabId);
+                }
+            });
+
+            // [NOVO v26] Listener para fechar o modal Gemini
+            document.getElementById('gemini-modal-close').addEventListener('click', closeGeminiModal);
+            document.getElementById('gemini-modal').addEventListener('click', (e) => {
+                // Fecha se clicar no overlay (fundo)
+                if (e.target.id === 'gemini-modal') {
+                    closeGeminiModal();
+                }
+            });
+
+
             console.log('[setupEventHandlers] Listeners configurados.');
         }
-       
-        /**
-         * [NOVO v12] Handle Login
-         */
-         function handleLogin(event) {
-             event.preventDefault(); // Impede o reload da página
-             console.log("[handleLogin] Tentativa de login...");
-             
-             const email = document.getElementById('login-email').value;
-             const password = document.getElementById('login-password').value;
-             const errorBox = document.getElementById('login-error');
-             
-             // Credenciais hardcoded
-             const validEmail = 'thiago.dias@hc.fm.usp.br';
-             const validPass = 'Thiago1508';
-             
-             if (email === validEmail && password === validPass) {
-                 console.log("[handleLogin] Login bem-sucedido.");
-                 errorBox.style.display = 'none';
-                 showView('dashboard-view'); // Mostra a estrutura principal
-                 initDashboard(); // Inicia o carregamento dos dados
-             } else {
-                 console.warn("[handleLogin] Falha no login.");
-                 showError("Email ou senha inválidos.", true); // Mostra erro no login
-             }
-         }
+        
+        function handleLogin(event) {
+            event.preventDefault(); 
+            console.log("[handleLogin] Tentativa de login...");
+            
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const errorBox = document.getElementById('login-error');
+            
+            const validEmail = 'thiago.dias@hc.fm.usp.br';
+            const validPass = 'Thiago1508';
+            
+            if (email === validEmail && password === validPass) {
+                console.log("[handleLogin] Login bem-sucedido.");
+                errorBox.style.display = 'none';
+                showView('dashboard-view'); 
+                initDashboard(); 
+            } else {
+                console.warn("[handleLogin] Falha no login.");
+                showError("Email ou senha inválidos.", true); 
+            }
+        }
 
         async function fetchAllData() {
-             console.log("[fetchAllData] Buscando dados estáticos...");
-             try {
-                 const r = await fetch(`${API_URL}?action=getAll`);
-                 if (!r.ok) throw new Error(`Rede (getAll): ${r.statusText} (${r.status})`);
-                 const d = await r.json();
-                 if (!d.success) throw new Error(`API (getAll): ${d.error || 'Erro desconhecido'}`);
-                 console.log("[fetchAllData] Dados estáticos recebidos:", d);
-                 onStaticDataLoaded(d);
-             } catch (e) {
-                 console.error("[fetchAllData] Erro detalhado:", e);
-                 throw new Error(`Falha ao buscar dados estáticos: ${e.message}`);
-             }
+            console.log("[fetchAllData] Buscando dados estáticos...");
+            try {
+                const r = await fetch(`${API_URL}?action=getAll`);
+                if (!r.ok) throw new Error(`Rede (getAll): ${r.statusText} (${r.status})`);
+                const d = await r.json();
+                if (!d.success) throw new Error(`API (getAll): ${d.error || 'Erro desconhecido'}`);
+                console.log("[fetchAllData] Dados estáticos recebidos:", d);
+                onStaticDataLoaded(d);
+            } catch (e) {
+                console.error("[fetchAllData] Erro detalhado:", e);
+                throw new Error(`Falha ao buscar dados estáticos: ${e.message}`);
+            }
         }
 
         function onStaticDataLoaded(data) {
@@ -1082,78 +1479,85 @@
             appState.escalas = data.escalas || {};
             appState.ausenciasReposicoes = data.ausenciasReposicoes || [];
             appState.notasTeoricas = data.notasTeoricas || { registros: [] };
-            appState.notasPraticas = data.notasPraticas || {}; // Corrigido no backend para ser objeto
+            
+            const notasRaw = data.notasPraticas || {};
+            const normalized = Array.isArray(notasRaw)
+              ? notasRaw.reduce((acc, item, idx) => {
+                  const name = item.nomeAba || item.nomePratica || `NotasPraticas${idx + 1}`;
+                  acc[name] = { nomePratica: name, registros: item.registros || [] };
+                  return acc;
+                }, {})
+              : Object.entries(notasRaw).reduce((acc, [key, val]) => {
+                  acc[key] = { nomePratica: key, registros: val.registros || [] };
+                  return acc;
+                }, {});
+
+            appState.notasPraticas = normalized;
+            console.log("[onStaticDataLoaded] Notas Práticas Normalizadas:", appState.notasPraticas);
+
             appState.alunosMap.clear();
             appState.alunos.forEach(a => { if(a && a.EmailHC) appState.alunosMap.set(a.EmailHC, a); });
+            
             console.log("[onStaticDataLoaded] Dados estáticos processados.");
         }
+
 
         async function fetchPontoHoje() {
             const timestampElem = document.getElementById('last-update-timestamp');
             console.log(`[fetchPontoHoje] Buscando ponto desde: ${appState.lastPontoUpdate||'Início'}`);
              try{
-                 let u = `${API_URL}?action=getPontoHoje`;
-                 const r = await fetch(u);
-                 if (!r.ok) throw new Error(`Rede (getPontoHoje): ${r.statusText} (${r.status})`);
-                 const d = await r.json();
-                 if (!d.success) throw new Error(`API (getPontoHoje): ${d.error || 'Erro desconhecido'}`);
-                 console.log('[fetchPontoHoje] Ponto recebido:', d.hoje);
-                 
-                 appState.lastPontoUpdate = d.lastUpdate;
-                 appState.pontoHojeMap.clear();
-                 (d.hoje || []).forEach(p => { if(p && p.EmailHC) appState.pontoHojeMap.set(p.EmailHC, p); });
-                 
-                 computeAndRenderFrequency(); // Apenas re-renderiza a frequência
-                 
-                 if (timestampElem) { timestampElem.textContent = `Última att: ${new Date().toLocaleTimeString('pt-BR')}`; }
+                let u = `${API_URL}?action=getPontoHoje`;
+                const r = await fetch(u);
+                if (!r.ok) throw new Error(`Rede (getPontoHoje): ${r.statusText} (${r.status})`);
+                const d = await r.json();
+                if (!d.success) throw new Error(`API (getPontoHoje): ${d.error || 'Erro desconhecido'}`);
+                console.log('[fetchPontoHoje] Ponto recebido:', d.hoje);
+                
+                appState.lastPontoUpdate = d.lastUpdate;
+                appState.pontoHojeMap.clear();
+                (d.hoje || []).forEach(p => { if(p && p.EmailHC) appState.pontoHojeMap.set(p.EmailHC, p); });
+                
+                computeAndRenderFrequency(); 
+                
+                if (timestampElem) { timestampElem.textContent = `Última att: ${new Date().toLocaleTimeString('pt-BR')}`; }
              } catch(e){
-                 console.warn('[fetchPontoHoje] Falha atualizar freq:', e.message);
-                 if (timestampElem) { timestampElem.textContent = `Falha na att: ${new Date().toLocaleTimeString('pt-BR')}`; }
+                console.warn('[fetchPontoHoje] Falha atualizar freq:', e.message);
+                if (timestampElem) { timestampElem.textContent = `Falha na att: ${new Date().toLocaleTimeString('pt-BR')}`; }
              }
         }
 
         // --- NAVEGAÇÃO PRINCIPAL ---
 
         function setupSidebarNavigation() {
-             const sidebar = document.querySelector('aside nav');
-             sidebar.addEventListener('click', (e) => {
-                 const link = e.target.closest('.sidebar-link');
-                 if (link) {
-                     e.preventDefault();
-                     switchMainTab(link.getAttribute('data-tab'));
-                 }
-             });
+            const sidebar = document.querySelector('#app-sidebar nav');
+            sidebar.addEventListener('click', (e) => {
+                const link = e.target.closest('.sidebar-link');
+                if (link) {
+                    e.preventDefault();
+                    switchMainTab(link.getAttribute('data-tab'));
+                }
+            });
         }
-       
-        /**
-         * [NOVO v12] Controla a sidebar colapsável
-         */
+        
         function toggleSidebar() {
             appState.isSidebarCollapsed = !appState.isSidebarCollapsed;
             console.log(`[toggleSidebar] Colapsada: ${appState.isSidebarCollapsed}`);
             const sidebar = document.getElementById('app-sidebar');
-            // Alterna a classe 'collapsed' que o CSS usa para estilizar
             sidebar.classList.toggle('collapsed', appState.isSidebarCollapsed);
         }
-       
-        /**
-         * [CORRIGIDO v13] Troca a aba principal visível (SUB-VIEW).
-         * O seletor foi corrigido de '.main-content-section' para 'main .view-container'.
-         */
+        
         function switchMainTab(tabName) {
             console.log("[switchMainTab] Trocando para aba principal:", tabName);
-            // Atualiza sidebar
             document.querySelectorAll('.sidebar-link').forEach(l => l.classList.toggle('active', l.getAttribute('data-tab') === tabName));
             
-            // [CORREÇÃO] O seletor estava errado. O correto é 'main .view-container'
-            // para pegar apenas os containers DENTRO do <main>.
-            const allSubViews = document.querySelectorAll('main .view-container');
-            
+            const allSubViews = document.querySelectorAll('main > .view-container');
             allSubViews.forEach(view => {
-                if (view.id === `content-${tabName}`) {
-                    view.style.display = 'block';
-                } else {
-                    view.style.display = 'none';
+                const isActive = view.id === `content-${tabName}`;
+                view.style.display = isActive ? 'block' : 'none';
+                if (isActive) {
+                    view.style.animation = 'none';
+                    view.offsetHeight; 
+                    view.style.animation = null; 
                 }
             });
             
@@ -1167,64 +1571,65 @@
             if (notaStr === null || notaStr === undefined) return 0;
             const str = String(notaStr).trim();
             if (str === '') return 0;
-            const n = parseFloat(str.replace(',', '.'));
+            const n = parseFloat(str.replace('R$', '').replace(/\s/g, '').replace(',', '.'));
             return isNaN(n) ? 0 : n;
         }
 
-        /**
-         * [CORRIGIDO v12] Lógica de cálculo de médias práticas e filtro de R2.
-         */
         function calculateAveragesAndDistribution() {
             const activeStudents = appState.alunos.filter(s => s.Status === 'Ativo');
-            const activeEmails = new Set(activeStudents.map(s => s.EmailHC));
             
-            // [NOVO v12] Filtra alunos R2 para média teórica
             const activeNonR2Emails = new Set(
                 activeStudents
-                    .filter(s => s.Curso !== 'Residência - 2º ano')
+                    .filter(s => s.Curso !== 'Residência - 2º ano' && s.Curso !== 'Residência  - 2º ano')
                     .map(s => s.EmailHC)
             );
-            console.log(`[calculateAverages] Alunos ativos: ${activeStudents.length}. Alunos para média teórica (não R2): ${activeNonR2Emails.size}`);
 
             // --- Teóricas (com filtro R2) ---
             let ttSum = 0; let ttCount = 0; const tSums = {}; const tCounts = {};
             if(appState.notasTeoricas?.registros){
                 appState.notasTeoricas.registros.forEach(r => {
-                    // USA O FILTRO !R2
-                    if(r && activeNonR2Emails.has(r.EmailHC)){
+                    const emailNormalizado = normalizeString(r.EmailHC);
+                    const nomeNormalizado = normalizeString(r.NomeCompleto);
+                    const isActiveNonR2 = activeStudents.some(s => 
+                        (s.Curso !== 'Residência - 2º ano' && s.Curso !== 'Residência  - 2º ano') &&
+                        (normalizeString(s.EmailHC) === emailNormalizado || normalizeString(s.NomeCompleto) === nomeNormalizado)
+                    );
+
+                    if(r && isActiveNonR2){
                         Object.keys(r).forEach(k => {
                             if(!['SerialNumber','NomeCompleto','EmailHC','Curso'].includes(k) && k.trim() !== ''){
                                 const n = parseNota(r[k]);
                                 if(n > 0){
                                     tSums[k] = (tSums[k] || 0) + n;
                                     tCounts[k] = (tCounts[k] || 0) + 1;
-                                    ttSum += n; 
-                                    ttCount++; // [CORREÇÃO LÓGICA] Contagem da média geral
+                                    if (!k.toUpperCase().includes('MÉDIA')) {
+                                        ttSum += n; 
+                                        ttCount++;
+                                    }
                                 }
                             }
                         });
                     }
                 });
-            } else { console.warn("notasTeoricas.registros não encontrado."); }
+            }
             const tAvgs = {};
             Object.keys(tSums).forEach(k => { tAvgs[k] = tCounts[k] > 0 ? tSums[k] / tCounts[k] : 0; });
-            // [CORRIGIDO v12] Média geral é soma total / contagem total
             const oTAvg = ttCount > 0 ? ttSum / ttCount : 0; 
             
-            console.log("[calculateAverages] Médias T Calc (sem R2):", tAvgs);
-            console.log(`[calculateAverages] Média T Geral (sem R2): ${oTAvg} (Soma: ${ttSum}, Contagem: ${ttCount})`);
-
-
             // --- Práticas (SEM filtro R2) ---
             let tpSum = 0; let tpCount = 0;
             if(appState.notasPraticas && typeof appState.notasPraticas === 'object'){
-                // [CORRIGIDO] Itera sobre os valores do objeto (NotasPraticas1, NotasPraticas2, etc.)
-                Object.values(appState.notasPraticas).forEach(p => {
+                Object.values(appState.notasPraticas).forEach(p => { 
                     if(p && p.registros){
                         p.registros.forEach(r => {
-                            // USA TODOS OS ATIVOS (activeEmails)
-                            if(r && activeEmails.has(r.EmailHC)){
-                                const kM = Object.keys(r).find(k => k.toUpperCase().includes('MÉDIA (NOTA FINAL)')) || null;
+                            // [CORREÇÃO v24] Filtra por EmailHC (agora correto) ou Nome
+                             const isActive = activeStudents.some(s => 
+                                (r.EmailHC && normalizeString(s.EmailHC) === normalizeString(r.EmailHC)) ||
+                                (r.NomeCompleto && normalizeString(s.NomeCompleto) === normalizeString(r.NomeCompleto))
+                             );
+
+                            if(r && isActive){
+                                const kM = Object.keys(r).find(k => /MÉDIA\s*\(NOTA FINAL\)[:]?/i.test(k)) || null;
                                 if(kM){
                                     const n = parseNota(r[kM]);
                                     if(n > 0){
@@ -1238,9 +1643,7 @@
                 });
             }
             const oPAvg = tpCount > 0 ? tpSum / tpCount : 0;
-            console.log(`[calculateAverages] Média P Geral (com R2): ${oPAvg} (Soma: ${tpSum}, Contagem: ${ttCount})`);
-
-
+            
             // --- Distribuição (Todos os ativos) ---
             const cCounts = activeStudents.reduce((acc,s) => { const c = s.Curso || 'Sem Curso'; acc[c] = (acc[c] || 0) + 1; return acc; }, {});
             const tA = activeStudents.length;
@@ -1255,267 +1658,755 @@
         function renderAtAGlance() {
             console.log("[renderAtAGlance] Iniciando...");
             try {
-                const tS=appState.alunos.length; const aS=appState.alunos.filter(s=>s.Status==='Ativo').length; const pR=appState.ausenciasReposicoes.filter(f=>!f.DataReposicaoISO).length;
-                // Chama a função de cálculo corrigida
-                const {overallTheoreticalAvg:oTAvg, theoreticalAverages:tAvgs, overallPracticalAvg:oPAvg, courseDistribution:cDist} = calculateAveragesAndDistribution();
-                document.getElementById('kpi-total-students').textContent=tS;
-                document.getElementById('kpi-active-students').textContent=aS;
-                document.getElementById('kpi-pending-replacements').textContent=pR;
-                document.getElementById('kpi-avg-theoretical').textContent=oTAvg.toFixed(1);
-                document.getElementById('kpi-avg-practical').textContent=oPAvg.toFixed(1); // Agora deve ter um valor
+                const tS = appState.alunos.length; 
+                const aS = appState.alunos.filter(s => s.Status === 'Ativo').length; 
+                const pR = appState.ausenciasReposicoes.filter(f => f && !f.DataReposicaoISO && (f.EmailHC || f.NomeCompleto)).length;
                 
-                // [TEMA v15] Define as cores dos gráficos
-                const chartColors = [
-                    'var(--accent-cyan)', 
-                    'var(--accent-purple)', 
-                    'var(--accent-orange)', 
-                    'var(--accent-green)', 
-                    'var(--accent-red)', 
-                    'var(--accent-yellow)', 
-                    'var(--text-tertiary)'
-                ];
-                renderCourseDistributionChart(cDist, chartColors);
+                const {overallTheoreticalAvg:oTAvg, theoreticalAverages:tAvgs, overallPracticalAvg:oPAvg, courseDistribution:cDist} = calculateAveragesAndDistribution();
+                
+                document.getElementById('kpi-total-students').textContent = tS;
+                document.getElementById('kpi-active-students').textContent = aS;
+                document.getElementById('kpi-pending-replacements').textContent = pR;
+                document.getElementById('kpi-avg-theoretical').textContent = oTAvg > 0 ? oTAvg.toFixed(1) : 'N/A';
+                document.getElementById('kpi-avg-practical').textContent = oPAvg > 0 ? oPAvg.toFixed(1) : 'N/A';
+                
+                renderCourseDistributionChart(cDist);
                 renderTheoreticalAvgChart(tAvgs);
                  console.log("[renderAtAGlance] Concluído.");
             } catch (e) { console.error("[renderAtAGlance] Erro:", e); showError("Erro ao renderizar visão geral."); }
         }
         
-        // [TEMA v15] Função atualizada para aceitar cores
-        function renderCourseDistributionChart(distribution, colors) {
+        function renderCourseDistributionChart(distribution) {
              const c=document.getElementById('course-distribution-chart'); if(!distribution||distribution.length===0){c.innerHTML='<p class="text-slate-500 text-sm italic">S/ dados curso.</p>'; return;} 
-             const chartColors = colors || ['#2563eb','#60a5fa','#34d399','#f97316','#f472b6', '#facc15', '#9ca3af'];
+             const colors=['var(--accent-blue)', 'var(--accent-red)', 'var(--accent-green)', 'var(--accent-yellow)', '#a855f7', '#64748b']; 
              let grad=''; let cum=0; const leg=[]; 
-             distribution.forEach((item,i)=>{
-                 const clr=chartColors[i % chartColors.length]; 
-                 const s=cum; const e=cum+item.percentage; 
-                 if(item.percentage>0){grad+=`, ${clr} ${s}% ${e}%`;} 
-                 cum=e; 
-                 leg.push(`<li><span class="legend-color-box" style="background-color:${clr};"></span>${item.course} (${item.count}) - ${item.percentage.toFixed(0)}%</li>`);
-             }); 
-             if(cum<100){grad+=`, #e2e8f0 ${cum}% 100%`;} 
+             distribution.forEach((item,i)=>{const clr=colors[i%colors.length]; const s=cum; const e=cum+item.percentage; if(item.percentage>0){grad+=`, ${clr} ${s}% ${e}%`;} cum=e; leg.push(`<li><span class="legend-color-box" style="background-color:${clr};"></span>${item.course} (${item.count})</li>`);}); 
+             if(cum<100){grad+=`, #E5E9EF ${cum}% 100%`;} 
              c.innerHTML=`<div class="donut-chart" style="--chart-segments:${grad.substring(1)};"></div><div class="donut-legend"><ul>${leg.join('')}</ul></div>`;
         }
         
         function renderTheoreticalAvgChart(averages) {
-             const p=document.getElementById('theoretical-avg-chart'); const sorted=Object.entries(averages).sort(([,a],[,b])=>b-a); if(sorted.length===0){p.innerHTML='<p class="text-slate-500 text-sm italic">S/ dados notas T.</p>'; return;} p.innerHTML=sorted.map(([s,a])=>{const iM=s.toUpperCase().includes('MÉDIA'); const bF=iM?'bar-fill-media':'bar-fill-normal'; const lC=iM?'text-blue-700 font-semibold':'text-slate-600'; const vC=iM?'text-blue-800 font-bold':'text-slate-700 font-semibold'; return `<div class="bar-chart-item text-xs rounded p-1.5 ${iM?'mt-2 pt-2 border-t border-slate-100':''}"><div class="flex justify-between items-center mb-0.5"><span class="bar-label ${lC} truncate pr-2" title="${s}">${s}</span><span class="bar-value ${vC} w-8 text-right">${a.toFixed(1)}</span></div><div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden bar-bg"><div class="h-full ${bF} rounded-full transition-all duration-500 ease-out" style="width:${a*10}%"></div></div></div>`;}).join('');
+            const p = document.getElementById('theoretical-avg-chart');
+            const sorted = Object.entries(averages)
+                                .filter(([s]) => s.toUpperCase().includes('MÉDIA'))
+                                .sort(([,a],[,b]) => b-a); 
+                                
+            if(sorted.length === 0){ p.innerHTML='<p class="text-slate-500 text-sm italic">S/ dados notas T.</p>'; return; } 
+            
+            p.innerHTML = sorted.map(([s,a]) => {
+                const bF = 'bar-fill-media';
+                const lC = 'text-blue-700 font-semibold';
+                const vC = 'text-blue-800 font-bold'; 
+                return `<div class="bar-chart-item text-xs rounded p-1.5 mt-2 pt-2 border-t border-blue-100"><div class="flex justify-between items-center mb-1"><span class="bar-label ${lC} truncate pr-2" title="${s}">${s}</span><span class="bar-value ${vC} w-8 text-right">${a.toFixed(1)}</span></div><div class="w-full h-2.5 bg-blue-100 rounded-full overflow-hidden bar-bg"><div class="h-full ${bF} rounded-full transition-all duration-500 ease-out" style="width:${a*10}%"></div></div></div>`;
+            }).join('');
         }
+
         function renderRecentAbsences() {
              console.log("[renderRecentAbsences] Iniciando...");
              try {
-                 const l=document.getElementById('recent-absences-list'); if(!appState.ausenciasReposicoes||appState.ausenciasReposicoes.length===0){l.innerHTML='<li class="text-slate-500 italic p-2">Nenhum registro.</li>'; return;} const sorted=[...appState.ausenciasReposicoes].sort((a,b)=>{const dA=a.DataReposicaoISO||a.DataAusenciaISO; const dB=b.DataReposicaoISO||b.DataAusenciaISO; if(!dB)return -1; if(!dA)return 1; return new Date(dB+'T00:00:00')-new Date(dA+'T00:00:00');}); l.innerHTML=sorted.slice(0,5).map(i=>{const al=appState.alunosMap.get(i.EmailHC); const n=al?al.NomeCompleto:i.EmailHC; const iP=!i.DataReposicaoISO; const sB=iP?'<span class="badge badge-yellow ml-2">Pendente</span>':'<span class="badge badge-green ml-2">Reposto</span>'; const dT=i.DataReposicaoISO||i.DataAusenciaISO; const fD=dT?new Date(dT+'T00:00:00').toLocaleDateString('pt-BR'):'Data Indef.'; return `<li><div class="flex justify-between items-center mb-0.5"><span class="font-medium truncate pr-2" title="${n}">${n}</span><span class="text-slate-500 text-[11px]">${fD}</span></div><div class="flex justify-between items-center"><span class="text-slate-500 text-xs truncate pr-2" title="${i.Motivo||''}">${iP?'Ausência':'Reposição'} (${i.Local||'N/A'})</span>${sB}</div></li>`;}).join('');
-                  console.log("[renderRecentAbsences] Concluído.");
+                const l=document.getElementById('recent-absences-list'); 
+                if(!appState.ausenciasReposicoes||appState.ausenciasReposicoes.length===0){
+                    l.innerHTML='<li class="text-slate-500 italic p-2">Nenhum registro.</li>'; 
+                    return;
+                } 
+                const sorted=[...appState.ausenciasReposicoes]
+                    .filter(f => f.EmailHC || f.NomeCompleto) 
+                    .sort((a,b)=>{
+                        const dA=a.DataReposicaoISO||a.DataAusenciaISO; 
+                        const dB=b.DataReposicaoISO||b.DataAusenciaISO; 
+                        if(!dB)return -1; if(!dA)return 1; 
+                        return new Date(dB+'T00:00:00')-new Date(dA+'T00:00:00');
+                    }); 
+                
+                l.innerHTML=sorted.slice(0,10).map(i=>{
+                    const al = appState.alunos.find(a => 
+                        (i.EmailHC && normalizeString(a.EmailHC) === normalizeString(i.EmailHC)) ||
+                        (i.NomeCompleto && normalizeString(a.NomeCompleto) === normalizeString(i.NomeCompleto))
+                    );
+                    const n = al ? al.NomeCompleto : (i.NomeCompleto || i.EmailHC); 
+                    const iP=!i.DataReposicaoISO; 
+                    const sB=iP?'<span class="badge badge-yellow ml-2">Pendente</span>':'<span class="badge badge-green ml-2">Reposto</span>'; 
+                    const dT=i.DataReposicaoISO||i.DataAusenciaISO; 
+                    const fD=dT?new Date(dT+'T00:00:00').toLocaleDateString('pt-BR'):'Data Indef.'; 
+                    return `<li class="text-xs"><div class="flex justify-between items-center mb-0.5"><span class="font-semibold text-slate-700 truncate pr-2" title="${n}">${n}</span><span class="text-slate-500 text-[11px] flex-shrink-0">${fD}</span></div><div class="flex justify-between items-center"><span class="text-slate-500 truncate pr-2" title="${i.Motivo||''}">${iP?'Ausência':'Reposição'} (${i.Local||'N/A'})</span>${sB}</div></li>`;
+                }).join('');
+                 console.log("[renderRecentAbsences] Concluído.");
              } catch(e) { console.error("[renderRecentAbsences] Erro:", e); showError("Erro ao renderizar registros recentes."); }
         }
+        
         function findActiveScale() {
              for(const n in appState.escalas){const e=appState.escalas[n]; if(e.headersDay?.includes(appState.todayBR))return e;} console.warn(`Nenhuma escala hoje (${appState.todayBR})`); return null;
         }
+        
         function computeAndRenderFrequency() {
-             console.log("[computeAndRenderFrequency] Calculando frequência...");
-             try {
-                 const p=document.getElementById('frequency-panel'); const kS=document.getElementById('kpi-scaled'); const kP=document.getElementById('kpi-present'); const kA=document.getElementById('kpi-absent'); const s=findActiveScale(); if(!s){p.innerHTML=`<p class="text-slate-500 italic text-sm">Nenhuma escala hoje (${appState.todayBR}).</p>`; kS.textContent='0'; kP.textContent='0'; kA.textContent='0'; return;} const present=[]; const absent=[]; let scaled=0; s.alunos.forEach(ae=>{const d=ae.dias.find(x=>x.dataColuna===appState.todayBR); if(d?.status&&d.status!=='folga'&&d.status!=='ausencia'){scaled++; const ai=appState.alunosMap.get(ae.EmailHC)||ae; const pi=appState.pontoHojeMap.get(ae.EmailHC); if(pi)present.push({...ai,HoraEntrada:pi.HoraEntrada,StatusEscala:d.status}); else absent.push({...ai,StatusEscala:d.status});}}); kS.textContent=scaled; kP.textContent=present.length; kA.textContent=absent.length; p.innerHTML=`<div><h3 class="font-semibold text-green-600">Presentes (${present.length})</h3><ul class="mt-2 text-xs text-slate-600 space-y-1.5">${present.length>0?present.map(s=>`<li class="flex justify-between items-center"><span class="truncate pr-2" title="${s.NomeCompleto}">${s.NomeCompleto}</span><span class="badge badge-green flex-shrink-0">${s.HoraEntrada}</span></li>`).join(''):'<li class="text-slate-400 italic">Nenhum.</li>'}</ul></div> <div class="mt-4"><h3 class="font-semibold text-red-600">Ausentes (${absent.length})</h3><ul class="mt-2 text-xs text-slate-600 space-y-1.5">${absent.length>0?absent.map(s=>`<li class="flex justify-between items-center"><span class="truncate pr-2" title="${s.NomeCompleto}">${s.NomeCompleto}</span><span class="badge badge-gray flex-shrink-0" title="Escala: ${s.StatusEscala}">Ausente</span></li>`).join(''):'<li class="text-slate-400 italic">Nenhum.</li>'}</ul></div>`;
-                  console.log("[computeAndRenderFrequency] Frequência atualizada.");
-             } catch (e) { console.error("[computeAndRenderFrequency] Erro:", e); showError("Erro ao calcular frequência."); }
+            console.log("[computeAndRenderFrequency] Calculando frequência...");
+            try {
+                const p=document.getElementById('frequency-panel'); const kS=document.getElementById('kpi-scaled'); const kP=document.getElementById('kpi-present'); const kA=document.getElementById('kpi-absent'); 
+                if (!p || !kS || !kP || !kA) {
+                    console.warn("[computeAndRenderFrequency] Painel de frequência não visível. Pulando renderização.");
+                    return;
+                }
+                const s=findActiveScale(); if(!s){p.innerHTML=`<p class="text-slate-500 italic text-sm">Nenhuma escala hoje (${appState.todayBR}).</p>`; kS.textContent='0'; kP.textContent='0'; kA.textContent='0'; return;} const present=[]; const absent=[]; let scaled=0; 
+                
+                s.alunos.forEach(ae=>{
+                    const d=ae.dias.find(x=>x.dataColuna===appState.todayBR); 
+                    if(d?.status&&d.status!=='folga'&&d.status!=='ausencia' && d.status.toLowerCase().indexOf('descanso') === -1){
+                        scaled++; 
+                        const ai = appState.alunos.find(a => 
+                            (a.EmailHC && normalizeString(a.EmailHC) === normalizeString(ae.EmailHC)) ||
+                            (a.NomeCompleto && normalizeString(a.NomeCompleto) === normalizeString(ae.NomeCompleto))
+                        ) || ae;
+                        
+                        const pi=appState.pontoHojeMap.get(ai.EmailHC); 
+                        if(pi)present.push({...ai,HoraEntrada:pi.HoraEntrada,StatusEscala:d.status}); 
+                        else absent.push({...ai,StatusEscala:d.status});
+                    }
+                }); 
+                
+                kS.textContent=scaled; kP.textContent=present.length; kA.textContent=absent.length; 
+                p.innerHTML=`<div><h3 class="text-green-700">Presentes (${present.length})</h3><ul class="mt-2 text-xs text-slate-600 space-y-1.5">${present.length>0?present.map(s=>`<li class="flex justify-between items-center"><span class="truncate pr-2" title="${s.NomeCompleto}">${s.NomeCompleto}</span><span class="badge badge-green flex-shrink-0">${s.HoraEntrada}</span></li>`).join(''):'<li class="text-slate-400 italic">Nenhum.</li>'}</ul></div> <div class="mt-4"><h3 class="text-red-700">Ausentes (${absent.length})</h3><ul class="mt-2 text-xs text-slate-600 space-y-1.5">${absent.length>0?absent.map(s=>`<li class="flex justify-between items-center"><span class="truncate pr-2" title="${s.NomeCompleto}">${s.NomeCompleto}</span><span class="badge badge-red flex-shrink-0" title="Escala: ${s.StatusEscala}">Ausente</span></li>`).join(''):'<li class="text-slate-400 italic">Nenhum.</li>'}</ul></div>`;
+                console.log("[computeAndRenderFrequency] Frequência atualizada.");
+            } catch (e) { console.error("[computeAndRenderFrequency] Erro:", e); showError("Erro ao calcular frequência."); }
         }
+        
         function renderStudentList(students) {
              console.log("[renderStudentList] Iniciando...");
              try {
-                 const panel = document.getElementById('student-list-panel'); const initialMsg = panel.querySelector('.initial-message'); if (initialMsg) initialMsg.remove(); if (!students || students.length === 0) { panel.innerHTML = '<p class="text-slate-500 p-6 text-center">Nenhum aluno.</p>'; return; } const grouped = students.reduce((acc, s) => { const c = s.Curso || 'Sem Curso'; if (!acc[c]) acc[c] = []; acc[c].push(s); return acc; }, {}); const courses = Object.keys(grouped).sort(); let html = ''; courses.forEach(c => { html += `<div class="student-group" data-course="${c}"><h3 class="student-group-header">${c} (${grouped[c].length})</h3><div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">`; grouped[c].forEach(s => { const img = s.FotoID ? `https://lh3.googleusercontent.com/d/${s.FotoID}=s96-c` : 'https://placehold.co/40x40/e2e8f0/64748b?text=?'; const inactive = s.Status !== 'Ativo'; const inactiveClass = inactive ? 'inactive-card' : ''; const inactiveBadge = inactive ? '<span class="badge badge-red inactive-badge">Inativo</span>' : ''; html += `<div class="student-card flex flex-col items-center text-center ${inactiveClass}" onclick="showStudentDetail('${s.EmailHC}')" data-student-email="${s.EmailHC}" data-student-name="${s.NomeCompleto.toLowerCase()}">${inactiveBadge}<img src="${img}" alt="Foto" class="mb-2 shadow-sm" onerror="this.src='https://placehold.co/40x40/e2e8f0/64748b?text=?'"><p class="student-name">${s.NomeCompleto}</p><p class="student-course mt-0.5">${s.Curso}</p></div>`; }); html += `</div></div>`; }); panel.innerHTML = html;
-                  console.log("[renderStudentList] Lista renderizada.");
+                 const panel = document.getElementById('student-list-panel'); 
+                 if (!panel) return;
+                 
+                 if (!students || students.length === 0) { panel.innerHTML = '<p class="text-slate-500 p-6 text-center">Nenhum aluno.</p>'; return; } 
+                 
+                 const grouped = students.reduce((acc, s) => { const c = s.Curso || 'Sem Curso'; if (!acc[c]) acc[c] = []; acc[c].push(s); return acc; }, {}); 
+                 const courses = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
+                 
+                 let html = ''; 
+                 courses.forEach(c => { 
+                    html += `<div class="student-group" data-course="${c}"><h3 class="student-group-header">${c} (${grouped[c].length})</h3><div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-1">`; 
+                    
+                    grouped[c].sort((a,b) => a.NomeCompleto.localeCompare(b.NomeCompleto)).forEach(s => { 
+                        const img = s.FotoID ? `https://lh3.googleusercontent.com/d/${s.FotoID}=s96-c` : 'https://placehold.co/60x60/e2e8f0/64748b?text=?'; 
+                        const inactive = s.Status !== 'Ativo'; 
+                        const inactiveClass = inactive ? 'inactive-card' : ''; 
+                        const inactiveBadge = inactive ? '<span class="badge badge-red inactive-badge">Inativo</span>' : ''; 
+                        html += `<div class="student-card ${inactiveClass}" onclick="showStudentDetail('${s.EmailHC}')" data-student-email="${s.EmailHC}" data-student-name="${normalizeString(s.NomeCompleto)}">${inactiveBadge}<img src="${img}" alt="Foto" onerror="this.src='https://placehold.co/60x60/e2e8f0/64748b?text=?'"><p class="student-name">${s.NomeCompleto}</p><p class="student-course mt-0.5">${s.Curso}</p></div>`; 
+                    }); 
+                    html += `</div></div>`; 
+                 }); 
+                 panel.innerHTML = html;
+                 console.log("[renderStudentList] Lista renderizada.");
              } catch (e) { console.error("[renderStudentList] Erro:", e); showError("Erro ao renderizar lista de alunos."); }
         }
-        function filterStudentList() {
-             const q=document.getElementById('search-student').value.toLowerCase().trim(); const gs=document.querySelectorAll('.student-group'); const msg=document.getElementById('no-search-results'); let hasVisible=false; if(msg)msg.remove(); gs.forEach(g=>{const cs=g.querySelectorAll('.student-card'); const h=g.querySelector('.student-group-header'); let groupVisible=false; cs.forEach(c=>{const ne=c.querySelector('.student-name'); const n=c.getAttribute('data-student-name'); const oN=ne.textContent; if(q===''||n.includes(q)){c.classList.remove('hidden'); groupVisible=true; hasVisible=true; if(q!==''){const rgx=new RegExp(`(${q.replace(/[-\/\\^$*+?.()|[\]{}]/g,'\\$&')})`,'gi'); ne.innerHTML=oN.replace(rgx,'<span class="highlight">$1</span>');}else{ne.innerHTML=oN;}}else{c.classList.add('hidden'); ne.innerHTML=oN;}}); h.classList.toggle('hidden',!groupVisible);}); if(!hasVisible&&q!==''){document.getElementById('student-list-panel').insertAdjacentHTML('beforeend','<p id="no-search-results" class="text-slate-500 p-6 text-center italic">Nenhum aluno para "'+q+'".</p>');}
+
+        function filterStudentList(e) {
+            const q = normalizeString(e.target.value);
+            const groups = document.querySelectorAll('.student-group');
+            let hasVisible = false;
+            
+            groups.forEach(g => {
+                const cards = g.querySelectorAll('.student-card');
+                const header = g.querySelector('.student-group-header');
+                let groupVisible = false;
+                
+                cards.forEach(c => {
+                    const nameElem = c.querySelector('.student-name');
+                    const name = c.getAttribute('data-student-name'); 
+                    const originalName = nameElem.textContent; 
+                    
+                    if (q === '' || name.includes(q)) {
+                        c.classList.remove('hidden');
+                        groupVisible = true;
+                        hasVisible = true;
+                        if (q !== '') {
+                            try {
+                                const regex = new RegExp(`(${q.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi');
+                                nameElem.innerHTML = originalName.replace(regex, '<span class="highlight">$1</span>');
+                            } catch (err) {
+                                nameElem.innerHTML = originalName; 
+                            }
+                        } else {
+                            nameElem.innerHTML = originalName;
+                        }
+                    } else {
+                        c.classList.add('hidden');
+                        nameElem.innerHTML = originalName;
+                    }
+                });
+                
+                if (header) {
+                    header.classList.toggle('hidden', !groupVisible);
+                }
+            });
+
+            let msg = document.getElementById('no-search-results');
+            if (!hasVisible && q !== '') {
+                if (!msg) {
+                    msg = document.createElement('p');
+                    msg.id = 'no-search-results';
+                    msg.className = 'text-slate-500 p-6 text-center italic';
+                    document.getElementById('student-list-panel').appendChild(msg);
+                }
+                msg.textContent = `Nenhum aluno encontrado para "${e.target.value}".`;
+            } else if (msg) {
+                msg.remove();
+            }
         }
 
         // --- NAVEGAÇÃO E RENDERIZAÇÃO VIEW DETALHE ALUNO ---
+        
+        function showAlunosList() {
+            console.log("[showAlunosList] Voltando para a lista de alunos.");
+            showView('dashboard-view');
+            switchMainTab('alunos');
+            window.scrollTo(0, 0);
+        }
+
+        function setupStudentTabNavigation() {
+            const nav = document.getElementById('student-tabs-nav'); 
+            nav.addEventListener('click', (e) => { 
+                const button = e.target.closest('.tab-button');
+                if(button){
+                    const tab = button.getAttribute('data-tab'); 
+                    switchStudentTab(tab);
+                }
+            });
+        }
+        
+        function switchStudentTab(tabName) {
+            console.log(`Trocando para aba de detalhe: ${tabName}`);
+            document.querySelectorAll('#student-tabs-nav .tab-button').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-tab') === tabName);
+            });
+            document.querySelectorAll('#student-tabs-content .tab-content').forEach(content => {
+                const isActive = content.id === `tab-${tabName}`;
+                content.style.display = isActive ? 'block' : 'none';
+                content.classList.toggle('active', isActive);
+            });
+        }
+
+        function switchStudentSubTab(subTabId) {
+            console.log(`[switchStudentSubTab] Trocando para sub-aba: ${subTabId}`);
+            document.querySelectorAll('.subnav-button').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-subtab-id') === subTabId);
+            });
+            document.querySelectorAll('.sub-tab-content').forEach(content => {
+                content.style.display = (content.id === subTabId) ? 'block' : 'none';
+                content.classList.toggle('active', content.id === subTabId);
+            });
+        }
+
         /**
-         * [CORRIGIDO v12] Mostra a view de detalhe usando showView e corrige o bug das Notas Práticas.
+         * [CORREÇÃO v25] Função principal de renderização do detalhe do aluno.
+         * Filtro de Notas Práticas AGORA USA APENAS EMAILHC.
          */
         function showStudentDetail(email) {
             console.log(`[showStudentDetail] Exibindo detalhes para: ${email}`);
              try {
-                 const info = appState.alunosMap.get(email);
-                 if (!info) {
-                     showError(`Aluno ${email} ñ encontrado no mapeamento.`);
-                     return;
-                 }
+                const info = appState.alunosMap.get(email);
+                if (!info) {
+                    showError(`Aluno ${email} não encontrado no mapeamento.`);
+                    return;
+                }
 
-                 // Busca dados relacionados...
-                  const escalas = [];
-                  for (const n in appState.escalas) {
-                      const e = appState.escalas[n];
-                      const a = (e.alunos || []).find(x => x && x.EmailHC === email);
-                      if (a) { escalas.push({ nomeEscala: e.nomeAba || n, Supervisor: a.Supervisor, Unidade: a.Unidade, dias: a.dias });}
-                  }
-                  const faltas = appState.ausenciasReposicoes.filter(f => f && f.EmailHC === email);
-                  const notasT = (appState.notasTeoricas.registros || []).find(n => n && n.EmailHC === email);
-                 
-                  // [CORRIGIDO v11] Loop de Notas Práticas
-                  const notasP = []; // <-- Variável correta é 'notasP'
-                  if(appState.notasPraticas && typeof appState.notasPraticas === 'object') {
-                      // Itera sobre os VALORES (os objetos de cada aba)
-                      for (const p of Object.values(appState.notasPraticas)) {
-                          if (p && p.registros) {
-                              const r = (p.registros || []).filter(x => x && x.EmailHC === email);
-                              // USA notasP.push (corrigido do bug 'nP.push')
-                              notasP.push(...r.map(i => ({ nomePratica: p.nomeAba || p.nomePratica, ...i })));
-                          }
-                      }
-                  }
-                 
-                  console.log("[showStudentDetail] Notas Teóricas encontradas:", notasT);
-                  console.log("[showStudentDetail] Notas Práticas encontradas:", notasP);
+                // --- Define IDs Normalizados ---
+                const emailNormalizado = normalizeString(email);
+                const alunoNomeNormalizado = normalizeString(info.NomeCompleto); 
 
-                 // Renderiza conteúdo PRIMEIRO
-                 renderStudentHeader(info);
-                 renderStudentDetailKPIs(faltas, notasP);
-                 renderTabInfo(info);
-                 renderTabEscala(escalas);
-                 renderTabFaltas(faltas);
-                 renderTabNotasTeoricas(notasT); // Passa o registro
-                 renderTabNotasPraticas(notasP); // Passa o array compilado
+                // --- Busca Dados Relacionados ---
+                
+                // Escalas
+                const escalas = [];
+                for (const n in appState.escalas) {
+                    const e = appState.escalas[n];
+                    const a = (e.alunos || []).find(x => x && 
+                        ((x.EmailHC && normalizeString(x.EmailHC) === emailNormalizado) || 
+                         (x.NomeCompleto && normalizeString(x.NomeCompleto) === alunoNomeNormalizado))
+                    );
+                    if (a) { escalas.push({ nomeEscala: e.nomeAba || n, Supervisor: a.Supervisor, Unidade: a.Unidade, dias: a.dias });}
+                }
+                
+                // Faltas
+                const faltas = appState.ausenciasReposicoes.filter(f => f && 
+                    ((f.EmailHC && normalizeString(f.EmailHC) === emailNormalizado) || 
+                     (f.NomeCompleto && normalizeString(f.NomeCompleto) === alunoNomeNormalizado))
+                );
+                
+                // Notas Teóricas
+                const notasT = (appState.notasTeoricas.registros || []).find(n => n && 
+                    ((n.EmailHC && normalizeString(n.EmailHC) === emailNormalizado) || 
+                     (n.NomeCompleto && normalizeString(n.NomeCompleto) === alunoNomeNormalizado))
+                );
+                
+                // [CORREÇÃO v25] Notas Práticas (Filtra por EmailHC)
+                const notasP = []; 
+                Object.values(appState.notasPraticas).forEach(p => { 
+                    if (p && p.registros) {
+                        const r = (p.registros || []).filter(x => x && 
+                             (x.EmailHC && normalizeString(x.EmailHC) === emailNormalizado)
+                        );
+                        notasP.push(...r.map(i => ({ nomePratica: p.nomePratica, ...i })));
+                    }
+                });
+                
+                // --- Logs de Depuração ---
+                console.groupCollapsed(`[Debug Dados] Aluno: ${info.NomeCompleto} (Email: ${email})`);
+                console.log(`Email Normalizado: ${emailNormalizado}`);
+                console.log(`Nome Normalizado: ${alunoNomeNormalizado}`);
+                console.log("Escalas Encontradas:", escalas);
+                console.log("Faltas Encontradas:", faltas);
+                
+                console.group("Notas Teóricas");
+                if (notasT) {
+                    console.log("Registro encontrado.");
+                    console.table([notasT]);
+                } else {
+                    console.warn("Nenhum registro de nota teórica encontrado.");
+                }
+                console.groupEnd();
+                
+                console.group("Notas Práticas");
+                if (notasP.length > 0) {
+                    console.log(`Total de ${notasP.length} avaliações práticas encontradas.`);
+                    console.table(notasP.map(n => ({ 
+                        Pratica: n.nomePratica,
+                        EmailAlunoNoRegisto: n.EmailHC, 
+                        Supervisor: n.Supervisor, 
+                        Data: n['Data/Hora'], 
+                        Media: n[Object.keys(n).find(k => /MÉDIA\s*\(NOTA FINAL\)[:]?/i.test(k))] 
+                    })));
+                } else {
+                    console.warn("Nenhuma nota prática encontrada para este aluno após o filtro.");
+                }
+                console.groupEnd();
+                console.groupEnd(); // Fim do Debug Dados
 
-                 // Mostra a view de detalhe usando a função centralizada
-                 showView('student-detail-view');
+                // --- Renderiza Conteúdo ---
+                renderStudentHeader(info);
+                renderStudentDetailKPIs(faltas, notasP);
+                renderTabInfo(info);
+                renderTabEscala(escalas);
+                renderTabFaltas(faltas);
+                renderTabNotasTeoricas(notasT); 
+                renderTabNotasPraticas(notasP); 
 
-                 switchStudentTab('info'); // Garante que a primeira aba esteja ativa
-                 window.scrollTo(0, 0); // Rola para o topo
-                 console.log("[showStudentDetail] View de detalhe exibida.");
+                // --- Exibe a View ---
+                showView('student-detail-view');
+                switchStudentTab('info'); 
+                window.scrollTo(0, 0); 
+                console.log("[showStudentDetail] View de detalhe exibida.");
              } catch (e) {
-                 console.error("[showStudentDetail] Erro durante renderização:", e);
-                 showError(`Erro ao exibir detalhes do aluno: ${e.message}`);
-                 showView('content-alunos'); // Tenta voltar para a lista em caso de erro
+                console.error("[showStudentDetail] Erro durante renderização:", e);
+                showError(`Erro ao exibir detalhes do aluno: ${e.message}`);
+                showView('dashboard-view'); 
+                switchMainTab('alunos');
              }
         }
-
-        /**
-         * [CORRIGIDO v12] Volta para a aba 'alunos' usando showView e ativa o link da sidebar.
-         */
-         function showAlunosList() {
-              console.log("[showAlunosList] Voltando para a lista de alunos.");
-              // Mostra a view da lista de alunos
-              showView('dashboard-view'); // Mostra a view principal
-              switchMainTab('alunos'); // Ativa a aba e o conteúdo dos alunos
-              window.scrollTo(0, 0);
-         }
-
-        function setupStudentTabNavigation() {
-             const n=document.getElementById('student-tabs-nav'); n.addEventListener('click', (e)=>{ if(e.target.tagName==='BUTTON'){const t=e.target.getAttribute('data-tab'); switchStudentTab(t);}});
-        }
-        function switchStudentTab(tabName) {
-            console.log(`Trocando para aba de detalhe: ${tabName}`);
-            // Atualiza botões
-            document.querySelectorAll('#student-tabs-nav .tab-button').forEach(btn => {
-                btn.classList.toggle('active', btn.getAttribute('data-tab') === tabName);
-            });
-            // Mostra/Esconde conteúdo
-            document.querySelectorAll('#student-tabs-content .tab-content').forEach(content => {
-                 const isActive = content.id === `tab-${tabName}`;
-                 content.style.display = isActive ? 'block' : 'none'; // Controle via display
-                 content.classList.toggle('active', isActive); // Mantém classe se o CSS usar
-            });
-        }
+        
         function renderStudentHeader(info) {
-             const p=document.getElementById('student-header'); const i=info.FotoID?`https://lh3.googleusercontent.com/d/${info.FotoID}=s160-c`:'https://placehold.co/80x80/e2e8f0/64748b?text=?'; const s=info.Status==='Ativo'?'badge-green':'badge-red'; p.innerHTML=`<img src="${i}" alt="Foto" class="w-20 h-20 rounded-full object-cover shadow-md bg-slate-200" onerror="this.src='https://placehold.co/80x80/e2e8f0/64748b?text=?'"><div class="flex-grow"><h2 class="text-2xl font-bold text-slate-800">${info.NomeCompleto}</h2><p class="text-base text-slate-500">${info.Curso}</p></div><div class="ml-auto flex-shrink-0"><span class="badge ${s}">${info.Status}</span></div>`;
+             const p=document.getElementById('student-header'); const i=info.FotoID?`https://lh3.googleusercontent.com/d/${info.FotoID}=s160-c`:'https://placehold.co/80x80/e8eef7/475569?text=?'; const s=info.Status==='Ativo'?'badge-green':'badge-red'; 
+             p.innerHTML=`<img src="${i}" alt="Foto" onerror="this.src='https://placehold.co/80x80/e8eef7/475569?text=?'">
+                          <div class="flex-grow text-center sm:text-left mt-4 sm:mt-0">
+                             <h2 class="text-2xl lg:text-3xl font-bold text-slate-900">${info.NomeCompleto}</h2>
+                             <p class="text-base lg:text-lg text-slate-600 mt-1">${info.Curso}</p>
+                          </div>
+                          <div class="ml-auto flex-shrink-0 mt-4 sm:mt-0">
+                             <span class="badge ${s} text-base py-2 px-4">${info.Status}</span>
+                          </div>`;
         }
+
         function renderStudentDetailKPIs(faltas, notasP) {
-             const p=document.getElementById('student-kpi-header'); const tF=faltas.length; const pF=faltas.filter(f=>!f.DataReposicaoISO).length; let mP=0; if(notasP.length>0){let s=0; notasP.forEach(n=>{const k=Object.keys(n).find(x=>x.toUpperCase().includes('MÉDIA (NOTA FINAL)'))||'MÉDIA (NOTA FINAL):'; let v=parseNota(n[k]); if(v>0)s+=v;}); mP=notasP.length>0?s/notasP.length:0;} p.innerHTML=`<div class="kpi-card flex items-center p-4"><div class="icon-bg kpi-icon-red"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg></div><div class="ml-3"><p class="kpi-label">Total Faltas</p><p class="kpi-value">${tF}</p></div></div> <div class="kpi-card flex items-center p-4"><div class="icon-bg kpi-icon-yellow"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div><div class="ml-3"><p class="kpi-label">Reposições Pendentes</p><p class="kpi-value">${pF}</p></div></div> <div class="kpi-card flex items-center p-4"><div class="icon-bg kpi-icon-blue"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div><div class="ml-3"><p class="kpi-label">Média (Prática)</p><p class="kpi-value">${mP.toFixed(1)}</p></div></div> <div class="kpi-card flex items-center p-4"><div class="icon-bg kpi-icon-green"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/><path d="M12 14l9-5-9-5-9 5 9 5zm0 0v6"/></svg></div><div class="ml-3"><p class="kpi-label">Módulos (Prática)</p><p class="kpi-value">${notasP.length}/${appState.notasPraticas?Object.keys(appState.notasPraticas).length:'?'}</p></div></div>`;
+             const tF=faltas.length; 
+             const pF=faltas.filter(f=> f && !f.DataReposicaoISO).length; 
+             let mP=0; let countP = 0; 
+             if(notasP.length>0){
+                 let s=0; 
+                 notasP.forEach(n=>{
+                     const k=Object.keys(n).find(k => /MÉDIA\s*\(NOTA FINAL\)[:]?/i.test(k)) || null; 
+                     if(k){
+                         let v=parseNota(n[k]); 
+                         if(v>0){s+=v; countP++;}
+                     }
+                 }); 
+                 mP=countP>0?s/countP:0;
+             }
+             document.getElementById('kpi-total-faltas').textContent = tF;
+             document.getElementById('kpi-pendentes').textContent = pF;
+             document.getElementById('kpi-media-pratica').textContent = mP > 0 ? mP.toFixed(1) : 'N/A';
+             document.getElementById('kpi-modulos').textContent = `${countP}/${Object.keys(appState.notasPraticas).length}`;
         }
+        
         function renderTabInfo(info) {
-             const p=document.getElementById('tab-info'); p.innerHTML=`<dl class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5 text-sm"><div class="border-b border-slate-100 pb-3"><dt class="font-medium text-slate-500">Email</dt><dd class="mt-1 font-semibold text-slate-700">${info.EmailHC||'N/A'}</dd></div><div class="border-b border-slate-100 pb-3"><dt class="font-medium text-slate-500">Nascimento</dt><dd class="mt-1 font-semibold text-slate-700">${info.DataNascimento||'N/A'}</dd></div><div class="border-b border-slate-100 pb-3"><dt class="font-medium text-slate-500">Sexo</dt><dd class="mt-1 font-semibold text-slate-700">${info.Sexo||'N/A'}</dd></div><div class="border-b border-slate-100 pb-3"><dt class="font-medium text-slate-500">Estado Civil</dt><dd class="mt-1 font-semibold text-slate-700">${info.EstadoCivil||'N/A'}</dd></div><div class="md:col-span-2 border-b border-slate-100 pb-3"><dt class="font-medium text-slate-500">CREFITO</dt><dd class="mt-1 font-semibold text-slate-700">${info.Crefito||'N/A'}</dd></div></dl>`;
+             const p=document.getElementById('tab-info'); p.innerHTML=`<dl class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6 text-sm"><div class="border-b border-slate-200 pb-3"><dt>Email</dt><dd>${info.EmailHC||'N/A'}</dd></div><div class="border-b border-slate-200 pb-3"><dt>Nascimento</dt><dd>${info.DataNascimento ? new Date(info.DataNascimento).toLocaleDateString('pt-BR') : 'N/A'}</dd></div><div class="border-b border-slate-200 pb-3"><dt>Sexo</dt><dd>${info.Sexo||'N/A'}</dd></div><div class="border-b border-slate-200 pb-3"><dt>Estado Civil</dt><dd>${info.EstadoCivil||'N/A'}</dd></div><div class="md:col-span-2 lg:col-span-1 border-b border-slate-200 pb-3"><dt>CREFITO</dt><dd>${info.Crefito||'N/A'}</dd></div></dl>`;
         }
+        
         function renderTabEscala(escalas) {
-             const p=document.getElementById('escala-heatmap-content'); if(!escalas||escalas.length===0){p.innerHTML='<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhum registro.</p></div>'; return;} p.innerHTML=escalas.map(e=>`<div class="content-card p-6"><h4 class="text-base font-semibold text-slate-800">${e.nomeEscala}</h4><p class="text-sm text-slate-500 mb-5"><strong>Unidade:</strong> ${e.Unidade} | <strong>Sup:</strong> ${e.Supervisor}</p><div class="flex flex-wrap gap-2">${e.dias.map(d=>`<div class="heatmap-day" data-status="${d.status||'none'}" title="${d.dataColuna}: ${d.status||'N/A'}"><span class="heatmap-day-date">${d.dataColuna}</span><span class="heatmap-day-status">${d.status||'N/A'}</span></div>`).join('')}</div></div>`).join('');
+             const p=document.getElementById('escala-heatmap-content'); if(!escalas||escalas.length===0){p.innerHTML='<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhum registro de escala encontrado.</p></div>'; return;} p.innerHTML=escalas.map(e=>`<div class="content-card p-6"><h4 class="text-base font-bold text-slate-800">${e.nomeEscala}</h4><p class="text-sm text-slate-500 mb-5"><strong>Unidade:</strong> ${e.Unidade||'N/A'} | <strong>Sup:</strong> ${e.Supervisor||'N/A'}</p><div class="flex flex-wrap gap-2">${e.dias.map(d=>`<div class="heatmap-day flex-grow" data-status="${d.status?d.status.toLowerCase():'none'}" title="${d.dataColuna}: ${d.status||'N/A'}"><span class="heatmap-day-date">${d.dataColuna}</span><span class="heatmap-day-status">${d.status||'N/A'}</span></div>`).join('')}</div></div>`).join('');
         }
+        
         function renderTabFaltas(faltas) {
-             const c=document.getElementById('tab-faltas'); const h=`<h3 class="content-card-header p-5">Registro de Ausências e Reposições</h3>`; let p=document.getElementById('faltas-content'); if(!faltas||faltas.length===0){c.innerHTML=h+'<p class="text-slate-500 p-5 text-sm italic">Nenhum registro.</p>'; return;} if(!p){c.innerHTML=h+'<div id="faltas-content" class="max-h-[500px] overflow-y-auto"></div>'; p=document.getElementById('faltas-content');} p.innerHTML=`<table class="min-w-full text-sm"><thead class="bg-slate-50"><tr><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Ausência</th><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Reposição</th><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Local</th><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Motivo</th></tr></thead><tbody class="bg-white divide-y divide-slate-100">${faltas.map(f=>{const iP=!f.DataReposicaoISO; const sB=iP?'<span class="badge badge-yellow">Pendente</span>':'<span class="badge badge-green">Completa</span>'; const dA=f.DataAusenciaISO?new Date(f.DataAusenciaISO+'T00:00:00').toLocaleDateString('pt-BR'):'-'; const dR=f.DataReposicaoISO?new Date(f.DataReposicaoISO+'T00:00:00').toLocaleDateString('pt-BR'):'-'; const mS=f.Motivo?(f.Motivo.length>35?f.Motivo.substring(0,35)+'...':f.Motivo):'-'; return `<tr class="hover:bg-sky-50 transition-colors duration-150"><td class="px-4 py-3 text-slate-600 align-middle">${sB}</td><td class="px-4 py-3 text-slate-600 align-middle">${dA}</td><td class="px-4 py-3 text-slate-600 align-middle">${dR}</td><td class="px-4 py-3 text-slate-600 align-middle">${f.Local||'-'}</td><td class="px-4 py-3 text-slate-600 align-middle" title="${f.Motivo||''}">${mS}</td></tr>`;}).join('')}</tbody></table>`;
+             const c=document.getElementById('faltas-content'); if(!faltas||faltas.length===0){c.innerHTML='<p class="text-slate-500 p-6 text-sm italic">Nenhum registro de falta.</p>'; return;} const h=`<table class="min-w-full"><thead><tr><th class="text-left">Status</th><th class="text-left">Ausência</th><th class="text-left">Reposição</th><th class="text-left">Local</th><th class="text-left">Motivo</th></tr></thead><tbody class="bg-white">${faltas.map(f=>{const iP=!f.DataReposicaoISO; const sB=iP?'<span class="badge badge-yellow">Pendente</span>':'<span class="badge badge-green">Completa</span>'; const dA=f.DataAusenciaISO?new Date(f.DataAusenciaISO+'T00:00:00').toLocaleDateString('pt-BR'):'-'; const dR=f.DataReposicaoISO?new Date(f.DataReposicaoISO+'T00:00:00').toLocaleDateString('pt-BR'):'-'; const mS=f.Motivo?(f.Motivo.length>40?f.Motivo.substring(0,40)+'...':f.Motivo):'-'; return `<tr><td>${sB}</td><td>${dA}</td><td>${dR}</td><td>${f.Local||'-'}</td><td title="${f.Motivo||''}">${mS}</td></tr>`;}).join('')}</tbody></table>`; c.innerHTML = h;
         }
-        /**
-         * [CORRIGIDO v9] Renderiza a aba "Notas Teóricas" com filtro explícito e validações robustas.
-         */
+
         function renderTabNotasTeoricas(notas) {
-             console.log('[renderTabNotasTeoricas] Dados recebidos:', notas);
-             const p = document.getElementById('notas-t-barchart-content');
+            console.log('[renderTabNotasTeoricas] Dados recebidos:', notas);
+            const p = document.getElementById('notas-t-content-wrapper');
 
-             if (!notas || typeof notas !== 'object' || Object.keys(notas).length === 0) {
-                 p.innerHTML = '<p class="text-slate-500 text-sm italic">Nenhum registro de notas teóricas encontrado para este aluno.</p>';
-                 console.log("[renderTabNotasTeoricas] Nenhum registro ou objeto inválido.");
+            if (!notas || typeof notas !== 'object' || Object.keys(notas).length === 0) {
+                p.innerHTML = '<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhum registro de notas teóricas encontrado.</p></div>';
+                return;
+            }
+
+            const mediaGroups = {
+                'Média - Fisio1': ['Anatomopatologia', 'Sub/Anatomopatologia', 'Bases', 'Sub/Bases', 'Doenças Pulmonares', 'Doenças Cardíacas', 'Proc. Cirurgico', 'Avaliação', 'Sub/Avaliacao', 'VM', 'Sub/VM'],
+                'Média - Fisio2': ['Técnicas e Recursos', 'Diag. Imagem'],
+                'Média - Fisio3': ['Fisio aplicada', 'UTI'],
+                'Média - Fisio4': ['Pediatria', 'Mobilização', 'Reab. Pulmonar'],
+                'Outras': ['M. Cientifica', 'Saúde e politicas', 'Farmacoterapia', 'Bioética']
+            };
+
+            let html = '';
+            const mediaKeys = Object.keys(notas).filter(k => k.toUpperCase().includes('MÉDIA'));
+            
+            if (mediaGroups.Outras.some(m => notas[m] && parseNota(notas[m]) > 0)) {
+                 mediaKeys.push('Outras');
+            }
+
+            if (mediaKeys.length === 0 && !mediaGroups.Outras.some(m => notas[m] && parseNota(notas[m]) > 0)) {
+                 p.innerHTML = '<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhuma nota ou média encontrada neste registro.</p></div>';
                  return;
-             }
+            }
 
-             // Lista EXPLÍCITA de chaves que são matérias/médias
-             const knownSubjectKeys = [
-                 'Anatomopatologia', 'Sub/Anatomopatologia', 'Bases', 'Sub/Bases',
-                 'Doenças Pulmonares', 'Doenças Cardíacas', 'Proc. Cirurgico',
-                 'Avaliação', 'Sub/Avaliacao', 'VM', 'Sub/VM', 'Média - Fisio1',
-                 'Técnicas e Recursos', 'Diag. Imagem', 'Média - Fisio2',
-                 'Fisio aplicada', 'UTI', 'Média - Fisio3', 'Pediatria',
-                 'Mobilização', 'Reab. Pulmonar', 'Média - Fisio4',
-                 'M. Cientifica', 'Saúde e politicas', 'Farmacoterapia', 'Bioética'
-             ];
+            mediaKeys.forEach(key => {
+                const mediaValue = parseNota(notas[key]);
+                const materias = (mediaGroups[key] || []);
+                
+                let detailsHtml = '';
+                let hasDetails = false;
+                
+                materias.forEach(materia => {
+                    if (notas[materia] !== null && notas[materia] !== undefined && String(notas[materia]).trim() !== '') {
+                        const notaMateria = parseNota(notas[materia]);
+                        if (notaMateria > 0 || String(notas[materia]).trim() !== '') { 
+                            detailsHtml += `<li><span class="score-label">${materia}</span><span class="score-value">${notaMateria.toFixed(1)}</span></li>`;
+                            hasDetails = true;
+                        }
+                    }
+                });
+                
+                if (mediaValue > 0 || hasDetails) {
+                     html += `
+                        <div class="content-card p-5 radial-card">
+                            <div class="flex-shrink-0">
+                                <div class="radial-progress" style="--value:${mediaValue * 10};">
+                                    <span class="radial-progress-value">${mediaValue > 0 ? mediaValue.toFixed(1) : 'N/A'}</span>
+                                </div>
+                            </div>
+                            <div class="flex-grow">
+                                <h4 class="text-base font-bold text-slate-800">${key}</h4>
+                                <p class="text-sm text-slate-500 mt-1">Notas do módulo teórico</p>
+                                ${hasDetails ? `
+                                <details class="mt-3 group">
+                                    <summary class="details-toggle list-none">
+                                        <span>Ver detalhes</span>
+                                        <svg class="transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                                    </summary>
+                                    <div class="details-content">
+                                        <ul class="details-scores-list">
+                                            ${detailsHtml}
+                                        </ul>
+                                    </div>
+                                </details>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                }
+            });
 
-             // Filtra o objeto 'notas' para conter apenas as chaves conhecidas E que tenham algum valor (não null/undefined/string vazia)
-             const materiasComNotas = knownSubjectKeys
-                 .filter(key => notas.hasOwnProperty(key) && notas[key] !== null && notas[key] !== undefined && String(notas[key]).trim() !== '')
-                 .map(key => ({ materia: key, notaStr: notas[key], notaValue: parseNota(String(notas[key])) }));
-                 // Filtramos por valor não vazio ANTES de parsear, para não exibir 0 para matérias não cursadas
-
-             console.log("[renderTabNotasTeoricas] Matérias válidas com notas parseadas:", materiasComNotas);
-
-             if (materiasComNotas.length === 0) {
-                 p.innerHTML = '<p class="text-slate-500 text-sm italic">Nenhuma nota válida encontrada neste registro.</p>';
-                 console.log("[renderTabNotasTeoricas] Nenhuma matéria conhecida com nota após filtro.");
-                 return;
-             }
-
-             // Renderiza as barras
-             p.innerHTML = materiasComNotas.map(item => {
-                 const x = item.materia;
-                 const v = item.notaValue; // Nota já parseada
-                 console.log(`[renderTabNotasTeoricas] Renderizando: ${x}, Valor: ${v}`);
-
-                 const iM = x.toUpperCase().includes('MÉDIA');
-                 const bF = iM ? 'bar-fill-media' : 'bar-fill-normal';
-                 const lC = iM ? 'text-blue-700 font-semibold' : 'text-slate-600';
-                 const vC = iM ? 'text-blue-800 font-bold' : 'text-slate-700 font-semibold';
-                 const barWidth = Math.max(0, v * 10); // Garante mínimo 0
-                 return `<div class="bar-chart-item text-xs rounded p-1.5 ${iM ? 'pt-3 mt-3 border-t border-slate-100' : ''}"><div class="flex justify-between items-center mb-0.5"><span class="bar-label ${lC} truncate pr-2" title="${x}">${x}</span><span class="bar-value ${vC} w-8 text-right">${v.toFixed(1)}</span></div><div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden bar-bg"><div class="h-full ${bF} rounded-full transition-all duration-500 ease-out" style="width:${barWidth}%"></div></div></div>`;
-             }).join('');
-             console.log("[renderTabNotasTeoricas] Gráfico renderizado.");
+            p.innerHTML = html || '<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhuma nota válida encontrada para exibir.</p></div>';
         }
 
+        /**
+         * [NOVO v26] Renderiza a aba de Notas Práticas com o botão da Gemini API.
+         */
+        function renderTabNotasPraticas(notasP) {
+            console.log("[renderTabNotasPraticas] Dados recebidos:", notasP);
+            const subNavContainer = document.getElementById('student-detail-subnav-container');
+            const subContentContainer = document.getElementById('student-detail-subnav-content');
 
-        function renderTabNotasPraticas(notasP) { // Renomeado para notasP para clareza
-             console.log("[renderTabNotasPraticas] Dados recebidos:", notasP);
-             const p=document.getElementById('notas-p-radial-content');
-             if(!notasP || notasP.length === 0){ // Verifica o array
-                 p.innerHTML='<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhum registro de notas práticas encontrado.</p></div>';
-                 console.log("[renderTabNotasPraticas] Nenhum registro.");
-                 return;
-             }
-             p.innerHTML = notasP.map((n,i) => { // Itera sobre o array notasP
-                 const dH=n['Data/Hora'];
-                 const dF=dH?new Date(String(dH).replace(/-/g,'/')).toLocaleDateString('pt-BR'):'N/A';
-                 const kM=Object.keys(n).find(k=>k.toUpperCase().includes('MÉDIA (NOTA FINAL)'))||'MÉDIA (NOTA FINAL):';
-                 let mF=parseNota(n[kM]);
-                 const kC=Object.keys(n).find(k=>k.toUpperCase().includes('COMENTÁRIOS'))||'COMENTÁRIOS DO(A) SUPERVISOR(A):';
-                 const c=n[kC]||'Sem comentários.';
-                 const nomePratica = n.nomePratica || `Avaliação ${i+1}`; // Usa o nome da prática injetado
-                 
-                 console.log(`[renderTabNotasPraticas] Renderizando: ${nomePratica}, Média: ${mF}`);
-                 
-                 return `<div class="content-card p-5 flex space-x-5 items-center"><div class="flex-shrink-0"><div class="radial-progress" style="--value:${mF*10};"><span class="radial-progress-value">${mF.toFixed(1)}</span></div></div><div class="flex-grow"><h4 class="text-sm font-semibold text-blue-700">${nomePratica}</h4><div class="text-xs text-slate-500 mt-1 space-x-3"><span><strong>Data:</strong> ${dF}</span><span><strong>Unid:</strong> ${n.Unidade||'-'}</span><span><strong>Sup:</strong> ${n.Supervisor||'-'}</span></div><details class="mt-2 group"><summary class="text-xs text-slate-500 font-medium cursor-pointer list-none flex items-center group-hover:text-blue-600 transition-colors"><span class="mr-1">Ver comentário</span><svg class="h-4 w-4 transform transition-transform duration-200 group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></summary><p class="text-sm italic text-slate-600 mt-2 p-3 bg-slate-50 rounded-md border border-slate-200">${c}</p></details></div></div>`;
-             }).join('');
-             console.log("[renderTabNotasPraticas] Gráfico renderizado.");
+            if (!notasP || notasP.length === 0) {
+                subNavContainer.innerHTML = '';
+                subContentContainer.innerHTML = '<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhum registro de notas práticas encontrado.</p></div>';
+                return;
+            }
+
+            let navHtml = '';
+            let contentHtml = '';
+
+            notasP.sort((a, b) => {
+                const dateA = a['Data/Hora'] ? new Date(String(a['Data/Hora']).replace(/-/g,'/')) : new Date(0);
+                const dateB = b['Data/Hora'] ? new Date(String(b['Data/Hora']).replace(/-/g,'/')) : new Date(0);
+                return dateB - dateA;
+            });
+
+            notasP.forEach((n, index) => {
+                const isActive = index === 0;
+                const tabId = `subtab-np-${index}`;
+                const nomePratica = n.nomePratica || `Avaliação ${index + 1}`;
+
+                navHtml += `<button class="subnav-button ${isActive ? 'active' : ''}" data-subtab-id="${tabId}">${nomePratica}</button>`;
+
+                // [NOVO v23] Regex para Média e Comentário
+                const keyM = Object.keys(n).find(k => /MÉDIA\s*\(NOTA FINAL\)[:]?/i.test(k)) || null;
+                const keyC = Object.keys(n).find(k => /COMENTÁRIOS\s*DO\(A\)\s*SUPERVISOR\(A\)[:]?/i.test(k)) || null;
+                
+                const mediaFinal = parseNota(n[keyM]);
+                const comentario = n[keyC] || 'Sem comentários.';
+                // [NOVO v26] Escapa o comentário para o HTML
+                const comentarioEscapado = comentario.replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/\n/g, "\\n");
+
+                const dataFormatada = n['Data/Hora'] ? new Date(String(n['Data/Hora']).replace(/-/g,'/')).toLocaleDateString('pt-BR') : 'N/A';
+
+                let scoresHtml = '';
+                Object.entries(n).forEach(([key, value]) => {
+                    const keyUpper = key.toUpperCase().trim();
+                    const isIgnored = /DATA\/HORA|EMAILHC|NOMECOMPLETO|CURSO|SUPERVISOR|UNIDADE|PERIODO|TURNO|MÉDIA\s*\(NOTA FINAL\)|COMENTÁRIOS\s*DO\(A\)\s*SUPERVISOR\(A\)|O SUPERVISOR ESTÁ CIENTE|NOMEPRATICA/i.test(keyUpper);
+                    
+                    if (!isIgnored && value) {
+                         scoresHtml += `
+                            <li class="col-span-1">
+                                <span class="score-label">${key.replace(/:/g, '')}</span>
+                                <span class="score-value">${String(value).length > 20 ? String(value).substring(0,20)+'...' : value}</span>
+                            </li>
+                        `;
+                    }
+                });
+
+                contentHtml += `
+                    <div id="${tabId}" class="sub-tab-content ${isActive ? 'active' : ''}">
+                        <div class="content-card p-6 lg:p-8">
+                            <div class="evaluation-layout">
+                                <div class="evaluation-header flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                                    <div class="evaluation-details">
+                                        <h3 class="font-display text-xl font-bold text-slate-900 mb-4">${nomePratica}</h3>
+                                        <dl>
+                                            <div><dt>Supervisor</dt><dd>${n.Supervisor || 'N/A'}</dd></div>
+                                            <div><dt>Data</dt><dd>${dataFormatada}</dd></div>
+                                            <div><dt>Unidade</dt><dd>${n.Unidade || 'N/A'}</dd></div>
+                                            <div><dt>Período</dt><dd>${n.Periodo || 'N/A'}</dd></div>
+                                        </dl>
+                                    </div>
+                                    <div class="text-center sm:text-right flex-shrink-0">
+                                        <p class="kpi-label" style="color: var(--accent-blue);">Nota Final</p>
+                                        <p class="kpi-value">${mediaFinal.toFixed(1)}</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="evaluation-scores lg:col-span-2">
+                                    <h4>Detalhes da Avaliação</h4>
+                                    <ul class="scores-list grid grid-cols-1 md:grid-cols-2 gap-x-4">
+                                        ${scoresHtml}
+                                    </ul>
+                                </div>
+                                
+                                <div class="evaluation-comments lg:col-span-1">
+                                    <div class="flex justify-between items-center">
+                                        <h4>Comentários</h4>
+                                        <!-- [NOVO v26] Botão Gemini -->
+                                        <button class="gemini-analysis-button" data-loading="false" onclick="handleAnalisarComentario(this, '${comentarioEscapado}')">
+                                            ✨ Analisar Comentário
+                                        </button>
+                                    </div>
+                                    <p>${comentario}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            subNavContainer.innerHTML = navHtml;
+            subContentContainer.innerHTML = contentHtml;
+
+            if (notasP.length > 0) {
+                switchStudentSubTab('subtab-np-0');
+            }
         }
+        
+        // --- [NOVO v26] Funções da API Gemini ---
+
+        /**
+         * Exibe o modal Gemini com o título e conteúdo especificados.
+         * @param {string} title O título do modal.
+         * @param {string} content O conteúdo HTML para o modal.
+         */
+        function showGeminiModal(title, content) {
+            const modal = document.getElementById('gemini-modal');
+            document.getElementById('gemini-modal-title').innerText = title;
+            document.getElementById('gemini-modal-content').innerHTML = content;
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('show'), 10); // Ativa a transição de opacidade
+        }
+
+        /**
+         * Fecha o modal Gemini.
+         */
+        function closeGeminiModal() {
+            const modal = document.getElementById('gemini-modal');
+            modal.classList.remove('show');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                document.getElementById('gemini-modal-content').innerHTML = ''; // Limpa o conteúdo
+            }, 300); // Aguarda a transição
+        }
+
+        /**
+         * Lida com o clique no botão "Analisar Comentário".
+         * @param {HTMLElement} button O botão que foi clicado.
+         * @param {string} commentText O texto do comentário a ser analisado.
+         */
+        async function handleAnalisarComentario(button, commentText) {
+            if (button.dataset.loading === 'true') return;
+
+            button.dataset.loading = 'true';
+            button.disabled = true;
+            button.innerHTML = 'A analisar...';
+
+            // Mostra o modal com o loader
+            showGeminiModal('✨ A analisar Avaliação', '<div class="gemini-loader"></div>');
+
+            const systemPrompt = `
+                Aja como um coordenador de ensino de fisioterapia altamente experiente. 
+                A sua tarefa é analisar o comentário de avaliação de um supervisor sobre um aluno. 
+                Extraia os pontos-chave de forma concisa.
+                Responda APENAS com um objeto JSON válido, sem \`\`\`json ou qualquer outro texto.
+                O formato deve ser:
+                {
+                  "pontosFortes": ["lista de elogios ou habilidades dominadas"],
+                  "pontosAMelhorar": ["lista de críticas ou áreas de dificuldade"],
+                  "feedbackGeral": "um resumo de uma frase sobre a avaliação"
+                }
+                Se uma categoria (pontosFortes ou pontosAMelhorar) não for mencionada, retorne um array vazio [].
+            `;
+
+            try {
+                const analysisJsonString = await callGeminiAPI(systemPrompt, commentText);
+                const analysis = JSON.parse(analysisJsonString);
+                
+                let html = '';
+
+                // Constrói HTML para Pontos Fortes
+                if (analysis.pontosFortes && analysis.pontosFortes.length > 0) {
+                    html += '<h3>Pontos Fortes</h3><ul>';
+                    analysis.pontosFortes.forEach(p => {
+                        html += `<li>${p}</li>`;
+                    });
+                    html += '</ul>';
+                } else {
+                    html += '<h3>Pontos Fortes</h3><p>Nenhum ponto forte específico mencionado.</p>';
+                }
+
+                // Constrói HTML para Pontos a Melhorar
+                if (analysis.pontosAMelhorar && analysis.pontosAMelhorar.length > 0) {
+                    html += '<h3>Pontos a Melhorar</h3><ul>';
+                    analysis.pontosAMelhorar.forEach(p => {
+                        html += `<li>${p}</li>`;
+                    });
+                    html += '</ul>';
+                } else {
+                    html += '<h3>Pontos a Melhorar</h3><p>Nenhum ponto a melhorar específico mencionado.</p>';
+                }
+
+                // Constrói HTML para Feedback Geral
+                html += '<h3>Feedback Geral</h3>';
+                html += `<p>${analysis.feedbackGeral || 'Não foi possível gerar um resumo.'}</p>`;
+
+                showGeminiModal('✨ Análise da Avaliação', html);
+
+            } catch (error) {
+                console.error("Erro ao analisar comentário:", error);
+                showGeminiModal('Erro na Análise', '<p>Não foi possível analisar o comentário. Verifique a consola para mais detalhes.</p>');
+            } finally {
+                button.dataset.loading = 'false';
+                button.disabled = false;
+                button.innerHTML = '✨ Analisar Comentário';
+            }
+        }
+
+        /**
+         * Faz a chamada à API Gemini com retentativas (exponential backoff).
+         * @param {string} systemPrompt O prompt do sistema.
+         * @param {string} userQuery O prompt do usuário (o comentário).
+         * @returns {Promise<string>} O texto da resposta da API (JSON stringificado).
+         */
+        async function callGeminiAPI(systemPrompt, userQuery) {
+            const apiKey = "AIzaSyAKZVcyv3ELzll3WG4cz4z0NuKU3rzfGqc"; // [NOVO v27] Chave de API local inserida
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{
+                    parts: [{ text: userQuery }]
+                }],
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                },
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    temperature: 0.2 // Baixa temperatura para manter a análise objetiva
+                }
+            };
+
+            const options = {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            };
+
+            // Usa a função de retentativa
+            const response = await fetchWithRetry(apiUrl, options);
+            if (!response.ok) {
+                throw new Error(`Falha na API: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+            if (!text) {
+                throw new Error("Resposta da API vazia ou mal formatada.");
+            }
+            
+            return text;
+        }
+
+        /**
+         * Wrapper de Fetch com retentativa e exponential backoff.
+         */
+        async function fetchWithRetry(url, options, retries = 3, delay = 1000) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    // Não faz retry em erros 4xx (ex: 400 Bad Request)
+                    if (response.ok || (response.status >= 400 && response.status < 500)) {
+                        return response;
+                    }
+                    // Faz retry em erros 5xx (Server error) ou 429 (Rate limit)
+                    console.warn(`[fetchWithRetry] Falha na tentativa ${i + 1}/${retries}. Status: ${response.status}. Tentando novamente em ${delay}ms...`);
+                } catch (error) {
+                    console.warn(`[fetchWithRetry] Erro de rede na tentativa ${i + 1}/${retries}. Tentando novamente em ${delay}ms...`, error.message);
+                }
+                await new Promise(resolve => setTimeout(resolve, delay));
+                delay *= 2; // Exponential backoff
+            }
+            // Tenta a última vez
+            return fetch(url, options);
+        }
+
 
         // --- Inicia ---
-        // Adiciona o listener principal
         document.addEventListener('DOMContentLoaded', () => {
-             console.log("DOM Carregado. Configurando login e exibindo view de login.");
-             setupEventHandlers(); // Configura todos os listeners, incluindo login
-             showView('login-view'); // Mostra a tela de login primeiro
-             // O initDashboard() só será chamado após login bem-sucedido
+            console.log("DOM Carregado. Configurando login e exibindo view de login.");
+            setupEventHandlers(); 
+            showView('login-view');
         });
     </script>
 </body>
