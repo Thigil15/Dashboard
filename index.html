@@ -3,160 +3,650 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Alunos PRO++ v8</title>
+    <title>Portal do Ensino - Dashboard v15 (Premium)</title>
     <!-- Carrega o Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- [NOVO v15] Importa as fontes 'Inter' (corpo) e 'Poppins' (títulos) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <!-- [TEMA NOVO v15] Estilos Premium Glassmorphism -->
     <style>
-        /* Estilos personalizados - Tema "Deep Ocean" Refinado */
-        :root { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
-        html { scroll-behavior: smooth; }
-        body { background-color: #f1f5f9; /* slate-100 */ }
+        /* --- [TEMA v15] Variáveis Globais de Design --- */
+        :root {
+            /* Tipografia */
+            --font-body: 'Inter', sans-serif;
+            --font-heading: 'Poppins', sans-serif;
 
-        /* Classes Utilitárias */
-        .hidden-view { display: none !important; opacity: 0; } /* Garante esconder */
-        .visible-view { display: block; opacity: 1; transition: opacity 0.3s ease-out; } /* Controla visibilidade */
-        /* Simplificação: não usamos mais .main-content-section.active */
+            /* Cores de Fundo */
+            --bg-main-start: hsl(220, 20%, 97%); /* Cinza-azulado muito claro */
+            --bg-main-end: hsl(220, 20%, 99%);   /* Quase branco */
+            --bg-gradient: linear-gradient(180deg, var(--bg-main-start) 0%, var(--bg-main-end) 100vh);
+            
+            /* Sidebar */
+            --sidebar-bg: hsl(224, 25%, 12%); /* Azul petróleo/cinza escuro */
+            --sidebar-border: hsl(224, 25%, 20%);
+            --sidebar-text: hsl(220, 14%, 75%);
+            --sidebar-text-hover: hsl(0, 0%, 100%);
+            --sidebar-accent: hsl(190, 80%, 55%); /* Ciano vibrante */
+            --sidebar-accent-glow: hsla(190, 80%, 55%, 0.15);
 
-        .highlight { background-color: #a5f3fc; border-radius: 2px; padding: 0 2px; color: #0e7490; font-weight: 500;}
-        .student-group-header.hidden, .student-card.hidden { display: none; }
+            /* Cards (Glassmorphism) */
+            --card-bg: rgba(255, 255, 255, 0.7);
+            --card-border: rgba(255, 255, 255, 0.9);
+            --card-shadow: 0 10px 30px -15px rgba(100, 116, 139, 0.15);
+            --card-shadow-hover: 0 15px 35px -15px rgba(100, 116, 139, 0.25);
+            
+            /* Cores de Texto */
+            --text-primary: hsl(225, 25%, 20%);
+            --text-secondary: hsl(220, 15%, 45%);
+            --text-tertiary: hsl(220, 10%, 65%);
+            
+            /* Acentos Vibrantes */
+            --accent-purple: hsl(250, 70%, 65%);
+            --accent-cyan: hsl(190, 80%, 55%);
+            --accent-orange: hsl(30, 90%, 65%);
+            --accent-green: hsl(140, 60%, 50%);
+            --accent-red: hsl(0, 80%, 65%);
+            --accent-yellow: hsl(45, 90%, 60%);
+        }
 
-        /* --- Loader --- */
-        #loading-overlay { position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.95); display: flex; justify-content: center; align-items: center; flex-direction: column; z-index: 9999; transition: opacity 0.6s ease-out; opacity: 1; }
-        .loader { width: 50px; height: 50px; border-radius: 50%; border: 4px solid #38bdf8; /* sky-400 */ border-top-color: #0ea5e9; /* sky-500 */ animation: spin 1s linear infinite; }
+        /* --- [TEMA v15] Estilos Base --- */
+        html { 
+            scroll-behavior: smooth; 
+            -webkit-font-smoothing: antialiased; 
+            -moz-osx-font-smoothing: grayscale;
+        }
+        body {
+            font-family: var(--font-body);
+            background: var(--bg-gradient);
+            background-attachment: fixed; /* Gradiente fica fixo */
+            color: var(--text-primary);
+        }
+        
+        /* Títulos principais (Dashboard, Alunos, etc) */
+        main h1.text-2xl {
+            font-family: var(--font-heading);
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+        }
+
+        /* --- [TEMA v15] Animações --- */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Aplica animação de fade-in às views (controlado pelo JS 'display: block') */
+        .view-container[style*="block"] {
+            animation: fadeInUp 0.4s ease-out both;
+        }
+        
+        /* --- [TEMA v15] Loader --- */
+        #loading-overlay { 
+            position: fixed; inset: 0; 
+            background-color: hsla(220, 20%, 98%, 0.8); /* Fundo "frosted" */
+            backdrop-filter: blur(5px);
+            display: none;
+            opacity: 0;
+            justify-content: center; align-items: center; flex-direction: column; 
+            z-index: 9999; 
+            transition: opacity 0.3s ease-out;
+        }
+        .loader { 
+            width: 40px; height: 40px; border-radius: 50%; 
+            border: 4px solid var(--accent-cyan);
+            border-top-color: var(--text-primary);
+            animation: spin 1s linear infinite; 
+        }
+        #loading-overlay p { 
+            color: var(--text-primary); 
+            margin-top: 1.5rem; 
+            font-weight: 500;
+            font-family: var(--font-heading);
+        }
         @keyframes spin { to { transform: rotate(360deg); } }
-        #loading-overlay p { color: #cbd5e1; margin-top: 1.5rem; font-weight: 500; }
 
-        /* --- Sidebar - Tema Escuro --- */
-        aside { background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%); }
-        .sidebar-logo-text { color: #f8fafc; }
-        .sidebar-link { transition: all 0.25s ease-in-out; border-left: 4px solid transparent; padding: 0.75rem 1.25rem; color: #a1a1aa; display: flex; align-items: center; }
-        .sidebar-link svg { color: #71717a; transition: all 0.25s ease-in-out; margin-right: 0.8rem; flex-shrink: 0; }
-        .sidebar-link:hover { background-color: rgba(51, 65, 85, 0.6); color: #f1f5f9; border-left-color: #52525b; }
-        .sidebar-link:hover svg { color: #e4e4e7; }
-        .sidebar-link.active { background-color: rgba(14, 165, 233, 0.1); color: #f8fafc; border-left-color: #0ea5e9; font-weight: 600; }
-        .sidebar-link.active svg { color: #38bdf8; }
+        /* --- [TEMA v15] Tela de Login --- */
+        #login-view {
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: var(--bg-gradient); /* Mesmo gradiente */
+        }
+        #login-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            box-shadow: var(--card-shadow);
+            padding: 2.5rem;
+            border-radius: 1rem; /* 16px */
+            width: 100%;
+            max-width: 24rem;
+            animation: fadeInUp 0.5s ease-out both;
+        }
+        #login-card h1 {
+            font-family: var(--font-heading);
+        }
+        /* Inputs do Login */
+        #login-form input {
+            background: hsl(220, 20%, 100%);
+            border: 1px solid hsl(220, 15%, 90%);
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+        }
+        #login-form input:focus {
+            border-color: var(--sidebar-accent);
+            box-shadow: 0 0 0 3px var(--sidebar-accent-glow);
+        }
+        /* Botão de Login */
+        #login-form button[type="submit"] {
+            font-family: var(--font-heading);
+            font-weight: 600;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
+            border-radius: 0.5rem;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 15px -5px hsla(220, 70%, 60%, 0.4);
+        }
+        #login-form button[type="submit"]:hover {
+            transform: scale(1.03);
+            box-shadow: 0 6px 20px -5px hsla(220, 70%, 60%, 0.6);
+        }
+        /* Erro do Login */
+        #login-error {
+            display: none;
+            background-color: hsl(0, 100%, 98%);
+            color: hsl(0, 70%, 45%);
+            border: 1px solid hsl(0, 80%, 92%);
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-top: 1rem;
+        }
 
-        /* --- Main Content Cards --- */
-        .content-card { background-color: #ffffff; border-radius: 0.75rem; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); border: 1px solid #e2e8f0; transition: all 0.3s ease-in-out; border-top: 4px solid #0ea5e9; }
-        .content-card:hover { box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.07), 0 4px 6px -4px rgb(0 0 0 / 0.07); transform: translateY(-3px); border-top-color: #0284c7; }
-        .content-card-header { font-size: 0.95rem; font-weight: 600; color: #1e293b; margin-bottom: 1rem; padding-bottom: 0.8rem; border-bottom: 1px solid #f1f5f9; }
+        /* --- [TEMA v15] Sidebar --- */
+        #app-sidebar { 
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--sidebar-border); 
+        }
+        #app-sidebar .sidebar-logo-text { 
+            color: var(--sidebar-text-hover);
+            font-family: var(--font-heading);
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+        /* Links da Sidebar */
+        .sidebar-link { 
+            transition: all 0.2s ease-in-out; 
+            border-left: 4px solid transparent; 
+            padding: 0.75rem 1.25rem; 
+            color: var(--sidebar-text); 
+            display: flex; 
+            align-items: center; 
+            font-weight: 500;
+        }
+        .sidebar-link svg { 
+            margin-right: 0.8rem; 
+            flex-shrink: 0;
+            transition: all 0.2s ease-in-out;
+        }
+        /* Ícones Coloridos (Conforme Pedido) */
+        .sidebar-link[data-tab="dashboard"] svg { color: var(--accent-cyan); }
+        .sidebar-link[data-tab="alunos"] svg { color: var(--accent-purple); }
+        .sidebar-link[data-tab="ponto"] svg { color: var(--accent-orange); }
+
+        /* Hover: Efeito "Glow" */
+        .sidebar-link:hover { 
+            background-color: var(--sidebar-border); 
+            color: var(--sidebar-text-hover);
+            /* O "Glow" */
+            box-shadow: inset 4px 0 10px -5px var(--sidebar-accent-glow);
+        }
+        .sidebar-link:hover svg { 
+            color: var(--sidebar-text-hover); /* Ícone fica branco no hover */
+        }
+        /* Link Ativo */
+        .sidebar-link.active { 
+            background: linear-gradient(90deg, rgba(0,0,0,0.3), rgba(0,0,0,0.0));
+            color: var(--sidebar-text-hover); 
+            border-left-color: var(--sidebar-accent); 
+            font-weight: 600;
+        }
+        .sidebar-link.active svg { 
+            color: var(--sidebar-text-hover); /* Ícone fica branco no ativo */
+        }
+
+        /* --- [TEMA v15] Sidebar Colapsada --- */
+        #app-sidebar.collapsed { width: 5.5rem; /* 88px */ }
+        #app-sidebar.collapsed .sidebar-logo-text { display: none; }
+        #app-sidebar.collapsed .sidebar-link { justify-content: center; padding-left: 0; padding-right: 0; }
+        #app-sidebar.collapsed .sidebar-link svg { margin-right: 0; }
+        #app-sidebar.collapsed .sidebar-link-text { display: none; }
+        #sidebar-toggle { transition: all 0.3s ease; }
+        #app-sidebar.collapsed #sidebar-toggle { transform: rotate(180deg); }
 
 
-        /* --- KPI Cards --- */
-        .kpi-card { background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 0.75rem; transition: all 0.25s ease-in-out; position: relative; overflow: hidden; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.03); }
-        .kpi-card:hover { transform: scale(1.03); box-shadow: 0 4px 10px -2px rgb(0 0 0 / 0.08); z-index: 5; }
-        .kpi-card > * { position: relative; z-index: 1; }
-        .kpi-card .icon-bg { padding: 0.8rem; border-radius: 0.5rem; }
-        .kpi-card .kpi-label { font-size: 0.65rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.1rem; }
-        .kpi-card .kpi-value { font-size: 1.8rem; font-weight: 700; color: #0f172a; line-height: 1; }
-        .kpi-icon-blue { background-color: #eff6ff; color: #2563eb; } .kpi-icon-green { background-color: #f0fdf4; color: #16a34a; } .kpi-icon-red { background-color: #fff1f2; color: #e11d48; } .kpi-icon-yellow { background-color: #fefce8; color: #ca8a04; }
-        .kpi-icon-purple { background-color: #faf5ff; color: #7c3aed; }
+        /* --- [TEMA v15] Cards de Conteúdo (Glassmorphism) --- */
+        .content-card { 
+            background: var(--card-bg);
+            backdrop-filter: blur(20px); /* Efeito "Frosted Glass" */
+            border: 1px solid var(--card-border);
+            box-shadow: var(--card-shadow);
+            border-radius: 1rem; /* 16px */
+            transition: all 0.3s ease-in-out; 
+            animation: fadeInUp 0.4s ease-out both 0.1s; /* Leve delay */
+        }
+        .content-card:hover { 
+            box-shadow: var(--card-shadow-hover);
+            transform: translateY(-4px); /* Elevação sutil */
+        }
+        .content-card-header { 
+            font-family: var(--font-heading);
+            font-size: 0.8rem; /* 13px */
+            font-weight: 600; 
+            color: var(--text-secondary);
+            margin-bottom: 1rem; 
+            padding-bottom: 0.8rem; 
+            border-bottom: 1px solid hsl(220, 25%, 94%); /* Borda interna sutil */
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* --- [TEMA v15] KPI Cards (Premium) --- */
+        
+        /* Estilo 1: Usado na "Visão Geral" (Layout v14) */
+        /* O ícone */
+        .kpi-card .icon-bg, .icon-bg { 
+            padding: 1rem; /* 16px */
+            border-radius: 0.75rem; /* 12px */
+            transition: all 0.3s ease;
+        }
+        /* O texto */
+        .kpi-card .kpi-label, .text-sm.font-medium.text-slate-500 {
+            font-size: 0.875rem; /* 14px */
+            font-weight: 500; 
+            color: var(--text-secondary); 
+            margin-bottom: 0;
+        }
+        .kpi-card .kpi-value, .text-2xl.font-bold.text-slate-800, .text-xl.font-bold.text-slate-800 { 
+            font-family: var(--font-heading);
+            font-size: 2rem; /* 32px (Grande) */
+            font-weight: 700; 
+            color: var(--text-primary);
+            line-height: 1.1;
+        }
+        /* Ajuste para médias (menores) */
+        .grid .text-xl.font-bold.text-slate-800 {
+             font-size: 1.75rem; /* 28px */
+        }
+        .grid .text-xs.font-medium.text-slate-500 {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        .grid .icon-bg {
+            padding: 0.8rem;
+        }
+
+        /* Estilo 2: Usado na "Frequência Diária" (Layout antigo) */
+        .kpi-card {
+            background: hsla(220, 20%, 98%, 0.7);
+            border: 1px solid hsl(220, 25%, 94%);
+            border-radius: 0.75rem;
+            transition: all 0.25s ease-in-out;
+            position: relative;
+            overflow: hidden;
+        }
+        .kpi-card:hover { 
+            transform: scale(1.02); 
+            box-shadow: 0 4px 10px -2px rgb(0 0 0 / 0.05); 
+            z-index: 5; 
+            border-color: var(--sidebar-accent);
+        }
+        .kpi-card .kpi-label {
+            font-size: 0.65rem; 
+            font-weight: 600; 
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+        }
+        .kpi-card .kpi-value {
+            font-size: 1.5rem; /* 24px */
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        /* Cores dos Ícones (Mantidas, mas com vars) */
+        .kpi-icon-blue { background-color: #dbeafe; color: #2563eb; } 
+        .kpi-icon-green { background-color: #dcfce7; color: #16a34a; } 
+        .kpi-icon-red { background-color: #fee2e2; color: #dc2626; } 
+        .kpi-icon-yellow { background-color: #fef9c3; color: #ca8a04; }
+        .kpi-icon-purple { background-color: #ede9fe; color: #7c3aed; }
         .kpi-icon-cyan { background-color: #ecfeff; color: #0891b2; }
         .kpi-icon-orange { background-color: #fff7ed; color: #f97316; }
 
-
-        /* --- Gráfico Donut (Distribuição Cursos) --- */
-        .donut-chart-container { display: flex; align-items: center; justify-content: space-around; flex-wrap: wrap; gap: 1rem; padding: 0.5rem 0; }
-        .donut-chart { position: relative; width: 130px; height: 130px; border-radius: 50%; background: conic-gradient( var(--chart-segments) ); transition: transform 0.3s ease; }
+        /* --- [TEMA v15] Gráficos --- */
+        .donut-chart { 
+            position: relative; width: 140px; height: 140px; border-radius: 50%; 
+            background: conic-gradient( var(--chart-segments) ); 
+            transition: transform 0.3s ease; 
+        }
         .donut-chart:hover { transform: scale(1.05); }
-        .donut-chart::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 65%; height: 65%; background: #fff; border-radius: 50%; box-shadow: inset 0 0 5px rgba(0,0,0,0.05);}
-        .donut-legend ul { list-style: none; padding: 0; margin: 0; font-size: 0.7rem; color: #475569; max-width: 150px; }
-        .donut-legend li { display: flex; align-items: center; margin-bottom: 0.45rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .legend-color-box { width: 10px; height: 10px; border-radius: 2px; margin-right: 0.6rem; flex-shrink: 0; }
+        .donut-chart::before { 
+            content: ''; position: absolute; top: 50%; left: 50%; 
+            transform: translate(-50%, -50%); width: 60%; height: 60%; 
+            background: var(--card-bg); /* Furo do Donut */
+            border-radius: 50%; 
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.05);
+        }
+        .donut-legend ul { font-size: 0.75rem; color: var(--text-secondary); }
+        .legend-color-box { border-radius: 4px; }
 
-        /* --- Abas Detalhe Aluno --- */
-        #student-tabs-nav { -ms-overflow-style: none; scrollbar-width: none; }
+        /* Gráfico de Barras */
+        .bar-chart-item { border-radius: 6px; padding: 0.4rem 0.6rem; }
+        .bar-chart-item:hover { background-color: hsl(220, 30%, 96%); }
+        .bar-chart-item .bar-bg { background-color: hsl(220, 25%, 94%); border-radius: 4px; }
+        .bar-chart-item .bar-fill-normal { background-color: var(--accent-cyan); border-radius: 4px; }
+        .bar-chart-item .bar-fill-media { background: linear-gradient(90deg, var(--accent-purple), var(--sidebar-accent)); border-radius: 4px; }
+        .bar-chart-item .bar-label { color: var(--text-secondary); font-size: 0.75rem; font-weight: 500; }
+        .bar-chart-item .bar-value { color: var(--text-primary); font-size: 0.75rem; font-weight: 600; }
+
+        /* --- [TEMA v15] Lista de Alunos --- */
+        .student-group-header { 
+            font-family: var(--font-heading);
+            font-size: 0.75rem; 
+            font-weight: 600; 
+            text-transform: uppercase; 
+            color: var(--text-primary); 
+            padding: 0.5rem 0.25rem; 
+            margin-top: 1.75rem; margin-bottom: 1rem; 
+            border: none; 
+            border-bottom: 2px solid var(--sidebar-accent); 
+            position: sticky; top: -1px; z-index: 5; 
+            /* Header "Frosted" */
+            background: linear-gradient(to bottom, hsla(220, 20%, 98%, 0.9) 80%, hsla(220, 20%, 98%, 0));
+            backdrop-filter: blur(5px);
+        }
+        .student-card { 
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            box-shadow: none; /* Mais limpo */
+            border-radius: 0.75rem; 
+            padding: 1rem; 
+            transition: all 0.25s ease-in-out; 
+            cursor: pointer; position: relative; 
+            display: flex; flex-direction: column; align-items: center; text-align: center; 
+        }
+        .student-card:hover { 
+            transform: translateY(-5px) scale(1.02); 
+            box-shadow: var(--card-shadow);
+            border-color: var(--sidebar-accent); 
+            z-index: 10; 
+        }
+        .student-card img { 
+            width: 3.5rem; height: 3.5rem; border-radius: 9999px; 
+            object-fit: cover; 
+            background-color: #e2e8f0; 
+            margin-bottom: 0.75rem; 
+            /* Efeito de anel */
+            border: none;
+            box-shadow: 0 0 0 3px var(--card-bg), 0 0 0 5px var(--accent-cyan);
+        }
+        .student-card .student-name { 
+            font-size: 0.875rem; font-weight: 600; color: var(--text-primary); 
+            line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; 
+            -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 0.25rem; 
+        }
+        .student-card .student-course { 
+            font-size: 0.7rem; color: var(--text-secondary); 
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; 
+        }
+        /* Card Inativo */
+        .student-card.inactive-card { 
+            opacity: 0.8; 
+            background: rgba(248, 250, 252, 0.7); 
+            border-style: dashed; 
+            border-color: hsl(220, 15%, 85%);
+        }
+        .student-card.inactive-card img {
+            box-shadow: 0 0 0 3px var(--card-bg), 0 0 0 5px hsl(220, 15%, 85%);
+        }
+        .student-card.inactive-card:hover { 
+            opacity: 1; 
+            transform: translateY(-2px) scale(1.01); 
+            border-color: var(--accent-red);
+        }
+        .inactive-badge { position: absolute; top: 0.5rem; right: 0.5rem; }
+        .highlight { background-color: var(--accent-yellow); border-radius: 2px; padding: 0 2px; color: var(--text-primary); font-weight: 500;}
+
+        /* --- [TEMA v15] Detalhe Aluno (Abas, Tabelas) --- */
+        #student-detail-view {
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+        }
+        /* Header Fixo Detalhe Aluno */
+        #student-detail-view > header {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--card-border);
+            box-shadow: 0 4px 10px rgba(100, 116, 139, 0.05);
+        }
+        #student-detail-view #back-to-dashboard {
+            font-family: var(--font-heading);
+            font-weight: 600;
+            color: var(--sidebar-accent);
+        }
+        #student-detail-view #back-to-dashboard:hover {
+            color: var(--accent-purple);
+        }
+        /* Header do Aluno (Nome/Foto) */
+        #student-header {
+            border-radius: 1rem;
+        }
+        #student-header h2 {
+            font-family: var(--font-heading);
+            font-weight: 700;
+        }
+        #student-header img {
+            border: 4px solid white;
+            box-shadow: 0 0 0 1px hsl(220, 15%, 85%);
+        }
+
+        /* KPIs do Aluno */
+        #student-kpi-header .kpi-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(10px);
+        }
+        #student-kpi-header .kpi-card:hover {
+            border-color: var(--sidebar-accent);
+        }
+        #student-kpi-header .kpi-card .kpi-label { font-size: 0.7rem; color: var(--text-secondary); }
+        #student-kpi-header .kpi-card .kpi-value { font-size: 1.75rem; color: var(--text-primary); }
+
+        /* Abas (Tabs) */
+        #student-tabs-nav { 
+            -ms-overflow-style: none; scrollbar-width: none; 
+            border-bottom: 1px solid hsl(220, 25%, 90%);
+        }
         #student-tabs-nav::-webkit-scrollbar { display: none; }
-        .tab-button { transition: all 0.25s ease-in-out; padding: 0.7rem 1.1rem; font-weight: 500; font-size: 0.8rem; white-space: nowrap; color: #4b5563; border-bottom: 3px solid transparent; margin-bottom: -1px; position: relative; background: transparent; }
-        .tab-button:hover { color: #0ea5e9; background-color: #f0f9ff; border-bottom-color: #bae6fd; }
-        .tab-button.active { color: #0369a1; font-weight: 600; border-bottom-color: #0ea5e9; background-color: transparent; }
-        .tab-button::after { content: none; }
+        .tab-button { 
+            transition: all 0.2s ease-in-out; 
+            padding: 0.7rem 1.1rem; 
+            font-weight: 600; 
+            font-size: 0.8rem; 
+            white-space: nowrap; 
+            color: var(--text-secondary);
+            border-bottom: 3px solid transparent; 
+            margin-bottom: -1px; 
+        }
+        .tab-button:hover { 
+            color: var(--text-primary); 
+            background: transparent;
+            border-bottom-color: hsl(220, 15%, 85%);
+        }
+        .tab-button.active { 
+            color: var(--sidebar-accent); 
+            font-weight: 600; 
+            border-bottom-color: var(--sidebar-accent);
+            background-color: transparent; 
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
 
-        /* --- Lista de Alunos - Cards Flutuantes --- */
-        .student-group-header { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #0f172a; background-color: transparent; padding: 0.5rem 0.25rem; margin-top: 1.75rem; margin-bottom: 1rem; border: none; border-bottom: 2px solid #38bdf8; position: sticky; top: -1px; z-index: 5; background: linear-gradient(to bottom, rgba(241, 245, 249, 1) 80%, rgba(241, 245, 249, 0)); }
-        .student-card { background-color: #ffffff; border-radius: 0.5rem; border: 1px solid #e2e8f0; padding: 0.8rem; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); transition: all 0.25s ease-in-out; cursor: pointer; position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; }
-        .student-card:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 6px 12px -2px rgb(0 0 0 / 0.1), 0 3px 7px -3px rgb(0 0 0 / 0.08); border-color: #7dd3fc; z-index: 10; }
-        .student-card img { width: 3rem; height: 3rem; border-radius: 9999px; object-cover; background-color: #e2e8f0; border: 2px solid white; box-shadow: 0 0 0 1px #cbd5e1; margin-bottom: 0.5rem; }
-        .student-card .student-name { font-size: 0.8rem; font-weight: 600; color: #1e293b; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 0.1rem; }
-        .student-card .student-course { font-size: 0.65rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-        .student-card.inactive-card { opacity: 0.65; background-color: #f8fafc; border-style: dashed; }
-        .student-card.inactive-card:hover { opacity: 0.8; transform: translateY(-2px) scale(1.01); }
-        .inactive-badge { position: absolute; top: 0.4rem; right: 0.4rem; }
-
-
-        /* --- Tabelas (Faltas) --- */
-        #faltas-content table thead { background-color: #f8fafc; }
-        #faltas-content table th { padding: 0.75rem 1rem; font-weight: 600; color: #334155; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.65rem; border-bottom: 2px solid #e2e8f0; }
-        #faltas-content table tbody tr { border-bottom: 1px solid #f1f5f9; }
+        /* --- [TEMA v15] Outros Elementos --- */
+        
+        /* Tabela de Faltas */
+        #faltas-content table thead { background-color: hsl(220, 30%, 98%); }
+        #faltas-content table th { 
+            font-family: var(--font-heading);
+            font-weight: 600; color: var(--text-tertiary); 
+            font-size: 0.65rem; 
+            border-bottom: 2px solid hsl(220, 25%, 90%);
+        }
+        #faltas-content table tbody tr { border-bottom: 1px solid hsl(220, 25%, 96%); }
         #faltas-content table tbody tr:last-child { border-bottom: none; }
-        #faltas-content table tbody tr:hover { background-color: #f0f9ff; }
-        #faltas-content table td { padding: 0.8rem 1rem; vertical-align: middle; color: #475569; }
+        #faltas-content table tbody tr:hover { background-color: hsla(190, 80%, 96%, 0.5); }
+        #faltas-content table td { color: var(--text-secondary); }
 
-        /* --- Gráfico Radial --- */
-        .radial-progress { background: conic-gradient(#0ea5e9 calc(var(--value) * 1%), #e2e8f0 calc(var(--value) * 1%) 100%); }
-        .radial-progress::before { background: #ffffff; } .radial-progress-value { color: #0f172a; }
+        /* Gráfico Radial */
+        .radial-progress { 
+            width: 100px; height: 100px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            position: relative;
+            background: conic-gradient(var(--accent-purple) calc(var(--value) * 1%), hsl(220, 25%, 94%) calc(var(--value) * 1%) 100%); 
+        }
+        .radial-progress::before { 
+            content: '';
+            position: absolute;
+            width: 75%; height: 75%;
+            background: var(--card-bg); 
+            border-radius: 50%;
+        } 
+        .radial-progress-value { 
+            position: relative;
+            color: var(--text-primary);
+            font-family: var(--font-heading);
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
 
-        /* --- Heatmap --- */
-        .heatmap-day { border-color: #e2e8f0; background-color: #ffffff; transition: all 0.25s ease-in-out; }
-        .heatmap-day:hover { transform: scale(1.06); box-shadow: 0 5px 10px rgba(0,0,0,0.1); border-color: #94a3b8; z-index: 10; position:relative; }
-        .heatmap-day-date { color: #64748b; border-color: #e2e8f0; background-color: #f8fafc; font-size: 0.65rem; }
-        .heatmap-day-status { color: #1e293b; font-weight: 600; font-size: 0.6rem; }
-        .heatmap-day[data-status="ausencia"] { background-color: #fee2e2; border-color: #fca5a5; } .heatmap-day[data-status="ausencia"] .heatmap-day-status { color: #b91c1c; }
-        .heatmap-day[data-status="folga"] { background-color: #f1f5f9; opacity: 0.7; border-style: dashed;}
-        .heatmap-day[data-status="reposicao"] { background-color: #ecfdf5; border-color: #a7f3d0; } .heatmap-day[data-status="reposicao"] .heatmap-day-status { color: #047857; }
-        .heatmap-day[data-status="none"], .heatmap-day:not([data-status]) { background-color: #fafafa; border-style: dotted; opacity: 0.6;} .heatmap-day[data-status="none"] .heatmap-day-status, .heatmap-day:not([data-status]) .heatmap-day-status { color: #a1a1aa; font-weight: 400;}
+        /* Heatmap (Escala) */
+        .heatmap-day { 
+            border: 1px solid hsl(220, 25%, 90%);
+            background-color: #ffffff; 
+            transition: all 0.25s ease-in-out; 
+            border-radius: 4px; padding: 4px;
+            width: 70px; text-align: center;
+        }
+        .heatmap-day:hover { 
+            transform: scale(1.05); 
+            box-shadow: var(--card-shadow); 
+            border-color: var(--text-secondary); 
+            z-index: 10; position:relative; 
+        }
+        .heatmap-day-date { 
+            display: block;
+            color: var(--text-tertiary); 
+            border-bottom: 1px solid hsl(220, 25%, 94%); 
+            background-color: transparent; 
+            font-size: 0.7rem; font-weight: 500;
+            padding-bottom: 2px; margin-bottom: 3px;
+        }
+        .heatmap-day-status { 
+            color: var(--text-primary); 
+            font-weight: 600; font-size: 0.65rem; 
+            text-transform: uppercase;
+        }
+        .heatmap-day[data-status="ausencia"] { background-color: hsl(0, 100%, 98%); border-color: hsl(0, 80%, 92%); } 
+        .heatmap-day[data-status="ausencia"] .heatmap-day-status { color: hsl(0, 70%, 45%); }
+        .heatmap-day[data-status="folga"] { background-color: hsl(220, 25%, 96%); opacity: 0.8; border-style: dashed;}
+        .heatmap-day[data-status="reposicao"] { background-color: hsl(140, 90%, 97%); border-color: hsl(140, 70%, 88%); } 
+        .heatmap-day[data-status="reposicao"] .heatmap-day-status { color: hsl(140, 60%, 35%); }
+        .heatmap-day[data-status="none"], .heatmap-day:not([data-status]) { background-color: hsl(220, 25%, 98%); border-style: dotted; opacity: 0.7;} 
+        .heatmap-day[data-status="none"] .heatmap-day-status, .heatmap-day:not([data-status]) .heatmap-day-status { color: var(--text-tertiary); font-weight: 400;}
 
-        /* --- Gráfico de Barras --- */
-        .bar-chart-item { transition: background-color 0.25s ease; border-radius: 4px; padding: 0.3rem 0.5rem; }
-        .bar-chart-item:hover { background-color: #f0f9ff; }
-        .bar-chart-item .bar-bg { background-color: #e2e8f0; }
-        .bar-chart-item .bar-fill-normal { background-color: #7dd3fc; }
-        .bar-chart-item .bar-fill-media { background: linear-gradient(90deg, #38bdf8 0%, #0ea5e9 100%); }
-        .bar-chart-item .bar-label { color: #475569; font-size: 0.7rem; }
-        .bar-chart-item .bar-value { color: #1e293b; font-size: 0.7rem; }
+        /* Badges */
+        .badge { 
+            font-size: 0.65rem; padding: 0.25em 0.75em; border: 1px solid transparent; 
+            font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
+            border-radius: 99px; /* Pill shape */
+        }
+        .badge-green { background-color: hsl(140, 80%, 96%); color: hsl(140, 70%, 30%); }
+        .badge-yellow { background-color: hsl(40, 100%, 96%); color: hsl(30, 70%, 35%); }
+        .badge-gray { background-color: hsl(220, 20%, 96%); color: hsl(220, 10%, 40%); }
+        .badge-red { background-color: hsl(0, 100%, 97%); color: hsl(0, 70%, 40%); } 
 
-        /* --- Badges --- */
-        .badge { font-size: 0.6rem; padding: 0.2em 0.65em; border: 1px solid transparent; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;}
-        .badge-green { background-color: #dcfce7; color: #166534; border-color: #86efac;}
-        .badge-yellow { background-color: #fef9c3; color: #854d0e; border-color: #fde047;}
-        .badge-gray { background-color: #f3f4f6; color: #4b5563; border-color: #d1d5db;}
-        .badge-red { background-color: #ffe4e6; color: #be123c; border-color: #fda4af;} /* Rose */
-
-        /* --- Caixa de Erro --- */
-        #error-message { background-color: #be123c; color: white; padding: 0.8rem 1.5rem; border-radius: 0.5rem; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); font-weight: 500; border-left: 5px solid #831843; animation: fadeInDown 0.5s ease-out; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 10000; }
+        /* Caixa de Erro */
+        #error-message { 
+            background: var(--accent-red); 
+            color: white; padding: 1rem 1.5rem; border-radius: 0.5rem; 
+            box-shadow: 0 10px 25px -5px hsla(0, 80%, 65%, 0.3);
+            font-weight: 600; border-left: 0; border-bottom: 4px solid hsla(0, 60%, 35%, 0.5);
+            animation: fadeInDown 0.5s ease-out; 
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 10000; 
+            font-family: var(--font-heading);
+        }
         @keyframes fadeInDown { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
-        #error-message button { font-weight: 700; opacity: 0.7; transition: opacity 0.2s; } #error-message button:hover { opacity: 1; }
+        #error-message button { font-weight: 700; opacity: 0.8; transition: opacity 0.2s; } 
+        #error-message button:hover { opacity: 1; }
 
-        /* --- Scrollbars --- */
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; border: 2px solid #f1f5f9; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        /* Scrollbars */
+        ::-webkit-scrollbar { width: 10px; height: 10px; }
+        ::-webkit-scrollbar-track { background: var(--bg-main-end); }
+        ::-webkit-scrollbar-thumb { 
+            background: hsl(220, 15%, 85%); 
+            border-radius: 10px; 
+            border: 2px solid var(--bg-main-end); 
+        }
+        ::-webkit-scrollbar-thumb:hover { background: hsl(220, 15%, 75%); }
 
-        /* --- Input de Busca --- */
-        #search-student { transition: all 0.3s ease; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); }
-        #search-student:focus { box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.3), 0 1px 2px 0 rgb(0 0 0 / 0.05); border-color: #0ea5e9; }
+        /* Input de Busca */
+        #search-student { 
+            transition: all 0.3s ease; 
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            background: white;
+            border-radius: 0.5rem; /* 8px */
+            border-color: hsl(220, 15%, 90%);
+        }
+        #search-student:focus { 
+            box-shadow: 0 0 0 3px var(--sidebar-accent-glow);
+            border-color: var(--sidebar-accent);
+        }
 
-        /* --- Lista Ausências Recentes --- */
-        #recent-absences-list li { transition: background-color 0.25s ease; padding: 0.6rem 0.25rem; border-radius: 4px; }
-        #recent-absences-list li:hover { background-color: #f8fafc; }
+        /* Lista Ausências Recentes */
+        #recent-absences-list li { 
+            transition: background-color 0.2s ease; 
+            padding: 0.75rem 0.25rem; 
+            border-radius: 6px; 
+            border-bottom: 1px solid hsl(220, 25%, 96%);
+        }
+        #recent-absences-list li:last-child { border-bottom: none; }
+        #recent-absences-list li:hover { background-color: hsl(220, 30%, 98%); }
+        #recent-absences-list .font-medium { font-weight: 600; color: var(--text-secondary); }
 
-        /* --- Timestamp --- */
-        #last-update-timestamp { font-size: 0.65rem; color: #64748b; }
-
-
+        /* Timestamp */
+        #last-update-timestamp { 
+            font-size: 0.7rem; 
+            color: var(--text-tertiary); 
+            font-style: italic;
+        }
     </style>
-    <!-- Importa a fonte Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="bg-slate-100">
+<!-- [ALTERADO v15] Removida a classe 'bg-slate-100' para permitir o gradiente do body -->
+<body>
 
-    <!-- Overlay de Loading -->
+    <!-- Overlay de Loading (Começa escondido) -->
     <div id="loading-overlay">
         <div class="loader"></div>
-        <p class="ml-4 text-lg font-semibold text-slate-300">Carregando dados...</p>
+        <p>Carregando dados...</p>
     </div>
 
     <!-- Caixa de Erro -->
@@ -165,126 +655,200 @@
         <button onclick="document.getElementById('error-message').style.display = 'none'" class="ml-4">X</button>
     </div>
 
-    <!-- Layout Principal com Sidebar -->
-    <div class="flex h-screen bg-slate-100 opacity-0 transition-opacity duration-500">
-        <!-- Sidebar -->
-        <aside class="w-64 border-r border-slate-700 flex flex-col flex-shrink-0">
-            <div class="h-16 flex items-center justify-center px-4 border-b border-slate-700 flex-shrink-0">
-                 <div class="flex items-center space-x-3">
-                    <svg class="w-7 h-7 text-sky-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 0 1-.375 1.5-3 3 0 0 1-5.25 0 3 3 0 0 1-.375-1.5V17.25m10.5-11.25h.008v.008h-.008V6M12 21h.008v.008H12V21m0 0H9.75M12 21H7.5M12 21H3.375M12 21h-7.5M12 21h7.5m0 0h3.375m0 0h1.875m-5.25 0h.008v.008h-.008V21m-1.5-1.5h.008v.008h-.008V19.5m-3 0h.008v.008h-.008V19.5m0 0h1.875m-1.875 0h-7.5m11.25-3.375h.008v.008h-.008V16.125m-3 0h.008v.008h-.008V16.125m0 0h1.875m-1.875 0h-7.5m11.25 0h.008v.008h-.008V16.125m-3 0h.008v.008h-.008V16.125m0 0h1.875m-1.875 0h-7.5M9 3.75h6M9 3.75h-7.5M9 3.75v1.5M9 3.75v3M9 3.75v4.5M9 3.75v6M9 3.75v7.5M9 3.75v9M9 3.75v10.5M9 3.75v12M9 3.75v13.5M9 3.75v15M9 3.75v16.5m0 0h6m0 0h-7.5m7.5 0v-1.5m0 0v-3m0 0v-4.5m0 0v-6m0 0v-7.5m0 0v-9m0 0v-10.5m0 0v-12m0 0v-13.5m0 0v-15m0 0v-16.5" /></svg>
-                     <h1 class="text-lg font-semibold sidebar-logo-text">Ensino InCor</h1>
-                 </div>
+    <!-- [NOVO v12] Tela de Login -->
+    <div id="login-view" class="view-container" style="display: flex;"> <!-- Começa visível -->
+        <div id="login-card">
+            <div class="flex flex-col items-center mb-6">
+                <!-- [REMOVIDO v14] Ícone de globo removido -->
+                <h1 class="text-2xl font-bold text-slate-800 mb-2">Portal do Ensino</h1>
+                <p class="text-sm text-slate-600">Acesso restrito a funcionários.</p>
             </div>
-            <nav class="flex-grow overflow-y-auto py-6 space-y-1.5"> <!-- Espaçamento links -->
+            <form id="login-form">
+                <div class="space-y-4">
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-slate-700">Email</label>
+                        <!-- [CORRIGIDO v13] Removido 'value' e adicionado 'placeholder' -->
+                        <input type="email" id="login-email" placeholder="seu.email@exemplo.com" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required>
+                    </div>
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-slate-700">Senha</label>
+                        <!-- [CORRIGIDO v13] Removido 'value' e adicionado 'placeholder' -->
+                        <input type="password" id="login-password" placeholder="Sua senha" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required>
+                    </div>
+                    <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150">
+                        Entrar
+                    </button>
+                </div>
+                 <div id="login-error" class="text-center"></div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- [NOVO v12] View do Dashboard Principal (Começa escondida) -->
+    <div id="dashboard-view" class="view-container flex h-screen opacity-0 transition-opacity duration-500">
+        <!-- Sidebar -->
+        <!-- [ALTERADO v14] Removidas classes de cor inline (bg-white, etc) pois agora são controladas pelo CSS -->
+        <aside id="app-sidebar" class="w-64 flex flex-col flex-shrink-0 transition-all duration-300 ease-in-out">
+            <!-- Header da Sidebar com Toggle -->
+            <!-- [ALTERADO v14] Cor do border alterada para tema escuro -->
+            <div class="h-16 flex items-center justify-between px-4 border-b border-slate-700 flex-shrink-0">
+                 <div class="flex items-center space-x-3 overflow-hidden">
+                     <!-- [NOVO v12] Logo de Texto Estilizado -->
+                     <!-- [ALTERADO v14] Removida classe 'text-blue-800' -->
+                     <h1 class="text-xl font-bold sidebar-logo-text whitespace-nowrap ml-2">Portal do Ensino</h1>
+                 </div>
+                 <!-- Botão de Toggle -->
+                 <!-- [ALTERADO v14] Classes de cor alteradas para tema escuro -->
+                 <button id="sidebar-toggle" title="Recolher menu" class="p-1 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                     </svg>
+                 </button>
+            </div>
+            <nav class="flex-grow overflow-y-auto py-6 space-y-1.5">
                 <a href="#dashboard" data-tab="dashboard" class="sidebar-link active text-sm">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17.5a.5.5 0 00.5.5h11a.5.5 0 00.5-.5V10.414l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg>
-                    Dashboard
+                    <span class="sidebar-link-text whitespace-nowrap">Dashboard</span>
                 </a>
                 <a href="#alunos" data-tab="alunos" class="sidebar-link text-sm">
                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" /></svg>
-                     Alunos
+                     <span class="sidebar-link-text whitespace-nowrap">Alunos</span>
                 </a>
                  <a href="#ponto" data-tab="ponto" class="sidebar-link text-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z" clip-rule="evenodd" /></svg>
-                    Ponto
-                </a>
+                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z" clip-rule="evenodd" /></svg>
+                     <span class="sidebar-link-text whitespace-nowrap">Ponto</span>
+                 </a>
             </nav>
         </aside>
 
         <!-- Conteúdo Principal -->
         <div class="flex-1 flex flex-col overflow-hidden">
-            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-slate-100 p-6 lg:p-8">
+            <!-- [ALTERADO v15] Removida classe 'bg-slate-100' -->
+            <main class="flex-1 overflow-x-hidden overflow-y-auto p-6 lg:p-8">
 
-                 <!-- View Principal: Dashboard -->
-                 <div id="content-dashboard" class="main-content-section hidden-view">
-                     <h1 class="text-2xl font-semibold text-slate-800 mb-6">Dashboard Geral</h1>
-                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                         <div class="md:col-span-1 space-y-6">
-                              <div class="content-card p-5">
-                                  <div class="flex justify-between items-center">
-                                       <h2 class="content-card-header mb-0 pb-0 border-b-0">Frequência Diária</h2>
-                                       <span id="current-date" class="text-xs font-medium text-slate-500"></span>
-                                  </div>
-                                  <div class="grid grid-cols-3 gap-3 my-4 text-center">
-                                      <div class="kpi-card p-3"><span class="kpi-label text-blue-600">ESCALADOS</span><p id="kpi-scaled" class="kpi-value text-blue-800">-</p></div>
-                                      <div class="kpi-card p-3"><span class="kpi-label text-green-600">PRESENTES</span><p id="kpi-present" class="kpi-value text-green-800">-</p></div>
-                                      <div class="kpi-card p-3"><span class="kpi-label text-red-600">AUSENTES</span><p id="kpi-absent" class="kpi-value text-red-800">-</p></div>
-                                  </div>
-                                  <div id="frequency-panel" class="space-y-4 max-h-[350px] overflow-y-auto text-sm"></div>
-                                   <div id="last-update-timestamp" class="text-right mt-3"></div>
-                              </div>
-                              <div class="content-card p-5">
-                                  <h2 class="content-card-header">Registros Recentes</h2>
-                                  <ul id="recent-absences-list" class="space-y-2 text-xs max-h-[300px] overflow-y-auto"></ul>
-                              </div>
-                         </div>
-                         <div class="md:col-span-1 space-y-6">
+                <!-- View Principal: Dashboard -->
+                <!-- IDs aqui (content-dashboard, etc) são as "sub-views" -->
+                <div id="content-dashboard" class="view-container"> <!-- Usa view-container -->
+                    <h1 class="text-2xl font-semibold text-slate-800 mb-6">Dashboard Geral</h1>
+                    <!-- [NOVO v12] Grid agora é lg:grid-cols-3 -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        
+                        <!-- Coluna 1: Visão Geral (Layout v14) -->
+                        <div class="lg:col-span-1 space-y-6">
+                            <!-- [LAYOUT ALTERADO v14] Card de Visão Geral (KPIs) redesenhado -->
+                            <div class="content-card p-5">
+                                <h2 class="content-card-header">Visão Geral</h2>
+                                <div class="mt-4 space-y-5">
+                                    <!-- KPI Item 1 -->
+                                    <div class="flex items-center">
+                                        <div class="icon-bg kpi-icon-purple flex-shrink-0"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M17 20h5v-2a3 3 0 00-5.356-2.121M17 20v-2m0 2H5a2 2 0 01-2-2v-5a2 2 0 012-2h14a2 2 0 012 2v5a2 2 0 01-2 2h-5m-4-8a3 3 0 100-6 3 3 0 000 6z" /></svg></div>
+                                        <div class="ml-4 flex-grow">
+                                            <p class="text-sm font-medium text-slate-500">Total de Inscritos</p>
+                                            <p id="kpi-total-students" class="text-2xl font-bold text-slate-800">-</p>
+                                        </div>
+                                    </div>
+                                    <!-- KPI Item 2 -->
+                                    <div class="flex items-center">
+                                        <div class="icon-bg kpi-icon-green flex-shrink-0"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
+                                        <div class="ml-4 flex-grow">
+                                            <p class="text-sm font-medium text-slate-500">Alunos Ativos</p>
+                                            <p id="kpi-active-students" class="text-2xl font-bold text-slate-800">-</p>
+                                        </div>
+                                    </div>
+                                    <!-- KPI Item 3 -->
+                                    <div class="flex items-center">
+                                        <div class="icon-bg kpi-icon-yellow flex-shrink-0"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></div>
+                                        <div class="ml-4 flex-grow">
+                                            <p class="text-sm font-medium text-slate-500">Reposições Pendentes</p>
+                                            <p id="kpi-pending-replacements" class="text-2xl font-bold text-slate-800">-</p>
+                                        </div>
+                                    </div>
+                                    <!-- KPI Médias (Grid 2 col) -->
+                                    <div class="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+                                        <div class="flex items-center">
+                                            <div class="icon-bg kpi-icon-orange flex-shrink-0"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></div>
+                                            <div class="ml-3">
+                                                <p class="text-xs font-medium text-slate-500">Média Teórica</p>
+                                                <p id="kpi-avg-theoretical" class="text-xl font-bold text-slate-800">-</p>
+                                            </div>
+                                        </div>
+                                         <div class="flex items-center">
+                                            <div class="icon-bg kpi-icon-cyan flex-shrink-0"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg></div>
+                                            <div class="ml-3">
+                                                <p class="text-xs font-medium text-slate-500">Média Prática</p>
+                                                <p id="kpi-avg-practical" class="text-xl font-bold text-slate-800">-</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Coluna 2: Frequência Diária -->
+                        <div class="lg:col-span-1 space-y-6">
                              <div class="content-card p-5">
-                                 <h2 class="content-card-header">Visão Geral</h2>
-                                 <div class="grid grid-cols-2 gap-4">
-                                      <div class="kpi-card flex items-center p-4">
-                                          <div class="icon-bg kpi-icon-purple"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M17 20h5v-2a3 3 0 00-5.356-2.121M17 20v-2m0 2H5a2 2 0 01-2-2v-5a2 2 0 012-2h14a2 2 0 012 2v5a2 2 0 01-2 2h-5m-4-8a3 3 0 100-6 3 3 0 000 6z" /></svg></div>
-                                          <div class="ml-3"><p class="kpi-label">Inscritos</p><p id="kpi-total-students" class="kpi-value">-</p></div>
-                                      </div>
-                                      <div class="kpi-card flex items-center p-4">
-                                           <div class="icon-bg kpi-icon-green"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
-                                           <div class="ml-3"><p class="kpi-label">Ativos</p><p id="kpi-active-students" class="kpi-value">-</p></div>
-                                      </div>
-                                       <div class="kpi-card flex items-center p-4">
-                                           <div class="icon-bg kpi-icon-orange"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></div>
-                                           <div class="ml-3"><p class="kpi-label">Média Teórica</p><p id="kpi-avg-theoretical" class="kpi-value">-</p></div>
-                                      </div>
-                                       <div class="kpi-card flex items-center p-4">
-                                           <div class="icon-bg kpi-icon-cyan"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg></div>
-                                           <div class="ml-3"><p class="kpi-label">Média Prática</p><p id="kpi-avg-practical" class="kpi-value">-</p></div>
-                                      </div>
-                                      <div class="kpi-card flex items-center p-4 col-span-2">
-                                           <div class="icon-bg kpi-icon-yellow"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></div>
-                                           <div class="ml-3"><p class="kpi-label">Reposições Pendentes</p><p id="kpi-pending-replacements" class="kpi-value">-</p></div>
-                                      </div>
-                                  </div>
+                                 <div class="flex justify-between items-center">
+                                     <h2 class="content-card-header mb-0 pb-0 border-b-0">Frequência Diária</h2>
+                                     <span id="current-date" class="text-xs font-medium text-slate-500"></span>
+                                 </div>
+                                 <div class="grid grid-cols-3 gap-3 my-4 text-center">
+                                     <div class="kpi-card p-3"><span class="kpi-label text-blue-600">ESCALADOS</span><p id="kpi-scaled" class="kpi-value text-blue-800">-</p></div>
+                                     <div class="kpi-card p-3"><span class="kpi-label text-green-600">PRESENTES</span><p id="kpi-present" class="kpi-value text-green-800">-</p></div>
+                                     <div class="kpi-card p-3"><span class="kpi-label text-red-600">AUSENTES</span><p id="kpi-absent" class="kpi-value text-red-800">-</p></div>
+                                 </div>
+                                 <div id="frequency-panel" class="space-y-4 max-h-[350px] overflow-y-auto text-sm"></div>
+                                  <div id="last-update-timestamp" class="text-right mt-3"></div>
                              </div>
-                             <div class="content-card p-5">
+                             
+                        </div>
+                        
+                        <!-- Coluna 3: Desempenho Teórico e Cursos -->
+                        <div class="lg:col-span-1 space-y-6">
+                            <div class="content-card p-5">
                                  <h2 class="content-card-header">Distribuição por Curso (Ativos)</h2>
                                  <div id="course-distribution-chart" class="donut-chart-container min-h-[140px]"></div>
-                             </div>
-                         </div>
-                          <div class="md:col-span-1 space-y-6">
+                            </div>
+                            <div class="content-card p-5">
+                                <h2 class="content-card-header">Desempenho Teórico (Médias Ativos)</h2>
+                                <div id="theoretical-avg-chart" class="space-y-2 max-h-[600px] overflow-y-auto pr-2"></div>
+                            </div>
+                            <!-- [MOVIDO v15] Card de Registros Recentes movido para Col 2 -->
                              <div class="content-card p-5">
-                                 <h2 class="content-card-header">Desempenho Teórico (Médias Ativos)</h2>
-                                 <div id="theoretical-avg-chart" class="space-y-2 max-h-[600px] overflow-y-auto pr-2"></div>
+                                 <h2 class="content-card-header">Registros Recentes</h2>
+                                 <ul id="recent-absences-list" class="space-y-2 text-xs max-h-[300px] overflow-y-auto"></ul>
                              </div>
-                         </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- View: Lista de Alunos -->
+                 <div id="content-alunos" class="view-container"> <!-- Usa view-container -->
+                     <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                         <h1 class="text-2xl font-semibold text-slate-800">Alunos</h1>
+                         <input type="text" id="search-student" placeholder="Buscar aluno..." class="border border-slate-300 rounded-lg px-4 py-2 text-sm w-full sm:w-auto max-w-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm">
                      </div>
+                     <div id="student-list-panel" class="max-h-[calc(100vh-200px)] overflow-y-auto"></div>
                  </div>
 
-                 <!-- View: Lista de Alunos -->
-                  <div id="content-alunos" class="main-content-section hidden-view">
-                      <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-                          <h1 class="text-2xl font-semibold text-slate-800">Alunos</h1>
-                          <input type="text" id="search-student" placeholder="Buscar aluno..." class="border border-slate-300 rounded-lg px-4 py-2 text-sm w-full sm:w-auto max-w-xs focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition shadow-sm">
-                      </div>
-                      <div id="student-list-panel" class="max-h-[calc(100vh-200px)] overflow-y-auto"></div>
-                  </div>
-
-                  <!-- View: Ponto -->
-                  <div id="content-ponto" class="main-content-section hidden-view">
-                      <h1 class="text-2xl font-semibold text-slate-800 mb-6">Análise de Ponto</h1>
-                      <div class="content-card p-6 text-center">
-                          <p class="text-slate-500 italic">Em desenvolvimento...</p>
-                          <p class="mt-4 text-slate-600 text-sm">Calendário de frequência, gráficos de atraso, etc.</p>
-                      </div>
-                  </div>
+                 <!-- View: Ponto -->
+                 <div id="content-ponto" class="view-container"> <!-- Usa view-container -->
+                     <h1 class="text-2xl font-semibold text-slate-800 mb-6">Análise de Ponto</h1>
+                     <div class="content-card p-6 text-center">
+                         <p class="text-slate-500 italic">Em desenvolvimento...</p>
+                         <p class="mt-4 text-slate-600 text-sm">Calendário de frequência, gráficos de atraso, etc.</p>
+                     </div>
+                 </div>
 
             </main>
         </div>
     </div>
 
     <!-- View: Detalhe do Aluno -->
-    <div id="student-detail-view" class="hidden-view fixed inset-0 bg-slate-100 z-50 overflow-y-auto">
+    <div id="student-detail-view" class="view-container fixed inset-0 z-50 overflow-y-auto"> <!-- Usa view-container -->
         <header class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-10">
             <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-                <button id="back-to-dashboard" class="flex items-center text-sm font-medium text-sky-600 hover:text-sky-800 transition-colors group">
+                <button id="back-to-dashboard" class="flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors group">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1 group-hover:-translate-x-1 transition-transform" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
                     Voltar para Alunos
                 </button>
@@ -306,243 +870,539 @@
             </div>
             <div id="student-tabs-content" class="mt-6 mb-16">
                  <!-- Os IDs precisam corresponder aos data-tab -->
-                <div id="tab-info" class="tab-content hidden-view content-card p-6"></div>
-                <div id="tab-escala" class="tab-content hidden-view"><div id="escala-heatmap-content" class="space-y-6"></div></div>
-                <div id="tab-faltas" class="tab-content hidden-view content-card p-0 overflow-hidden">
+                <div id="tab-info" class="tab-content content-card p-6"></div> <!-- Removido active inicial -->
+                <div id="tab-escala" class="tab-content"><div id="escala-heatmap-content" class="space-y-6"></div></div>
+                <div id="tab-faltas" class="tab-content content-card p-0 overflow-hidden">
                      <h3 class="content-card-header p-5">Registro de Ausências e Reposições</h3>
                     <div id="faltas-content" class="max-h-[500px] overflow-y-auto"></div>
                 </div>
-                <div id="tab-notas-t" class="tab-content hidden-view content-card p-6">
-                    <h3 class="content-card-header mb-5">Notas Teóricas</h3>
-                    <div id="notas-t-barchart-content" class="space-y-3"></div>
+                <div id="tab-notas-t" class="tab-content content-card p-6">
+                     <h3 class="content-card-header mb-5">Notas Teóricas</h3>
+                     <div id="notas-t-barchart-content" class="space-y-3"></div>
                 </div>
-                <div id="tab-notas-p" class="tab-content hidden-view"><div id="notas-p-radial-content" class="space-y-5"></div></div>
+                <div id="tab-notas-p" class="tab-content"><div id="notas-p-radial-content" class="space-y-5"></div></div>
             </div>
         </div>
     </div>
 
 
-    <!-- CLIENT-SIDE SCRIPT -->
+    <!-- CLIENT-SIDE SCRIPT (Inalterado) -->
     <script>
+        // URL da API (use a sua URL de implantação)
         const API_URL = "https://script.google.com/macros/s/AKfycbxq7vepPQ6F6qxPvXbLnINZbMkoBiMVRMwlfw5_O_pZMoNp-XcJijoX6DWM6g9SQhd3/exec";
         console.log(`API_URL: ${API_URL}`);
 
-        const appState = { /* ... (sem alterações) ... */
-             lastPontoUpdate: null, alunos: [], alunosMap: new Map(), pontoHojeMap: new Map(),
-             escalas: {}, ausenciasReposicoes: [], notasTeoricas: {}, notasPraticas: {},
-             todayBR: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-             todayFullBR: new Date().toLocaleDateString('pt-BR'),
+        // Estado global da aplicação
+        const appState = {
+            lastPontoUpdate: null,
+            alunos: [],
+            alunosMap: new Map(),
+            pontoHojeMap: new Map(),
+            escalas: {},
+            ausenciasReposicoes: [],
+            notasTeoricas: {},
+            notasPraticas: {},
+            todayBR: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+            todayFullBR: new Date().toLocaleDateString('pt-BR'),
+            isSidebarCollapsed: false // [NOVO v12] Estado da sidebar
         };
 
-        function showLoading(show) { /* ... (sem alterações) ... */
-             const overlay = document.getElementById('loading-overlay');
-             overlay.style.opacity = show ? '1' : '0';
-             setTimeout(() => { overlay.style.display = show ? 'flex' : 'none'; }, show ? 0 : 600);
-        }
-        function showError(message) { /* ... (sem alterações) ... */
-             console.error("ERRO:", message); // Adiciona prefixo ERRO
-             const errorBox = document.getElementById('error-message');
-             document.getElementById('error-text').textContent = `Erro: ${message}`; // Adiciona prefixo Erro:
-             errorBox.style.display = 'block';
-             setTimeout(() => { errorBox.style.display = 'none'; }, 10000);
-             showLoading(false); // Garante que loading suma
-        }
+        // --- Funções Utilitárias (Loading/Erro) ---
 
-        // --- INICIALIZAÇÃO E CARGA ---
-        async function init() {
-            console.log('Iniciando Dashboard PRO++ v8...'); // Nome atualizado
-            document.getElementById('current-date').textContent = appState.todayFullBR;
-            setupSidebarNavigation();
-            document.getElementById('back-to-dashboard').addEventListener('click', showAlunosList);
-            document.getElementById('search-student').addEventListener('input', filterStudentList);
-            setupStudentTabNavigation();
-            try {
-                showLoading(true);
-                await fetchAllData();
-                await fetchPontoHoje();
-                // Renderiza após ter TODOS os dados
-                renderStudentList(appState.alunos);
-                computeAndRenderFrequency();
-                renderAtAGlance();
-                renderRecentAbsences();
-                showView('content-dashboard'); // Mostra a view inicial explicitamente
-                document.querySelector('body > div.flex').style.opacity = '1';
-                showLoading(false);
-                setInterval(fetchPontoHoje, 30000);
-                console.log("Inicialização completa. Live update iniciado.");
-            } catch (error) {
-                 // Erro durante a inicialização é mais crítico
-                 showError(`Falha Crítica na Inicialização: ${error.message}. Recarregue a página.`);
-                 // Não esconde o loading para indicar falha total
+        function showLoading(show) {
+            const overlay = document.getElementById('loading-overlay');
+            if (show) {
+                overlay.style.display = 'flex';
+                // Pequeno delay para forçar o reflow antes de mudar a opacidade
+                setTimeout(() => { overlay.style.opacity = '1'; }, 10);
+            } else {
+                overlay.style.opacity = '0';
+                setTimeout(() => { overlay.style.display = 'none'; }, 300); // Sincroniza com a transição
             }
         }
-        async function fetchAllData() { /* ... (sem alterações) ... */
-             console.log("Buscando dados estáticos..."); try { const r=await fetch(`${API_URL}?action=getAll`); if (!r.ok) throw new Error(`Rede (getAll): ${r.statusText} (${r.status})`); const d=await r.json(); if (!d.success) throw new Error(`API (getAll): ${d.error || 'Erro desconhecido'}`); console.log("Dados estáticos:", d); onStaticDataLoaded(d); } catch (e) { console.error("Erro detalhado em fetchAllData:", e); throw new Error(`Falha ao buscar dados estáticos: ${e.message}`); }
-        }
-        function onStaticDataLoaded(data) { /* ... (sem alterações) ... */
-            appState.alunos = data.alunos || []; appState.escalas = data.escalas || {}; appState.ausenciasReposicoes = data.ausenciasReposicoes || []; appState.notasTeoricas = data.notasTeoricas || { registros: [] }; /* Garante que registros exista */ appState.notasPraticas = data.notasPraticas || {}; appState.alunosMap.clear(); appState.alunos.forEach(a => { if(a.EmailHC) appState.alunosMap.set(a.EmailHC, a); }); console.log("Dados estáticos processados.");
-        }
-        async function fetchPontoHoje() { /* ... (sem alterações) ... */
-            const timestampElem = document.getElementById('last-update-timestamp');
-            console.log(`Buscando ponto desde: ${appState.lastPontoUpdate||'Início'}`);
-             try{
-                 let u=`${API_URL}?action=getPontoHoje`;
-                 const r=await fetch(u);
-                 if(!r.ok) throw new Error(`Rede (getPontoHoje): ${r.statusText} (${r.status})`);
-                 const d=await r.json();
-                 if(!d.success) throw new Error(`API (getPontoHoje): ${d.error || 'Erro desconhecido'}`);
-                 console.log('Ponto recebido:', d.hoje);
-                 appState.lastPontoUpdate=d.lastUpdate;
-                 appState.pontoHojeMap.clear();
-                 d.hoje.forEach(p=>{if(p.EmailHC)appState.pontoHojeMap.set(p.EmailHC,p);});
-                 computeAndRenderFrequency();
-                 if (timestampElem) { timestampElem.textContent = `Última att: ${new Date().toLocaleTimeString('pt-BR')}`; }
-             } catch(e){ console.warn('Falha atualizar freq:', e.message); if (timestampElem) { timestampElem.textContent = `Falha na att: ${new Date().toLocaleTimeString('pt-BR')}`; } }
-        }
 
-        // --- NAVEGAÇÃO PRINCIPAL ---
-        function setupSidebarNavigation() { /* ... (sem alterações) ... */
-             const sidebar = document.querySelector('aside nav'); sidebar.addEventListener('click', (e) => { const link = e.target.closest('.sidebar-link'); if (link) { e.preventDefault(); switchMainTab(link.getAttribute('data-tab')); } });
-        }
         /**
-         * [CORRIGIDO v8] Centraliza a lógica de mostrar uma view e esconder as outras.
+         * [CORRIGIDO v13] Descomentada a linha de erro principal.
+         */
+        function showError(message, isLoginError = false) {
+            console.error("ERRO:", message);
+            const errorBoxId = isLoginError ? 'login-error' : 'error-message';
+            const errorBox = document.getElementById(errorBoxId);
+            
+            if (!errorBox) { // Fallback se o erro ocorrer antes do DOM
+                alert(`Erro: ${message}`);
+                return;
+            }
+            
+            if (isLoginError) {
+               errorBox.textContent = message;
+            } else {
+                // [CORREÇÃO] A caixa de erro principal existe, mas a linha que atualiza o texto estava comentada.
+                document.getElementById('error-text').textContent = `Erro: ${message}`;
+            }
+            
+            errorBox.style.display = 'block';
+            
+            if (!isLoginError) {
+                setTimeout(() => { errorBox.style.display = 'none'; }, 10000); // Esconde após 10s
+                showLoading(false); // Garante que o loading suma
+            }
+        }
+       
+        // --- [NOVO v12] Gerenciador de Views Centralizado ---
+        /**
+         * [CORRIGIDO v12] Centraliza a lógica de mostrar uma view e esconder as outras.
          */
          function showView(viewIdToShow) {
-             console.log(`Tentando mostrar view: ${viewIdToShow}`);
-             const allViews = document.querySelectorAll('.main-content-section, #student-detail-view');
+             console.log(`[showView] Tentando mostrar view: ${viewIdToShow}`);
+             // Lista de todos os containers de view
+             const allViewIds = ['login-view', 'dashboard-view', 'student-detail-view'];
              let found = false;
-             allViews.forEach(view => {
-                 if (view.id === viewIdToShow) {
-                     view.classList.remove('hidden-view');
-                     view.classList.add('visible-view');
-                     view.style.display = 'block'; // Garante display block
-                     console.log(`Mostrando ${view.id}`);
-                     found = true;
+             
+             allViewIds.forEach(id => {
+                 const view = document.getElementById(id);
+                 if (view) {
+                     if (view.id === viewIdToShow) {
+                         // O 'dashboard-view' é o container flex, os outros são block
+                         view.style.display = (id === 'dashboard-view' || id === 'login-view') ? 'flex' : 'block';
+                         console.log(`[showView] View ${view.id} exibida.`);
+                         found = true;
+                     } else {
+                         view.style.display = 'none'; // Esconde as outras views
+                     }
                  } else {
-                     view.classList.remove('visible-view');
-                     view.classList.add('hidden-view');
-                     view.style.opacity = '0'; // Garante opacidade 0
-                     // Não usa display none aqui, hidden-view deve cuidar disso
+                     console.warn(`[showView] View com ID "${id}" não encontrada no DOM!`);
                  }
              });
+
              if (!found) {
-                 console.error(`View com ID "${viewIdToShow}" não encontrada!`);
+                 console.error(`[showView] View com ID "${viewIdToShow}" não encontrada!`);
              }
          }
 
 
+        // --- INICIALIZAÇÃO E CARGA DE DADOS ---
+
         /**
-         * [CORRIGIDO v8] Troca a aba principal visível usando showView.
+         * Ponto de entrada principal da aplicação.
+         */
+        async function initDashboard() {
+            console.log('[initDashboard] Iniciando Dashboard...');
+            try {
+                showLoading(true);
+                await fetchAllData();
+                await fetchPontoHoje(); // Busca inicial do ponto
+
+                console.log('[initDashboard] Dados carregados, iniciando renderização inicial...');
+                // Renderiza os dados no estado "invisível"
+                renderStudentList(appState.alunos);
+                computeAndRenderFrequency();
+                renderAtAGlance();
+                renderRecentAbsences();
+
+                console.log('[initDashboard] Renderização inicial completa.');
+                
+                // Mostra a aba inicial (Dashboard) dentro da view principal
+                // [IMPORTANTE] A view 'dashboard-view' já está visível (flex)
+                switchMainTab('dashboard'); 
+                
+                document.querySelector('#dashboard-view').style.opacity = '1'; // Fade-in do layout
+                showLoading(false);
+
+                // Inicia live update APÓS tudo estar pronto
+                setInterval(fetchPontoHoje, 30000);
+                console.log("[initDashboard] Inicialização completa. Live update iniciado.");
+            } catch (error) {
+                 // [CORRIGIDO v13] Garante que o loading suma e volte ao login
+                 const errorMessage = error.message || "Erro desconhecido";
+                 showError(`Falha Crítica na Inicialização: ${errorMessage}. Verifique a API e recarregue a página.`);
+                 showLoading(false);
+                 showView('login-view'); // Volta para a tela de login
+            }
+             console.log('[initDashboard] Fim.');
+        }
+       
+        /**
+         * Configura todos os event listeners da página.
+         */
+        function setupEventHandlers() {
+            console.log('[setupEventHandlers] Configurando listeners...');
+            document.getElementById('login-form').addEventListener('submit', handleLogin);
+            setupSidebarNavigation();
+            document.getElementById('sidebar-toggle').addEventListener('click', toggleSidebar); // [NOVO v12]
+            document.getElementById('back-to-dashboard').addEventListener('click', showAlunosList);
+            document.getElementById('search-student').addEventListener('input', filterStudentList);
+            setupStudentTabNavigation();
+            console.log('[setupEventHandlers] Listeners configurados.');
+        }
+       
+        /**
+         * [NOVO v12] Handle Login
+         */
+         function handleLogin(event) {
+             event.preventDefault(); // Impede o reload da página
+             console.log("[handleLogin] Tentativa de login...");
+             
+             const email = document.getElementById('login-email').value;
+             const password = document.getElementById('login-password').value;
+             const errorBox = document.getElementById('login-error');
+             
+             // Credenciais hardcoded
+             const validEmail = 'thiago.dias@hc.fm.usp.br';
+             const validPass = 'Thiago1508';
+             
+             if (email === validEmail && password === validPass) {
+                 console.log("[handleLogin] Login bem-sucedido.");
+                 errorBox.style.display = 'none';
+                 showView('dashboard-view'); // Mostra a estrutura principal
+                 initDashboard(); // Inicia o carregamento dos dados
+             } else {
+                 console.warn("[handleLogin] Falha no login.");
+                 showError("Email ou senha inválidos.", true); // Mostra erro no login
+             }
+         }
+
+        async function fetchAllData() {
+             console.log("[fetchAllData] Buscando dados estáticos...");
+             try {
+                 const r = await fetch(`${API_URL}?action=getAll`);
+                 if (!r.ok) throw new Error(`Rede (getAll): ${r.statusText} (${r.status})`);
+                 const d = await r.json();
+                 if (!d.success) throw new Error(`API (getAll): ${d.error || 'Erro desconhecido'}`);
+                 console.log("[fetchAllData] Dados estáticos recebidos:", d);
+                 onStaticDataLoaded(d);
+             } catch (e) {
+                 console.error("[fetchAllData] Erro detalhado:", e);
+                 throw new Error(`Falha ao buscar dados estáticos: ${e.message}`);
+             }
+        }
+
+        function onStaticDataLoaded(data) {
+            appState.alunos = data.alunos || [];
+            appState.escalas = data.escalas || {};
+            appState.ausenciasReposicoes = data.ausenciasReposicoes || [];
+            appState.notasTeoricas = data.notasTeoricas || { registros: [] };
+            appState.notasPraticas = data.notasPraticas || {}; // Corrigido no backend para ser objeto
+            appState.alunosMap.clear();
+            appState.alunos.forEach(a => { if(a && a.EmailHC) appState.alunosMap.set(a.EmailHC, a); });
+            console.log("[onStaticDataLoaded] Dados estáticos processados.");
+        }
+
+        async function fetchPontoHoje() {
+            const timestampElem = document.getElementById('last-update-timestamp');
+            console.log(`[fetchPontoHoje] Buscando ponto desde: ${appState.lastPontoUpdate||'Início'}`);
+             try{
+                 let u = `${API_URL}?action=getPontoHoje`;
+                 const r = await fetch(u);
+                 if (!r.ok) throw new Error(`Rede (getPontoHoje): ${r.statusText} (${r.status})`);
+                 const d = await r.json();
+                 if (!d.success) throw new Error(`API (getPontoHoje): ${d.error || 'Erro desconhecido'}`);
+                 console.log('[fetchPontoHoje] Ponto recebido:', d.hoje);
+                 
+                 appState.lastPontoUpdate = d.lastUpdate;
+                 appState.pontoHojeMap.clear();
+                 (d.hoje || []).forEach(p => { if(p && p.EmailHC) appState.pontoHojeMap.set(p.EmailHC, p); });
+                 
+                 computeAndRenderFrequency(); // Apenas re-renderiza a frequência
+                 
+                 if (timestampElem) { timestampElem.textContent = `Última att: ${new Date().toLocaleTimeString('pt-BR')}`; }
+             } catch(e){
+                 console.warn('[fetchPontoHoje] Falha atualizar freq:', e.message);
+                 if (timestampElem) { timestampElem.textContent = `Falha na att: ${new Date().toLocaleTimeString('pt-BR')}`; }
+             }
+        }
+
+        // --- NAVEGAÇÃO PRINCIPAL ---
+
+        function setupSidebarNavigation() {
+             const sidebar = document.querySelector('aside nav');
+             sidebar.addEventListener('click', (e) => {
+                 const link = e.target.closest('.sidebar-link');
+                 if (link) {
+                     e.preventDefault();
+                     switchMainTab(link.getAttribute('data-tab'));
+                 }
+             });
+        }
+       
+        /**
+         * [NOVO v12] Controla a sidebar colapsável
+         */
+        function toggleSidebar() {
+            appState.isSidebarCollapsed = !appState.isSidebarCollapsed;
+            console.log(`[toggleSidebar] Colapsada: ${appState.isSidebarCollapsed}`);
+            const sidebar = document.getElementById('app-sidebar');
+            // Alterna a classe 'collapsed' que o CSS usa para estilizar
+            sidebar.classList.toggle('collapsed', appState.isSidebarCollapsed);
+        }
+       
+        /**
+         * [CORRIGIDO v13] Troca a aba principal visível (SUB-VIEW).
+         * O seletor foi corrigido de '.main-content-section' para 'main .view-container'.
          */
         function switchMainTab(tabName) {
-            console.log("Trocando aba principal para:", tabName);
+            console.log("[switchMainTab] Trocando para aba principal:", tabName);
             // Atualiza sidebar
             document.querySelectorAll('.sidebar-link').forEach(l => l.classList.toggle('active', l.getAttribute('data-tab') === tabName));
-            // Mostra a view principal correta
-            showView(`content-${tabName}`);
+            
+            // [CORREÇÃO] O seletor estava errado. O correto é 'main .view-container'
+            // para pegar apenas os containers DENTRO do <main>.
+            const allSubViews = document.querySelectorAll('main .view-container');
+            
+            allSubViews.forEach(view => {
+                if (view.id === `content-${tabName}`) {
+                    view.style.display = 'block';
+                } else {
+                    view.style.display = 'none';
+                }
+            });
+            
             window.scrollTo(0, 0);
         }
 
 
         // --- CÁLCULOS AUXILIARES ---
-        function parseNota(notaStr) { /* ... (sem alterações) ... */
-            // Adiciona verificação para null/undefined
+
+        function parseNota(notaStr) {
             if (notaStr === null || notaStr === undefined) return 0;
-            const str = String(notaStr).trim(); // Converte para string e remove espaços
+            const str = String(notaStr).trim();
             if (str === '') return 0;
             const n = parseFloat(str.replace(',', '.'));
             return isNaN(n) ? 0 : n;
         }
-        function calculateAveragesAndDistribution() { /* ... (sem alterações) ... */
-            const active=appState.alunos.filter(s=>s.Status==='Ativo'); const emails=new Set(active.map(s=>s.EmailHC)); let ttSum=0; let ttCount=0; const tSums={}; const tCounts={}; if(appState.notasTeoricas?.registros){appState.notasTeoricas.registros.forEach(r=>{if(emails.has(r.EmailHC)){Object.keys(r).forEach(k=>{if(!['SerialNumber','NomeCompleto','EmailHC','Curso'].includes(k)&&k.trim()!==''){const n=parseNota(r[k]); if(n>0){tSums[k]=(tSums[k]||0)+n; tCounts[k]=(tCounts[k]||0)+1;}}});}});} else {console.warn("notasTeoricas.registros não encontrado.");} Object.values(tSums).forEach(s=>ttSum+=s); Object.values(tCounts).forEach(c=>ttCount+=c); const tAvgs={}; Object.keys(tSums).forEach(k=>{tAvgs[k]=tCounts[k]>0?tSums[k]/tCounts[k]:0;}); const oTAvg=ttCount>0?ttSum/ttCount:0; console.log("Médias T Calc:", tAvgs); console.log("Média T Geral:", oTAvg); let tpSum=0; let tpCount=0; if(appState.notasPraticas){Object.values(appState.notasPraticas).forEach(p=>{if(p.registros){p.registros.forEach(r=>{if(emails.has(r.EmailHC)){const kM=Object.keys(r).find(k=>k.toUpperCase().includes('MÉDIA (NOTA FINAL)'))||null; if(kM){const n=parseNota(r[kM]); if(n>0){tpSum+=n; tpCount++;}}}});}});} const oPAvg=tpCount>0?tpSum/tpCount:0; const cCounts=active.reduce((acc,s)=>{const c=s.Curso||'Sem Curso'; acc[c]=(acc[c]||0)+1; return acc;},{}); const tA=active.length; const cDist=Object.entries(cCounts).map(([c,n])=>({course:c, count:n, percentage:tA>0?(n/tA)*100:0})).sort((a,b)=>b.count-a.count); return {overallTheoreticalAvg: oTAvg, theoreticalAverages: tAvgs, overallPracticalAvg: oPAvg, courseDistribution: cDist};
+
+        /**
+         * [CORRIGIDO v12] Lógica de cálculo de médias práticas e filtro de R2.
+         */
+        function calculateAveragesAndDistribution() {
+            const activeStudents = appState.alunos.filter(s => s.Status === 'Ativo');
+            const activeEmails = new Set(activeStudents.map(s => s.EmailHC));
+            
+            // [NOVO v12] Filtra alunos R2 para média teórica
+            const activeNonR2Emails = new Set(
+                activeStudents
+                    .filter(s => s.Curso !== 'Residência - 2º ano')
+                    .map(s => s.EmailHC)
+            );
+            console.log(`[calculateAverages] Alunos ativos: ${activeStudents.length}. Alunos para média teórica (não R2): ${activeNonR2Emails.size}`);
+
+            // --- Teóricas (com filtro R2) ---
+            let ttSum = 0; let ttCount = 0; const tSums = {}; const tCounts = {};
+            if(appState.notasTeoricas?.registros){
+                appState.notasTeoricas.registros.forEach(r => {
+                    // USA O FILTRO !R2
+                    if(r && activeNonR2Emails.has(r.EmailHC)){
+                        Object.keys(r).forEach(k => {
+                            if(!['SerialNumber','NomeCompleto','EmailHC','Curso'].includes(k) && k.trim() !== ''){
+                                const n = parseNota(r[k]);
+                                if(n > 0){
+                                    tSums[k] = (tSums[k] || 0) + n;
+                                    tCounts[k] = (tCounts[k] || 0) + 1;
+                                    ttSum += n; 
+                                    ttCount++; // [CORREÇÃO LÓGICA] Contagem da média geral
+                                }
+                            }
+                        });
+                    }
+                });
+            } else { console.warn("notasTeoricas.registros não encontrado."); }
+            const tAvgs = {};
+            Object.keys(tSums).forEach(k => { tAvgs[k] = tCounts[k] > 0 ? tSums[k] / tCounts[k] : 0; });
+            // [CORRIGIDO v12] Média geral é soma total / contagem total
+            const oTAvg = ttCount > 0 ? ttSum / ttCount : 0; 
+            
+            console.log("[calculateAverages] Médias T Calc (sem R2):", tAvgs);
+            console.log(`[calculateAverages] Média T Geral (sem R2): ${oTAvg} (Soma: ${ttSum}, Contagem: ${ttCount})`);
+
+
+            // --- Práticas (SEM filtro R2) ---
+            let tpSum = 0; let tpCount = 0;
+            if(appState.notasPraticas && typeof appState.notasPraticas === 'object'){
+                // [CORRIGIDO] Itera sobre os valores do objeto (NotasPraticas1, NotasPraticas2, etc.)
+                Object.values(appState.notasPraticas).forEach(p => {
+                    if(p && p.registros){
+                        p.registros.forEach(r => {
+                            // USA TODOS OS ATIVOS (activeEmails)
+                            if(r && activeEmails.has(r.EmailHC)){
+                                const kM = Object.keys(r).find(k => k.toUpperCase().includes('MÉDIA (NOTA FINAL)')) || null;
+                                if(kM){
+                                    const n = parseNota(r[kM]);
+                                    if(n > 0){
+                                        tpSum += n;
+                                        tpCount++;
+                                    }
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+            const oPAvg = tpCount > 0 ? tpSum / tpCount : 0;
+            console.log(`[calculateAverages] Média P Geral (com R2): ${oPAvg} (Soma: ${tpSum}, Contagem: ${ttCount})`);
+
+
+            // --- Distribuição (Todos os ativos) ---
+            const cCounts = activeStudents.reduce((acc,s) => { const c = s.Curso || 'Sem Curso'; acc[c] = (acc[c] || 0) + 1; return acc; }, {});
+            const tA = activeStudents.length;
+            const cDist = Object.entries(cCounts).map(([c,n]) => ({course: c, count: n, percentage: tA > 0 ? (n/tA)*100 : 0})).sort((a,b) => b.count - a.count);
+
+            return {overallTheoreticalAvg: oTAvg, theoreticalAverages: tAvgs, overallPracticalAvg: oPAvg, courseDistribution: cDist};
         }
 
+
         // --- RENDERIZAÇÃO VIEW PRINCIPAL ---
-        function renderAtAGlance() { /* ... (sem alterações) ... */
-            const tS=appState.alunos.length; const aS=appState.alunos.filter(s=>s.Status==='Ativo').length; const pR=appState.ausenciasReposicoes.filter(f=>!f.DataReposicaoISO).length; const {overallTheoreticalAvg:oTAvg, theoreticalAverages:tAvgs, overallPracticalAvg:oPAvg, courseDistribution:cDist} = calculateAveragesAndDistribution(); document.getElementById('kpi-total-students').textContent=tS; document.getElementById('kpi-active-students').textContent=aS; document.getElementById('kpi-pending-replacements').textContent=pR; document.getElementById('kpi-avg-theoretical').textContent=oTAvg.toFixed(1); document.getElementById('kpi-avg-practical').textContent=oPAvg.toFixed(1); renderCourseDistributionChart(cDist); renderTheoreticalAvgChart(tAvgs);
+
+        function renderAtAGlance() {
+            console.log("[renderAtAGlance] Iniciando...");
+            try {
+                const tS=appState.alunos.length; const aS=appState.alunos.filter(s=>s.Status==='Ativo').length; const pR=appState.ausenciasReposicoes.filter(f=>!f.DataReposicaoISO).length;
+                // Chama a função de cálculo corrigida
+                const {overallTheoreticalAvg:oTAvg, theoreticalAverages:tAvgs, overallPracticalAvg:oPAvg, courseDistribution:cDist} = calculateAveragesAndDistribution();
+                document.getElementById('kpi-total-students').textContent=tS;
+                document.getElementById('kpi-active-students').textContent=aS;
+                document.getElementById('kpi-pending-replacements').textContent=pR;
+                document.getElementById('kpi-avg-theoretical').textContent=oTAvg.toFixed(1);
+                document.getElementById('kpi-avg-practical').textContent=oPAvg.toFixed(1); // Agora deve ter um valor
+                
+                // [TEMA v15] Define as cores dos gráficos
+                const chartColors = [
+                    'var(--accent-cyan)', 
+                    'var(--accent-purple)', 
+                    'var(--accent-orange)', 
+                    'var(--accent-green)', 
+                    'var(--accent-red)', 
+                    'var(--accent-yellow)', 
+                    'var(--text-tertiary)'
+                ];
+                renderCourseDistributionChart(cDist, chartColors);
+                renderTheoreticalAvgChart(tAvgs);
+                 console.log("[renderAtAGlance] Concluído.");
+            } catch (e) { console.error("[renderAtAGlance] Erro:", e); showError("Erro ao renderizar visão geral."); }
         }
-        function renderCourseDistributionChart(distribution) { /* ... (sem alterações) ... */
-             const c=document.getElementById('course-distribution-chart'); if(!distribution||distribution.length===0){c.innerHTML='<p class="text-slate-500 text-sm italic">S/ dados curso.</p>'; return;} const colors=['#22d3ee','#a5b4fc','#fb923c','#34d399','#f472b6', '#facc15', '#9ca3af']; let grad=''; let cum=0; const leg=[]; distribution.forEach((item,i)=>{const clr=colors[i%colors.length]; const s=cum; const e=cum+item.percentage; if(item.percentage>0){grad+=`, ${clr} ${s}% ${e}%`;} cum=e; leg.push(`<li><span class="legend-color-box" style="background-color:${clr};"></span>${item.course} (${item.count}) - ${item.percentage.toFixed(0)}%</li>`);}); if(cum<100){grad+=`, #e2e8f0 ${cum}% 100%`;} c.innerHTML=`<div class="donut-chart" style="--chart-segments:${grad.substring(1)};"></div><div class="donut-legend"><ul>${leg.join('')}</ul></div>`;
+        
+        // [TEMA v15] Função atualizada para aceitar cores
+        function renderCourseDistributionChart(distribution, colors) {
+             const c=document.getElementById('course-distribution-chart'); if(!distribution||distribution.length===0){c.innerHTML='<p class="text-slate-500 text-sm italic">S/ dados curso.</p>'; return;} 
+             const chartColors = colors || ['#2563eb','#60a5fa','#34d399','#f97316','#f472b6', '#facc15', '#9ca3af'];
+             let grad=''; let cum=0; const leg=[]; 
+             distribution.forEach((item,i)=>{
+                 const clr=chartColors[i % chartColors.length]; 
+                 const s=cum; const e=cum+item.percentage; 
+                 if(item.percentage>0){grad+=`, ${clr} ${s}% ${e}%`;} 
+                 cum=e; 
+                 leg.push(`<li><span class="legend-color-box" style="background-color:${clr};"></span>${item.course} (${item.count}) - ${item.percentage.toFixed(0)}%</li>`);
+             }); 
+             if(cum<100){grad+=`, #e2e8f0 ${cum}% 100%`;} 
+             c.innerHTML=`<div class="donut-chart" style="--chart-segments:${grad.substring(1)};"></div><div class="donut-legend"><ul>${leg.join('')}</ul></div>`;
         }
-        function renderTheoreticalAvgChart(averages) { /* ... (sem alterações) ... */
-             const p=document.getElementById('theoretical-avg-chart'); const sorted=Object.entries(averages).sort(([,a],[,b])=>b-a); if(sorted.length===0){p.innerHTML='<p class="text-slate-500 text-sm italic">S/ dados notas T.</p>'; return;} p.innerHTML=sorted.map(([s,a])=>{const iM=s.toUpperCase().includes('MÉDIA'); const bF=iM?'bar-fill-media':'bar-fill-normal'; const lC=iM?'text-sky-700 font-semibold':'text-slate-600'; const vC=iM?'text-sky-800 font-bold':'text-slate-700 font-semibold'; return `<div class="bar-chart-item text-xs rounded p-1.5 ${iM?'mt-2 pt-2 border-t border-slate-200':''}"><div class="flex justify-between items-center mb-0.5"><span class="bar-label ${lC} truncate pr-2" title="${s}">${s}</span><span class="bar-value ${vC} w-8 text-right">${a.toFixed(1)}</span></div><div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden bar-bg"><div class="h-full ${bF} rounded-full transition-all duration-500 ease-out" style="width:${a*10}%"></div></div></div>`;}).join('');
+        
+        function renderTheoreticalAvgChart(averages) {
+             const p=document.getElementById('theoretical-avg-chart'); const sorted=Object.entries(averages).sort(([,a],[,b])=>b-a); if(sorted.length===0){p.innerHTML='<p class="text-slate-500 text-sm italic">S/ dados notas T.</p>'; return;} p.innerHTML=sorted.map(([s,a])=>{const iM=s.toUpperCase().includes('MÉDIA'); const bF=iM?'bar-fill-media':'bar-fill-normal'; const lC=iM?'text-blue-700 font-semibold':'text-slate-600'; const vC=iM?'text-blue-800 font-bold':'text-slate-700 font-semibold'; return `<div class="bar-chart-item text-xs rounded p-1.5 ${iM?'mt-2 pt-2 border-t border-slate-100':''}"><div class="flex justify-between items-center mb-0.5"><span class="bar-label ${lC} truncate pr-2" title="${s}">${s}</span><span class="bar-value ${vC} w-8 text-right">${a.toFixed(1)}</span></div><div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden bar-bg"><div class="h-full ${bF} rounded-full transition-all duration-500 ease-out" style="width:${a*10}%"></div></div></div>`;}).join('');
         }
-        function renderRecentAbsences() { /* ... (sem alterações) ... */
-             const l=document.getElementById('recent-absences-list'); if(!appState.ausenciasReposicoes||appState.ausenciasReposicoes.length===0){l.innerHTML='<li class="text-slate-500 italic">Nenhum registro.</li>'; return;} const sorted=[...appState.ausenciasReposicoes].sort((a,b)=>{const dA=a.DataReposicaoISO||a.DataAusenciaISO; const dB=b.DataReposicaoISO||b.DataAusenciaISO; if(!dB)return -1; if(!dA)return 1; return new Date(dB+'T00:00:00')-new Date(dA+'T00:00:00');}); l.innerHTML=sorted.slice(0,5).map(i=>{const al=appState.alunosMap.get(i.EmailHC); const n=al?al.NomeCompleto:i.EmailHC; const iP=!i.DataReposicaoISO; const sB=iP?'<span class="badge badge-yellow ml-2">Pendente</span>':'<span class="badge badge-green ml-2">Reposto</span>'; const dT=i.DataReposicaoISO||i.DataAusenciaISO; const fD=dT?new Date(dT+'T00:00:00').toLocaleDateString('pt-BR'):'Data Indef.'; return `<li class="border-b border-slate-100 last:border-b-0 py-2.5 px-1 rounded"><div class="flex justify-between items-center mb-0.5"><span class="font-medium text-slate-700 truncate pr-2" title="${n}">${n}</span><span class="text-slate-500 text-[11px]">${fD}</span></div><div class="flex justify-between items-center"><span class="text-slate-500 truncate pr-2" title="${i.Motivo||''}">${iP?'Ausência':'Reposição'} (${i.Local||'N/A'})</span>${sB}</div></li>`;}).join('');
+        function renderRecentAbsences() {
+             console.log("[renderRecentAbsences] Iniciando...");
+             try {
+                 const l=document.getElementById('recent-absences-list'); if(!appState.ausenciasReposicoes||appState.ausenciasReposicoes.length===0){l.innerHTML='<li class="text-slate-500 italic p-2">Nenhum registro.</li>'; return;} const sorted=[...appState.ausenciasReposicoes].sort((a,b)=>{const dA=a.DataReposicaoISO||a.DataAusenciaISO; const dB=b.DataReposicaoISO||b.DataAusenciaISO; if(!dB)return -1; if(!dA)return 1; return new Date(dB+'T00:00:00')-new Date(dA+'T00:00:00');}); l.innerHTML=sorted.slice(0,5).map(i=>{const al=appState.alunosMap.get(i.EmailHC); const n=al?al.NomeCompleto:i.EmailHC; const iP=!i.DataReposicaoISO; const sB=iP?'<span class="badge badge-yellow ml-2">Pendente</span>':'<span class="badge badge-green ml-2">Reposto</span>'; const dT=i.DataReposicaoISO||i.DataAusenciaISO; const fD=dT?new Date(dT+'T00:00:00').toLocaleDateString('pt-BR'):'Data Indef.'; return `<li><div class="flex justify-between items-center mb-0.5"><span class="font-medium truncate pr-2" title="${n}">${n}</span><span class="text-slate-500 text-[11px]">${fD}</span></div><div class="flex justify-between items-center"><span class="text-slate-500 text-xs truncate pr-2" title="${i.Motivo||''}">${iP?'Ausência':'Reposição'} (${i.Local||'N/A'})</span>${sB}</div></li>`;}).join('');
+                  console.log("[renderRecentAbsences] Concluído.");
+             } catch(e) { console.error("[renderRecentAbsences] Erro:", e); showError("Erro ao renderizar registros recentes."); }
         }
-        function findActiveScale() { /* ... (sem alterações) ... */
+        function findActiveScale() {
              for(const n in appState.escalas){const e=appState.escalas[n]; if(e.headersDay?.includes(appState.todayBR))return e;} console.warn(`Nenhuma escala hoje (${appState.todayBR})`); return null;
         }
-        function computeAndRenderFrequency() { /* ... (sem alterações) ... */
-             const p=document.getElementById('frequency-panel'); const kS=document.getElementById('kpi-scaled'); const kP=document.getElementById('kpi-present'); const kA=document.getElementById('kpi-absent'); const s=findActiveScale(); if(!s){p.innerHTML=`<p class="text-slate-500 italic text-sm">Nenhuma escala hoje (${appState.todayBR}).</p>`; kS.textContent='0'; kP.textContent='0'; kA.textContent='0'; return;} const present=[]; const absent=[]; let scaled=0; s.alunos.forEach(ae=>{const d=ae.dias.find(x=>x.dataColuna===appState.todayBR); if(d?.status&&d.status!=='folga'&&d.status!=='ausencia'){scaled++; const ai=appState.alunosMap.get(ae.EmailHC)||ae; const pi=appState.pontoHojeMap.get(ae.EmailHC); if(pi)present.push({...ai,HoraEntrada:pi.HoraEntrada,StatusEscala:d.status}); else absent.push({...ai,StatusEscala:d.status});}}); kS.textContent=scaled; kP.textContent=present.length; kA.textContent=absent.length; p.innerHTML=`<div><h3 class="font-semibold text-green-600">Presentes (${present.length})</h3><ul class="mt-2 text-xs text-slate-600 space-y-1.5">${present.length>0?present.map(s=>`<li class="flex justify-between items-center"><span class="truncate pr-2" title="${s.NomeCompleto}">${s.NomeCompleto}</span><span class="badge badge-green flex-shrink-0">${s.HoraEntrada}</span></li>`).join(''):'<li class="text-slate-400 italic">Nenhum.</li>'}</ul></div> <div class="mt-4"><h3 class="font-semibold text-red-600">Ausentes (${absent.length})</h3><ul class="mt-2 text-xs text-slate-600 space-y-1.5">${absent.length>0?absent.map(s=>`<li class="flex justify-between items-center"><span class="truncate pr-2" title="${s.NomeCompleto}">${s.NomeCompleto}</span><span class="badge badge-gray flex-shrink-0" title="Escala: ${s.StatusEscala}">Ausente</span></li>`).join(''):'<li class="text-slate-400 italic">Nenhum.</li>'}</ul></div>`;
+        function computeAndRenderFrequency() {
+             console.log("[computeAndRenderFrequency] Calculando frequência...");
+             try {
+                 const p=document.getElementById('frequency-panel'); const kS=document.getElementById('kpi-scaled'); const kP=document.getElementById('kpi-present'); const kA=document.getElementById('kpi-absent'); const s=findActiveScale(); if(!s){p.innerHTML=`<p class="text-slate-500 italic text-sm">Nenhuma escala hoje (${appState.todayBR}).</p>`; kS.textContent='0'; kP.textContent='0'; kA.textContent='0'; return;} const present=[]; const absent=[]; let scaled=0; s.alunos.forEach(ae=>{const d=ae.dias.find(x=>x.dataColuna===appState.todayBR); if(d?.status&&d.status!=='folga'&&d.status!=='ausencia'){scaled++; const ai=appState.alunosMap.get(ae.EmailHC)||ae; const pi=appState.pontoHojeMap.get(ae.EmailHC); if(pi)present.push({...ai,HoraEntrada:pi.HoraEntrada,StatusEscala:d.status}); else absent.push({...ai,StatusEscala:d.status});}}); kS.textContent=scaled; kP.textContent=present.length; kA.textContent=absent.length; p.innerHTML=`<div><h3 class="font-semibold text-green-600">Presentes (${present.length})</h3><ul class="mt-2 text-xs text-slate-600 space-y-1.5">${present.length>0?present.map(s=>`<li class="flex justify-between items-center"><span class="truncate pr-2" title="${s.NomeCompleto}">${s.NomeCompleto}</span><span class="badge badge-green flex-shrink-0">${s.HoraEntrada}</span></li>`).join(''):'<li class="text-slate-400 italic">Nenhum.</li>'}</ul></div> <div class="mt-4"><h3 class="font-semibold text-red-600">Ausentes (${absent.length})</h3><ul class="mt-2 text-xs text-slate-600 space-y-1.5">${absent.length>0?absent.map(s=>`<li class="flex justify-between items-center"><span class="truncate pr-2" title="${s.NomeCompleto}">${s.NomeCompleto}</span><span class="badge badge-gray flex-shrink-0" title="Escala: ${s.StatusEscala}">Ausente</span></li>`).join(''):'<li class="text-slate-400 italic">Nenhum.</li>'}</ul></div>`;
+                  console.log("[computeAndRenderFrequency] Frequência atualizada.");
+             } catch (e) { console.error("[computeAndRenderFrequency] Erro:", e); showError("Erro ao calcular frequência."); }
         }
-        function renderStudentList(students) { /* ... (sem alterações) ... */
-             const panel = document.getElementById('student-list-panel'); const initialMsg = panel.querySelector('.initial-message'); if (initialMsg) initialMsg.remove(); if (!students || students.length === 0) { panel.innerHTML = '<p class="text-slate-500 p-6 text-center">Nenhum aluno.</p>'; return; } const grouped = students.reduce((acc, s) => { const c = s.Curso || 'Sem Curso'; if (!acc[c]) acc[c] = []; acc[c].push(s); return acc; }, {}); const courses = Object.keys(grouped).sort(); let html = ''; courses.forEach(c => { html += `<div class="student-group" data-course="${c}"><h3 class="student-group-header">${c} (${grouped[c].length})</h3><div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">`; grouped[c].forEach(s => { const img = s.FotoID ? `https://lh3.googleusercontent.com/d/${s.FotoID}=s96-c` : 'https://placehold.co/40x40/e2e8f0/64748b?text=?'; const inactive = s.Status !== 'Ativo'; const inactiveClass = inactive ? 'inactive-card' : ''; const inactiveBadge = inactive ? '<span class="badge badge-red inactive-badge">Inativo</span>' : ''; html += `<div class="student-card flex flex-col items-center text-center ${inactiveClass}" onclick="showStudentDetail('${s.EmailHC}')" data-student-email="${s.EmailHC}" data-student-name="${s.NomeCompleto.toLowerCase()}">${inactiveBadge}<img src="${img}" alt="Foto" class="mb-2 shadow-sm" onerror="this.src='https://placehold.co/40x40/e2e8f0/64748b?text=?'"><p class="student-name">${s.NomeCompleto}</p><p class="student-course mt-0.5">${s.Curso}</p></div>`; }); html += `</div></div>`; }); panel.innerHTML = html;
+        function renderStudentList(students) {
+             console.log("[renderStudentList] Iniciando...");
+             try {
+                 const panel = document.getElementById('student-list-panel'); const initialMsg = panel.querySelector('.initial-message'); if (initialMsg) initialMsg.remove(); if (!students || students.length === 0) { panel.innerHTML = '<p class="text-slate-500 p-6 text-center">Nenhum aluno.</p>'; return; } const grouped = students.reduce((acc, s) => { const c = s.Curso || 'Sem Curso'; if (!acc[c]) acc[c] = []; acc[c].push(s); return acc; }, {}); const courses = Object.keys(grouped).sort(); let html = ''; courses.forEach(c => { html += `<div class="student-group" data-course="${c}"><h3 class="student-group-header">${c} (${grouped[c].length})</h3><div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">`; grouped[c].forEach(s => { const img = s.FotoID ? `https://lh3.googleusercontent.com/d/${s.FotoID}=s96-c` : 'https://placehold.co/40x40/e2e8f0/64748b?text=?'; const inactive = s.Status !== 'Ativo'; const inactiveClass = inactive ? 'inactive-card' : ''; const inactiveBadge = inactive ? '<span class="badge badge-red inactive-badge">Inativo</span>' : ''; html += `<div class="student-card flex flex-col items-center text-center ${inactiveClass}" onclick="showStudentDetail('${s.EmailHC}')" data-student-email="${s.EmailHC}" data-student-name="${s.NomeCompleto.toLowerCase()}">${inactiveBadge}<img src="${img}" alt="Foto" class="mb-2 shadow-sm" onerror="this.src='https://placehold.co/40x40/e2e8f0/64748b?text=?'"><p class="student-name">${s.NomeCompleto}</p><p class="student-course mt-0.5">${s.Curso}</p></div>`; }); html += `</div></div>`; }); panel.innerHTML = html;
+                  console.log("[renderStudentList] Lista renderizada.");
+             } catch (e) { console.error("[renderStudentList] Erro:", e); showError("Erro ao renderizar lista de alunos."); }
         }
-        function filterStudentList() { /* ... (sem alterações) ... */
-            const q=document.getElementById('search-student').value.toLowerCase().trim(); const gs=document.querySelectorAll('.student-group'); const msg=document.getElementById('no-search-results'); let hasVisible=false; if(msg)msg.remove(); gs.forEach(g=>{const cs=g.querySelectorAll('.student-card'); const h=g.querySelector('.student-group-header'); let groupVisible=false; cs.forEach(c=>{const ne=c.querySelector('.student-name'); const n=c.getAttribute('data-student-name'); const oN=ne.textContent; if(q===''||n.includes(q)){c.classList.remove('hidden'); groupVisible=true; hasVisible=true; if(q!==''){const rgx=new RegExp(`(${q.replace(/[-\/\\^$*+?.()|[\]{}]/g,'\\$&')})`,'gi'); ne.innerHTML=oN.replace(rgx,'<span class="highlight">$1</span>');}else{ne.innerHTML=oN;}}else{c.classList.add('hidden'); ne.innerHTML=oN;}}); h.classList.toggle('hidden',!groupVisible);}); if(!hasVisible&&q!==''){document.getElementById('student-list-panel').insertAdjacentHTML('beforeend','<p id="no-search-results" class="text-slate-500 p-6 text-center italic">Nenhum aluno para "'+q+'".</p>');}
+        function filterStudentList() {
+             const q=document.getElementById('search-student').value.toLowerCase().trim(); const gs=document.querySelectorAll('.student-group'); const msg=document.getElementById('no-search-results'); let hasVisible=false; if(msg)msg.remove(); gs.forEach(g=>{const cs=g.querySelectorAll('.student-card'); const h=g.querySelector('.student-group-header'); let groupVisible=false; cs.forEach(c=>{const ne=c.querySelector('.student-name'); const n=c.getAttribute('data-student-name'); const oN=ne.textContent; if(q===''||n.includes(q)){c.classList.remove('hidden'); groupVisible=true; hasVisible=true; if(q!==''){const rgx=new RegExp(`(${q.replace(/[-\/\\^$*+?.()|[\]{}]/g,'\\$&')})`,'gi'); ne.innerHTML=oN.replace(rgx,'<span class="highlight">$1</span>');}else{ne.innerHTML=oN;}}else{c.classList.add('hidden'); ne.innerHTML=oN;}}); h.classList.toggle('hidden',!groupVisible);}); if(!hasVisible&&q!==''){document.getElementById('student-list-panel').insertAdjacentHTML('beforeend','<p id="no-search-results" class="text-slate-500 p-6 text-center italic">Nenhum aluno para "'+q+'".</p>');}
         }
 
         // --- NAVEGAÇÃO E RENDERIZAÇÃO VIEW DETALHE ALUNO ---
         /**
-         * [CORRIGIDO v8] Mostra a view de detalhe e esconde as principais usando showView.
+         * [CORRIGIDO v12] Mostra a view de detalhe usando showView e corrige o bug das Notas Práticas.
          */
         function showStudentDetail(email) {
             console.log(`[showStudentDetail] Exibindo detalhes para: ${email}`);
-            const info = appState.alunosMap.get(email);
-            if (!info) return showError(`Aluno ${email} ñ encontrado.`);
+             try {
+                 const info = appState.alunosMap.get(email);
+                 if (!info) {
+                     showError(`Aluno ${email} ñ encontrado no mapeamento.`);
+                     return;
+                 }
 
-            // Busca dados relacionados...
-             const escalas = [];
-             for (const n in appState.escalas) {
-                 const e = appState.escalas[n];
-                 const a = (e.alunos || []).find(x => x.EmailHC === email);
-                 if (a) { escalas.push({ nomeEscala: e.nomeAba || n, Supervisor: a.Supervisor, Unidade: a.Unidade, dias: a.dias });}
+                 // Busca dados relacionados...
+                  const escalas = [];
+                  for (const n in appState.escalas) {
+                      const e = appState.escalas[n];
+                      const a = (e.alunos || []).find(x => x && x.EmailHC === email);
+                      if (a) { escalas.push({ nomeEscala: e.nomeAba || n, Supervisor: a.Supervisor, Unidade: a.Unidade, dias: a.dias });}
+                  }
+                  const faltas = appState.ausenciasReposicoes.filter(f => f && f.EmailHC === email);
+                  const notasT = (appState.notasTeoricas.registros || []).find(n => n && n.EmailHC === email);
+                 
+                  // [CORRIGIDO v11] Loop de Notas Práticas
+                  const notasP = []; // <-- Variável correta é 'notasP'
+                  if(appState.notasPraticas && typeof appState.notasPraticas === 'object') {
+                      // Itera sobre os VALORES (os objetos de cada aba)
+                      for (const p of Object.values(appState.notasPraticas)) {
+                          if (p && p.registros) {
+                              const r = (p.registros || []).filter(x => x && x.EmailHC === email);
+                              // USA notasP.push (corrigido do bug 'nP.push')
+                              notasP.push(...r.map(i => ({ nomePratica: p.nomeAba || p.nomePratica, ...i })));
+                          }
+                      }
+                  }
+                 
+                  console.log("[showStudentDetail] Notas Teóricas encontradas:", notasT);
+                  console.log("[showStudentDetail] Notas Práticas encontradas:", notasP);
+
+                 // Renderiza conteúdo PRIMEIRO
+                 renderStudentHeader(info);
+                 renderStudentDetailKPIs(faltas, notasP);
+                 renderTabInfo(info);
+                 renderTabEscala(escalas);
+                 renderTabFaltas(faltas);
+                 renderTabNotasTeoricas(notasT); // Passa o registro
+                 renderTabNotasPraticas(notasP); // Passa o array compilado
+
+                 // Mostra a view de detalhe usando a função centralizada
+                 showView('student-detail-view');
+
+                 switchStudentTab('info'); // Garante que a primeira aba esteja ativa
+                 window.scrollTo(0, 0); // Rola para o topo
+                 console.log("[showStudentDetail] View de detalhe exibida.");
+             } catch (e) {
+                 console.error("[showStudentDetail] Erro durante renderização:", e);
+                 showError(`Erro ao exibir detalhes do aluno: ${e.message}`);
+                 showView('content-alunos'); // Tenta voltar para a lista em caso de erro
              }
-             const faltas = appState.ausenciasReposicoes.filter(f => f.EmailHC === email);
-             const notasT = (appState.notasTeoricas.registros || []).find(n => n.EmailHC === email);
-             const notasP = [];
-             for (const n in appState.notasPraticas) {
-                 const p = appState.notasPraticas[n];
-                 const r = (p.registros || []).filter(x => x.EmailHC === email);
-                 nP.push(...r.map(i => ({ nomePratica: p.nomeAba || n, ...i })));
-             }
-             console.log("[showStudentDetail] Notas Teóricas encontradas:", notasT);
-             console.log("[showStudentDetail] Notas Práticas encontradas:", notasP);
-
-            // Renderiza conteúdo PRIMEIRO
-            renderStudentHeader(info);
-            renderStudentDetailKPIs(faltas, nP);
-            renderTabInfo(info);
-            renderTabEscala(escalas);
-            renderTabFaltas(faltas);
-            renderTabNotasTeoricas(notasT); // Passa o registro
-            renderTabNotasPraticas(nP);
-
-            // Mostra a view de detalhe usando a função centralizada
-            showView('student-detail-view');
-
-            switchStudentTab('info'); // Garante que a primeira aba esteja ativa
-            window.scrollTo(0, 0); // Rola para o topo
-            console.log("[showStudentDetail] View de detalhe exibida.");
         }
 
         /**
-         * [CORRIGIDO v8] Volta para a aba 'alunos' e esconde a view de detalhe usando showView.
+         * [CORRIGIDO v12] Volta para a aba 'alunos' usando showView e ativa o link da sidebar.
          */
          function showAlunosList() {
-             console.log("[showAlunosList] Voltando para a lista de alunos.");
-             // Mostra a view da lista de alunos
-             showView('content-alunos');
-             // Reativa a aba 'alunos' na sidebar (switchMainTab faz isso se chamado, mas podemos forçar aqui tbm)
-             document.querySelectorAll('.sidebar-link').forEach(l => l.classList.toggle('active', l.getAttribute('data-tab') === 'alunos'));
-             window.scrollTo(0, 0);
-        }
+              console.log("[showAlunosList] Voltando para a lista de alunos.");
+              // Mostra a view da lista de alunos
+              showView('dashboard-view'); // Mostra a view principal
+              switchMainTab('alunos'); // Ativa a aba e o conteúdo dos alunos
+              window.scrollTo(0, 0);
+         }
 
-        function setupStudentTabNavigation() { /* ... (sem alterações) ... */
+        function setupStudentTabNavigation() {
              const n=document.getElementById('student-tabs-nav'); n.addEventListener('click', (e)=>{ if(e.target.tagName==='BUTTON'){const t=e.target.getAttribute('data-tab'); switchStudentTab(t);}});
         }
-        function switchStudentTab(tabName) { /* [CORRIGIDO v8] Usa IDs corretos */
+        function switchStudentTab(tabName) {
             console.log(`Trocando para aba de detalhe: ${tabName}`);
             // Atualiza botões
             document.querySelectorAll('#student-tabs-nav .tab-button').forEach(btn => {
@@ -550,30 +1410,28 @@
             });
             // Mostra/Esconde conteúdo
             document.querySelectorAll('#student-tabs-content .tab-content').forEach(content => {
-                 // Usa a classe visible-view / hidden-view para consistência
                  const isActive = content.id === `tab-${tabName}`;
-                 content.classList.toggle('visible-view', isActive);
-                 content.classList.toggle('hidden-view', !isActive);
-                 if (isActive) content.style.display = 'block'; // Garante display block
+                 content.style.display = isActive ? 'block' : 'none'; // Controle via display
+                 content.classList.toggle('active', isActive); // Mantém classe se o CSS usar
             });
         }
-        function renderStudentHeader(info) { /* ... (sem alterações) ... */
+        function renderStudentHeader(info) {
              const p=document.getElementById('student-header'); const i=info.FotoID?`https://lh3.googleusercontent.com/d/${info.FotoID}=s160-c`:'https://placehold.co/80x80/e2e8f0/64748b?text=?'; const s=info.Status==='Ativo'?'badge-green':'badge-red'; p.innerHTML=`<img src="${i}" alt="Foto" class="w-20 h-20 rounded-full object-cover shadow-md bg-slate-200" onerror="this.src='https://placehold.co/80x80/e2e8f0/64748b?text=?'"><div class="flex-grow"><h2 class="text-2xl font-bold text-slate-800">${info.NomeCompleto}</h2><p class="text-base text-slate-500">${info.Curso}</p></div><div class="ml-auto flex-shrink-0"><span class="badge ${s}">${info.Status}</span></div>`;
         }
-        function renderStudentDetailKPIs(faltas, notasP) { /* ... (sem alterações) ... */
+        function renderStudentDetailKPIs(faltas, notasP) {
              const p=document.getElementById('student-kpi-header'); const tF=faltas.length; const pF=faltas.filter(f=>!f.DataReposicaoISO).length; let mP=0; if(notasP.length>0){let s=0; notasP.forEach(n=>{const k=Object.keys(n).find(x=>x.toUpperCase().includes('MÉDIA (NOTA FINAL)'))||'MÉDIA (NOTA FINAL):'; let v=parseNota(n[k]); if(v>0)s+=v;}); mP=notasP.length>0?s/notasP.length:0;} p.innerHTML=`<div class="kpi-card flex items-center p-4"><div class="icon-bg kpi-icon-red"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg></div><div class="ml-3"><p class="kpi-label">Total Faltas</p><p class="kpi-value">${tF}</p></div></div> <div class="kpi-card flex items-center p-4"><div class="icon-bg kpi-icon-yellow"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div><div class="ml-3"><p class="kpi-label">Reposições Pendentes</p><p class="kpi-value">${pF}</p></div></div> <div class="kpi-card flex items-center p-4"><div class="icon-bg kpi-icon-blue"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div><div class="ml-3"><p class="kpi-label">Média (Prática)</p><p class="kpi-value">${mP.toFixed(1)}</p></div></div> <div class="kpi-card flex items-center p-4"><div class="icon-bg kpi-icon-green"><svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/><path d="M12 14l9-5-9-5-9 5 9 5zm0 0v6"/></svg></div><div class="ml-3"><p class="kpi-label">Módulos (Prática)</p><p class="kpi-value">${notasP.length}/${appState.notasPraticas?Object.keys(appState.notasPraticas).length:'?'}</p></div></div>`;
         }
-        function renderTabInfo(info) { /* ... (sem alterações) ... */
+        function renderTabInfo(info) {
              const p=document.getElementById('tab-info'); p.innerHTML=`<dl class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5 text-sm"><div class="border-b border-slate-100 pb-3"><dt class="font-medium text-slate-500">Email</dt><dd class="mt-1 font-semibold text-slate-700">${info.EmailHC||'N/A'}</dd></div><div class="border-b border-slate-100 pb-3"><dt class="font-medium text-slate-500">Nascimento</dt><dd class="mt-1 font-semibold text-slate-700">${info.DataNascimento||'N/A'}</dd></div><div class="border-b border-slate-100 pb-3"><dt class="font-medium text-slate-500">Sexo</dt><dd class="mt-1 font-semibold text-slate-700">${info.Sexo||'N/A'}</dd></div><div class="border-b border-slate-100 pb-3"><dt class="font-medium text-slate-500">Estado Civil</dt><dd class="mt-1 font-semibold text-slate-700">${info.EstadoCivil||'N/A'}</dd></div><div class="md:col-span-2 border-b border-slate-100 pb-3"><dt class="font-medium text-slate-500">CREFITO</dt><dd class="mt-1 font-semibold text-slate-700">${info.Crefito||'N/A'}</dd></div></dl>`;
         }
-        function renderTabEscala(escalas) { /* ... (sem alterações) ... */
+        function renderTabEscala(escalas) {
              const p=document.getElementById('escala-heatmap-content'); if(!escalas||escalas.length===0){p.innerHTML='<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhum registro.</p></div>'; return;} p.innerHTML=escalas.map(e=>`<div class="content-card p-6"><h4 class="text-base font-semibold text-slate-800">${e.nomeEscala}</h4><p class="text-sm text-slate-500 mb-5"><strong>Unidade:</strong> ${e.Unidade} | <strong>Sup:</strong> ${e.Supervisor}</p><div class="flex flex-wrap gap-2">${e.dias.map(d=>`<div class="heatmap-day" data-status="${d.status||'none'}" title="${d.dataColuna}: ${d.status||'N/A'}"><span class="heatmap-day-date">${d.dataColuna}</span><span class="heatmap-day-status">${d.status||'N/A'}</span></div>`).join('')}</div></div>`).join('');
         }
-        function renderTabFaltas(faltas) { /* ... (sem alterações) ... */
+        function renderTabFaltas(faltas) {
              const c=document.getElementById('tab-faltas'); const h=`<h3 class="content-card-header p-5">Registro de Ausências e Reposições</h3>`; let p=document.getElementById('faltas-content'); if(!faltas||faltas.length===0){c.innerHTML=h+'<p class="text-slate-500 p-5 text-sm italic">Nenhum registro.</p>'; return;} if(!p){c.innerHTML=h+'<div id="faltas-content" class="max-h-[500px] overflow-y-auto"></div>'; p=document.getElementById('faltas-content');} p.innerHTML=`<table class="min-w-full text-sm"><thead class="bg-slate-50"><tr><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Ausência</th><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Reposição</th><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Local</th><th class="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Motivo</th></tr></thead><tbody class="bg-white divide-y divide-slate-100">${faltas.map(f=>{const iP=!f.DataReposicaoISO; const sB=iP?'<span class="badge badge-yellow">Pendente</span>':'<span class="badge badge-green">Completa</span>'; const dA=f.DataAusenciaISO?new Date(f.DataAusenciaISO+'T00:00:00').toLocaleDateString('pt-BR'):'-'; const dR=f.DataReposicaoISO?new Date(f.DataReposicaoISO+'T00:00:00').toLocaleDateString('pt-BR'):'-'; const mS=f.Motivo?(f.Motivo.length>35?f.Motivo.substring(0,35)+'...':f.Motivo):'-'; return `<tr class="hover:bg-sky-50 transition-colors duration-150"><td class="px-4 py-3 text-slate-600 align-middle">${sB}</td><td class="px-4 py-3 text-slate-600 align-middle">${dA}</td><td class="px-4 py-3 text-slate-600 align-middle">${dR}</td><td class="px-4 py-3 text-slate-600 align-middle">${f.Local||'-'}</td><td class="px-4 py-3 text-slate-600 align-middle" title="${f.Motivo||''}">${mS}</td></tr>`;}).join('')}</tbody></table>`;
         }
         /**
-         * [CORRIGIDO v8] Renderiza a aba "Notas Teóricas" com verificações e filtro de chaves explícito.
+         * [CORRIGIDO v9] Renderiza a aba "Notas Teóricas" com filtro explícito e validações robustas.
          */
         function renderTabNotasTeoricas(notas) {
              console.log('[renderTabNotasTeoricas] Dados recebidos:', notas);
@@ -585,56 +1443,80 @@
                  return;
              }
 
-             // Lista EXPLÍCITA de chaves que representam matérias ou médias
-             // Adapte esta lista se os nomes das colunas na sua planilha mudarem!
+             // Lista EXPLÍCITA de chaves que são matérias/médias
              const knownSubjectKeys = [
-                'Anatomopatologia', 'Sub/Anatomopatologia', 'Bases', 'Sub/Bases',
-                'Doenças Pulmonares', 'Doenças Cardíacas', 'Proc. Cirurgico',
-                'Avaliação', 'Sub/Avaliacao', 'VM', 'Sub/VM', 'Média - Fisio1',
-                'Técnicas e Recursos', 'Diag. Imagem', 'Média - Fisio2',
-                'Fisio aplicada', 'UTI', 'Média - Fisio3', 'Pediatria',
-                'Mobilização', 'Reab. Pulmonar', 'Média - Fisio4',
-                'M. Cientifica', 'Saúde e politicas', 'Farmacoterapia', 'Bioética'
+                 'Anatomopatologia', 'Sub/Anatomopatologia', 'Bases', 'Sub/Bases',
+                 'Doenças Pulmonares', 'Doenças Cardíacas', 'Proc. Cirurgico',
+                 'Avaliação', 'Sub/Avaliacao', 'VM', 'Sub/VM', 'Média - Fisio1',
+                 'Técnicas e Recursos', 'Diag. Imagem', 'Média - Fisio2',
+                 'Fisio aplicada', 'UTI', 'Média - Fisio3', 'Pediatria',
+                 'Mobilização', 'Reab. Pulmonar', 'Média - Fisio4',
+                 'M. Cientifica', 'Saúde e politicas', 'Farmacoterapia', 'Bioética'
              ];
 
-             // Filtra o objeto 'notas' para conter apenas as chaves conhecidas e com valores não nulos/undefined
+             // Filtra o objeto 'notas' para conter apenas as chaves conhecidas E que tenham algum valor (não null/undefined/string vazia)
              const materiasComNotas = knownSubjectKeys
-                .filter(key => notas.hasOwnProperty(key) && notas[key] !== null && notas[key] !== undefined)
-                .map(key => ({ materia: key, notaStr: notas[key], notaValue: parseNota(String(notas[key])) }))
-                // Opcional: filtrar matérias onde a nota parseada resultou em 0 (se não quiser exibir barras zeradas)
-                // .filter(item => item.notaValue > 0);
+                 .filter(key => notas.hasOwnProperty(key) && notas[key] !== null && notas[key] !== undefined && String(notas[key]).trim() !== '')
+                 .map(key => ({ materia: key, notaStr: notas[key], notaValue: parseNota(String(notas[key])) }));
+                 // Filtramos por valor não vazio ANTES de parsear, para não exibir 0 para matérias não cursadas
 
              console.log("[renderTabNotasTeoricas] Matérias válidas com notas parseadas:", materiasComNotas);
 
-
              if (materiasComNotas.length === 0) {
                  p.innerHTML = '<p class="text-slate-500 text-sm italic">Nenhuma nota válida encontrada neste registro.</p>';
-                 console.log("[renderTabNotasTeoricas] Nenhuma matéria com nota válida após filtro e parse.");
+                 console.log("[renderTabNotasTeoricas] Nenhuma matéria conhecida com nota após filtro.");
                  return;
              }
 
-             // Renderiza as barras usando os dados filtrados e parseados
+             // Renderiza as barras
              p.innerHTML = materiasComNotas.map(item => {
                  const x = item.materia;
-                 const v = item.notaValue;
+                 const v = item.notaValue; // Nota já parseada
                  console.log(`[renderTabNotasTeoricas] Renderizando: ${x}, Valor: ${v}`);
 
                  const iM = x.toUpperCase().includes('MÉDIA');
                  const bF = iM ? 'bar-fill-media' : 'bar-fill-normal';
-                 const lC = iM ? 'text-sky-700 font-semibold' : 'text-slate-600';
-                 const vC = iM ? 'text-sky-800 font-bold' : 'text-slate-700 font-semibold';
-                 return `<div class="bar-chart-item text-xs rounded p-1.5 ${iM ? 'pt-3 mt-3 border-t border-slate-100' : ''}"><div class="flex justify-between items-center mb-0.5"><span class="bar-label ${lC} truncate pr-2" title="${x}">${x}</span><span class="bar-value ${vC} w-8 text-right">${v.toFixed(1)}</span></div><div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden bar-bg"><div class="h-full ${bF} rounded-full transition-all duration-500 ease-out" style="width:${v * 10}%"></div></div></div>`;
+                 const lC = iM ? 'text-blue-700 font-semibold' : 'text-slate-600';
+                 const vC = iM ? 'text-blue-800 font-bold' : 'text-slate-700 font-semibold';
+                 const barWidth = Math.max(0, v * 10); // Garante mínimo 0
+                 return `<div class="bar-chart-item text-xs rounded p-1.5 ${iM ? 'pt-3 mt-3 border-t border-slate-100' : ''}"><div class="flex justify-between items-center mb-0.5"><span class="bar-label ${lC} truncate pr-2" title="${x}">${x}</span><span class="bar-value ${vC} w-8 text-right">${v.toFixed(1)}</span></div><div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden bar-bg"><div class="h-full ${bF} rounded-full transition-all duration-500 ease-out" style="width:${barWidth}%"></div></div></div>`;
              }).join('');
              console.log("[renderTabNotasTeoricas] Gráfico renderizado.");
         }
 
 
-        function renderTabNotasPraticas(notas) { /* ... (sem alterações) ... */
-             const p=document.getElementById('notas-p-radial-content'); if(!notas||notas.length===0){p.innerHTML='<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhum registro.</p></div>'; return;} p.innerHTML=notas.map((n,i)=>{const dH=n['Data/Hora']; const dF=dH?new Date(String(dH).replace(/-/g,'/')).toLocaleDateString('pt-BR'):'N/A'; const kM=Object.keys(n).find(k=>k.toUpperCase().includes('MÉDIA (NOTA FINAL)'))||'MÉDIA (NOTA FINAL):'; let mF=parseNota(n[kM]); const kC=Object.keys(n).find(k=>k.toUpperCase().includes('COMENTÁRIOS'))||'COMENTÁRIOS DO(A) SUPERVISOR(A):'; const c=n[kC]||'Sem comentários.'; return `<div class="content-card p-5 flex space-x-5 items-center"><div class="flex-shrink-0"><div class="radial-progress" style="--value:${mF*10};"><span class="radial-progress-value">${mF.toFixed(1)}</span></div></div><div class="flex-grow"><h4 class="text-sm font-semibold text-sky-700">${n.nomePratica} (Aval. ${i+1})</h4><div class="text-xs text-slate-500 mt-1 space-x-3"><span><strong>Data:</strong> ${dF}</span><span><strong>Unid:</strong> ${n.Unidade||'-'}</span><span><strong>Sup:</strong> ${n.Supervisor||'-'}</span></div><details class="mt-2 group"><summary class="text-xs text-slate-500 font-medium cursor-pointer list-none flex items-center group-hover:text-sky-600 transition-colors"><span class="mr-1">Ver comentário</span><svg class="h-4 w-4 transform transition-transform duration-200 group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></summary><p class="text-sm italic text-slate-600 mt-2 p-3 bg-slate-50 rounded-md border border-slate-200">${c}</p></details></div></div>`;}).join('');
+        function renderTabNotasPraticas(notasP) { // Renomeado para notasP para clareza
+             console.log("[renderTabNotasPraticas] Dados recebidos:", notasP);
+             const p=document.getElementById('notas-p-radial-content');
+             if(!notasP || notasP.length === 0){ // Verifica o array
+                 p.innerHTML='<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhum registro de notas práticas encontrado.</p></div>';
+                 console.log("[renderTabNotasPraticas] Nenhum registro.");
+                 return;
+             }
+             p.innerHTML = notasP.map((n,i) => { // Itera sobre o array notasP
+                 const dH=n['Data/Hora'];
+                 const dF=dH?new Date(String(dH).replace(/-/g,'/')).toLocaleDateString('pt-BR'):'N/A';
+                 const kM=Object.keys(n).find(k=>k.toUpperCase().includes('MÉDIA (NOTA FINAL)'))||'MÉDIA (NOTA FINAL):';
+                 let mF=parseNota(n[kM]);
+                 const kC=Object.keys(n).find(k=>k.toUpperCase().includes('COMENTÁRIOS'))||'COMENTÁRIOS DO(A) SUPERVISOR(A):';
+                 const c=n[kC]||'Sem comentários.';
+                 const nomePratica = n.nomePratica || `Avaliação ${i+1}`; // Usa o nome da prática injetado
+                 
+                 console.log(`[renderTabNotasPraticas] Renderizando: ${nomePratica}, Média: ${mF}`);
+                 
+                 return `<div class="content-card p-5 flex space-x-5 items-center"><div class="flex-shrink-0"><div class="radial-progress" style="--value:${mF*10};"><span class="radial-progress-value">${mF.toFixed(1)}</span></div></div><div class="flex-grow"><h4 class="text-sm font-semibold text-blue-700">${nomePratica}</h4><div class="text-xs text-slate-500 mt-1 space-x-3"><span><strong>Data:</strong> ${dF}</span><span><strong>Unid:</strong> ${n.Unidade||'-'}</span><span><strong>Sup:</strong> ${n.Supervisor||'-'}</span></div><details class="mt-2 group"><summary class="text-xs text-slate-500 font-medium cursor-pointer list-none flex items-center group-hover:text-blue-600 transition-colors"><span class="mr-1">Ver comentário</span><svg class="h-4 w-4 transform transition-transform duration-200 group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></summary><p class="text-sm italic text-slate-600 mt-2 p-3 bg-slate-50 rounded-md border border-slate-200">${c}</p></details></div></div>`;
+             }).join('');
+             console.log("[renderTabNotasPraticas] Gráfico renderizado.");
         }
 
         // --- Inicia ---
-        document.addEventListener('DOMContentLoaded', init);
+        // Adiciona o listener principal
+        document.addEventListener('DOMContentLoaded', () => {
+             console.log("DOM Carregado. Configurando login e exibindo view de login.");
+             setupEventHandlers(); // Configura todos os listeners, incluindo login
+             showView('login-view'); // Mostra a tela de login primeiro
+             // O initDashboard() só será chamado após login bem-sucedido
+        });
     </script>
 </body>
 </html>
