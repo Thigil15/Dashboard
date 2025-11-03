@@ -1241,6 +1241,199 @@
             background-color: rgba(100, 116, 139, 0.1);
             color: var(--content-text-secondary);
         }
+        
+        /* === [ESCALAS] Calendário Pro === */
+        #escala-calendar-shell {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        }
+
+        /* Toolbar (switcher de escalas + mês navegação) */
+        .escala-toolbar {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+        }
+        @media (min-width: 1024px) {
+        .escala-toolbar {
+            grid-template-columns: 1fr auto;
+            align-items: center;
+        }
+        }
+
+        /* Botões de escala */
+        .escala-switcher {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        }
+        .escala-pill {
+        font-family: var(--font-display);
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        padding: 0.45rem 0.9rem;
+        border-radius: 999px;
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        color: var(--content-text-primary);
+        transition: var(--transition-fast);
+        cursor: pointer;
+        }
+        .escala-pill:hover { border-color: var(--accent-blue); box-shadow: 0 2px 10px rgba(0,84,180,.12); }
+        .escala-pill.active { 
+        color: #fff;
+        border-color: transparent;
+        background-image: linear-gradient(135deg, var(--accent-blue), var(--accent-blue-secondary));
+        box-shadow: 0 5px 14px rgba(0,84,180,.22);
+        }
+
+        /* Navegação de mês/período */
+        .calendar-nav {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        }
+        .calendar-nav .nav-btn {
+        width: 36px; height: 36px; border-radius: 10px;
+        display: grid; place-items: center; cursor: pointer;
+        background: #fff; border: 1px solid #e2e8f0; transition: var(--transition-fast);
+        }
+        .calendar-nav .nav-btn:hover { border-color: var(--accent-blue); transform: translateY(-1px); }
+        .calendar-nav .period-label {
+        font-family: var(--font-display);
+        font-weight: 700;
+        color: var(--content-text-primary);
+        min-width: 10ch;
+        text-align: center;
+        }
+
+        /* Grid do calendário (7 colunas) */
+        .calendar-card {
+        background: var(--card-bg-darker);
+        border: 1px solid #fff;
+        border-radius: 0.75rem;
+        padding: 0.75rem;
+        }
+        .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 6px;
+        }
+        .calendar-weekday {
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        font-weight: 800;
+        letter-spacing: .06em;
+        color: var(--content-text-secondary);
+        text-align: center;
+        padding: .25rem 0;
+        }
+        .calendar-day {
+        min-height: 92px;
+        background: var(--sidebar-bg);
+        border: 1px solid #e5e9ef;
+        border-radius: 0.5rem;
+        padding: 6px;
+        display: flex; flex-direction: column; gap: 6px;
+        transition: var(--transition-fast);
+        position: relative;
+        }
+        .calendar-day:hover {
+        border-color: var(--accent-blue);
+        box-shadow: var(--card-shadow-hover);
+        transform: translateY(-2px);
+        }
+        .calendar-day .date-badge {
+        font-family: var(--font-display);
+        font-size: .9rem; font-weight: 800;
+        width: 28px; height: 28px; border-radius: 8px;
+        display: grid; place-items: center;
+        background: #f1f5f9; color: #334155;
+        }
+        .calendar-day .status-chip {
+        display: inline-flex; align-items: center; gap: .5rem;
+        font-size: .72rem; font-weight: 700;
+        padding: .35rem .55rem; border-radius: .45rem;
+        border: 1px solid transparent;
+        line-height: 1.1;
+        max-width: 100%;
+        }
+        .status-present { background: #dcfce7; color: #166534; border-color: #86efac; }
+        .status-absent  { background: rgba(226,30,38,.08); color: #b91c1c; border-color: rgba(226,30,38,.25); }
+        .status-makeup  { background: #fef9c3; color: #854d0e; border-color: #fde047; }
+        .status-off     { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
+        .status-work    { background: rgba(0,84,180,.08); color: var(--accent-blue); border-color: rgba(0,84,180,.25); } /* “plantão/aula/semana” */
+        .status-none    { background: #fafafa; color: #9ca3af; border-color: #eee; }
+
+        .calendar-day .status-text {
+        font-weight: 600;
+        font-size: .72rem;
+        color: inherit;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        /* Mini painéis */
+        .calendar-side {
+        display: grid; gap: .75rem;
+        }
+        @media (min-width: 1024px) {
+        #escala-calendar-shell { grid-template-columns: 2fr 1fr; }
+        }
+        .mini-card {
+        background: var(--card-bg-darker);
+        border: 1px solid #fff;
+        border-radius: .75rem;
+        padding: 1rem;
+        }
+        .mini-card .k {
+        font-size: .72rem; font-weight: 800; letter-spacing: .05em;
+        color: var(--content-text-secondary); text-transform: uppercase;
+        }
+        .mini-card .v {
+        font-family: var(--font-display); font-size: 1.4rem; font-weight: 800; color: var(--content-text-primary);
+        }
+
+        /* Legenda */
+        .legend {
+        display: grid; grid-template-columns: repeat(2, minmax(0,1fr));
+        gap: .5rem .75rem;
+        }
+        .legend-item { display: inline-flex; align-items: center; gap: .5rem; font-size: .8rem; }
+        .legend-dot {
+        width: 12px; height: 12px; border-radius: 3px; border: 1px solid rgba(0,0,0,.06);
+        }
+        .legend-present { background: #86efac; }
+        .legend-absent  { background: #fecaca; }
+        .legend-makeup  { background: #fde68a; }
+        .legend-off     { background: #e2e8f0; }
+        .legend-work    { background: #bfdbfe; }
+        .legend-none    { background: #f3f4f6; }
+
+        /* Tooltip simples (acessível) */
+        .calendar-day [data-tip] {
+        position: relative;
+        }
+        .calendar-day [data-tip]:focus::after,
+        .calendar-day [data-tip]:hover::after {
+        content: attr(data-tip);
+        position: absolute; z-index: 20;
+        left: 50%; transform: translateX(-50%);
+        bottom: 100%; margin-bottom: 8px;
+        background: #111827; color: #fff;
+        font-size: .72rem; font-weight: 600;
+        padding: .35rem .5rem; border-radius: .4rem;
+        white-space: nowrap;
+        box-shadow: 0 10px 20px rgba(0,0,0,.18);
+        }
+            /* compacta os chips do calendário, reaproveitando suas classes .badge */
+    #escala-heatmap-content .badge {
+    display: inline-block;
+    font-weight: 700;
+    border-radius: 999px;
+    line-height: 1;
+    }
 
     </style>
     
@@ -1532,9 +1725,115 @@
                 <div id="tab-info" class="tab-content content-card p-6 lg:p-8"></div>
                 
                 <!-- Escala -->
-                <div id="tab-escala" class="tab-content">
-                    <div id="escala-heatmap-content" class="space-y-6"></div>
-                </div>
+                    <div id="tab-escala" class="tab-content">
+                    <!-- Mantemos este wrapper para compatibilidade com a versão atual -->
+                    <div id="escala-heatmap-content" class="space-y-6">
+                        
+                        <!-- [NOVO] Toolbar: botões de Escala + navegação de período -->
+                        <div class="content-card p-4">
+                        <div class="escala-toolbar">
+                            <div class="escala-switcher" id="escala-switcher">
+                            <!-- Parte 2 vai preencher dinamicamente a partir de appState.escalas do aluno -->
+                            <!-- Exemplo estático (não precisa manter): 
+                            <button class="escala-pill active">Escala 1</button>
+                            <button class="escala-pill">Escala 2</button>
+                            -->
+                            </div>
+                            <div class="calendar-nav">
+                            <button type="button" class="nav-btn" id="cal-prev" title="Período anterior" aria-label="Período anterior">
+                                <!-- ícone seta esquerda -->
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M12.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 111.414 1.414L9.414 10l3.293 3.293a1 1 0 010 1.414z"/></svg>
+                            </button>
+                            <div class="period-label" id="cal-period-label">Período</div>
+                            <button type="button" class="nav-btn" id="cal-next" title="Próximo período" aria-label="Próximo período">
+                                <!-- ícone seta direita -->
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M7.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L10.586 10 7.293 6.707a1 1 0 010-1.414z"/></svg>
+                            </button>
+                            </div>
+                        </div>
+                        </div>
+
+                        <!-- [NOVO] Calendário + lateral -->
+                        <div id="escala-calendar-shell">
+                        
+                        <!-- Calendário (grid) -->
+                        <section class="calendar-card">
+                            <div class="grid grid-cols-7 gap-1 mb-1">
+                            <div class="calendar-weekday">Dom</div>
+                            <div class="calendar-weekday">Seg</div>
+                            <div class="calendar-weekday">Ter</div>
+                            <div class="calendar-weekday">Qua</div>
+                            <div class="calendar-weekday">Qui</div>
+                            <div class="calendar-weekday">Sex</div>
+                            <div class="calendar-weekday">Sáb</div>
+                            </div>
+
+                            <!-- Parte 2 desenha os dias aqui -->
+                            <div class="calendar-grid" id="calendar-grid">
+                            <!-- Exemplo estático de um dia (não precisa manter):
+                            <div class="calendar-day">
+                                <div class="date-badge">10</div>
+                                <div class="status-chip status-present" data-tip="Presença às 07:00">
+                                <span class="status-text">Presente</span>
+                                </div>
+                                <div class="status-chip status-work" data-tip="Plantão UTI 07:00–13:00">
+                                <span class="status-text">Plantão 7–13h</span>
+                                </div>
+                            </div>
+                            -->
+                            </div>
+                        </section>
+
+                        <!-- Lateral: mini KPIs + legenda -->
+                        <aside class="calendar-side">
+                            <div class="mini-card">
+                            <div class="k">Resumo</div>
+                            <div class="grid grid-cols-2 gap-3 mt-2">
+                                <div>
+                                <div class="k">Escalados</div>
+                                <div class="v" id="cal-kpi-scaled">-</div>
+                                </div>
+                                <div>
+                                <div class="k">Presentes</div>
+                                <div class="v" id="cal-kpi-present">-</div>
+                                </div>
+                                <div>
+                                <div class="k">Ausentes</div>
+                                <div class="v" id="cal-kpi-absent">-</div>
+                                </div>
+                                <div>
+                                <div class="k">Reposições</div>
+                                <div class="v" id="cal-kpi-makeup">-</div>
+                                </div>
+                                <div>
+                                <div class="k">Folgas</div>
+                                <div class="v" id="cal-kpi-off">-</div>
+                                </div>
+                            </div>
+                            </div>
+
+                            <div class="mini-card">
+                            <div class="k">Legenda</div>
+                            <div class="legend mt-2">
+                                <span class="legend-item"><span class="legend-dot legend-present"></span>Presença</span>
+                                <span class="legend-item"><span class="legend-dot legend-absent"></span>Ausência</span>
+                                <span class="legend-item"><span class="legend-dot legend-makeup"></span>Reposição</span>
+                                <span class="legend-item"><span class="legend-dot legend-off"></span>Folga</span>
+                                <span class="legend-item"><span class="legend-dot legend-work"></span>Plantão/Aula</span>
+                                <span class="legend-item"><span class="legend-dot legend-none"></span>Sem dado</span>
+                            </div>
+                            </div>
+
+                        </aside>
+                        </div>
+
+                        <!-- Nota de UX -->
+                        <div class="text-xs text-slate-500 px-1">
+                        Dica: passe o mouse (ou toque) nos chips para ver detalhes do dia.
+                        </div>
+                    </div>
+                    </div>
+
                 
                 <!-- Faltas -->
                 <div id="tab-faltas" class="tab-content content-card p-0 overflow-hidden">
@@ -2366,10 +2665,397 @@
              const p=document.getElementById('tab-info'); p.innerHTML=`<dl class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6 text-sm"><div class="border-b border-slate-200 pb-3"><dt>Email</dt><dd>${info.EmailHC||'N/A'}</dd></div><div class="border-b border-slate-200 pb-3"><dt>Nascimento</dt><dd>${info.DataNascimento ? new Date(info.DataNascimento).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : 'N/A'}</dd></div><div class="border-b border-slate-200 pb-3"><dt>Sexo</dt><dd>${info.Sexo||'N/A'}</dd></div><div class="border-b border-slate-200 pb-3"><dt>Estado Civil</dt><dd>${info.EstadoCivil||'N/A'}</dd></div><div class="md:col-span-2 lg:col-span-1 border-b border-slate-200 pb-3"><dt>CREFITO</dt><dd>${info.Crefito||'N/A'}</dd></div></dl>`;
         }
         
-        function renderTabEscala(escalas) {
-             const p=document.getElementById('escala-heatmap-content'); if(!escalas||escalas.length===0){p.innerHTML='<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhum registro de escala encontrado.</p></div>'; return;} p.innerHTML=escalas.map(e=>`<div class="content-card p-6"><h4 class="text-base font-bold text-slate-800">${e.nomeEscala}</h4><p class="text-sm text-slate-500 mb-5"><strong>Unidade:</strong> ${e.Unidade||'N/A'} | <strong>Sup:</strong> ${e.Supervisor||'N/A'}</p><div class="flex flex-wrap gap-2">${e.dias.map(d=>`<div class="heatmap-day flex-grow" data-status="${d.status?normalizeString(d.status):'none'}" title="${d.dataColuna}: ${d.status||'N/A'}"><span class="heatmap-day-date">${d.dataColuna}</span><span class="heatmap-day-status">${d.status||'N/A'}</span></div>`).join('')}</div></div>`).join('');
-        }
-        
+                        /* ===============================
+                [ESCALAS] Calendar Pro - Helpers
+                =============================== */
+
+                /** Normaliza string para comparações. */
+                function _esc_norm(s) {
+                return (s || '').toString().trim().toLowerCase()
+                    .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                }
+
+                /** Pega nome e email do aluno atualmente aberto na tela (do header e da aba Info). */
+                function _esc_getCurrentStudentKey() {
+                const nameEl = document.querySelector('#student-header h2');
+                const name = nameEl ? nameEl.textContent.trim() : null;
+
+                // procura <dt>Email</dt> e lê o irmão <dd>
+                let email = null;
+                document.querySelectorAll('#tab-info dl dt').forEach(dt => {
+                    if (_esc_norm(dt.textContent) === 'email') {
+                    const dd = dt.parentElement?.querySelector('dd');
+                    if (dd) email = dd.textContent.trim();
+                    }
+                });
+
+                return {
+                    name,
+                    email,
+                    normName: _esc_norm(name),
+                    normEmail: _esc_norm(email)
+                };
+                }
+
+                /** Transforma 'dd/mm' em Date, inferindo ano perto do mês atual (heurística ±7 meses). */
+                function _esc_parseDMInferYear(dm, refDate = new Date()) {
+                if (!dm || !/^\d{1,2}\/\d{1,2}$/.test(dm)) return null;
+                const [dStr, mStr] = dm.split('/');
+                const d = parseInt(dStr, 10);
+                const m = parseInt(mStr, 10); // 1..12
+
+                // Heurística de ano: aproxima do mês atual
+                const nowM = refDate.getMonth() + 1; // 1..12
+                const nowY = refDate.getFullYear();
+                let y = nowY;
+
+                const delta = m - nowM; // -11..+11
+                if (delta >= 7) y = nowY - 1;
+                else if (delta <= -7) y = nowY + 1;
+
+                const date = new Date(y, m - 1, d);
+                if (isNaN(date.getTime())) return null;
+                return date;
+                }
+
+                /** Formata ano-mês-dia (YYYY-MM-DD). */
+                function _esc_iso(d) {
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${y}-${m}-${day}`;
+                }
+
+                /** Nome do mês PT-BR, capitalizado. */
+                function _esc_monthLabel(year, month0) {
+                const dt = new Date(year, month0, 1);
+                const name = dt.toLocaleString('pt-BR', { month: 'long' });
+                return name.charAt(0).toUpperCase() + name.slice(1) + ` ${year}`;
+                }
+
+                /** Gera todos os YYYY-MM dos dias da escala, ordenados e únicos. */
+                function _esc_collectYearMonths(days) {
+                const set = new Set();
+                days.forEach(d => {
+                    if (d._date instanceof Date) {
+                    set.add(`${d._date.getFullYear()}-${String(d._date.getMonth()+1).padStart(2,'0')}`);
+                    }
+                });
+                return Array.from(set).sort();
+                }
+
+                /** Divide “YYYY-MM” em {year, month0}. */
+                function _esc_splitYM(ym) {
+                const [y, m] = ym.split('-');
+                return { year: parseInt(y, 10), month0: parseInt(m, 10) - 1 };
+                }
+
+                /** Agrupa faltas/reposições para o aluno atual em conjuntos de datas ISO. */
+                function _esc_buildAbsMakeupSets() {
+                const { normEmail, normName } = _esc_getCurrentStudentKey();
+                const abs = new Set();
+                const mak = new Set();
+
+                (appState.ausenciasReposicoes || []).forEach(f => {
+                    const fMail = _esc_norm(f.EmailHC);
+                    const fName = _esc_norm(f.NomeCompleto);
+                    const isThis =
+                    (normEmail && fMail && normEmail === fMail) ||
+                    (normName && fName && normName === fName);
+
+                    if (!isThis) return;
+
+                    if (f.DataAusenciaISO) abs.add(f.DataAusenciaISO);
+                    if (f.DataReposicaoISO) mak.add(f.DataReposicaoISO);
+                });
+
+                return { abs, mak };
+                }
+
+                /** Verifica se é “presente” no dia atual via Ponto Hoje (somente hoje). */
+                function _esc_isPresentTodayIso(iso) {
+                const todayIso = new Date().toISOString().slice(0,10);
+                if (iso !== todayIso) return false;
+
+                const { normEmail } = _esc_getCurrentStudentKey();
+                let present = false;
+                // O map do ponto hoje tem chave EmailHC “exato”, então tente achar por email visível
+                if (appState.pontoHojeMap && appState.pontoHojeMap.size > 0) {
+                    for (const [key, val] of appState.pontoHojeMap.entries()) {
+                    if (_esc_norm(key) === normEmail) {
+                        present = true; break;
+                    }
+                    }
+                }
+                return present;
+                }
+
+                /** Cria elementos com classe utilitária. */
+                function _esc_el(tag, className, text) {
+                const el = document.createElement(tag);
+                if (className) el.className = className;
+                if (text !== undefined) el.textContent = text;
+                return el;
+                }
+
+                                /** ---------------------------------------------------------
+                 * Render: Aba Escala (calendário mensal + resumo lateral)
+                 * Drop-in: substitui a função renderTabEscala(escalas)
+                 * Depende apenas de: normalizeString (já existe) e Tailwind/CSS badge do seu app.
+                 * --------------------------------------------------------*/
+                function renderTabEscala(escalas) {
+                const root = document.getElementById('escala-heatmap-content');
+                if (!root) return;
+
+                // Sem escalas?
+                if (!Array.isArray(escalas) || escalas.length === 0) {
+                    root.innerHTML = `
+                    <div class="content-card p-6">
+                        <p class="text-slate-500 text-sm italic">Nenhuma escala encontrada para este(a) aluno(a).</p>
+                    </div>`;
+                    return;
+                }
+
+                // ---------- helpers ----------
+                const MONTH_NAMES_PT = [
+                    'Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                    'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'
+                ];
+                const WEEK_HEAD = ['DOM','SEG','TER','QUA','QUI','SEX','SÁB'];
+
+                // status -> rótulo e classe de cor (usando SUAS badges)
+                const STATUS_THEME = {
+                    presenca:  { label: 'Presença',  cls: 'badge badge-green'  },
+                    ausencia:  { label: 'Ausência',  cls: 'badge badge-red'    },
+                    reposicao: { label: 'Reposição', cls: 'badge badge-yellow' },
+                    folga:     { label: 'Folga',     cls: 'badge badge-gray'   },
+                    plantao:   { label: 'Plantão/Aula', cls: 'badge badge-gray' },
+                    vazio:     { label: 'Sem dado',  cls: 'badge badge-gray'   },
+                };
+
+                // normaliza o status retornado do backend para uma chave do STATUS_THEME
+                const normalizeStatusKey = (raw) => {
+                    if (!raw) return 'vazio';
+                    const s = String(raw).toLowerCase();
+                    if (s.includes('ausencia') || s.includes('ausência')) return 'ausencia';
+                    if (s.includes('reposição') || s.includes('reposicao')) return 'reposicao';
+                    if (s.includes('folga')) return 'folga';
+                    // Qualquer outra string '08h às 17h', 'Plantão', 'Aula', etc → tratamos como presença/plantão.
+                    // Se quiser separar plantão de presença, troque a linha abaixo para 'plantao'.
+                    return 'presenca';
+                };
+
+                // rótulo "Escala 1/2/3..." limpo
+                const labelEscala = (nome, idx) => {
+                    if (!nome) return `Escala ${idx + 1}`;
+                    const m = String(nome).match(/(\d+)/);
+                    return `Escala ${m ? m[1] : (idx + 1)}`;
+                };
+
+                // mapeia dias (dd/mm) → status
+                const buildDiaMap = (esc) => {
+                    const map = new Map();
+                    (esc.dias || []).forEach(d => {
+                    if (d && d.dataColuna) {
+                        map.set(d.dataColuna.trim(), d.status || null);
+                    }
+                    });
+                    return map;
+                };
+
+                // gera estrutura base da view
+                const containerId = 'escala-cal-root';
+                root.innerHTML = `
+                    <div class="content-card p-6 lg:p-8">
+                    <div class="flex flex-wrap items-center gap-2 mb-4" id="escala-switch"></div>
+
+                    <div class="flex flex-wrap items-center justify-between mb-4">
+                        <div class="flex items-center gap-2">
+                        <button id="escCalPrev" class="px-3 py-2 rounded-lg border hover:bg-slate-50 text-slate-600" title="Mês anterior">‹</button>
+                        <div id="escCalTitle" class="font-display font-bold text-lg text-slate-800"></div>
+                        <button id="escCalNext" class="px-3 py-2 rounded-lg border hover:bg-slate-50 text-slate-600" title="Próximo mês">›</button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-[1fr,320px] gap-6">
+                        <div>
+                        <div class="grid grid-cols-7 gap-2 mb-2 text-xs font-semibold text-slate-500">
+                            ${WEEK_HEAD.map(d => `<div class="text-center">${d}</div>`).join('')}
+                        </div>
+                        <div id="escCalGrid" class="grid grid-cols-7 gap-2"></div>
+
+                        <p class="text-[12px] text-slate-500 mt-4">
+                            Dica: passe o mouse (ou toque) nos chips para ver o detalhe do dia.
+                        </p>
+                        </div>
+
+                        <aside class="space-y-4">
+                        <div class="content-card p-4">
+                            <h4 class="text-sm font-display font-bold text-slate-700 mb-2">Resumo</h4>
+                            <dl class="grid grid-cols-2 gap-3 text-sm" id="escCalSummary">
+                            <!-- preenchido via JS -->
+                            </dl>
+                        </div>
+                        <div class="content-card p-4">
+                            <h4 class="text-sm font-display font-bold text-slate-700 mb-3">Legenda</h4>
+                            <ul class="space-y-2 text-sm">
+                            <li class="flex items-center gap-2"><span class="${STATUS_THEME.presenca.cls}"> </span> <span>Presença</span></li>
+                            <li class="flex items-center gap-2"><span class="${STATUS_THEME.ausencia.cls}"> </span> <span>Ausência</span></li>
+                            <li class="flex items-center gap-2"><span class="${STATUS_THEME.reposicao.cls}"> </span> <span>Reposição</span></li>
+                            <li class="flex items-center gap-2"><span class="${STATUS_THEME.folga.cls}"> </span> <span>Folga</span></li>
+                            <li class="flex items-center gap-2"><span class="${STATUS_THEME.vazio.cls}"> </span> <span>Sem dado</span></li>
+                            </ul>
+                        </div>
+                        </aside>
+                    </div>
+                    </div>
+                `;
+
+                // estado da view
+                let currentEscIdx = 0;
+                let viewYear  = (new Date()).getFullYear();
+                let viewMonth = (new Date()).getMonth(); // 0..11
+
+                // render chips de escala
+                const $switch = document.getElementById('escala-switch');
+                $switch.innerHTML = escalas.map((e, i) => `
+                    <button data-esc="${i}"
+                    class="px-3 py-2 rounded-full border font-medium text-sm
+                            ${i === 0 ? 'bg-blue-600 text-white border-blue-700' : 'bg-white text-slate-700 hover:bg-slate-50'}">
+                    ${labelEscala(e.nomeEscala || e.nomeAba || e.sheetName || '', i)}
+                    </button>
+                `).join('');
+
+                $switch.addEventListener('click', (ev) => {
+                    const btn = ev.target.closest('button[data-esc]');
+                    if (!btn) return;
+                    currentEscIdx = Number(btn.dataset.esc);
+                    // ativa visual
+                    [...$switch.querySelectorAll('button')].forEach((b, idx) => {
+                    b.className = `px-3 py-2 rounded-full border font-medium text-sm ${
+                        idx === currentEscIdx
+                        ? 'bg-blue-600 text-white border-blue-700'
+                        : 'bg-white text-slate-700 hover:bg-slate-50'
+                    }`;
+                    });
+                    drawCalendar();
+                });
+
+                // navegação de mês
+                document.getElementById('escCalPrev').onclick = () => {
+                    if (viewMonth === 0) { viewMonth = 11; viewYear--; } else { viewMonth--; }
+                    drawCalendar();
+                };
+                document.getElementById('escCalNext').onclick = () => {
+                    if (viewMonth === 11) { viewMonth = 0; viewYear++; } else { viewMonth++; }
+                    drawCalendar();
+                };
+
+                // desenha tudo
+                drawCalendar();
+
+                // -------------- desenhistas --------------
+                function drawCalendar() {
+                    const esc = escalas[currentEscIdx];
+                    const diaMap = buildDiaMap(esc);
+
+                    // título
+                    document.getElementById('escCalTitle').textContent = `${MONTH_NAMES_PT[viewMonth]} ${viewYear}`;
+
+                    // grade
+                    const $grid = document.getElementById('escCalGrid');
+                    $grid.innerHTML = '';
+
+                    const first = new Date(viewYear, viewMonth, 1);
+                    const firstW = first.getDay(); // 0..6 (domingo)
+                    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+
+                    // “vazios” antes do dia 1
+                    for (let i = 0; i < firstW; i++) {
+                    $grid.appendChild(emptyCell());
+                    }
+
+                    // dias do mês
+                    let counters = { presenca:0, ausencia:0, reposicao:0, folga:0, vazio:0 };
+
+                    for (let day = 1; day <= daysInMonth; day++) {
+                    const dd = String(day).padStart(2, '0');
+                    const mm = String(viewMonth + 1).padStart(2, '0');
+                    const ddmm = `${dd}/${mm}`;
+
+                    const raw = diaMap.get(ddmm) || null;
+                    const key = normalizeStatusKey(raw);
+                    counters[key] = (counters[key] || 0) + 1;
+
+                    $grid.appendChild(dayCell(day, key, raw));
+                    }
+
+                    // completa a última linha (opcional, só estética)
+                    const totalCells = firstW + daysInMonth;
+                    const rest = (7 - (totalCells % 7)) % 7;
+                    for (let i = 0; i < rest; i++) {
+                    $grid.appendChild(emptyCell());
+                    }
+
+                    drawSummary(counters);
+                }
+
+                function emptyCell() {
+                    const div = document.createElement('div');
+                    div.className = 'rounded-xl border border-slate-200 bg-white h-24';
+                    return div;
+                }
+
+                function dayCell(n, key, raw) {
+                    const div = document.createElement('div');
+                    div.className = 'rounded-xl border border-slate-200 bg-white h-24 p-2 flex flex-col';
+
+                    const head = document.createElement('div');
+                    head.className = 'flex items-center justify-between text-[11px] text-slate-500 mb-1';
+                    head.innerHTML = `<span class="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-slate-100 font-semibold text-slate-700">${n}</span>`;
+                    div.appendChild(head);
+
+                    // chip de status
+                    const chip = document.createElement('span');
+                    const theme = STATUS_THEME[key] || STATUS_THEME.vazio;
+                    chip.className = `${theme.cls} !text-[11px] !px-2 !py-[2px] inline-block mt-auto max-w-full truncate`;
+                    chip.title = raw ? String(raw) : theme.label;
+                    chip.textContent = (key === 'presenca' && raw && !/presença/i.test(raw))
+                    ? String(raw)         // mostra "08h às 17h", "Aula", etc
+                    : theme.label;        // caso contrário, rótulo padrão
+                    div.appendChild(chip);
+
+                    return div;
+                }
+
+                function drawSummary(c) {
+                    // Escalados = Presença (dias de trabalho) + Reposição (dias trabalhados como reposição)
+                    const escalados = (c.presenca || 0) + (c.reposicao || 0);
+                    const html = `
+                    <div>
+                        <dt class="text-slate-500">Escalados</dt>
+                        <dd class="font-display text-xl text-slate-800">${escalados}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-slate-500">Presenças</dt>
+                        <dd class="font-display text-xl text-slate-800">${c.presenca || 0}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-slate-500">Ausências</dt>
+                        <dd class="font-display text-xl text-slate-800">${c.ausencia || 0}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-slate-500">Reposições</dt>
+                        <dd class="font-display text-xl text-slate-800">${c.reposicao || 0}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-slate-500">Folgas</dt>
+                        <dd class="font-display text-xl text-slate-800">${c.folga || 0}</dd>
+                    </div>
+                    `;
+                    document.getElementById('escCalSummary').innerHTML = html;
+                }
+                }       
         function renderTabFaltas(faltas) {
              const c=document.getElementById('faltas-content'); if(!faltas||faltas.length===0){c.innerHTML='<p class="text-slate-500 p-6 text-sm italic">Nenhum registro de falta.</p>'; return;} const h=`<table class="min-w-full"><thead><tr><th class="text-left">Status</th><th class="text-left">Ausência</th><th class="text-left">Reposição</th><th class="text-left">Local</th><th class="text-left">Motivo</th></tr></thead><tbody class="bg-white">${faltas.map(f=>{const iP=!f.DataReposicaoISO; const sB=iP?'<span class="badge badge-yellow">Pendente</span>':'<span class="badge badge-green">Completa</span>'; const dA=f.DataAusenciaISO?new Date(f.DataAusenciaISO+'T00:00:00').toLocaleDateString('pt-BR', {timeZone: 'UTC'}):'-'; const dR=f.DataReposicaoISO?new Date(f.DataReposicaoISO+'T00:00:00').toLocaleDateString('pt-BR', {timeZone: 'UTC'}):'-'; const mS=f.Motivo?(f.Motivo.length>40?f.Motivo.substring(0,40)+'...':f.Motivo):'-'; return `<tr><td>${sB}</td><td>${dA}</td><td>${dR}</td><td>${f.Local||'-'}</td><td title="${f.Motivo||''}">${mS}</td></tr>`;}).join('')}</tbody></table>`; c.innerHTML = h;
         }
