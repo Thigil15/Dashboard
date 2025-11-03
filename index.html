@@ -1875,1652 +1875,1725 @@
 
     <!-- CLIENT-SIDE SCRIPT -->
     <script>
-        // URL da API
-        const API_URL = "https://script.google.com/macros/s/AKfycbz0ggDxcDPXe0h_GJeQ-NT_-INHMKkQ08PAGLp5QN2m7HKHfMlTqg6gsATMzrtRF48n/exec";
-        
-        // Estado global da aplicação
-        const appState = {
-            lastPontoUpdate: null,
-            alunos: [],
-            alunosMap: new Map(),
-            pontoHojeMap: new Map(),
-            escalas: {},
-            ausenciasReposicoes: [],
-            notasTeoricas: {},
-            notasPraticas: {}, 
-            todayBR: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-            todayFullBR: new Date().toLocaleDateString('pt-BR'),
-            isSidebarCollapsed: false
-        };
+    const API_URL = "https://script.google.com/macros/s/AKfycbwUtuXb-_CvxWccqm1T0k5sea9Bcr0xYsOpECw8XX6zJ0FVEhLohQgYzxZV2AMbpwpt/exec";
+    
+    // Estado global da aplicação
+    const appState = {
+        lastPontoUpdate: null,
+        alunos: [],
+        alunosMap: new Map(),
+        pontoHojeMap: new Map(),
+        escalas: {},
+        ausenciasReposicoes: [],
+        notasTeoricas: {},
+        notasPraticas: {}, 
+        todayBR: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+        todayFullBR: new Date().toLocaleDateString('pt-BR'),
+        isSidebarCollapsed: false
+    };
 
-        // --- Função Helper para Normalização ---
-        function normalizeString(str) {
-            if (!str) return '';
-            return str.trim().toLowerCase()
-                       .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        }
+    // --- Função Helper para Normalização ---
+    function normalizeString(str) {
+        if (!str) return '';
+        return str.trim().toLowerCase()
+                    .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    }
 
-        // --- Funções Utilitárias (Loading/Erro) ---
-        function showLoading(show) {
-            const overlay = document.getElementById('loading-overlay');
-            if (show) {
-                overlay.style.display = 'flex';
-                setTimeout(() => { overlay.style.opacity = '1'; }, 10);
-            } else {
-                overlay.style.opacity = '0';
-                setTimeout(() => { overlay.style.display = 'none'; }, 300); 
-            }
+    // --- Funções Utilitárias (Loading/Erro) ---
+    function showLoading(show) {
+        const overlay = document.getElementById('loading-overlay');
+        if (show) {
+            overlay.style.display = 'flex';
+            setTimeout(() => { overlay.style.opacity = '1'; }, 10);
+        } else {
+            overlay.style.opacity = '0';
+            setTimeout(() => { overlay.style.display = 'none'; }, 300); 
         }
+    }
+    
+    function showError(message, isLoginError = false) {
+        console.error("ERRO:", message);
+        const errorBoxId = isLoginError ? 'login-error' : 'error-message';
+        const errorBox = document.getElementById(errorBoxId);
         
-        function showError(message, isLoginError = false) {
-            console.error("ERRO:", message);
-            const errorBoxId = isLoginError ? 'login-error' : 'error-message';
-            const errorBox = document.getElementById(errorBoxId);
-            
-            if (!errorBox) { 
-                alert(`Erro: ${message}`);
-                return;
-            }
-            
-            if (isLoginError) {
-                errorBox.textContent = message;
-            } else {
-                document.getElementById('error-text').textContent = `Erro: ${message}`;
-            }
-            
-            errorBox.style.display = 'block';
-            
-            if (!isLoginError) {
-                setTimeout(() => { errorBox.style.display = 'none'; }, 10000); 
-                showLoading(false); 
-            }
+        if (!errorBox) { 
+            alert(`Erro: ${message}`);
+            return;
         }
         
-        // --- Gerenciador de Views Centralizado ---
-        function showView(viewIdToShow) {
-            console.log(`[showView] Tentando mostrar view: ${viewIdToShow}`);
-            const allViewIds = ['login-view', 'dashboard-view', 'student-detail-view'];
-            let found = false;
-            
-            allViewIds.forEach(id => {
-                const view = document.getElementById(id);
-                if (view) {
-                    let displayStyle = 'none';
-                    if (view.id === viewIdToShow) {
-                        displayStyle = (id === 'dashboard-view' || id === 'login-view') ? 'flex' : 'block';
-                        
-                        view.style.animation = 'none';
-                        view.offsetHeight;
-                        view.style.animation = null; 
-                        found = true;
-                    }
-                    view.style.display = displayStyle;
-                }
-            });
-
-            if (!found) {
-                console.error(`[showView] View com ID "${viewIdToShow}" não encontrada!`);
-            }
-        }
-
-        // --- INICIALIZAÇÃO E CARGA DE DADOS ---
-        async function initDashboard() {
-            console.log('[initDashboard] Iniciando Dashboard...');
-            try {
-                showLoading(true);
-                await fetchAllData();
-                await fetchPontoHoje(); 
-
-                console.log('[initDashboard] Dados carregados, iniciando renderização inicial...');
-                renderStudentList(appState.alunos);
-                renderAtAGlance(); // Inclui renderModuleAverages()
-                renderRecentAbsences();
-                renderTabPonto(); // Renderiza a aba Ponto (que agora tem conteúdo)
-
-                console.log('[initDashboard] Renderização inicial completa.');
-                
-                switchMainTab('dashboard'); 
-                
-                document.querySelector('#dashboard-view').style.opacity = '1';
-                showLoading(false);
-
-                setInterval(fetchPontoHoje, 30000); 
-                console.log("[initDashboard] Inicialização completa. Live update iniciado.");
-            } catch (error) {
-                const errorMessage = error.message || "Erro desconhecido";
-                showError(`Falha Crítica na Inicialização: ${errorMessage}. Verifique a API e recarregue a página.`);
-                showLoading(false);
-                showView('login-view');
-            }
+        if (isLoginError) {
+            errorBox.textContent = message;
+        } else {
+            document.getElementById('error-text').textContent = `Erro: ${message}`;
         }
         
-        function setupEventHandlers() {
-            console.log('[setupEventHandlers] Configurando listeners...');
-            document.getElementById('login-form').addEventListener('submit', handleLogin);
-            setupSidebarNavigation();
-            document.getElementById('sidebar-toggle').addEventListener('click', toggleSidebar); 
-            document.getElementById('back-to-dashboard').addEventListener('click', showAlunosList);
-            document.getElementById('search-student').addEventListener('input', filterStudentList);
-            setupStudentTabNavigation();
-
-            // [ORION] Event Delegation para os cards de aluno
-            document.getElementById('student-list-panel').addEventListener('click', (e) => {
-                const card = e.target.closest('.student-card');
-                if (card) {
-                    const email = card.getAttribute('data-student-email');
-                    if (email) {
-                        showStudentDetail(email);
-                    }
-                }
-            });
-
-            // Event listener para as sub-abas (delegado ao #tab-notas-p)
-            document.getElementById('tab-notas-p').addEventListener('click', (e) => {
-                const button = e.target.closest('.subnav-button');
-                if (button && !button.classList.contains('active')) {
-                    const tabId = button.getAttribute('data-subtab-id');
-                    switchStudentSubTab(tabId);
-                }
-            });
-
-            // [ORION] Event Delegation para botões Gemini (caso existam múltiplos)
-            document.getElementById('student-tabs-content').addEventListener('click', (e) => {
-                 const button = e.target.closest('.gemini-analysis-button');
-                 if(button) {
-                    const comment = button.getAttribute('data-comment');
-                    handleAnalisarComentario(button, comment);
-                 }
-            });
-
-            document.getElementById('gemini-modal-close').addEventListener('click', closeGeminiModal);
-            document.getElementById('gemini-modal').addEventListener('click', (e) => {
-                if (e.target.id === 'gemini-modal') {
-                    closeGeminiModal();
-                }
-            });
-
-            console.log('[setupEventHandlers] Listeners configurados.');
-        }
+        errorBox.style.display = 'block';
         
-        function handleLogin(event) {
-            event.preventDefault(); 
-            console.log("[handleLogin] Tentativa de login...");
-            
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-            const errorBox = document.getElementById('login-error');
-            
-            // [ORION] Senha local (INSEGURO)
-            const validEmail = 'thiago.dias@hc.fm.usp.br';
-            const validPass = 'Thiago1508'; 
-            
-            if (email === validEmail && password === validPass) {
-                console.log("[handleLogin] Login bem-sucedido.");
-                errorBox.style.display = 'none';
-                showView('dashboard-view'); 
-                initDashboard(); 
-            } else {
-                console.warn("[handleLogin] Falha no login.");
-                showError("Email ou senha inválidos.", true); 
-            }
+        if (!isLoginError) {
+            setTimeout(() => { errorBox.style.display = 'none'; }, 10000); 
+            showLoading(false); 
         }
-
-        async function fetchAllData() {
-            console.log("[fetchAllData] Buscando dados estáticos...");
-            try {
-                const r = await fetch(`${API_URL}?action=getAll`);
-                if (!r.ok) throw new Error(`Rede (getAll): ${r.statusText} (${r.status})`);
-                const d = await r.json();
-                if (!d.success) throw new Error(`API (getAll): ${d.error || 'Erro desconhecido'}`);
-                console.log("[fetchAllData] Dados estáticos recebidos:", d);
-                onStaticDataLoaded(d);
-            } catch (e) {
-                console.error("[fetchAllData] Erro detalhado:", e);
-                throw new Error(`Falha ao buscar dados estáticos: ${e.message}`);
-            }
-        }
-
-        function onStaticDataLoaded(data) {
-            appState.alunos = data.alunos || [];
-            appState.escalas = data.escalas || {};
-            appState.ausenciasReposicoes = data.ausenciasReposicoes || [];
-            appState.notasTeoricas = data.notasTeoricas || { registros: [] };
-            
-            const notasRaw = data.notasPraticas || {};
-            const normalized = Array.isArray(notasRaw)
-               ? notasRaw.reduce((acc, item, idx) => {
-                   const name = item.nomeAba || item.nomePratica || `NotasPraticas${idx + 1}`;
-                   acc[name] = { nomePratica: name, registros: item.registros || [] };
-                   return acc;
-                 }, {})
-               : Object.entries(notasRaw).reduce((acc, [key, val]) => {
-                   acc[key] = { nomePratica: key, registros: val.registros || [] };
-                   return acc;
-                 }, {});
-
-            appState.notasPraticas = normalized;
-            console.log("[onStaticDataLoaded] Notas Práticas Normalizadas:", appState.notasPraticas);
-
-            appState.alunosMap.clear();
-            appState.alunos.forEach(a => { if(a && a.EmailHC) appState.alunosMap.set(a.EmailHC, a); });
-            
-            console.log("[onStaticDataLoaded] Dados estáticos processados.");
-        }
-
-        async function fetchPontoHoje() {
-            const timestampElem = document.getElementById('last-update-timestamp');
-            console.log(`[fetchPontoHoje] Buscando ponto desde: ${appState.lastPontoUpdate||'Início'}`);
-             try{
-                let u = `${API_URL}?action=getPontoHoje`;
-                const r = await fetch(u);
-                if (!r.ok) throw new Error(`Rede (getPontoHoje): ${r.statusText} (${r.status})`);
-                const d = await r.json();
-                if (!d.success) throw new Error(`API (getPontoHoje): ${d.error || 'Erro desconhecido'}`);
-                console.log('[fetchPontoHoje] Ponto recebido:', d.hoje);
-                
-                appState.lastPontoUpdate = d.lastUpdate;
-                appState.pontoHojeMap.clear();
-                (d.hoje || []).forEach(p => { if(p && p.EmailHC) appState.pontoHojeMap.set(p.EmailHC, p); });
-                
-                renderTabPonto(); 
-                
-                if (timestampElem) { timestampElem.textContent = `Última att: ${new Date().toLocaleTimeString('pt-BR')}`; }
-             } catch(e){
-                console.warn('[fetchPontoHoje] Falha atualizar freq:', e.message);
-                if (timestampElem) { timestampElem.textContent = `Falha na att: ${new Date().toLocaleTimeString('pt-BR')}`; }
-             }
-        }
-
-        // --- NAVEGAÇÃO PRINCIPAL ---
-        function setupSidebarNavigation() {
-            const sidebar = document.querySelector('#app-sidebar nav');
-            sidebar.addEventListener('click', (e) => {
-                const link = e.target.closest('.sidebar-link');
-                if (link) {
-                    e.preventDefault();
-                    switchMainTab(link.getAttribute('data-tab'));
-                }
-            });
-        }
+    }
+    
+    // --- Gerenciador de Views Centralizado ---
+    function showView(viewIdToShow) {
+        console.log(`[showView] Tentando mostrar view: ${viewIdToShow}`);
+        const allViewIds = ['login-view', 'dashboard-view', 'student-detail-view'];
+        let found = false;
         
-        function toggleSidebar() {
-            appState.isSidebarCollapsed = !appState.isSidebarCollapsed;
-            console.log(`[toggleSidebar] Colapsada: ${appState.isSidebarCollapsed}`);
-            const sidebar = document.getElementById('app-sidebar');
-            sidebar.classList.toggle('collapsed', appState.isSidebarCollapsed);
-        }
-        
-        function switchMainTab(tabName) {
-            console.log("[switchMainTab] Trocando para aba principal:", tabName);
-            document.querySelectorAll('.sidebar-link').forEach(l => l.classList.toggle('active', l.getAttribute('data-tab') === tabName));
-            
-            const allSubViews = document.querySelectorAll('main > .view-container');
-            allSubViews.forEach(view => {
-                const isActive = view.id === `content-${tabName}`;
-                view.style.display = isActive ? 'block' : 'none';
-                if (isActive) {
-                    view.style.animation = 'none';
-                    view.offsetHeight; 
-                    view.style.animation = null; 
-                }
-            });
-            
-            window.scrollTo(0, 0);
-        }
-
-        // --- CÁLCULOS AUXILIARES ---
-        function parseNota(notaStr) {
-            if (notaStr === null || notaStr === undefined) return 0;
-            const str = String(notaStr).trim();
-            if (str === '') return 0;
-            const n = parseFloat(str.replace('R$', '').replace(/\s/g, '').replace(',', '.'));
-            return isNaN(n) ? 0 : n;
-        }
-
-        // [ORION] Helper para centralizar a busca de dados do aluno
-        function findDataByStudent(emailNormalizado, alunoNomeNormalizado) {
-            // Escalas
-            const escalas = Object.values(appState.escalas).map(e => {
-                const a = (e.alunos || []).find(x => x && 
-                    ((x.EmailHC && normalizeString(x.EmailHC) === emailNormalizado) || 
-                     (x.NomeCompleto && normalizeString(x.NomeCompleto) === alunoNomeNormalizado))
-                );
-                return a ? { nomeEscala: e.nomeAba || 'Escala', ...a } : null;
-            }).filter(Boolean); // Filtra nulos
-
-            // Faltas
-            const faltas = appState.ausenciasReposicoes.filter(f => f && 
-                ((f.EmailHC && normalizeString(f.EmailHC) === emailNormalizado) || 
-                 (f.NomeCompleto && normalizeString(f.NomeCompleto) === alunoNomeNormalizado))
-            );
-
-            // Notas Teóricas
-            const notasT = (appState.notasTeoricas.registros || []).find(n => n && 
-                ((n.EmailHC && normalizeString(n.EmailHC) === emailNormalizado) || 
-                 (n.NomeCompleto && normalizeString(n.NomeCompleto) === alunoNomeNormalizado))
-            );
-
-            // Notas Práticas
-            const notasP = Object.values(appState.notasPraticas).flatMap(p =>
-                (p.registros || []).filter(x => x && 
-                    ((x.EmailHC && normalizeString(x.EmailHC) === emailNormalizado) || 
-                     (x.NomeCompleto && normalizeString(x.NomeCompleto) === alunoNomeNormalizado))
-                ).map(i => ({ nomePratica: p.nomePratica, ...i }))
-            );
-
-            return { escalas, faltas, notasT, notasP };
-        }
-        
-        function calculateAveragesAndDistribution() {
-            const activeStudents = appState.alunos.filter(s => s.Status === 'Ativo');
-            const activeStudentMap = new Map();
-            activeStudents.forEach(s => {
-                if (s.EmailHC) activeStudentMap.set(normalizeString(s.EmailHC), s);
-                if (s.NomeCompleto) activeStudentMap.set(normalizeString(s.NomeCompleto), s);
-            });
-
-            // --- Teóricas (com filtro R2) ---
-            const tSums = {}; const tCounts = {};
-            if(appState.notasTeoricas?.registros){
-                appState.notasTeoricas.registros.forEach(r => {
-                    const rEmailNorm = normalizeString(r.EmailHC);
-                    const rNomeNorm = normalizeString(r.NomeCompleto);
-                    const student = activeStudentMap.get(rEmailNorm) || activeStudentMap.get(rNomeNorm);
-
-                    if(student && student.Curso !== 'Residência - 2º ano' && student.Curso !== 'Residência  - 2º ano'){
-                        Object.keys(r).forEach(k => {
-                            if(!['SerialNumber','NomeCompleto','EmailHC','Curso'].includes(k) && k.trim() !== ''){
-                                const n = parseNota(r[k]);
-                                if(n > 0){
-                                    tSums[k] = (tSums[k] || 0) + n;
-                                    tCounts[k] = (tCounts[k] || 0) + 1;
-                                }
-                            }
-                        });
-                    }
-                });
-            }
-            const tAvgs = {};
-            let oTSum = 0; let oTCount = 0;
-            Object.keys(tSums).forEach(k => { 
-                tAvgs[k] = tCounts[k] > 0 ? tSums[k] / tCounts[k] : 0; 
-                if (!k.toUpperCase().includes('MÉDIA')) {
-                    oTSum += (tSums[k] || 0);
-                    oTCount += (tCounts[k] || 0);
-                }
-            });
-            const oTAvg = oTCount > 0 ? oTSum / oTCount : 0;
-            
-            // --- Práticas (SEM filtro R2) ---
-            const pSums = {}; const pCounts = {};
-            let oPSum = 0; let oPCount = 0;
-            if(appState.notasPraticas && typeof appState.notasPraticas === 'object'){
-                Object.values(appState.notasPraticas).forEach(p => { 
-                    const pNome = p.nomePratica;
-                    if (!pSums[pNome]) { pSums[pNome] = 0; pCounts[pNome] = 0; }
-                    if(p && p.registros){
-                        p.registros.forEach(r => {
-                             const rEmailNorm = normalizeString(r.EmailHC);
-                             const rNomeNorm = normalizeString(r.NomeCompleto);
-                             const isActive = activeStudentMap.has(rEmailNorm) || activeStudentMap.has(rNomeNorm);
-                            if(r && isActive){
-                                const kM = Object.keys(r).find(k => /MÉDIA\s*\(NOTA FINAL\)[:]?/i.test(k)) || null;
-                                if(kM){
-                                    const n = parseNota(r[kM]);
-                                    if(n > 0){
-                                        pSums[pNome] += n;
-                                        pCounts[pNome]++;
-                                        oPSum += n;
-                                        oPCount++;
-                                    }
-                                }
-                            }
-                        });
-                    }
-                });
-            }
-            const pAvgs = {};
-            Object.keys(pSums).forEach(k => { pAvgs[k] = pCounts[k] > 0 ? pSums[k] / pCounts[k] : 0; });
-            const oPAvg = oPCount > 0 ? oPSum / oPCount : 0;
-            
-            // --- Distribuição (Todos os ativos) ---
-            const cCounts = activeStudents.reduce((acc,s) => { const c = s.Curso || 'Sem Curso'; acc[c] = (acc[c] || 0) + 1; return acc; }, {});
-            const tA = activeStudents.length;
-            const cDist = Object.entries(cCounts).map(([c,n]) => ({course: c, count: n, percentage: tA > 0 ? (n/tA)*100 : 0})).sort((a,b) => b.count - a.count);
-
-            return {
-                overallTheoreticalAvg: oTAvg, 
-                theoreticalAverages: tAvgs, 
-                overallPracticalAvg: oPAvg, 
-                practicalAverages: pAvgs, 
-                courseDistribution: cDist
-            };
-        }
-
-        // --- RENDERIZAÇÃO VIEW PRINCIPAL ---
-        function renderAtAGlance() {
-            try {
-                const tS = appState.alunos.length; 
-                const aS = appState.alunos.filter(s => s.Status === 'Ativo').length; 
-                const pR = appState.ausenciasReposicoes.filter(f => f && !f.DataReposicaoISO && (f.EmailHC || f.NomeCompleto)).length;
-                
-                const {
-                    overallTheoreticalAvg:oTAvg, 
-                    theoreticalAverages:tAvgs, 
-                    overallPracticalAvg:oPAvg, 
-                    practicalAverages:pAvgs, 
-                    courseDistribution:cDist
-                } = calculateAveragesAndDistribution();
-                
-                document.getElementById('kpi-total-students').textContent = tS;
-                document.getElementById('kpi-active-students').textContent = aS;
-                document.getElementById('kpi-pending-replacements').textContent = pR;
-                document.getElementById('kpi-avg-theoretical').textContent = oTAvg > 0 ? oTAvg.toFixed(1) : 'N/A';
-                document.getElementById('kpi-avg-practical').textContent = oPAvg > 0 ? oPAvg.toFixed(1) : 'N/A';
-                
-                renderCourseDistributionChart(cDist);
-                renderModuleAverages(tAvgs, pAvgs);
-            } catch (e) { console.error("[renderAtAGlance] Erro:", e); showError("Erro ao renderizar visão geral."); }
-        }
-        
-        function renderCourseDistributionChart(distribution) {
-             const c=document.getElementById('course-distribution-chart'); if(!distribution||distribution.length===0){c.innerHTML='<p class="text-slate-500 text-sm italic">S/ dados curso.</p>'; return;} 
-             const colors=['var(--accent-blue)', 'var(--accent-red)', 'var(--accent-green)', 'var(--accent-yellow)', '#a855f7', '#64748b']; 
-             let grad=''; let cum=0; const leg=[]; 
-             distribution.forEach((item,i)=>{const clr=colors[i%colors.length]; const s=cum; const e=cum+item.percentage; if(item.percentage>0){grad+=`, ${clr} ${s}% ${e}%`;} cum=e; leg.push(`<li><span class="legend-color-box" style="background-color:${clr};"></span>${item.course} (${item.count})</li>`);}); 
-             if(cum<100){grad+=`, #E5E9EF ${cum}% 100%`;} 
-             c.innerHTML=`<div class="donut-chart" style="--chart-segments:${grad.substring(1)};"></div><div class="donut-legend"><ul>${leg.join('')}</ul></div>`;
-        }
-        
-        function renderModuleAverages(tAvgs, pAvgs) {
-            const container = document.getElementById('module-averages-chart');
-            if (!container) return;
-            let html = '';
-            Object.entries(tAvgs)
-                .filter(([key]) => key.toUpperCase().includes('MÉDIA'))
-                .sort(([keyA], [keyB]) => keyA.localeCompare(keyB)) 
-                .forEach(([key, value]) => {
-                    if (value > 0) {
-                        html += `
-                        <div class="radial-card-small">
-                            <div class="radial-progress-small" style="--value:${value * 10}; --progress-color: var(--accent-orange);">
-                                <span class="radial-progress-small-value" style="color: var(--accent-orange);">${value.toFixed(1)}</span>
-                            </div>
-                            <div>
-                                <span class="radial-label">${key}</span>
-                                <span class="block text-xs text-slate-500">Média Teórica</span>
-                            </div>
-                        </div>
-                        `;
-                    }
-                });
-            Object.entries(pAvgs)
-                .sort(([keyA], [keyB]) => keyA.localeCompare(keyB)) 
-                .forEach(([key, value]) => {
-                    if (value > 0) {
-                        html += `
-                        <div class="radial-card-small">
-                            <div class="radial-progress-small" style="--value:${value * 10}; --progress-color: var(--accent-blue);">
-                                <span class="radial-progress-small-value" style="color: var(--accent-blue);">${value.toFixed(1)}</span>
-                            </div>
-                            <div>
-                                <span class="radial-label">${key}</span>
-                                <span class="block text-xs text-slate-500">Média Prática</span>
-                            </div>
-                        </div>
-                        `;
-                    }
-                });
-            if (html === '') {
-                container.innerHTML = '<p class="text-slate-500 text-sm italic col-span-full">Nenhuma média de módulo calculada para alunos ativos.</p>';
-                return;
-            }
-            container.innerHTML = html;
-        }
-
-        function renderRecentAbsences() {
-             try {
-                 const l=document.getElementById('recent-absences-list'); 
-                 if(!appState.ausenciasReposicoes||appState.ausenciasReposicoes.length===0){
-                     l.innerHTML='<li class="text-slate-500 italic p-2">Nenhum registro.</li>'; 
-                     return;
-                 } 
-                 const sorted=[...appState.ausenciasReposicoes]
-                     .filter(f => f.EmailHC || f.NomeCompleto) 
-                     .sort((a,b)=>{
-                         const dA=a.DataReposicaoISO||a.DataAusenciaISO; 
-                         const dB=b.DataReposicaoISO||b.DataAusenciaISO; 
-                         if(!dB)return -1; if(!dA)return 1; 
-                         return new Date(dB+'T00:00:00')-new Date(dA+'T00:00:00');
-                     }); 
-                
-                 l.innerHTML=sorted.slice(0,5).map(i=>{
-                     const al = appState.alunos.find(a => 
-                         (i.EmailHC && normalizeString(a.EmailHC) === normalizeString(i.EmailHC)) ||
-                         (i.NomeCompleto && normalizeString(a.NomeCompleto) === normalizeString(i.NomeCompleto))
-                     );
-                     const n = al ? al.NomeCompleto : (i.NomeCompleto || i.EmailHC); 
-                     const iP=!i.DataReposicaoISO; 
-                     const sB=iP?'<span class="badge badge-yellow ml-2">Pendente</span>':'<span class="badge badge-green ml-2">Reposto</span>'; 
-                     const dT=i.DataReposicaoISO||i.DataAusenciaISO; 
-                     const fD=dT?new Date(dT+'T00:00:00').toLocaleDateString('pt-BR'):'Data Indef.'; 
-                     return `<li class="text-xs"><div class="flex justify-between items-center mb-0.5"><span class="font-semibold text-slate-700 truncate pr-2" title="${n}">${n}</span><span class="text-slate-500 text-[11px] flex-shrink-0">${fD}</span></div><div class="flex justify-between items-center"><span class="text-slate-500 truncate pr-2" title="${i.Motivo||''}">${iP?'Ausência':'Reposição'} (${i.Local||'N/A'})</span>${sB}</div></li>`;
-                 }).join('');
-             } catch(e) { console.error("[renderRecentAbsences] Erro:", e); showError("Erro ao renderizar registros recentes."); }
-        }
-        
-        function findActiveScale() {
-             for(const n in appState.escalas){const e=appState.escalas[n]; if(e.headersDay?.includes(appState.todayBR))return e;} console.warn(`Nenhuma escala hoje (${appState.todayBR})`); return null;
-        }
-        
-        function renderTabPonto() {
-            try {
-                const p=document.getElementById('frequency-panel'); const kS=document.getElementById('kpi-scaled'); const kP=document.getElementById('kpi-present'); const kA=document.getElementById('kpi-absent'); 
-                
-                if (!p || !kS || !kP || !kA) {
-                    console.warn("[renderTabPonto] Painel de frequência não encontrado. Pulando renderização.");
-                    return;
-                }
-                
-                const s=findActiveScale(); 
-                if(!s){
-                    p.innerHTML=`<p class="text-slate-500 italic text-sm">Nenhuma escala hoje (${appState.todayBR}).</p>`; 
-                    kS.textContent='0'; kP.textContent='0'; kA.textContent='0'; return;
-                } 
-                
-                const present=[]; const absent=[]; let scaled=0; 
-                s.alunos.forEach(ae=>{
-                    const d=ae.dias.find(x=>x.dataColuna===appState.todayBR); 
-                    if(d?.status&&d.status!=='folga'&&d.status!=='ausencia' && d.status.toLowerCase().indexOf('descanso') === -1){
-                        scaled++; 
-                        const ai = appState.alunos.find(a => 
-                            (a.EmailHC && normalizeString(a.EmailHC) === normalizeString(ae.EmailHC)) ||
-                            (a.NomeCompleto && normalizeString(a.NomeCompleto) === normalizeString(ae.NomeCompleto))
-                        ) || ae;
-                        
-                        const pi=appState.pontoHojeMap.get(ai.EmailHC); 
-                        if(pi)present.push({...ai,HoraEntrada:pi.HoraEntrada,StatusEscala:d.status}); 
-                        else absent.push({...ai,StatusEscala:d.status});
-                    }
-                }); 
-                
-                kS.textContent=scaled; kP.textContent=present.length; kA.textContent=absent.length; 
-                p.innerHTML=`<div><h3 class="text-green-700">Presentes (${present.length})</h3><ul class="mt-2 text-xs text-slate-600 space-y-1.5">${present.length>0?present.map(s=>`<li class="flex justify-between items-center"><span class="truncate pr-2" title="${s.NomeCompleto}">${s.NomeCompleto}</span><span class="badge badge-green flex-shrink-0">${s.HoraEntrada}</span></li>`).join(''):'<li class="text-slate-400 italic">Nenhum.</li>'}</ul></div> <div class="mt-4"><h3 class="text-red-700">Ausentes (${absent.length})</h3><ul class="mt-2 text-xs text-slate-600 space-y-1.5">${absent.length>0?absent.map(s=>`<li class="flex justify-between items-center"><span class="truncate pr-2" title="${s.NomeCompleto}">${s.NomeCompleto}</span><span class="badge badge-red flex-shrink-0" title="Escala: ${s.StatusEscala}">Ausente</span></li>`).join(''):'<li class="text-slate-400 italic">Nenhum.</li>'}</ul></div>`;
-            } catch (e) { console.error("[renderTabPonto] Erro:", e); showError("Erro ao calcular frequência."); }
-        }
-        
-        function renderStudentList(students) {
-             try {
-                 const panel = document.getElementById('student-list-panel'); 
-                 if (!panel) return;
-                 
-                 if (!students || students.length === 0) { panel.innerHTML = '<p class="text-slate-500 p-6 text-center">Nenhum aluno.</p>'; return; } 
-                 
-                 const grouped = students.reduce((acc, s) => { const c = s.Curso || 'Sem Curso'; if (!acc[c]) acc[c] = []; acc[c].push(s); return acc; }, {}); 
-                 const courses = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
-                 
-                 let html = ''; 
-                 courses.forEach(c => { 
-                     html += `<div class="student-group" data-course="${c}"><h3 class="student-group-header">${c} (${grouped[c].length})</h3><div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-1">`; 
-                     
-                     grouped[c].sort((a,b) => a.NomeCompleto.localeCompare(b.NomeCompleto)).forEach(s => { 
-                         const img = s.FotoID ? `https://lh3.googleusercontent.com/d/${s.FotoID}=s96-c` : 'https://placehold.co/60x60/e2e8f0/64748b?text=?'; 
-                         const inactive = s.Status !== 'Ativo'; 
-                         const inactiveClass = inactive ? 'inactive-card' : ''; 
-                         const inactiveBadge = inactive ? '<span class="badge badge-red inactive-badge">Inativo</span>' : ''; 
-                         
-                         // [ORION] Removido 'onclick' do HTML.
-                         html += `<div class="student-card ${inactiveClass}" data-student-email="${s.EmailHC}" data-student-name="${normalizeString(s.NomeCompleto)}">
-                                      ${inactiveBadge}
-                                      <img src="${img}" alt="Foto" onerror="this.src='https://placehold.co/60x60/e2e8f0/64748b?text=?'">
-                                      <p class="student-name">${s.NomeCompleto}</p>
-                                      <p class="student-course mt-0.5">${s.Curso}</p>
-                                  </div>`; 
-                     }); 
-                     html += `</div></div>`; 
-                 }); 
-                 panel.innerHTML = html;
-             } catch (e) { console.error("[renderStudentList] Erro:", e); showError("Erro ao renderizar lista de alunos."); }
-        }
-
-        function filterStudentList(e) {
-            const q = normalizeString(e.target.value);
-            const groups = document.querySelectorAll('.student-group');
-            let hasVisible = false;
-            
-            groups.forEach(g => {
-                const cards = g.querySelectorAll('.student-card');
-                const header = g.querySelector('.student-group-header');
-                let groupVisible = false;
-                
-                cards.forEach(c => {
-                    const nameElem = c.querySelector('.student-name');
-                    const name = c.getAttribute('data-student-name'); 
-                    const originalName = nameElem.textContent; 
+        allViewIds.forEach(id => {
+            const view = document.getElementById(id);
+            if (view) {
+                let displayStyle = 'none';
+                if (view.id === viewIdToShow) {
+                    displayStyle = (id === 'dashboard-view' || id === 'login-view') ? 'flex' : 'block';
                     
-                    if (q === '' || name.includes(q)) {
-                        c.classList.remove('hidden');
-                        groupVisible = true;
-                        hasVisible = true;
-                        if (q !== '') {
-                            try {
-                                const regex = new RegExp(`(${q.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi');
-                                nameElem.innerHTML = originalName.replace(regex, '<span class="highlight">$1</span>');
-                            } catch (err) {
-                                nameElem.innerHTML = originalName; 
+                    view.style.animation = 'none';
+                    view.offsetHeight;
+                    view.style.animation = null; 
+                    found = true;
+                }
+                view.style.display = displayStyle;
+            }
+        });
+
+        if (!found) {
+            console.error(`[showView] View com ID "${viewIdToShow}" não encontrada!`);
+        }
+    }
+
+    // --- INICIALIZAÇÃO E CARGA DE DADOS ---
+    async function initDashboard() {
+        console.log('[initDashboard] Iniciando Dashboard...');
+        try {
+            showLoading(true);
+            await fetchAllData();
+            await fetchPontoHoje(); 
+
+            console.log('[initDashboard] Dados carregados, iniciando renderização inicial...');
+            renderStudentList(appState.alunos);
+            renderAtAGlance(); // Inclui renderModuleAverages()
+            renderRecentAbsences();
+            renderTabPonto(); // Renderiza a aba Ponto (que agora tem conteúdo)
+
+            console.log('[initDashboard] Renderização inicial completa.');
+            
+            switchMainTab('dashboard'); 
+            
+            document.querySelector('#dashboard-view').style.opacity = '1';
+            showLoading(false);
+
+            // [ORION] Atualiza o ponto a cada 30 segundos
+            setInterval(fetchPontoHoje, 30000); 
+            console.log("[initDashboard] Inicialização completa. Live update iniciado.");
+        } catch (error) {
+            const errorMessage = error.message || "Erro desconhecido";
+            // [ORION] Se a inicialização falhar (ex: token expirado), força o logout.
+            console.error(`[initDashboard] Falha Crítica na Inicialização: ${errorMessage}`);
+            showError(`Falha Crítica na Inicialização: ${errorMessage}. Faça login novamente.`);
+            sessionStorage.removeItem('authToken');
+            showLoading(false);
+            showView('login-view');
+        }
+    }
+    
+    function setupEventHandlers() {
+        console.log('[setupEventHandlers] Configurando listeners...');
+        // Modificado para o ID correto do input de senha
+        document.getElementById('login-form').addEventListener('submit', handleLogin);
+        setupSidebarNavigation();
+        document.getElementById('sidebar-toggle').addEventListener('click', toggleSidebar); 
+        document.getElementById('back-to-dashboard').addEventListener('click', showAlunosList);
+        document.getElementById('search-student').addEventListener('input', filterStudentList);
+        setupStudentTabNavigation();
+
+        // [ORION] Event Delegation para os cards de aluno
+        document.getElementById('student-list-panel').addEventListener('click', (e) => {
+            const card = e.target.closest('.student-card');
+            if (card) {
+                const email = card.getAttribute('data-student-email');
+                if (email) {
+                    showStudentDetail(email);
+                }
+            }
+        });
+
+        // Event listener para as sub-abas (delegado ao #tab-notas-p)
+        document.getElementById('tab-notas-p').addEventListener('click', (e) => {
+            const button = e.target.closest('.subnav-button');
+            if (button && !button.classList.contains('active')) {
+                const tabId = button.getAttribute('data-subtab-id');
+                switchStudentSubTab(tabId);
+            }
+        });
+
+        // [ORION] Event Delegation para botões Gemini (caso existam múltiplos)
+        document.getElementById('student-tabs-content').addEventListener('click', (e) => {
+                const button = e.target.closest('.gemini-analysis-button');
+                if(button) {
+                const comment = button.getAttribute('data-comment');
+                handleAnalisarComentario(button, comment);
+                }
+        });
+
+        document.getElementById('gemini-modal-close').addEventListener('click', closeGeminiModal);
+        document.getElementById('gemini-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'gemini-modal') {
+                closeGeminiModal();
+            }
+        });
+        
+        // [ORION - NOVO] Listeners para o Calendário Pro
+        document.getElementById('tab-escala').addEventListener('click', (e) => {
+            // Botões de switcher de escala
+            const pill = e.target.closest('.escala-pill');
+            if (pill && !pill.classList.contains('active')) {
+                // Remove active de todos e adiciona neste
+                document.querySelectorAll('.escala-pill').forEach(p => p.classList.remove('active'));
+                pill.classList.add('active');
+                // Chama a função de renderização (que deve ser definida em renderTabEscala)
+                if (typeof window.renderEscalaCalendar === 'function') {
+                    window.renderEscalaCalendar(pill.getAttribute('data-scale-key'), pill.getAttribute('data-scale-name'));
+                }
+            }
+            // Botões de navegação de mês
+            const navBtn = e.target.closest('.nav-btn');
+            if (navBtn && typeof window.navigateEscalaCalendar === 'function') {
+                 window.navigateEscalaCalendar(navBtn.id === 'cal-next' ? 1 : -1);
+            }
+        });
+
+        console.log('[setupEventHandlers] Listeners configurados.');
+    }
+    
+    /**
+     * [ORION REFA TORADO V32.2 - MELHORIA DE ERRO]
+     * Lida com a submissão do formulário de login.
+     */
+    async function handleLogin(event) {
+        event.preventDefault(); 
+        console.log("[handleLogin] Tentativa de login...");
+
+        const email = document.getElementById('login-email').value;
+        const pass = document.getElementById('login-password').value; // ID correto
+        const errorBox = document.getElementById('login-error');
+        const loginButton = event.target.querySelector('button[type="submit"]');
+        const originalButtonText = loginButton.innerHTML;
+
+        loginButton.innerHTML = `
+            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Verificando...`;
+        loginButton.disabled = true;
+        errorBox.style.display = 'none';
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'text/plain',
+                },
+                body: JSON.stringify({
+                    action: 'login',
+                    email: email,
+                    password: pass
+                })
+            });
+
+            // [ORION] Etapa 1: Verificar se a resposta é OK.
+            if (!response.ok) {
+                // Erro de rede ou HTTP (4xx, 5xx)
+                throw new Error(`Erro de rede: ${response.status} ${response.statusText}`);
+            }
+
+            // [ORION] Etapa 2: Tentar ler como JSON.
+            // A falha que você viu (SyntaxError) acontece aqui.
+            const result = await response.json();
+            
+            // [ORION] Etapa 3: Verificar a lógica da API.
+            if (result.status === 'success' && result.token) {
+                console.log("[handleLogin] Login bem-sucedido. Token recebido.");
+                sessionStorage.setItem('authToken', result.token);
+                showView('dashboard-view');
+                initDashboard();
+            } else {
+                // Erro lógico (ex: senha errada)
+                console.warn("[handleLogin] Falha no login:", result.message);
+                showError(result.message || 'Credenciais inválidas.', true);
+            }
+
+        } catch (error) {
+            // [ORION] CORREÇÃO: Mostrar o erro real (ex: 'SyntaxError...')
+            // em vez da mensagem genérica.
+            console.error('Erro na tentativa de login:', error);
+            let userMessage = `Falha na conexão: ${error.message}`;
+            if (error instanceof SyntaxError) {
+                userMessage = "Erro crítico: A API retornou dados inválidos. Verifique o backend.";
+            }
+            showError(userMessage, true);
+        } finally {
+            loginButton.innerHTML = originalButtonText;
+            loginButton.disabled = false;
+        }
+    }
+
+    /**
+     * [ORION NOVO V32.1 - SEGURO]
+     * Função central para fazer requisições POST seguras para a API.
+     */
+    async function fetchApi(action) {
+        const token = sessionStorage.getItem('authToken');
+        if (!token) {
+            throw new Error("Sessão não encontrada. Faça login.");
+        }
+
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'text/plain',
+            },
+            body: JSON.stringify({
+                action: action,
+                token: token
+            })
+        });
+
+        if (!response.ok) {
+                throw new Error(`Erro de rede (${response.status}): ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        
+        if (!data.success && data.message) {
+            throw new Error(`Erro da API: ${data.message}`);
+        }
+        
+        if (!data.success) {
+            throw new Error(`Erro desconhecido da API ao buscar '${action}'.`);
+        }
+
+        return data;
+    }
+
+    /**
+     * [ORION REFA TORADO V32.1 - SEGURO]
+     * Busca todos os dados estáticos usando o token.
+     */
+    async function fetchAllData() {
+        console.log("[fetchAllData] Buscando dados estáticos (com token)...");
+        try {
+            const d = await fetchApi('getAll'); 
+            console.log("[fetchAllData] Dados estáticos recebidos:", d);
+            onStaticDataLoaded(d);
+        } catch (e) {
+            console.error("[fetchAllData] Erro detalhado:", e);
+            throw new Error(`Falha ao buscar dados estáticos: ${e.message}`);
+        }
+    }
+
+    function onStaticDataLoaded(data) {
+        appState.alunos = data.alunos || [];
+        appState.escalas = data.escalas || {};
+        appState.ausenciasReposicoes = data.ausenciasReposicoes || [];
+        appState.notasTeoricas = data.notasTeoricas || { registros: [] };
+        
+        const notasRaw = data.notasPraticas || {};
+        const normalized = Array.isArray(notasRaw)
+            ? notasRaw.reduce((acc, item, idx) => {
+                const name = item.nomeAba || item.nomePratica || `NotasPraticas${idx + 1}`;
+                acc[name] = { nomePratica: name, registros: item.registros || [] };
+                return acc;
+                }, {})
+            : Object.entries(notasRaw).reduce((acc, [key, val]) => {
+                acc[key] = { nomePratica: key, registros: val.registros || [] };
+                return acc;
+                }, {});
+
+        appState.notasPraticas = normalized;
+        console.log("[onStaticDataLoaded] Notas Práticas Normalizadas:", appState.notasPraticas);
+
+        appState.alunosMap.clear();
+        appState.alunos.forEach(a => { if(a && a.EmailHC) appState.alunosMap.set(a.EmailHC, a); });
+        
+        console.log("[onStaticDataLoaded] Dados estáticos processados.");
+    }
+
+    /**
+     * [ORION REFA TORADO V32.1 - SEGURO]
+     * Busca os dados de ponto do dia usando o token.
+     */
+    async function fetchPontoHoje() {
+        const timestampElem = document.getElementById('last-update-timestamp');
+        console.log(`[fetchPontoHoje] Buscando ponto (com token)...`);
+            try{
+            const d = await fetchApi('getPontoHoje');
+            console.log('[fetchPontoHoje] Ponto recebido:', d.hoje);
+            
+            appState.lastPontoUpdate = d.lastUpdate;
+            appState.pontoHojeMap.clear();
+            (d.hoje || []).forEach(p => { if(p && p.EmailHC) appState.pontoHojeMap.set(p.EmailHC, p); });
+            
+            renderTabPonto(); 
+            
+            if (timestampElem) { timestampElem.textContent = `Última att: ${new Date().toLocaleTimeString('pt-BR')}`; }
+            } catch(e){
+            console.warn('[fetchPontoHoje] Falha atualizar freq:', e.message);
+            if (timestampElem) { timestampElem.textContent = `Falha na att: ${new Date().toLocaleTimeString('pt-BR')}`; }
+            }
+    }
+
+    // --- NAVEGAÇÃO PRINCIPAL ---
+    // (Todas as funções de navegação, cálculos e renderização abaixo
+    // são IDÊNTICAS às do seu arquivo original)
+    // ---
+    
+    function setupSidebarNavigation() {
+        const sidebar = document.querySelector('#app-sidebar nav');
+        sidebar.addEventListener('click', (e) => {
+            const link = e.target.closest('.sidebar-link');
+            if (link) {
+                e.preventDefault();
+                switchMainTab(link.getAttribute('data-tab'));
+            }
+        });
+    }
+    
+    function toggleSidebar() {
+        appState.isSidebarCollapsed = !appState.isSidebarCollapsed;
+        console.log(`[toggleSidebar] Colapsada: ${appState.isSidebarCollapsed}`);
+        const sidebar = document.getElementById('app-sidebar');
+        sidebar.classList.toggle('collapsed', appState.isSidebarCollapsed);
+    }
+    
+    function switchMainTab(tabName) {
+        console.log("[switchMainTab] Trocando para aba principal:", tabName);
+        document.querySelectorAll('.sidebar-link').forEach(l => l.classList.toggle('active', l.getAttribute('data-tab') === tabName));
+        
+        const allSubViews = document.querySelectorAll('main > .view-container');
+        allSubViews.forEach(view => {
+            const isActive = view.id === `content-${tabName}`;
+            view.style.display = isActive ? 'block' : 'none';
+            if (isActive) {
+                view.style.animation = 'none';
+                view.offsetHeight; 
+                view.style.animation = null; 
+            }
+        });
+        
+        window.scrollTo(0, 0);
+    }
+
+    // --- CÁLCULOS AUXILIARES ---
+    function parseNota(notaStr) {
+        if (notaStr === null || notaStr === undefined) return 0;
+        const str = String(notaStr).trim();
+        if (str === '') return 0;
+        const n = parseFloat(str.replace('R$', '').replace(/\s/g, '').replace(',', '.'));
+        return isNaN(n) ? 0 : n;
+    }
+    
+    function calculateAveragesAndDistribution() {
+        const activeStudents = appState.alunos.filter(s => s.Status === 'Ativo');
+        const activeStudentMap = new Map();
+        activeStudents.forEach(s => {
+            if (s.EmailHC) activeStudentMap.set(normalizeString(s.EmailHC), s);
+            if (s.NomeCompleto) activeStudentMap.set(normalizeString(s.NomeCompleto), s);
+        });
+
+        // --- Teóricas (com filtro R2) ---
+        const tSums = {}; const tCounts = {};
+        if(appState.notasTeoricas?.registros){
+            appState.notasTeoricas.registros.forEach(r => {
+                const rEmailNorm = normalizeString(r.EmailHC);
+                const rNomeNorm = normalizeString(r.NomeCompleto);
+                const student = activeStudentMap.get(rEmailNorm) || activeStudentMap.get(rNomeNorm);
+
+                if(student && student.Curso !== 'Residência - 2º ano' && student.Curso !== 'Residência  - 2º ano'){
+                    Object.keys(r).forEach(k => {
+                        if(!['SerialNumber','NomeCompleto','EmailHC','Curso'].includes(k) && k.trim() !== ''){
+                            const n = parseNota(r[k]);
+                            if(n > 0){
+                                tSums[k] = (tSums[k] || 0) + n;
+                                tCounts[k] = (tCounts[k] || 0) + 1;
                             }
-                        } else {
-                            nameElem.innerHTML = originalName;
+                        }
+                    });
+                }
+            });
+        }
+        const tAvgs = {};
+        let oTSum = 0; let oTCount = 0;
+        Object.keys(tSums).forEach(k => { 
+            tAvgs[k] = tCounts[k] > 0 ? tSums[k] / tCounts[k] : 0; 
+            if (!k.toUpperCase().includes('MÉDIA')) {
+                oTSum += (tSums[k] || 0);
+                oTCount += (tCounts[k] || 0);
+            }
+        });
+        const oTAvg = oTCount > 0 ? oTSum / oTCount : 0;
+        
+        // --- Práticas (SEM filtro R2) ---
+        const pSums = {}; const pCounts = {};
+        let oPSum = 0; let oPCount = 0;
+        if(appState.notasPraticas && typeof appState.notasPraticas === 'object'){
+            Object.values(appState.notasPraticas).forEach(p => { 
+                const pNome = p.nomePratica;
+                if (!pSums[pNome]) { pSums[pNome] = 0; pCounts[pNome] = 0; }
+                if(p && p.registros){
+                    p.registros.forEach(r => {
+                            const rEmailNorm = normalizeString(r.EmailHC);
+                            const rNomeNorm = normalizeString(r.NomeCompleto);
+                            const isActive = activeStudentMap.has(rEmailNorm) || activeStudentMap.has(rNomeNorm);
+                        if(r && isActive){
+                            const kM = Object.keys(r).find(k => /MÉDIA\s*\(NOTA FINAL\)[:]?/i.test(k)) || null;
+                            if(kM){
+                                const n = parseNota(r[kM]);
+                                if(n > 0){
+                                    pSums[pNome] += n;
+                                    pCounts[pNome]++;
+                                    oPSum += n;
+                                    oPCount++;
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+        }
+        const pAvgs = {};
+        Object.keys(pSums).forEach(k => { pAvgs[k] = pCounts[k] > 0 ? pSums[k] / pCounts[k] : 0; });
+        const oPAvg = oPCount > 0 ? oPSum / oPCount : 0;
+        
+        // --- Distribuição (Todos os ativos) ---
+        const cCounts = activeStudents.reduce((acc,s) => { const c = s.Curso || 'Sem Curso'; acc[c] = (acc[c] || 0) + 1; return acc; }, {});
+        const tA = activeStudents.length;
+        const cDist = Object.entries(cCounts).map(([c,n]) => ({course: c, count: n, percentage: tA > 0 ? (n/tA)*100 : 0})).sort((a,b) => b.count - a.count);
+
+        return {
+            overallTheoreticalAvg: oTAvg, 
+            theoreticalAverages: tAvgs, 
+            overallPracticalAvg: oPAvg, 
+            practicalAverages: pAvgs, 
+            courseDistribution: cDist
+        };
+    }
+
+    // --- RENDERIZAÇÃO VIEW PRINCIPAL ---
+    function renderAtAGlance() {
+        try {
+            const tS = appState.alunos.length; 
+            const aS = appState.alunos.filter(s => s.Status === 'Ativo').length; 
+            const pR = appState.ausenciasReposicoes.filter(f => f && !f.DataReposicaoISO && (f.EmailHC || f.NomeCompleto)).length;
+            
+            const {
+                overallTheoreticalAvg:oTAvg, 
+                theoreticalAverages:tAvgs, 
+                overallPracticalAvg:oPAvg, 
+                practicalAverages:pAvgs, 
+                courseDistribution:cDist
+            } = calculateAveragesAndDistribution();
+            
+            document.getElementById('kpi-total-students').textContent = tS;
+            document.getElementById('kpi-active-students').textContent = aS;
+            document.getElementById('kpi-pending-replacements').textContent = pR;
+            document.getElementById('kpi-avg-theoretical').textContent = oTAvg > 0 ? oTAvg.toFixed(1) : 'N/A';
+            document.getElementById('kpi-avg-practical').textContent = oPAvg > 0 ? oPAvg.toFixed(1) : 'N/A';
+            
+            renderCourseDistributionChart(cDist);
+            renderModuleAverages(tAvgs, pAvgs);
+        } catch (e) { console.error("[renderAtAGlance] Erro:", e); showError("Erro ao renderizar visão geral."); }
+    }
+    
+    function renderCourseDistributionChart(distribution) {
+            const c=document.getElementById('course-distribution-chart'); if(!distribution||distribution.length===0){c.innerHTML='<p class="text-slate-500 text-sm italic">S/ dados curso.</p>'; return;} 
+            const colors=['var(--accent-blue)', 'var(--accent-red)', 'var(--accent-green)', 'var(--accent-yellow)', '#a855f7', '#64748b']; 
+            let grad=''; let cum=0; const leg=[]; 
+            distribution.forEach((item,i)=>{const clr=colors[i%colors.length]; const s=cum; const e=cum+item.percentage; if(item.percentage>0){grad+=`, ${clr} ${s}% ${e}%`;} cum=e; leg.push(`<li><span class="legend-color-box" style="background-color:${clr};"></span>${item.course} (${item.count})</li>`);}); 
+            if(cum<100){grad+=`, #E5E9EF ${cum}% 100%`;} 
+            c.innerHTML=`<div class="donut-chart" style="--chart-segments:${grad.substring(1)};"></div><div class="donut-legend"><ul>${leg.join('')}</ul></div>`;
+    }
+    
+    function renderModuleAverages(tAvgs, pAvgs) {
+        const container = document.getElementById('module-averages-chart');
+        if (!container) return;
+        let html = '';
+        Object.entries(tAvgs)
+            .filter(([key]) => key.toUpperCase().includes('MÉDIA'))
+            .sort(([keyA], [keyB]) => keyA.localeCompare(keyB)) 
+            .forEach(([key, value]) => {
+                if (value > 0) {
+                    html += `
+                    <div class="radial-card-small">
+                        <div class="radial-progress-small" style="--value:${value * 10}; --progress-color: var(--accent-orange);">
+                            <span class="radial-progress-small-value" style="color: var(--accent-orange);">${value.toFixed(1)}</span>
+                        </div>
+                        <div>
+                            <span class="radial-label">${key}</span>
+                            <span class="block text-xs text-slate-500">Média Teórica</span>
+                        </div>
+                    </div>
+                    `;
+                }
+            });
+        Object.entries(pAvgs)
+            .sort(([keyA], [keyB]) => keyA.localeCompare(keyB)) 
+            .forEach(([key, value]) => {
+                if (value > 0) {
+                    html += `
+                    <div class="radial-card-small">
+                        <div class="radial-progress-small" style="--value:${value * 10}; --progress-color: var(--accent-blue);">
+                            <span class="radial-progress-small-value" style="color: var(--accent-blue);">${value.toFixed(1)}</span>
+                        </div>
+                        <div>
+                            <span class="radial-label">${key}</span>
+                            <span class="block text-xs text-slate-500">Média Prática</span>
+                        </div>
+                    </div>
+                    `;
+                }
+            });
+        if (html === '') {
+            container.innerHTML = '<p class="text-slate-500 text-sm italic col-span-full">Nenhuma média de módulo calculada para alunos ativos.</p>';
+            return;
+        }
+        container.innerHTML = html;
+    }
+
+    function renderRecentAbsences() {
+            try {
+                const l=document.getElementById('recent-absences-list'); 
+                if(!appState.ausenciasReposicoes||appState.ausenciasReposicoes.length===0){
+                    l.innerHTML='<li class="text-slate-500 italic p-2">Nenhum registro.</li>'; 
+                    return;
+                } 
+                const sorted=[...appState.ausenciasReposicoes]
+                    .filter(f => f.EmailHC || f.NomeCompleto) 
+                    .sort((a,b)=>{
+                        const dA=a.DataReposicaoISO||a.DataAusenciaISO; 
+                        const dB=b.DataReposicaoISO||b.DataAusenciaISO; 
+                        if(!dB)return -1; if(!dA)return 1; 
+                        return new Date(dB+'T00:00:00')-new Date(dA+'T00:00:00');
+                    }); 
+            
+                l.innerHTML=sorted.slice(0,5).map(i=>{
+                    const al = appState.alunos.find(a => 
+                        (i.EmailHC && normalizeString(a.EmailHC) === normalizeString(i.EmailHC)) ||
+                        (i.NomeCompleto && normalizeString(a.NomeCompleto) === normalizeString(i.NomeCompleto))
+                    );
+                    const n = al ? al.NomeCompleto : (i.NomeCompleto || i.EmailHC); 
+                    const iP=!i.DataReposicaoISO; 
+                    const sB=iP?'<span class="badge badge-yellow ml-2">Pendente</span>':'<span class="badge badge-green ml-2">Reposto</span>'; 
+                    const dT=i.DataReposicaoISO||i.DataAusenciaISO; 
+                    const fD=dT?new Date(dT+'T00:00:00').toLocaleDateString('pt-BR'):'Data Indef.'; 
+                    return `<li class="text-xs"><div class="flex justify-between items-center mb-0.5"><span class="font-semibold text-slate-700 truncate pr-2" title="${n}">${n}</span><span class="text-slate-500 text-[11px] flex-shrink-0">${fD}</span></div><div class="flex justify-between items-center"><span class="text-slate-500 truncate pr-2" title="${i.Motivo||''}">${iP?'Ausência':'Reposição'} (${i.Local||'N/A'})</span>${sB}</div></li>`;
+                }).join('');
+            } catch(e) { console.error("[renderRecentAbsences] Erro:", e); showError("Erro ao renderizar registros recentes."); }
+    }
+    
+    function findActiveScale() {
+            for(const n in appState.escalas){const e=appState.escalas[n]; if(e.headersDay?.includes(appState.todayBR))return e;} console.warn(`Nenhuma escala hoje (${appState.todayBR})`); return null;
+    }
+    
+    function renderTabPonto() {
+        try {
+            const p=document.getElementById('frequency-panel'); const kS=document.getElementById('kpi-scaled'); const kP=document.getElementById('kpi-present'); const kA=document.getElementById('kpi-absent'); 
+            
+            if (!p || !kS || !kP || !kA) {
+                console.warn("[renderTabPonto] Painel de frequência não encontrado. Pulando renderização.");
+                return;
+            }
+            
+            const s=findActiveScale(); 
+            if(!s){
+                p.innerHTML=`<p class="text-slate-500 italic text-sm">Nenhuma escala hoje (${appState.todayBR}).</p>`; 
+                kS.textContent='0'; kP.textContent='0'; kA.textContent='0'; return;
+            } 
+            
+            const present=[]; const absent=[]; let scaled=0; 
+            s.alunos.forEach(ae=>{
+                const d=ae.dias.find(x=>x.dataColuna===appState.todayBR); 
+                if(d?.status&&d.status!=='folga'&&d.status!=='ausencia' && d.status.toLowerCase().indexOf('descanso') === -1){
+                    scaled++; 
+                    const ai = appState.alunos.find(a => 
+                        (a.EmailHC && normalizeString(a.EmailHC) === normalizeString(ae.EmailHC)) ||
+                        (a.NomeCompleto && normalizeString(a.NomeCompleto) === normalizeString(ae.NomeCompleto))
+                    ) || ae;
+                    
+                    const pi=appState.pontoHojeMap.get(ai.EmailHC); 
+                    if(pi)present.push({...ai,HoraEntrada:pi.HoraEntrada,StatusEscala:d.status}); 
+                    else absent.push({...ai,StatusEscala:d.status});
+                }
+            }); 
+            
+            kS.textContent=scaled; kP.textContent=present.length; kA.textContent=absent.length; 
+            p.innerHTML=`<div><h3 class="text-green-700">Presentes (${present.length})</h3><ul class="mt-2 text-xs text-slate-600 space-y-1.5">${present.length>0?present.map(s=>`<li class="flex justify-between items-center"><span class="truncate pr-2" title="${s.NomeCompleto}">${s.NomeCompleto}</span><span class="badge badge-green flex-shrink-0">${s.HoraEntrada}</span></li>`).join(''):'<li class="text-slate-400 italic">Nenhum.</li>'}</ul></div> <div class="mt-4"><h3 class="text-red-700">Ausentes (${absent.length})</h3><ul class="mt-2 text-xs text-slate-600 space-y-1.5">${absent.length>0?absent.map(s=>`<li class="flex justify-between items-center"><span class="truncate pr-2" title="${s.NomeCompleto}">${s.NomeCompleto}</span><span class="badge badge-red flex-shrink-0" title="Escala: ${s.StatusEscala}">Ausente</span></li>`).join(''):'<li class="text-slate-400 italic">Nenhum.</li>'}</ul></div>`;
+        } catch (e) { console.error("[renderTabPonto] Erro:", e); showError("Erro ao calcular frequência."); }
+    }
+    
+    function renderStudentList(students) {
+            try {
+                const panel = document.getElementById('student-list-panel'); 
+                if (!panel) return;
+                
+                if (!students || students.length === 0) { panel.innerHTML = '<p class="text-slate-500 p-6 text-center">Nenhum aluno.</p>'; return; } 
+                
+                const grouped = students.reduce((acc, s) => { const c = s.Curso || 'Sem Curso'; if (!acc[c]) acc[c] = []; acc[c].push(s); return acc; }, {}); 
+                const courses = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
+                
+                let html = ''; 
+                courses.forEach(c => { 
+                    html += `<div class="student-group" data-course="${c}"><h3 class="student-group-header">${c} (${grouped[c].length})</h3><div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-1">`; 
+                    
+                    grouped[c].sort((a,b) => a.NomeCompleto.localeCompare(b.NomeCompleto)).forEach(s => { 
+                        const img = s.FotoID ? `https://lh3.googleusercontent.com/d/${s.FotoID}=s96-c` : 'https://placehold.co/60x60/e2e8f0/64748b?text=?'; 
+                        const inactive = s.Status !== 'Ativo'; 
+                        const inactiveClass = inactive ? 'inactive-card' : ''; 
+                        const inactiveBadge = inactive ? '<span class="badge badge-red inactive-badge">Inativo</span>' : ''; 
+                        
+                        html += `<div class="student-card ${inactiveClass}" data-student-email="${s.EmailHC}" data-student-name="${normalizeString(s.NomeCompleto)}">
+                                    ${inactiveBadge}
+                                    <img src="${img}" alt="Foto" onerror="this.src='https://placehold.co/60x60/e2e8f0/64748b?text=?'">
+                                    <p class="student-name">${s.NomeCompleto}</p>
+                                    <p class="student-course mt-0.5">${s.Curso}</p>
+                                </div>`; 
+                    }); 
+                    html += `</div></div>`; 
+                }); 
+                panel.innerHTML = html;
+            } catch (e) { console.error("[renderStudentList] Erro:", e); showError("Erro ao renderizar lista de alunos."); }
+    }
+
+    function filterStudentList(e) {
+        const q = normalizeString(e.target.value);
+        const groups = document.querySelectorAll('.student-group');
+        let hasVisible = false;
+        
+        groups.forEach(g => {
+            const cards = g.querySelectorAll('.student-card');
+            const header = g.querySelector('.student-group-header');
+            let groupVisible = false;
+            
+            cards.forEach(c => {
+                const nameElem = c.querySelector('.student-name');
+                const name = c.getAttribute('data-student-name'); 
+                const originalName = nameElem.textContent; 
+                
+                if (q === '' || name.includes(q)) {
+                    c.classList.remove('hidden');
+                    groupVisible = true;
+                    hasVisible = true;
+                    if (q !== '') {
+                        try {
+                            const regex = new RegExp(`(${q.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi');
+                            nameElem.innerHTML = originalName.replace(regex, '<span class="highlight">$1</span>');
+                        } catch (err) {
+                            nameElem.innerHTML = originalName; 
                         }
                     } else {
-                        c.classList.add('hidden');
                         nameElem.innerHTML = originalName;
                     }
-                });
-                
-                if (header) {
-                    header.classList.toggle('hidden', !groupVisible);
+                } else {
+                    c.classList.add('hidden');
+                    nameElem.innerHTML = originalName;
                 }
             });
-
-            let msg = document.getElementById('no-search-results');
-            if (!hasVisible && q !== '') {
-                if (!msg) {
-                    msg = document.createElement('p');
-                    msg.id = 'no-search-results';
-                    msg.className = 'text-slate-500 p-6 text-center italic';
-                    document.getElementById('student-list-panel').appendChild(msg);
-                }
-                msg.textContent = `Nenhum aluno encontrado para "${e.target.value}".`;
-            } else if (msg) {
-                msg.remove();
+            
+            if (header) {
+                header.classList.toggle('hidden', !groupVisible);
             }
-        }
+        });
 
-        // --- NAVEGAÇÃO E RENDERIZAÇÃO VIEW DETALHE ALUNO ---
+        let msg = document.getElementById('no-search-results');
+        if (!hasVisible && q !== '') {
+            if (!msg) {
+                msg = document.createElement('p');
+                msg.id = 'no-search-results';
+                msg.className = 'text-slate-500 p-6 text-center italic';
+                document.getElementById('student-list-panel').appendChild(msg);
+            }
+            msg.textContent = `Nenhum aluno encontrado para "${e.target.value}".`;
+        } else if (msg) {
+            msg.remove();
+        }
+    }
+
+    // --- NAVEGAÇÃO E RENDERIZAÇÃO VIEW DETALHE ALUNO ---
+    
+    function showAlunosList() {
+        console.log("[showAlunosList] Voltando para a lista de alunos.");
+        showView('dashboard-view');
+        switchMainTab('alunos');
+        window.scrollTo(0, 0);
+    }
+
+    function setupStudentTabNavigation() {
+        const nav = document.getElementById('student-tabs-nav'); 
+        nav.addEventListener('click', (e) => { 
+            const button = e.target.closest('.tab-button');
+            if(button){
+                const tab = button.getAttribute('data-tab'); 
+                switchStudentTab(tab);
+            }
+        });
+    }
+    
+    function switchStudentTab(tabName) {
+        console.log(`Trocando para aba de detalhe: ${tabName}`);
+        document.querySelectorAll('#student-tabs-nav .tab-button').forEach(btn => {
+            btn.classList.toggle('active', btn.getAttribute('data-tab') === tabName);
+        });
+        document.querySelectorAll('#student-tabs-content .tab-content').forEach(content => {
+            const isActive = content.id === `tab-${tabName}`;
+            content.style.display = isActive ? 'block' : 'none';
+            content.classList.toggle('active', isActive);
+        });
+    }
+
+    function switchStudentSubTab(subTabId) {
+        console.log(`[switchStudentSubTab] Trocando para sub-aba: ${subTabId}`);
+        const subNavContainer = document.getElementById('student-detail-subnav-container');
+        const subContentContainer = document.getElementById('student-detail-subnav-content');
         
-        function showAlunosList() {
-            console.log("[showAlunosList] Voltando para a lista de alunos.");
-            showView('dashboard-view');
-            switchMainTab('alunos');
-            window.scrollTo(0, 0);
-        }
-
-        function setupStudentTabNavigation() {
-            const nav = document.getElementById('student-tabs-nav'); 
-            nav.addEventListener('click', (e) => { 
-                const button = e.target.closest('.tab-button');
-                if(button){
-                    const tab = button.getAttribute('data-tab'); 
-                    switchStudentTab(tab);
-                }
+        if (subNavContainer) {
+            subNavContainer.querySelectorAll('.subnav-button').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-subtab-id') === subTabId);
             });
         }
-        
-        function switchStudentTab(tabName) {
-            console.log(`Trocando para aba de detalhe: ${tabName}`);
-            document.querySelectorAll('#student-tabs-nav .tab-button').forEach(btn => {
-                btn.classList.toggle('active', btn.getAttribute('data-tab') === tabName);
-            });
-            document.querySelectorAll('#student-tabs-content .tab-content').forEach(content => {
-                const isActive = content.id === `tab-${tabName}`;
+        if (subContentContainer) {
+                subContentContainer.querySelectorAll('.sub-tab-content').forEach(content => {
+                const isActive = content.id === subTabId;
                 content.style.display = isActive ? 'block' : 'none';
                 content.classList.toggle('active', isActive);
             });
         }
-
-        function switchStudentSubTab(subTabId) {
-            console.log(`[switchStudentSubTab] Trocando para sub-aba: ${subTabId}`);
-            const subNavContainer = document.getElementById('student-detail-subnav-container');
-            const subContentContainer = document.getElementById('student-detail-subnav-content');
-            
-            if (subNavContainer) {
-                subNavContainer.querySelectorAll('.subnav-button').forEach(btn => {
-                    btn.classList.toggle('active', btn.getAttribute('data-subtab-id') === subTabId);
-                });
-            }
-            if (subContentContainer) {
-                 subContentContainer.querySelectorAll('.sub-tab-content').forEach(content => {
-                    const isActive = content.id === subTabId;
-                    content.style.display = isActive ? 'block' : 'none';
-                    content.classList.toggle('active', isActive);
-                });
-            }
-        }
-
-        function showStudentDetail(email) {
-            console.log(`[showStudentDetail] Exibindo detalhes para: ${email}`);
-             try {
-                const info = appState.alunosMap.get(email);
-                if (!info) {
-                    showError(`Aluno ${email} não encontrado no mapeamento.`);
-                    return;
-                }
-                const emailNormalizado = normalizeString(email);
-                const alunoNomeNormalizado = normalizeString(info.NomeCompleto); 
-                const { escalas, faltas, notasT, notasP } = findDataByStudent(emailNormalizado, alunoNomeNormalizado);
-                
-                console.groupCollapsed(`[Debug Dados] Aluno: ${info.NomeCompleto} (Email: ${email})`);
-                console.log("Info:", info);
-                console.log("Escalas:", escalas);
-                console.log("Faltas:", faltas);
-                console.log("Notas Teóricas:", notasT);
-                console.log("Notas Práticas:", notasP);
-                console.groupEnd();
-
-                renderStudentHeader(info);
-                renderStudentDetailKPIs(faltas, notasP);
-                renderTabInfo(info);
-                renderTabEscala(escalas);
-                renderTabFaltas(faltas);
-                renderTabNotasTeoricas(notasT); 
-                renderTabNotasPraticas(notasP); 
-
-                showView('student-detail-view');
-                switchStudentTab('info'); 
-                window.scrollTo(0, 0); 
-                console.log("[showStudentDetail] View de detalhe exibida.");
-             } catch (e) {
-                console.error("[showStudentDetail] Erro durante renderização:", e);
-                showError(`Erro ao exibir detalhes do aluno: ${e.message}`);
-                showView('dashboard-view'); 
-                switchMainTab('alunos');
-             }
-        }
-        
-        function renderStudentHeader(info) {
-             const p=document.getElementById('student-header'); const i=info.FotoID?`https://lh3.googleusercontent.com/d/${info.FotoID}=s160-c`:'https://placehold.co/80x80/e8eef7/475569?text=?'; const s=info.Status==='Ativo'?'badge-green':'badge-red'; 
-             p.innerHTML=`<img src="${i}" alt="Foto" onerror="this.src='https://placehold.co/80x80/e8eef7/475569?text=?'">
-                           <div class="flex-grow text-center sm:text-left mt-4 sm:mt-0">
-                               <h2 class="text-2xl lg:text-3xl font-bold text-slate-900">${info.NomeCompleto}</h2>
-                               <p class="text-base lg:text-lg text-slate-600 mt-1">${info.Curso}</p>
-                           </div>
-                           <div class="ml-auto flex-shrink-0 mt-4 sm:mt-0">
-                               <span class="badge ${s} text-base py-2 px-4">${info.Status}</span>
-                           </div>`;
-        }
-
-        function renderStudentDetailKPIs(faltas, notasP) {
-             const tF=faltas.length; 
-             const pF=faltas.filter(f=> f && !f.DataReposicaoISO).length; 
-             let mP=0; let countP = 0; 
-             if(notasP.length>0){
-                 let s=0; 
-                 notasP.forEach(n=>{
-                     const k=Object.keys(n).find(k => /MÉDIA\s*\(NOTA FINAL\)[:]?/i.test(k)) || null; 
-                     if(k){
-                         let v=parseNota(n[k]); 
-                         if(v>0){s+=v; countP++;}
-                     }
-                 }); 
-                 mP=countP>0?s/countP:0;
-             }
-             document.getElementById('kpi-total-faltas').textContent = tF;
-             document.getElementById('kpi-pendentes').textContent = pF;
-             document.getElementById('kpi-media-pratica').textContent = mP > 0 ? mP.toFixed(1) : 'N/A';
-             document.getElementById('kpi-modulos').textContent = `${countP}/${Object.keys(appState.notasPraticas).length}`;
-        }
-        
-        function renderTabInfo(info) {
-             const p=document.getElementById('tab-info'); p.innerHTML=`<dl class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6 text-sm"><div class="border-b border-slate-200 pb-3"><dt>Email</dt><dd>${info.EmailHC||'N/A'}</dd></div><div class="border-b border-slate-200 pb-3"><dt>Nascimento</dt><dd>${info.DataNascimento ? new Date(info.DataNascimento).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : 'N/A'}</dd></div><div class="border-b border-slate-200 pb-3"><dt>Sexo</dt><dd>${info.Sexo||'N/A'}</dd></div><div class="border-b border-slate-200 pb-3"><dt>Estado Civil</dt><dd>${info.EstadoCivil||'N/A'}</dd></div><div class="md:col-span-2 lg:col-span-1 border-b border-slate-200 pb-3"><dt>CREFITO</dt><dd>${info.Crefito||'N/A'}</dd></div></dl>`;
-        }
-        
-                        /* ===============================
-                [ESCALAS] Calendar Pro - Helpers
-                =============================== */
-
-                /** Normaliza string para comparações. */
-                function _esc_norm(s) {
-                return (s || '').toString().trim().toLowerCase()
-                    .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                }
-
-                /** Pega nome e email do aluno atualmente aberto na tela (do header e da aba Info). */
-                function _esc_getCurrentStudentKey() {
-                const nameEl = document.querySelector('#student-header h2');
-                const name = nameEl ? nameEl.textContent.trim() : null;
-
-                // procura <dt>Email</dt> e lê o irmão <dd>
-                let email = null;
-                document.querySelectorAll('#tab-info dl dt').forEach(dt => {
-                    if (_esc_norm(dt.textContent) === 'email') {
-                    const dd = dt.parentElement?.querySelector('dd');
-                    if (dd) email = dd.textContent.trim();
-                    }
-                });
-
-                return {
-                    name,
-                    email,
-                    normName: _esc_norm(name),
-                    normEmail: _esc_norm(email)
-                };
-                }
-
-                /** Transforma 'dd/mm' em Date, inferindo ano perto do mês atual (heurística ±7 meses). */
-                function _esc_parseDMInferYear(dm, refDate = new Date()) {
-                if (!dm || !/^\d{1,2}\/\d{1,2}$/.test(dm)) return null;
-                const [dStr, mStr] = dm.split('/');
-                const d = parseInt(dStr, 10);
-                const m = parseInt(mStr, 10); // 1..12
-
-                // Heurística de ano: aproxima do mês atual
-                const nowM = refDate.getMonth() + 1; // 1..12
-                const nowY = refDate.getFullYear();
-                let y = nowY;
-
-                const delta = m - nowM; // -11..+11
-                if (delta >= 7) y = nowY - 1;
-                else if (delta <= -7) y = nowY + 1;
-
-                const date = new Date(y, m - 1, d);
-                if (isNaN(date.getTime())) return null;
-                return date;
-                }
-
-                /** Formata ano-mês-dia (YYYY-MM-DD). */
-                function _esc_iso(d) {
-                const y = d.getFullYear();
-                const m = String(d.getMonth() + 1).padStart(2, '0');
-                const day = String(d.getDate()).padStart(2, '0');
-                return `${y}-${m}-${day}`;
-                }
-
-                /** Nome do mês PT-BR, capitalizado. */
-                function _esc_monthLabel(year, month0) {
-                const dt = new Date(year, month0, 1);
-                const name = dt.toLocaleString('pt-BR', { month: 'long' });
-                return name.charAt(0).toUpperCase() + name.slice(1) + ` ${year}`;
-                }
-
-                /** Gera todos os YYYY-MM dos dias da escala, ordenados e únicos. */
-                function _esc_collectYearMonths(days) {
-                const set = new Set();
-                days.forEach(d => {
-                    if (d._date instanceof Date) {
-                    set.add(`${d._date.getFullYear()}-${String(d._date.getMonth()+1).padStart(2,'0')}`);
-                    }
-                });
-                return Array.from(set).sort();
-                }
-
-                /** Divide “YYYY-MM” em {year, month0}. */
-                function _esc_splitYM(ym) {
-                const [y, m] = ym.split('-');
-                return { year: parseInt(y, 10), month0: parseInt(m, 10) - 1 };
-                }
-
-                /** Agrupa faltas/reposições para o aluno atual em conjuntos de datas ISO. */
-                function _esc_buildAbsMakeupSets() {
-                const { normEmail, normName } = _esc_getCurrentStudentKey();
-                const abs = new Set();
-                const mak = new Set();
-
-                (appState.ausenciasReposicoes || []).forEach(f => {
-                    const fMail = _esc_norm(f.EmailHC);
-                    const fName = _esc_norm(f.NomeCompleto);
-                    const isThis =
-                    (normEmail && fMail && normEmail === fMail) ||
-                    (normName && fName && normName === fName);
-
-                    if (!isThis) return;
-
-                    if (f.DataAusenciaISO) abs.add(f.DataAusenciaISO);
-                    if (f.DataReposicaoISO) mak.add(f.DataReposicaoISO);
-                });
-
-                return { abs, mak };
-                }
-
-                /** Verifica se é “presente” no dia atual via Ponto Hoje (somente hoje). */
-                function _esc_isPresentTodayIso(iso) {
-                const todayIso = new Date().toISOString().slice(0,10);
-                if (iso !== todayIso) return false;
-
-                const { normEmail } = _esc_getCurrentStudentKey();
-                let present = false;
-                // O map do ponto hoje tem chave EmailHC “exato”, então tente achar por email visível
-                if (appState.pontoHojeMap && appState.pontoHojeMap.size > 0) {
-                    for (const [key, val] of appState.pontoHojeMap.entries()) {
-                    if (_esc_norm(key) === normEmail) {
-                        present = true; break;
-                    }
-                    }
-                }
-                return present;
-                }
-
-                /** Cria elementos com classe utilitária. */
-                function _esc_el(tag, className, text) {
-                const el = document.createElement(tag);
-                if (className) el.className = className;
-                if (text !== undefined) el.textContent = text;
-                return el;
-                }
-
-                                /** ---------------------------------------------------------
-                 * Render: Aba Escala (calendário mensal + resumo lateral)
-                 * Drop-in: substitui a função renderTabEscala(escalas)
-                 * Depende apenas de: normalizeString (já existe) e Tailwind/CSS badge do seu app.
-                 * --------------------------------------------------------*/
-                function renderTabEscala(escalas) {
-                const root = document.getElementById('escala-heatmap-content');
-                if (!root) return;
-
-                // Sem escalas?
-                if (!Array.isArray(escalas) || escalas.length === 0) {
-                    root.innerHTML = `
-                    <div class="content-card p-6">
-                        <p class="text-slate-500 text-sm italic">Nenhuma escala encontrada para este(a) aluno(a).</p>
-                    </div>`;
-                    return;
-                }
-
-                // ---------- helpers ----------
-                const MONTH_NAMES_PT = [
-                    'Janeiro','Fevereiro','Março','Abril','Maio','Junho',
-                    'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'
-                ];
-                const WEEK_HEAD = ['DOM','SEG','TER','QUA','QUI','SEX','SÁB'];
-
-                // status -> rótulo e classe de cor (usando SUAS badges)
-                const STATUS_THEME = {
-                    presenca:  { label: 'Presença',  cls: 'badge badge-green'  },
-                    ausencia:  { label: 'Ausência',  cls: 'badge badge-red'    },
-                    reposicao: { label: 'Reposição', cls: 'badge badge-yellow' },
-                    folga:     { label: 'Folga',     cls: 'badge badge-gray'   },
-                    plantao:   { label: 'Plantão/Aula', cls: 'badge badge-gray' },
-                    vazio:     { label: 'Sem dado',  cls: 'badge badge-gray'   },
-                };
-
-                // normaliza o status retornado do backend para uma chave do STATUS_THEME
-                const normalizeStatusKey = (raw) => {
-                    if (!raw) return 'vazio';
-                    const s = String(raw).toLowerCase();
-                    if (s.includes('ausencia') || s.includes('ausência')) return 'ausencia';
-                    if (s.includes('reposição') || s.includes('reposicao')) return 'reposicao';
-                    if (s.includes('folga')) return 'folga';
-                    // Qualquer outra string '08h às 17h', 'Plantão', 'Aula', etc → tratamos como presença/plantão.
-                    // Se quiser separar plantão de presença, troque a linha abaixo para 'plantao'.
-                    return 'presenca';
-                };
-
-                // rótulo "Escala 1/2/3..." limpo
-                const labelEscala = (nome, idx) => {
-                    if (!nome) return `Escala ${idx + 1}`;
-                    const m = String(nome).match(/(\d+)/);
-                    return `Escala ${m ? m[1] : (idx + 1)}`;
-                };
-
-                // mapeia dias (dd/mm) → status
-                const buildDiaMap = (esc) => {
-                    const map = new Map();
-                    (esc.dias || []).forEach(d => {
-                    if (d && d.dataColuna) {
-                        map.set(d.dataColuna.trim(), d.status || null);
-                    }
-                    });
-                    return map;
-                };
-
-                // gera estrutura base da view
-                const containerId = 'escala-cal-root';
-                root.innerHTML = `
-                    <div class="content-card p-6 lg:p-8">
-                    <div class="flex flex-wrap items-center gap-2 mb-4" id="escala-switch"></div>
-
-                    <div class="flex flex-wrap items-center justify-between mb-4">
-                        <div class="flex items-center gap-2">
-                        <button id="escCalPrev" class="px-3 py-2 rounded-lg border hover:bg-slate-50 text-slate-600" title="Mês anterior">‹</button>
-                        <div id="escCalTitle" class="font-display font-bold text-lg text-slate-800"></div>
-                        <button id="escCalNext" class="px-3 py-2 rounded-lg border hover:bg-slate-50 text-slate-600" title="Próximo mês">›</button>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 lg:grid-cols-[1fr,320px] gap-6">
-                        <div>
-                        <div class="grid grid-cols-7 gap-2 mb-2 text-xs font-semibold text-slate-500">
-                            ${WEEK_HEAD.map(d => `<div class="text-center">${d}</div>`).join('')}
-                        </div>
-                        <div id="escCalGrid" class="grid grid-cols-7 gap-2"></div>
-
-                        <p class="text-[12px] text-slate-500 mt-4">
-                            Dica: passe o mouse (ou toque) nos chips para ver o detalhe do dia.
-                        </p>
-                        </div>
-
-                        <aside class="space-y-4">
-                        <div class="content-card p-4">
-                            <h4 class="text-sm font-display font-bold text-slate-700 mb-2">Resumo</h4>
-                            <dl class="grid grid-cols-2 gap-3 text-sm" id="escCalSummary">
-                            <!-- preenchido via JS -->
-                            </dl>
-                        </div>
-                        <div class="content-card p-4">
-                            <h4 class="text-sm font-display font-bold text-slate-700 mb-3">Legenda</h4>
-                            <ul class="space-y-2 text-sm">
-                            <li class="flex items-center gap-2"><span class="${STATUS_THEME.presenca.cls}"> </span> <span>Presença</span></li>
-                            <li class="flex items-center gap-2"><span class="${STATUS_THEME.ausencia.cls}"> </span> <span>Ausência</span></li>
-                            <li class="flex items-center gap-2"><span class="${STATUS_THEME.reposicao.cls}"> </span> <span>Reposição</span></li>
-                            <li class="flex items-center gap-2"><span class="${STATUS_THEME.folga.cls}"> </span> <span>Folga</span></li>
-                            <li class="flex items-center gap-2"><span class="${STATUS_THEME.vazio.cls}"> </span> <span>Sem dado</span></li>
-                            </ul>
-                        </div>
-                        </aside>
-                    </div>
-                    </div>
-                `;
-
-                // estado da view
-                let currentEscIdx = 0;
-                let viewYear  = (new Date()).getFullYear();
-                let viewMonth = (new Date()).getMonth(); // 0..11
-
-                // render chips de escala
-                const $switch = document.getElementById('escala-switch');
-                $switch.innerHTML = escalas.map((e, i) => `
-                    <button data-esc="${i}"
-                    class="px-3 py-2 rounded-full border font-medium text-sm
-                            ${i === 0 ? 'bg-blue-600 text-white border-blue-700' : 'bg-white text-slate-700 hover:bg-slate-50'}">
-                    ${labelEscala(e.nomeEscala || e.nomeAba || e.sheetName || '', i)}
-                    </button>
-                `).join('');
-
-                $switch.addEventListener('click', (ev) => {
-                    const btn = ev.target.closest('button[data-esc]');
-                    if (!btn) return;
-                    currentEscIdx = Number(btn.dataset.esc);
-                    // ativa visual
-                    [...$switch.querySelectorAll('button')].forEach((b, idx) => {
-                    b.className = `px-3 py-2 rounded-full border font-medium text-sm ${
-                        idx === currentEscIdx
-                        ? 'bg-blue-600 text-white border-blue-700'
-                        : 'bg-white text-slate-700 hover:bg-slate-50'
-                    }`;
-                    });
-                    drawCalendar();
-                });
-
-                // navegação de mês
-                document.getElementById('escCalPrev').onclick = () => {
-                    if (viewMonth === 0) { viewMonth = 11; viewYear--; } else { viewMonth--; }
-                    drawCalendar();
-                };
-                document.getElementById('escCalNext').onclick = () => {
-                    if (viewMonth === 11) { viewMonth = 0; viewYear++; } else { viewMonth++; }
-                    drawCalendar();
-                };
-
-                // desenha tudo
-                drawCalendar();
-
-                // -------------- desenhistas --------------
-                function drawCalendar() {
-                    const esc = escalas[currentEscIdx];
-                    const diaMap = buildDiaMap(esc);
-
-                    // título
-                    document.getElementById('escCalTitle').textContent = `${MONTH_NAMES_PT[viewMonth]} ${viewYear}`;
-
-                    // grade
-                    const $grid = document.getElementById('escCalGrid');
-                    $grid.innerHTML = '';
-
-                    const first = new Date(viewYear, viewMonth, 1);
-                    const firstW = first.getDay(); // 0..6 (domingo)
-                    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-
-                    // “vazios” antes do dia 1
-                    for (let i = 0; i < firstW; i++) {
-                    $grid.appendChild(emptyCell());
-                    }
-
-                    // dias do mês
-                    let counters = { presenca:0, ausencia:0, reposicao:0, folga:0, vazio:0 };
-
-                    for (let day = 1; day <= daysInMonth; day++) {
-                    const dd = String(day).padStart(2, '0');
-                    const mm = String(viewMonth + 1).padStart(2, '0');
-                    const ddmm = `${dd}/${mm}`;
-
-                    const raw = diaMap.get(ddmm) || null;
-                    const key = normalizeStatusKey(raw);
-                    counters[key] = (counters[key] || 0) + 1;
-
-                    $grid.appendChild(dayCell(day, key, raw));
-                    }
-
-                    // completa a última linha (opcional, só estética)
-                    const totalCells = firstW + daysInMonth;
-                    const rest = (7 - (totalCells % 7)) % 7;
-                    for (let i = 0; i < rest; i++) {
-                    $grid.appendChild(emptyCell());
-                    }
-
-                    drawSummary(counters);
-                }
-
-                function emptyCell() {
-                    const div = document.createElement('div');
-                    div.className = 'rounded-xl border border-slate-200 bg-white h-24';
-                    return div;
-                }
-
-                function dayCell(n, key, raw) {
-                    const div = document.createElement('div');
-                    div.className = 'rounded-xl border border-slate-200 bg-white h-24 p-2 flex flex-col';
-
-                    const head = document.createElement('div');
-                    head.className = 'flex items-center justify-between text-[11px] text-slate-500 mb-1';
-                    head.innerHTML = `<span class="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-slate-100 font-semibold text-slate-700">${n}</span>`;
-                    div.appendChild(head);
-
-                    // chip de status
-                    const chip = document.createElement('span');
-                    const theme = STATUS_THEME[key] || STATUS_THEME.vazio;
-                    chip.className = `${theme.cls} !text-[11px] !px-2 !py-[2px] inline-block mt-auto max-w-full truncate`;
-                    chip.title = raw ? String(raw) : theme.label;
-                    chip.textContent = (key === 'presenca' && raw && !/presença/i.test(raw))
-                    ? String(raw)         // mostra "08h às 17h", "Aula", etc
-                    : theme.label;        // caso contrário, rótulo padrão
-                    div.appendChild(chip);
-
-                    return div;
-                }
-
-                function drawSummary(c) {
-                    // Escalados = Presença (dias de trabalho) + Reposição (dias trabalhados como reposição)
-                    const escalados = (c.presenca || 0) + (c.reposicao || 0);
-                    const html = `
-                    <div>
-                        <dt class="text-slate-500">Escalados</dt>
-                        <dd class="font-display text-xl text-slate-800">${escalados}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-slate-500">Presenças</dt>
-                        <dd class="font-display text-xl text-slate-800">${c.presenca || 0}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-slate-500">Ausências</dt>
-                        <dd class="font-display text-xl text-slate-800">${c.ausencia || 0}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-slate-500">Reposições</dt>
-                        <dd class="font-display text-xl text-slate-800">${c.reposicao || 0}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-slate-500">Folgas</dt>
-                        <dd class="font-display text-xl text-slate-800">${c.folga || 0}</dd>
-                    </div>
-                    `;
-                    document.getElementById('escCalSummary').innerHTML = html;
-                }
-                }       
-        function renderTabFaltas(faltas) {
-             const c=document.getElementById('faltas-content'); if(!faltas||faltas.length===0){c.innerHTML='<p class="text-slate-500 p-6 text-sm italic">Nenhum registro de falta.</p>'; return;} const h=`<table class="min-w-full"><thead><tr><th class="text-left">Status</th><th class="text-left">Ausência</th><th class="text-left">Reposição</th><th class="text-left">Local</th><th class="text-left">Motivo</th></tr></thead><tbody class="bg-white">${faltas.map(f=>{const iP=!f.DataReposicaoISO; const sB=iP?'<span class="badge badge-yellow">Pendente</span>':'<span class="badge badge-green">Completa</span>'; const dA=f.DataAusenciaISO?new Date(f.DataAusenciaISO+'T00:00:00').toLocaleDateString('pt-BR', {timeZone: 'UTC'}):'-'; const dR=f.DataReposicaoISO?new Date(f.DataReposicaoISO+'T00:00:00').toLocaleDateString('pt-BR', {timeZone: 'UTC'}):'-'; const mS=f.Motivo?(f.Motivo.length>40?f.Motivo.substring(0,40)+'...':f.Motivo):'-'; return `<tr><td>${sB}</td><td>${dA}</td><td>${dR}</td><td>${f.Local||'-'}</td><td title="${f.Motivo||''}">${mS}</td></tr>`;}).join('')}</tbody></table>`; c.innerHTML = h;
-        }
-
-        function renderTabNotasTeoricas(notas) {
-            console.log('[renderTabNotasTeoricas] Dados recebidos:', notas);
-            const p = document.getElementById('notas-t-content-wrapper');
-
-            if (!notas || typeof notas !== 'object' || Object.keys(notas).length === 0) {
-                p.innerHTML = '<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhum registro de notas teóricas encontrado.</p></div>';
-                return;
-            }
-
-            const mediaGroups = {
-                'Média - Fisio1': ['Anatomopatologia', 'Sub/Anatomopatologia', 'Bases', 'Sub/Bases', 'Doenças Pulmonares', 'Doenças Cardíacas', 'Proc. Cirurgico', 'Avaliação', 'Sub/Avaliacao', 'VM', 'Sub/VM'],
-                'Média - Fisio2': ['Técnicas e Recursos', 'Diag. Imagem'],
-                'Média - Fisio3': ['Fisio aplicada', 'UTI'],
-                'Média - Fisio4': ['Pediatria', 'Mobilização', 'Reab. Pulmonar'],
-                'Outras': ['M. Cientifica', 'Saúde e politicas', 'Farmacoterapia', 'Bioética']
-            };
-
-            let html = '';
-            const mediaKeys = Object.keys(notas).filter(k => k.toUpperCase().includes('MÉDIA'));
-            
-            if (mediaGroups.Outras.some(m => notas[m] && parseNota(notas[m]) > 0)) {
-                 mediaKeys.push('Outras');
-            }
-
-            if (mediaKeys.length === 0 && !mediaGroups.Outras.some(m => notas[m] && parseNota(notas[m]) > 0)) {
-                 p.innerHTML = '<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhuma nota ou média encontrada neste registro.</p></div>';
-                 return;
-            }
-
-            mediaKeys.forEach(key => {
-                const mediaValue = parseNota(notas[key]);
-                const materias = (mediaGroups[key] || []);
-                
-                let detailsHtml = '';
-                let hasDetails = false;
-                
-                materias.forEach(materia => {
-                    if (notas[materia] !== null && notas[materia] !== undefined && String(notas[materia]).trim() !== '') {
-                        const notaMateria = parseNota(notas[materia]);
-                        if (notaMateria > 0 || String(notas[materia]).trim() !== '') { 
-                            detailsHtml += `<li><span class="score-label">${materia}</span><span class="score-value">${notaMateria.toFixed(1)}</span></li>`;
-                            hasDetails = true;
-                        }
-                    }
-                });
-                
-                if (mediaValue > 0 || hasDetails) {
-                     html += `
-                        <div class="content-card p-5 radial-card">
-                            <div class="flex-shrink-0">
-                                <div class="radial-progress" style="--value:${mediaValue * 10};">
-                                    <span class="radial-progress-value">${mediaValue > 0 ? mediaValue.toFixed(1) : 'N/A'}</span>
-                                </div>
-                            </div>
-                            <div class="flex-grow">
-                                <h4 class="text-base font-bold text-slate-800">${key}</h4>
-                                <p class="text-sm text-slate-500 mt-1">Notas do módulo teórico</p>
-                                ${hasDetails ? `
-                                <details class="mt-3 group">
-                                    <summary class="details-toggle list-none">
-                                        <span>Ver detalhes</span>
-                                        <svg class="transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-                                    </summary>
-                                    <div class="details-content">
-                                        <ul class="details-scores-list">
-                                            ${detailsHtml}
-                                        </ul>
-                                    </div>
-                                </details>
-                                ` : ''}
-                            </div>
-                        </div>
-                    `;
-                }
+    }
+
+    /**
+     * [ORION] Função robusta para encontrar dados (do seu arquivo)
+     */
+    function findDataByStudent(emailNormalizado, alunoNomeNormalizado) {
+        emailNormalizado = normalizeString(emailNormalizado || '');
+        alunoNomeNormalizado = normalizeString(alunoNomeNormalizado || '');
+
+        // --- Escalas ---
+        const escalasEncontradas = [];
+        try {
+            const escalasObj = appState.escalas || {};
+            Object.keys(escalasObj).forEach(escKey => {
+            const esc = escalasObj[escKey];
+            if (!esc || !Array.isArray(esc.alunos)) return;
+
+            const alunoLinha = (esc.alunos || []).find(a => {
+                if (!a) return false;
+                const aEmail = normalizeString(a.EmailHC || '');
+                const aNome  = normalizeString(a.NomeCompleto || '');
+                return (emailNormalizado && aEmail === emailNormalizado) || (alunoNomeNormalizado && aNome === alunoNomeNormalizado);
             });
 
-            p.innerHTML = html || '<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhuma nota válida encontrada para exibir.</p></div>';
-        }
-
-        function calculatePracticeSummary(notasP) {
-            let overallSum = 0;
-            let overallCount = 0;
-            const competency = {
-                raciocinio: { sum: 0, count: 0 },
-                tecnica: { sum: 0, count: 0 },
-                profissionalismo: { sum: 0, count: 0 }
-            };
-            const last5Notes = [];
-            const map = {
-                raciocinio: [/1\.\s*CAPACIDADE DE AVALIAÇÃO/i, /2\.\s*PLANEJAMENTO E ORGANIZAÇÃO/i, /4\.\s*HABILIDADE DE ASSOCIAÇÃO/i],
-                tecnica: [/3\.\s*HABILIDADE NA EXECUÇÃO/i],
-                profissionalismo: [/5\.\s*HABILIDADE NO USO DE TERMOS/i, /8\.\s*COMUNICAÇÃO INTERPROFISSIONAL/i, /9\.\s*RELACIONAMENTO/i, /4\.\s*COMPORTAMENTO ÉTICO/i, /1\.\s*INICIATIVA/i, /2\.\s*INTERESSE/i, /3\.\s*RESPONSABILIDADE/i]
-            };
-            const sortedNotasP = [...notasP].sort((a, b) => {
-                const dateA = a['Data/Hora'] ? new Date(String(a['Data/Hora']).replace(/-/g,'/')) : new Date(0);
-                const dateB = b['Data/Hora'] ? new Date(String(b['Data/Hora']).replace(/-/g,'/')) : new Date(0);
-                return dateA - dateB; 
-            });
-            sortedNotasP.forEach(n => {
-                const kM = Object.keys(n).find(k => /MÉDIA\s*\(NOTA FINAL\)[:]?/i.test(k)) || null;
-                const media = parseNota(n[kM]);
-                if (media > 0) {
-                    overallSum += media;
-                    overallCount++;
-                    last5Notes.push({ label: n.nomePratica, value: media });
-                }
-                Object.keys(n).forEach(key => {
-                    const val = parseNota(n[key]);
-                    if (val > 0) {
-                        if (map.raciocinio.some(regex => regex.test(key))) {
-                            competency.raciocinio.sum += val;
-                            competency.raciocinio.count++;
-                        } else if (map.tecnica.some(regex => regex.test(key))) {
-                            competency.tecnica.sum += val;
-                            competency.tecnica.count++;
-                        } else if (map.profissionalismo.some(regex => regex.test(key))) {
-                            competency.profissionalismo.sum += val;
-                            competency.profissionalismo.count++;
-                        }
-                    }
+            if (alunoLinha) {
+                escalasEncontradas.push({
+                nomeEscala: esc.nomeEscala || escKey,
+                nomeAba: escKey,
+                Supervisor: (alunoLinha.Supervisor || esc.Supervisor || ''),
+                Unidade: (alunoLinha.Unidade || esc.Unidade || ''),
+                headersDay: esc.headersDay || (esc.dias ? esc.dias.map(d=>d.dataColuna) : []),
+                dias: alunoLinha.dias || esc.dias || [],
+                rawRow: alunoLinha
                 });
+            }
             });
-            return {
-                overallAvg: overallCount > 0 ? (overallSum / overallCount) : 0,
-                raciocinioAvg: competency.raciocinio.count > 0 ? (competency.raciocinio.sum / competency.raciocinio.count) : 0,
-                tecnicaAvg: competency.tecnica.count > 0 ? (competency.tecnica.sum / competency.tecnica.count) : 0,
-                profissionalismoAvg: competency.profissionalismo.count > 0 ? (competency.profissionalismo.sum / competency.profissionalismo.count) : 0,
-                last5Notes: last5Notes.slice(-5)
-            };
+        } catch (err) {
+            console.warn('[findDataByStudent] Erro ao montar escalas:', err);
         }
 
-
-        function renderTabNotasPraticas(notasP) {
-            console.log("[renderTabNotasPraticas v32] Dados recebidos:", notasP);
-            const tabContainer = document.getElementById('tab-notas-p');
-            
-            if (!notasP || notasP.length === 0) {
-                tabContainer.innerHTML = '<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhum registro de notas práticas encontrado.</p></div>';
-                return;
-            }
-            const summary = calculatePracticeSummary(notasP);
-            let summaryHtml = `
-                <div id="practice-summary-dashboard">
-                    <!-- Card Média Geral -->
-                    <div class="content-card summary-progress-card animated-card delay-100">
-                        <div class="summary-progress-ring" style="--value:${summary.overallAvg * 10}">
-                            <div class="value">${summary.overallAvg.toFixed(1)}</div>
-                        </div>
-                        <div class="summary-text">
-                            <h3>Média Geral Prática</h3>
-                            <p>${summary.overallAvg >= 8.5 ? 'Excelente desempenho' : (summary.overallAvg >= 7 ? 'Bom desempenho' : 'Precisa de atenção')}</p>
-                        </div>
-                    </div>
-                    <!-- Cards Competência -->
-                    <div class="competency-card-container animated-card delay-200">
-                        <div class="content-card kpi-base-card competency-card">
-                            <div class="icon" style="background-color: rgba(0, 84, 180, 0.1); color: var(--accent-blue);">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>
-                            </div>
-                            <div>
-                                <div class="value" style="color: var(--accent-blue);">${summary.raciocinioAvg.toFixed(1)}</div>
-                                <div class="label">Raciocínio Clínico</div>
-                            </div>
-                        </div>
-                        <div class="content-card kpi-base-card competency-card">
-                            <div class="icon" style="background-color: rgba(249, 115, 22, 0.15); color: var(--accent-orange);">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                            </div>
-                            <div>
-                                <div class="value" style="color: var(--accent-orange);">${summary.tecnicaAvg.toFixed(1)}</div>
-                                <div class="label">Execução Técnica</div>
-                            </div>
-                        </div>
-                        <div class="content-card kpi-base-card competency-card">
-                            <div class="icon" style="background-color: rgba(22, 163, 74, 0.15); color: var(--accent-green);">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666lM18 18.72A8.954 8.954 0 0112 21a8.954 8.954 0 01-6-2.28m12 0A9.09 9.09 0 0012 15.092m6 2.28m-6-2.28a9.09 9.09 0 01-3.741-.479 3 3 0 01-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666mM6 18.72A8.954 8.954 0 0012 21a8.954 8.954 0 006-2.28m-12 0A9.09 9.09 0 0112 15.092m-6 2.28m6-2.28a9.09 9.09 0 00-3.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666m0 0L6 15.75M12 12a3 3 0 11-6 0 3 3 0 016 0zm-3 3a3 3 0 100-6 3 3 0 000 6z" /></svg>
-                            </div>
-                            <div>
-                                <div class="value" style="color: var(--accent-green);">${summary.profissionalismoAvg.toFixed(1)}</div>
-                                <div class="label">Profissionalismo</div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Gráfico de Evolução -->
-                    <div class="content-card p-6 evolution-chart-card animated-card delay-300">
-                        <h2 class="content-card-header mt-0 mb-2">Evolução das Notas Finais (Últimas 5)</h2>
-                        <div class="evolution-chart-container">
-                            ${summary.last5Notes.length > 0 ? summary.last5Notes.map((note, i) => `
-                                <div class="evolution-bar" style="height: ${note.value * 10}%; animation-delay: ${i * 0.1}s;">
-                                    <span class="bar-value">${note.value.toFixed(1)}</span>
-                                    <span class="bar-label">${note.label}</span>
-                                </div>
-                            `).join('') : '<p class="text-sm text-slate-500 italic">Não há notas finais suficientes para exibir a evolução.</p>'}
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            let navHtml = '';
-            let contentHtml = '';
-            const sortedNotasPDesc = [...notasP].sort((a, b) => {
-                const dateA = a['Data/Hora'] ? new Date(String(a['Data/Hora']).replace(/-/g,'/')) : new Date(0);
-                const dateB = b['Data/Hora'] ? new Date(String(b['Data/Hora']).replace(/-/g,'/')) : new Date(0);
-                return dateB - dateA;
-            });
-
-            sortedNotasPDesc.forEach((n, index) => {
-                const isActive = index === 0;
-                const tabId = `subtab-np-${index}`;
-                const nomePratica = n.nomePratica || `Avaliação ${index + 1}`;
-                navHtml += `<button class="subnav-button ${isActive ? 'active' : ''}" data-subtab-id="${tabId}">${nomePratica}</button>`;
-
-                const keyM = Object.keys(n).find(k => /MÉDIA\s*\(NOTA FINAL\)[:]?/i.test(k)) || null;
-                const keyC = Object.keys(n).find(k => /COMENTÁRIOS\s*DO\(A\)\s*SUPERVISOR\(A\)[:]?/i.test(k)) || null;
-                const mediaFinal = parseNota(n[keyM]);
-                const comentario = n[keyC] || 'Sem comentários.';
-                const comentarioEscapado = comentario.replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/\n/g, "\\n");
-                const dataFormatada = n['Data/Hora'] ? new Date(String(n['Data/Hora']).replace(/-/g,'/')).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : 'N/A';
-                let numericalScores = [];
-                let checklistScores = [];
-                
-                Object.entries(n).forEach(([key, value]) => {
-                    const isIgnored = /DATA\/HORA|EMAILHC|NOMECOMPLETO|CURSO|SUPERVISOR|UNIDADE|PERIODO|TURNO|MÉDIA\s*\(NOTA FINAL\)|COMENTÁRIOS\s*DO\(A\)\s*SUPERVISOR\(A\)|O SUPERVISOR ESTÁ CIENTE|NOMEPRATICA/i.test(key.toUpperCase().trim());
-                    if (!isIgnored && value) {
-                        const parsedValue = parseNota(value);
-                        if (!isNaN(parsedValue) && parsedValue > 0 && String(value).trim().match(/^[\d,.]+$/)) {
-                            numericalScores.push({ label: key.replace(/:/g, ''), value: parsedValue });
-                        } else if (String(value).trim() !== '' && String(value).trim() !== '0') {
-                            checklistScores.push({ label: key.replace(/:/g, ''), value: value });
-                        }
-                    }
-                });
-                numericalScores.sort((a, b) => b.value - a.value);
-
-                contentHtml += `
-                    <div id="${tabId}" class="sub-tab-content ${isActive ? 'active' : ''}">
-                        <div class="content-card p-6 lg:p-8">
-                            <div class="evaluation-header">
-                                <div class="evaluation-details">
-                                    <h3 class="font-display text-xl font-bold text-slate-900 mb-4 col-span-2">${nomePratica}</h3>
-                                    <dl>
-                                        <div><dt>Supervisor</dt><dd>${n.Supervisor || 'N/A'}</dd></div>
-                                        <div><dt>Data</dt><dd>${dataFormatada}</dd></div>
-                                        <div><dt>Unidade</dt><dd>${n.Unidade || 'N/A'}</dd></div>
-                                        <div><dt>Período</dt><dd>${n.Periodo || 'N/A'}</dd></div>
-                                    </dl>
-                                </div>
-                                <div class="text-center sm:text-right flex-shrink-0">
-                                    <p class="kpi-label">Nota Final</p>
-                                    <p class="kpi-value">${mediaFinal.toFixed(1)}</p>
-                                </div>
-                            </div>
-                            <div class="evaluation-layout mt-6">
-                                <div class="skills-barchart-container">
-                                    <h4 class="evaluation-section-title">Notas de Desempenho (0-10)</h4>
-                                    ${numericalScores.length > 0 ? numericalScores.map(score => `
-                                        <div class="bar-chart-item">
-                                            <div class="flex justify-between items-center">
-                                                <span class="bar-label" title="${score.label}">${score.label}</span>
-                                                <span class="bar-value">${score.value.toFixed(1)}</span>
-                                            </div>
-                                            <div class="bar-bg mt-1">
-                                                <div class="bar-fill" style="width: ${score.value * 10}%;"></div>
-                                            </div>
-                                        </div>
-                                    `).join('') : '<p class="text-sm text-slate-500 italic">Nenhuma nota numérica registrada.</p>'}
-                                </div>
-                                <div class="skills-checklist-container">
-                                    <h4 class="evaluation-section-title">Checklist de Habilidades</h4>
-                                    ${checklistScores.length > 0 ? checklistScores.map(skill => `
-                                        <div class="skill-checklist-item">
-                                            <span class="skill-question">${skill.label}</span>
-                                            <span class="skill-answer" title="${skill.value}">${skill.value}</span>
-                                        </div>
-                                    `).join('') : '<p class="text-sm text-slate-500 italic">Nenhum item de checklist registrado.</p>'}
-                                </div>
-                                <div class="evaluation-comments">
-                                    <div class="flex justify-between items-center">
-                                        <h4 class="evaluation-section-title mb-4">Comentários do Supervisor</h4>
-                                        <button class="gemini-analysis-button" data-loading="false" data-comment="${comentarioEscapado}">
-                                            ✨ Analisar Comentário
-                                        </button>
-                                    </div>
-                                    <p>${comentario}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-
-            tabContainer.innerHTML = `
-                ${summaryHtml}
-                <h3 class="text-xl font-bold text-slate-800 mb-4 mt-10">Relatórios Detalhados</h3>
-                <div id="student-detail-subnav-container" class="subnav-container">
-                    ${navHtml}
-                </div>
-                <div id="student-detail-subnav-content">
-                    ${contentHtml}
-                </div>
-            `;
-            
-            if (notasP.length > 0) {
-                switchStudentSubTab('subtab-np-0');
-            }
-        }
-        
-        // --- [ORION] Funções da API Gemini (Versão LOCAL INSEGURA) ---
-        
-        function showGeminiModal(title, content) {
-            const modal = document.getElementById('gemini-modal');
-            document.getElementById('gemini-modal-title').innerText = title;
-            document.getElementById('gemini-modal-content').innerHTML = content;
-            modal.style.display = 'flex';
-            setTimeout(() => modal.classList.add('show'), 10);
-        }
-
-        function closeGeminiModal() {
-            const modal = document.getElementById('gemini-modal');
-            modal.classList.remove('show');
-            setTimeout(() => {
-                modal.style.display = 'none';
-                document.getElementById('gemini-modal-content').innerHTML = ''; 
-            }, 300); 
-        }
-
-        async function handleAnalisarComentario(button, commentText) {
-            if (button.dataset.loading === 'true') return;
-
-            button.dataset.loading = 'true';
-            button.disabled = true;
-            button.innerHTML = 'A analisar...';
-
-            showGeminiModal('✨ A analisar Avaliação', '<div class="gemini-loader"></div>');
-
-            const systemPrompt = `
-                Aja como um coordenador de ensino de fisioterapia altamente experiente. 
-                A sua tarefa é analisar o comentário de avaliação de um supervisor sobre um aluno. 
-                Extraia os pontos-chave de forma concisa.
-                Responda APENAS com um objeto JSON válido, sem \`\`\`json ou qualquer outro texto.
-                O formato deve ser:
-                {
-                  "pontosFortes": ["lista de elogios ou habilidades dominadas"],
-                  "pontosAMelhorar": ["lista de críticas ou áreas de dificuldade"],
-                  "feedbackGeral": "um resumo de uma frase sobre a avaliação"
-                }
-                Se uma categoria (pontosFortes ou pontosAMelhorar) não for mencionada, retorne um array vazio [].
-            `;
-
-            try {
-                // [ORION] Chamada local, como solicitado
-                const analysisJsonString = await callGeminiAPI(systemPrompt, commentText);
-                const analysis = JSON.parse(analysisJsonString);
-                
-                let html = '';
-
-                if (analysis.pontosFortes && analysis.pontosFortes.length > 0) {
-                    html += '<h3>Pontos Fortes</h3><ul>';
-                    analysis.pontosFortes.forEach(p => { html += `<li>${p}</li>`; });
-                    html += '</ul>';
-                } else {
-                    html += '<h3>Pontos Fortes</h3><p>Nenhum ponto forte específico mencionado.</p>';
-                }
-
-                if (analysis.pontosAMelhorar && analysis.pontosAMelhorar.length > 0) {
-                    html += '<h3>Pontos a Melhorar</h3><ul>';
-                    analysis.pontosAMelhorar.forEach(p => { html += `<li>${p}</li>`; });
-                    html += '</ul>';
-                } else {
-                    html += '<h3>Pontos a Melhorar</h3><p>Nenhum ponto a melhorar específico mencionado.</p>';
-                }
-
-                html += '<h3>Feedback Geral</h3>';
-                html += `<p>${analysis.feedbackGeral || 'Não foi possível gerar um resumo.'}</p>`;
-
-                showGeminiModal('✨ Análise da Avaliação', html);
-
-            } catch (error) {
-                console.error("Erro ao analisar comentário:", error);
-                showGeminiModal('Erro na Análise', `<p>Não foi possível analisar o comentário. Verifique a consola para mais detalhes. Erro: ${error.message}</p>`);
-            } finally {
-                button.dataset.loading = 'false';
-                button.disabled = false;
-                button.innerHTML = '✨ Analisar Comentário';
-            }
-        }
-
-        async function callGeminiAPI(systemPrompt, userQuery) {
-            
-            // [ORION - ALERTA DE SEGURANÇA CRÍTICO]
-            // Como solicitado, a API Key está local.
-            // ISTO É INSEGURO. NÃO USE EM PRODUÇÃO.
-            // A chave será visível para qualquer pessoa no navegador.
-            // Substitua a string abaixo pela sua chave.
-            const apiKey = "AIzaSyAKZVcyv3ELzll3WG4cz4z0NuKU3rzfGqc";
-
-            if (apiKey === "SUA_API_KEY_COMPLETA_VAI_AQUI") {
-                 throw new Error("API Key não configurada. Substitua 'SUA_API_KEY_COMPLETA_VAI_AQUI' no código.");
-            }
-
-            // [ORION - CORREÇÃO DE MODELO]
-            // Este é o nome de modelo correto para o endpoint v1beta que resolve os erros 404
-            const modelName = "gemini-2.5-flash-preview-09-2025";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
-
-            const payload = {
-                contents: [{ parts: [{ text: userQuery }] }],
-                systemInstruction: { parts: [{ text: systemPrompt }] },
-                generationConfig: {
-                    responseMimeType: "application/json",
-                    temperature: 0.2
-                }
-            };
-
-            const options = {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            };
-
-            const response = await fetchWithRetry(apiUrl, options);
-            
-            if (!response.ok) {
-                 const errData = await response.json();
-                 const errMsg = errData.error?.message || response.statusText;
-                 throw new Error(`Falha na API: ${errMsg}`);
-            }
-            
-            const result = await response.json();
-            const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-            
-            if (!text) {
-                throw new Error("Resposta da API vazia ou mal formatada.");
-            }
-            return text;
-        }
-
-        async function fetchWithRetry(url, options, retries = 3, delay = 1000) {
-            for (let i = 0; i < retries; i++) {
-                try {
-                    const response = await fetch(url, options);
-                    if (response.ok || (response.status >= 400 && response.status < 500)) {
-                        return response;
-                    }
-                    // Se for 5xx, tenta novamente
-                } catch (error) {
-                    // Erro de rede, tenta novamente
-                }
-                await new Promise(resolve => setTimeout(resolve, delay));
-                delay *= 2; 
-            }
-            // Tenta a última vez
-            return fetch(url, options);
-        }
-
-        // --- Inicia ---
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log("DOM Carregado. Configurando login e exibindo view de login.");
-            setupEventHandlers(); 
-            showView('login-view');
+        // --- Faltas / Reposições ---
+        const faltasEncontradas = (appState.ausenciasReposicoes || []).filter(f => {
+            if (!f) return false;
+            const fEmail = normalizeString(f.EmailHC || '');
+            const fNome  = normalizeString(f.NomeCompleto || '');
+            return (emailNormalizado && fEmail === emailNormalizado) || (alunoNomeNormalizado && fNome === alunoNomeNormalizado);
         });
-    </script>
+
+        // --- Notas Teóricas ---
+        let notasT = null;
+        try {
+            const registrosT = (appState.notasTeoricas && appState.notasTeoricas.registros) || [];
+            notasT = registrosT.find(r => {
+            if (!r) return false;
+            const rEmail = normalizeString(r.EmailHC || '');
+            const rNome  = normalizeString(r.NomeCompleto || '');
+            return (emailNormalizado && rEmail === emailNormalizado) || (alunoNomeNormalizado && rNome === alunoNomeNormalizado);
+            }) || null;
+        } catch (err) {
+            console.warn('[findDataByStudent] Erro ao buscar notas teóricas:', err);
+            notasT = null;
+        }
+
+        // --- Notas Práticas ---
+        const notasPEncontradas = [];
+        try {
+            const notasPraticasObj = appState.notasPraticas || {};
+            Object.values(notasPraticasObj).forEach(pratica => {
+            if (!pratica || !Array.isArray(pratica.registros)) return;
+            const registros = pratica.registros.filter(r => {
+                if (!r) return false;
+                const rNome = normalizeString(r.NomeCompleto || '');
+                return alunoNomeNormalizado && rNome === alunoNomeNormalizado;
+            });
+            registros.forEach(r => {
+                notasPEncontradas.push(Object.assign({ nomePratica: pratica.nomePratica || pratica.nomeAba || 'Prática' }, r));
+            });
+            });
+        } catch (err) {
+            console.warn('[findDataByStudent] Erro ao buscar notas práticas:', err);
+        }
+
+        return {
+            escalas: escalasEncontradas,
+            faltas: faltasEncontradas,
+            notasT: notasT,
+            notasP: notasPEncontradas
+        };
+    }
+
+
+    function showStudentDetail(email) {
+        console.log(`[showStudentDetail] Exibindo detalhes para: ${email}`);
+            try {
+            const info = appState.alunosMap.get(email);
+            if (!info) {
+                showError(`Aluno ${email} não encontrado no mapeamento.`);
+                return;
+            }
+            const emailNormalizado = normalizeString(email);
+            const alunoNomeNormalizado = normalizeString(info.NomeCompleto); 
+            const { escalas, faltas, notasT, notasP } = findDataByStudent(emailNormalizado, alunoNomeNormalizado);
+            
+            console.groupCollapsed(`[Debug Dados] Aluno: ${info.NomeCompleto} (Email: ${email})`);
+            console.log("Info:", info);
+            console.log("Escalas:", escalas);
+            console.log("Faltas:", faltas);
+            console.log("Notas Teóricas:", notasT);
+            console.log("Notas Práticas:", notasP);
+            console.groupEnd();
+
+            renderStudentHeader(info);
+            renderStudentDetailKPIs(faltas, notasP);
+            renderTabInfo(info);
+            renderTabEscala(escalas); 
+            renderTabFaltas(faltas);
+            renderTabNotasTeoricas(notasT); 
+            renderTabNotasPraticas(notasP); 
+
+            showView('student-detail-view');
+            switchStudentTab('info'); 
+            window.scrollTo(0, 0); 
+            console.log("[showStudentDetail] View de detalhe exibida.");
+            } catch (e) {
+            console.error("[showStudentDetail] Erro durante renderização:", e);
+            showError(`Erro ao exibir detalhes do aluno: ${e.message}`);
+            showView('dashboard-view'); 
+            switchMainTab('alunos');
+            }
+    }
+    
+    function renderStudentHeader(info) {
+            const p=document.getElementById('student-header'); const i=info.FotoID?`https://lh3.googleusercontent.com/d/${info.FotoID}=s160-c`:'https://placehold.co/80x80/e8eef7/475569?text=?'; const s=info.Status==='Ativo'?'badge-green':'badge-red'; 
+            p.innerHTML=`<img src="${i}" alt="Foto" onerror="this.src='https://placehold.co/80x80/e8eef7/475569?text=?'">
+                        <div class="flex-grow text-center sm:text-left mt-4 sm:mt-0">
+                            <h2 class="text-2xl lg:text-3xl font-bold text-slate-900">${info.NomeCompleto}</h2>
+                            <p class="text-base lg:text-lg text-slate-600 mt-1">${info.Curso}</p>
+                        </div>
+                        <div class="ml-auto flex-shrink-0 mt-4 sm:mt-0">
+                            <span class="badge ${s} text-base py-2 px-4">${info.Status}</span>
+                        </div>`;
+    }
+
+    function renderStudentDetailKPIs(faltas, notasP) {
+            const tF=faltas.length; 
+            const pF=faltas.filter(f=> f && !f.DataReposicaoISO).length; 
+            let mP=0; let countP = 0; 
+            if(notasP.length>0){
+                let s=0; 
+                notasP.forEach(n=>{
+                    const k=Object.keys(n).find(k => /MÉDIA\s*\(NOTA FINAL\)[:]?/i.test(k)) || null; 
+                    if(k){
+                        let v=parseNota(n[k]); 
+                        if(v>0){s+=v; countP++;}
+                    }
+                }); 
+                mP=countP>0?s/countP:0;
+            }
+            document.getElementById('kpi-total-faltas').textContent = tF;
+            document.getElementById('kpi-pendentes').textContent = pF;
+            document.getElementById('kpi-media-pratica').textContent = mP > 0 ? mP.toFixed(1) : 'N/A';
+            document.getElementById('kpi-modulos').textContent = `${countP}/${Object.keys(appState.notasPraticas).length}`;
+    }
+    
+    function renderTabInfo(info) {
+            const p=document.getElementById('tab-info'); p.innerHTML=`<dl class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6 text-sm"><div class="border-b border-slate-200 pb-3"><dt>Email</dt><dd>${info.EmailHC||'N/A'}</dd></div><div class="border-b border-slate-200 pb-3"><dt>Nascimento</dt><dd>${info.DataNascimento ? new Date(info.DataNascimento).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : 'N/A'}</dd></div><div class="border-b border-slate-200 pb-3"><dt>Sexo</dt><dd>${info.Sexo||'N/A'}</dd></div><div class="border-b border-slate-200 pb-3"><dt>Estado Civil</dt><dd>${info.EstadoCivil||'N/A'}</dd></div><div class="md:col-span-2 lg:col-span-1 border-b border-slate-200 pb-3"><dt>CREFITO</dt><dd>${info.Crefito||'N/A'}</dd></div></dl>`;
+    }
+    
+    /* ===============================
+    [ESCALAS] Calendar Pro - (Funções do seu arquivo)
+    =============================== */
+    
+    function _esc_norm(s) {
+        return (s || '').toString().trim().toLowerCase()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    }
+    function _esc_getCurrentStudentKey() {
+        const nameEl = document.querySelector('#student-header h2');
+        const name = nameEl ? nameEl.textContent.trim() : null;
+        let email = null;
+        document.querySelectorAll('#tab-info dl dt').forEach(dt => {
+            if (_esc_norm(dt.textContent) === 'email') {
+                const dd = dt.parentElement?.querySelector('dd');
+                if (dd) email = dd.textContent.trim();
+            }
+        });
+        return {
+            name,
+            email,
+            normName: _esc_norm(name),
+            normEmail: _esc_norm(email)
+        };
+    }
+    function _esc_parseDMInferYear(dm, refDate = new Date()) {
+        if (!dm || !/^\d{1,2}\/\d{1,2}$/.test(dm)) return null;
+        const [dStr, mStr] = dm.split('/');
+        const d = parseInt(dStr, 10);
+        const m = parseInt(mStr, 10);
+        const nowM = refDate.getMonth() + 1;
+        const nowY = refDate.getFullYear();
+        let y = nowY;
+        const delta = m - nowM;
+        if (delta >= 7) y = nowY - 1;
+        else if (delta <= -7) y = nowY + 1;
+        const date = new Date(y, m - 1, d);
+        if (isNaN(date.getTime())) return null;
+        return date;
+    }
+    function _esc_iso(d) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+    }
+    function _esc_monthLabel(year, month0) {
+        const dt = new Date(year, month0, 1);
+        const name = dt.toLocaleString('pt-BR', { month: 'long' });
+        return name.charAt(0).toUpperCase() + name.slice(1) + ` ${year}`;
+    }
+    function _esc_collectYearMonths(days) {
+        const set = new Set();
+        days.forEach(d => {
+            if (d._date instanceof Date) {
+            set.add(`${d._date.getFullYear()}-${String(d._date.getMonth()+1).padStart(2,'0')}`);
+            }
+        });
+        return Array.from(set).sort();
+    }
+    function _esc_splitYM(ym) {
+        const [y, m] = ym.split('-');
+        return { year: parseInt(y, 10), month0: parseInt(m, 10) - 1 };
+    }
+    function _esc_buildAbsMakeupSets() {
+        const { normEmail, normName } = _esc_getCurrentStudentKey();
+        const abs = new Set();
+        const mak = new Set();
+        (appState.ausenciasReposicoes || []).forEach(f => {
+            const fMail = _esc_norm(f.EmailHC);
+            const fName = _esc_norm(f.NomeCompleto);
+            const isThis =
+            (normEmail && fMail && normEmail === fMail) ||
+            (normName && fName && normName === fName);
+            if (!isThis) return;
+            if (f.DataAusenciaISO) abs.add(f.DataAusenciaISO);
+            if (f.DataReposicaoISO) mak.add(f.DataReposicaoISO);
+        });
+        return { abs, mak };
+    }
+    function _esc_isPresentTodayIso(iso) {
+        const todayIso = new Date().toISOString().slice(0,10);
+        if (iso !== todayIso) return false;
+        const { normEmail } = _esc_getCurrentStudentKey();
+        let present = false;
+        if (appState.pontoHojeMap && appState.pontoHojeMap.size > 0) {
+            for (const [key, val] of appState.pontoHojeMap.entries()) {
+                if (_esc_norm(key) === normEmail) {
+                    present = true; break;
+                }
+            }
+        }
+        return present;
+    }
+    function _esc_el(tag, className, text) {
+        const el = document.createElement(tag);
+        if (className) el.className = className;
+        if (text !== undefined) el.textContent = text;
+        return el;
+    }
+
+    // [ORION] Sua função de renderização do Calendário Pro (v32)
+    function renderTabEscala(escalas) {
+        const container = document.getElementById('escala-heatmap-content');
+        if (!container) return;
+
+        if (!escalas || escalas.length === 0) {
+            container.innerHTML = '<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhuma escala encontrada para este aluno.</p></div>';
+            return;
+        }
+
+        // Helpers
+        const formatScaleLabel = (rawName) => {
+            if (!rawName) return rawName;
+            return String(rawName).replace(/[_\-]/g, ' ').replace(/(Escala)\s*?(\d+)/i, (m,a,b) => `${a} ${b}`).trim();
+        };
+
+        const classifyStatus = (raw) => {
+            if (!raw || String(raw).trim() === '') return 'semdado';
+            const s = String(raw).toLowerCase();
+            if (s.includes('aus') || s.includes('ausência') || s.includes('falta')) return 'ausencia';
+            if (s.includes('reposição') || s.includes('reposi')) return 'reposicao';
+            if (s.includes('folga')) return 'folga';
+            if (/\d{1,2}\s*h\s*(às|as|a|-|–)\s*\d{1,2}\s*h/i.test(s) ||
+                /\d{1,2}:\d{2}/.test(s) ||
+                s.includes('aula') || s.includes('plantão') || s.includes('plantao') || s.includes('inicial')) {
+            return 'presenca';
+            }
+            return 'semdado';
+        };
+
+        const formatRawForDisplay = (raw) => {
+            if (!raw) return '';
+            return String(raw).replace(/\s*\n\s*/g, ' ').trim();
+        };
+
+        const buildDayMap = (scale) => {
+            const map = {};
+            (scale.dias || []).forEach(d => {
+            const key = String(d.dataColuna || '').trim();
+            const raw = d.status === undefined || d.status === null ? '' : String(d.status);
+            const cls = classifyStatus(raw);
+            map[key] = { raw: raw, cls: cls };
+            });
+            return map;
+        };
+
+        const escalaButtonsHtml = escalas.map((s, idx) => {
+            const label = formatScaleLabel(s.nomeEscala || `Escala ${idx+1}`);
+            return `<button class="scale-btn ${idx===0 ? 'active' : ''}" data-scale-index="${idx}">${label}</button>`;
+        }).join('');
+
+        container.innerHTML = `
+            <div class="scale-toolbar">${escalaButtonsHtml}</div>
+            <div class="scale-panel">
+            <div class="scale-calendar-wrap">
+                <div class="scale-calendar-header" id="scale-period"></div>
+                <div class="scale-weekdays">
+                <div>DOM</div><div>SEG</div><div>TER</div><div>QUA</div><div>QUI</div><div>SEX</div><div>SÁB</div>
+                </div>
+                <div class="scale-grid" id="scale-grid" aria-live="polite"></div>
+            </div>
+            <aside class="scale-summary" id="scale-summary">
+                <h4>Resumo</h4>
+                <div class="summary-row"><span>Escalados</span><span id="sum-escalados">0</span></div>
+                <div class="summary-row"><span>Presentes</span><span id="sum-presentes">0</span></div>
+                <div class="summary-row"><span>Ausentes</span><span id="sum-ausentes">0</span></div>
+                <div class="summary-row"><span>Reposições</span><span id="sum-reposicoes">0</span></div>
+                <div class="summary-row"><span>Folgas</span><span id="sum-folgas">0</span></div>
+                <div class="scale-legend">
+                <div style="margin-top:10px;font-weight:700;color:var(--content-text-secondary);">Legenda</div>
+                <div class="legend-item"><span class="legend-swatch legend-pres"></span><span>Presença</span></div>
+                <div class="legend-item"><span class="legend-swatch legend-rep"></span><span>Reposição</span></div>
+                <div class="legend-item"><span class="legend-swatch legend-aus"></span><span>Ausência</span></div>
+                <div class="legend-item"><span class="legend-swatch legend-fol"></span><span>Folga</span></div>
+                <div class="legend-item"><span class="legend-swatch legend-semd"></span><span>Sem dado</span></div>
+                </div>
+            </aside>
+            </div>
+        `;
+
+        const grid = container.querySelector('#scale-grid');
+        const periodLabel = container.querySelector('#scale-period');
+
+        function renderScaleByIndex(idx) {
+            const scale = escalas[idx];
+            if (!scale) return;
+
+            const dayMap = buildDayMap(scale);
+            const headers = (scale.headersDay || []).slice();
+
+            if (headers.length === 0) {
+            grid.innerHTML = '<p class="text-slate-500 italic">Escala sem dias.</p>';
+            periodLabel.innerText = `${formatScaleLabel(scale.nomeEscala || '')}`;
+            return;
+            }
+
+            const todayYear = new Date().getFullYear();
+            const parsed = headers.map(h => {
+            const parts = String(h).split('/').map(p => p.trim());
+            const d = { raw: h, day: Number(parts[0]), month: Number(parts[1]), year: todayYear };
+            return d;
+            });
+            for (let i = 1; i < parsed.length; i++) {
+            if (parsed[i].month < parsed[i-1].month) parsed[i].year = parsed[i-1].year + 1;
+            else parsed[i].year = parsed[i-1].year;
+            }
+
+            const start = new Date(parsed[0].year, parsed[0].month - 1, parsed[0].day);
+            const last = parsed[parsed.length - 1];
+            const end = new Date(last.year, last.month - 1, last.day);
+
+            const startSunday = new Date(start); startSunday.setDate(start.getDate() - start.getDay());
+            const endSaturday = new Date(end); endSaturday.setDate(end.getDate() + (6 - end.getDay()));
+
+            const calendarDays = [];
+            for (let d = new Date(startSunday); d <= endSaturday; d.setDate(d.getDate() + 1)) {
+            calendarDays.push(new Date(d));
+            }
+
+            grid.innerHTML = '';
+
+            const counters = { escalados: 0, presenca: 0, ausente: 0, reposicao: 0, folga: 0 };
+
+            calendarDays.forEach(dt => {
+            const dayNum = dt.getDate();
+            const dd = String(dayNum).padStart(2, '0');
+            const mm = String(dt.getMonth() + 1).padStart(2, '0');
+            const key = `${dd}/${mm}`;
+
+            if (dt < start || dt > end) {
+                grid.insertAdjacentHTML('beforeend', `<div class="cal-day" style="opacity:.12"></div>`);
+                return;
+            }
+
+            const mapEntry = dayMap[key] || { raw: '', cls: 'semdado' };
+            const rawText = formatRawForDisplay(mapEntry.raw);
+            const cls = mapEntry.cls || 'semdado';
+
+            if (cls !== 'folga' && cls !== 'semdado') counters.escalados++;
+            if (cls === 'presenca') counters.presenca++;
+            if (cls === 'ausencia') counters.ausente++;
+            if (cls === 'reposicao') counters.reposicao++;
+            if (cls === 'folga') counters.folga++;
+
+            const labelMap = {
+                presenca: 'Presença',
+                reposicao: 'Reposição',
+                ausencia: 'Ausência',
+                folga: 'Folga',
+                semdado: 'Sem dado'
+            };
+            const badgeLabel = labelMap[cls] || 'Sem dado';
+            const topHtml = rawText ? `<div class="day-time">${rawText}</div>` : `<div class="day-time"> </div>`;
+
+            const cellHtml = `
+                <div class="cal-day" data-date="${dt.toISOString().slice(0,10)}" title="${rawText || badgeLabel}">
+                <div>
+                    <div class="day-number">${dayNum}</div>
+                    ${topHtml}
+                </div>
+                <div>
+                    <span class="cal-badge ${cls}">${badgeLabel}</span>
+                </div>
+                </div>
+            `;
+            grid.insertAdjacentHTML('beforeend', cellHtml);
+            });
+
+            periodLabel.innerText = `${String(parsed[0].day).padStart(2,'0')}/${String(parsed[0].month).padStart(2,'0')} até ${String(last.day).padStart(2,'0')}/${String(last.month).padStart(2,'0')} — ${formatScaleLabel(scale.nomeEscala || '')}`;
+
+            container.querySelector('#sum-escalados').innerText = counters.escalados;
+            container.querySelector('#sum-presentes').innerText = counters.presenca;
+            container.querySelector('#sum-ausentes').innerText = counters.ausente;
+            container.querySelector('#sum-reposicoes').innerText = counters.reposicao;
+            container.querySelector('#sum-folgas').innerText = counters.folga;
+        }
+
+        renderScaleByIndex(0);
+
+        const toolbar = container.querySelector('.scale-toolbar');
+        toolbar.addEventListener('click', (e) => {
+            const btn = e.target.closest('.scale-btn');
+            if (!btn) return;
+            const idx = Number(btn.getAttribute('data-scale-index'));
+            toolbar.querySelectorAll('.scale-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderScaleByIndex(idx);
+        });
+    }
+
+    function renderTabFaltas(faltas) {
+            const c=document.getElementById('faltas-content'); if(!faltas||faltas.length===0){c.innerHTML='<p class="text-slate-500 p-6 text-sm italic">Nenhum registro de falta.</p>'; return;} const h=`<table class="min-w-full"><thead><tr><th class="text-left">Status</th><th class="text-left">Ausência</th><th class="text-left">Reposição</th><th class="text-left">Local</th><th class="text-left">Motivo</th></tr></thead><tbody class="bg-white">${faltas.map(f=>{const iP=!f.DataReposicaoISO; const sB=iP?'<span class="badge badge-yellow">Pendente</span>':'<span class="badge badge-green">Completa</span>'; const dA=f.DataAusenciaISO?new Date(f.DataAusenciaISO+'T00:00:00').toLocaleDateString('pt-BR', {timeZone: 'UTC'}):'-'; const dR=f.DataReposicaoISO?new Date(f.DataReposicaoISO+'T00:00:00').toLocaleDateString('pt-BR', {timeZone: 'UTC'}):'-'; const mS=f.Motivo?(f.Motivo.length>40?f.Motivo.substring(0,40)+'...':f.Motivo):'-'; return `<tr><td>${sB}</td><td>${dA}</td><td>${dR}</td><td>${f.Local||'-'}</td><td title="${f.Motivo||''}">${mS}</td></tr>`;}).join('')}</tbody></table>`; c.innerHTML = h;
+    }
+
+    function renderTabNotasTeoricas(notas) {
+        console.log('[renderTabNotasTeoricas] Dados recebidos:', notas);
+        const p = document.getElementById('notas-t-content-wrapper');
+
+        if (!notas || typeof notas !== 'object' || Object.keys(notas).length === 0) {
+            p.innerHTML = '<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhum registro de notas teóricas encontrado.</p></div>';
+            return;
+        }
+
+        const mediaGroups = {
+            'Média - Fisio1': ['Anatomopatologia', 'Sub/Anatomopatologia', 'Bases', 'Sub/Bases', 'Doenças Pulmonares', 'Doenças Cardíacas', 'Proc. Cirurgico', 'Avaliação', 'Sub/Avaliacao', 'VM', 'Sub/VM'],
+            'Média - Fisio2': ['Técnicas e Recursos', 'Diag. Imagem'],
+            'Média - Fisio3': ['Fisio aplicada', 'UTI'],
+            'Média - Fisio4': ['Pediatria', 'Mobilização', 'Reab. Pulmonar'],
+            'Outras': ['M. Cientifica', 'Saúde e politicas', 'Farmacoterapia', 'Bioética']
+        };
+
+        let html = '';
+        const mediaKeys = Object.keys(notas).filter(k => k.toUpperCase().includes('MÉDIA'));
+        
+        if (mediaGroups.Outras.some(m => notas[m] && parseNota(notas[m]) > 0)) {
+                mediaKeys.push('Outras');
+        }
+
+        if (mediaKeys.length === 0 && !mediaGroups.Outras.some(m => notas[m] && parseNota(notas[m]) > 0)) {
+                p.innerHTML = '<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhuma nota ou média encontrada neste registro.</p></div>';
+                return;
+        }
+
+        mediaKeys.forEach(key => {
+            const mediaValue = parseNota(notas[key]);
+            const materias = (mediaGroups[key] || []);
+            
+            let detailsHtml = '';
+            let hasDetails = false;
+            
+            materias.forEach(materia => {
+                if (notas[materia] !== null && notas[materia] !== undefined && String(notas[materia]).trim() !== '') {
+                    const notaMateria = parseNota(notas[materia]);
+                    if (notaMateria > 0 || String(notas[materia]).trim() !== '') { 
+                        detailsHtml += `<li><span class="score-label">${materia}</span><span class="score-value">${notaMateria.toFixed(1)}</span></li>`;
+                        hasDetails = true;
+                    }
+                }
+            });
+            
+            if (mediaValue > 0 || hasDetails) {
+                    html += `
+                    <div class="content-card p-5 radial-card">
+                        <div class="flex-shrink-0">
+                            <div class="radial-progress" style="--value:${mediaValue * 10};">
+                                <span class="radial-progress-value">${mediaValue > 0 ? mediaValue.toFixed(1) : 'N/A'}</span>
+                            </div>
+                        </div>
+                        <div class="flex-grow">
+                            <h4 class="text-base font-bold text-slate-800">${key}</h4>
+                            <p class="text-sm text-slate-500 mt-1">Notas do módulo teórico</p>
+                            ${hasDetails ? `
+                            <details class="mt-3 group">
+                                <summary class="details-toggle list-none">
+                                    <span>Ver detalhes</span>
+                                    <svg class="transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                                </summary>
+                                <div class="details-content">
+                                    <ul class="details-scores-list">
+                                        ${detailsHtml}
+                                    </ul>
+                                </div>
+                            </details>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+        });
+
+        p.innerHTML = html || '<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhuma nota válida encontrada para exibir.</p></div>';
+    }
+
+    function calculatePracticeSummary(notasP) {
+        let overallSum = 0;
+        let overallCount = 0;
+        const competency = {
+            raciocinio: { sum: 0, count: 0 },
+            tecnica: { sum: 0, count: 0 },
+            profissionalismo: { sum: 0, count: 0 }
+        };
+        const last5Notes = [];
+        const map = {
+            raciocinio: [/1\.\s*CAPACIDADE DE AVALIAÇÃO/i, /2\.\s*PLANEJAMENTO E ORGANIZAÇÃO/i, /4\.\s*HABILIDADE DE ASSOCIAÇÃO/i],
+            tecnica: [/3\.\s*HABILIDADE NA EXECUÇÃO/i],
+            profissionalismo: [/5\.\s*HABILIDADE NO USO DE TERMOS/i, /8\.\s*COMUNICAÇÃO INTERPROFISSIONAL/i, /9\.\s*RELACIONAMENTO/i, /4\.\s*COMPORTAMENTO ÉTICO/i, /1\.\s*INICIATIVA/i, /2\.\s*INTERESSE/i, /3\.\s*RESPONSABILIDADE/i]
+        };
+        const sortedNotasP = [...notasP].sort((a, b) => {
+            const dateA = a['Data/Hora'] ? new Date(String(a['Data/Hora']).replace(/-/g,'/')) : new Date(0);
+            const dateB = b['Data/Hora'] ? new Date(String(b['Data/Hora']).replace(/-/g,'/')) : new Date(0);
+            return dateA - dateB; 
+        });
+        sortedNotasP.forEach(n => {
+            const kM = Object.keys(n).find(k => /MÉDIA\s*\(NOTA FINAL\)[:]?/i.test(k)) || null;
+            const media = parseNota(n[kM]);
+            if (media > 0) {
+                overallSum += media;
+                overallCount++;
+                last5Notes.push({ label: n.nomePratica, value: media });
+            }
+            Object.keys(n).forEach(key => {
+                const val = parseNota(n[key]);
+                if (val > 0) {
+                    if (map.raciocinio.some(regex => regex.test(key))) {
+                        competency.raciocinio.sum += val;
+                        competency.raciocinio.count++;
+                    } else if (map.tecnica.some(regex => regex.test(key))) {
+                        competency.tecnica.sum += val;
+                        competency.tecnica.count++;
+                    } else if (map.profissionalismo.some(regex => regex.test(key))) {
+                        competency.profissionalismo.sum += val;
+                        competency.profissionalismo.count++;
+                    }
+                }
+            });
+        });
+        return {
+            overallAvg: overallCount > 0 ? (overallSum / overallCount) : 0,
+            raciocinioAvg: competency.raciocinio.count > 0 ? (competency.raciocinio.sum / competency.raciocinio.count) : 0,
+            tecnicaAvg: competency.tecnica.count > 0 ? (competency.tecnica.sum / competency.tecnica.count) : 0,
+            profissionalismoAvg: competency.profissionalismo.count > 0 ? (competency.profissionalismo.sum / competency.profissionalismo.count) : 0,
+            last5Notes: last5Notes.slice(-5)
+        };
+    }
+
+
+    function renderTabNotasPraticas(notasP) {
+        console.log("[renderTabNotasPraticas v32] Dados recebidos:", notasP);
+        const tabContainer = document.getElementById('tab-notas-p');
+        
+        if (!notasP || notasP.length === 0) {
+            tabContainer.innerHTML = '<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhum registro de notas práticas encontrado.</p></div>';
+            return;
+        }
+        const summary = calculatePracticeSummary(notasP);
+        let summaryHtml = `
+            <div id="practice-summary-dashboard">
+                <div class="content-card summary-progress-card animated-card delay-100">
+                    <div class="summary-progress-ring" style="--value:${summary.overallAvg * 10}">
+                        <div class="value">${summary.overallAvg.toFixed(1)}</div>
+                    </div>
+                    <div class="summary-text">
+                        <h3>Média Geral Prática</h3>
+                        <p>${summary.overallAvg >= 8.5 ? 'Excelente desempenho' : (summary.overallAvg >= 7 ? 'Bom desempenho' : 'Precisa de atenção')}</p>
+                    </div>
+                </div>
+                <div class="competency-card-container animated-card delay-200">
+                    <div class="content-card kpi-base-card competency-card">
+                        <div class="icon" style="background-color: rgba(0, 84, 180, 0.1); color: var(--accent-blue);">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>
+                        </div>
+                        <div>
+                            <div class="value" style="color: var(--accent-blue);">${summary.raciocinioAvg.toFixed(1)}</div>
+                            <div class="label">Raciocínio Clínico</div>
+                        </div>
+                    </div>
+                    <div class="content-card kpi-base-card competency-card">
+                        <div class="icon" style="background-color: rgba(249, 115, 22, 0.15); color: var(--accent-orange);">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        </div>
+                        <div>
+                            <div class="value" style="color: var(--accent-orange);">${summary.tecnicaAvg.toFixed(1)}</div>
+                            <div class="label">Execução Técnica</div>
+                        </div>
+                    </div>
+                    <div class="content-card kpi-base-card competency-card">
+                        <div class="icon" style="background-color: rgba(22, 163, 74, 0.15); color: var(--accent-green);">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666lM18 18.72A8.954 8.954 0 0112 21a8.954 8.954 0 01-6-2.28m12 0A9.09 9.09 0 0012 15.092m6 2.28m-6-2.28a9.09 9.09 0 01-3.741-.479 3 3 0 01-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666mM6 18.72A8.954 8.954 0 0012 21a8.954 8.954 0 006-2.28m-12 0A9.09 9.09 0 0112 15.092m-6 2.28m6-2.28a9.09 9.09 0 00-3.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666m0 0L6 15.75M12 12a3 3 0 11-6 0 3 3 0 016 0zm-3 3a3 3 0 100-6 3 3 0 000 6z" /></svg>
+                        </div>
+                        <div>
+                            <div class="value" style="color: var(--accent-green);">${summary.profissionalismoAvg.toFixed(1)}</div>
+                            <div class="label">Profissionalismo</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="content-card p-6 evolution-chart-card animated-card delay-300">
+                    <h2 class="content-card-header mt-0 mb-2">Evolução das Notas Finais (Últimas 5)</h2>
+                    <div class="evolution-chart-container">
+                        ${summary.last5Notes.length > 0 ? summary.last5Notes.map((note, i) => `
+                            <div class="evolution-bar" style="height: ${note.value * 10}%; animation-delay: ${i * 0.1}s;">
+                                <span class="bar-value">${note.value.toFixed(1)}</span>
+                                <span class="bar-label">${note.label}</span>
+                            </div>
+                        `).join('') : '<p class="text-sm text-slate-500 italic">Não há notas finais suficientes para exibir a evolução.</p>'}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        let navHtml = '';
+        let contentHtml = '';
+        const sortedNotasPDesc = [...notasP].sort((a, b) => {
+            const dateA = a['Data/Hora'] ? new Date(String(a['Data/Hora']).replace(/-/g,'/')) : new Date(0);
+            const dateB = b['Data/Hora'] ? new Date(String(b['Data/Hora']).replace(/-/g,'/')) : new Date(0);
+            return dateB - dateA;
+        });
+
+        sortedNotasPDesc.forEach((n, index) => {
+            const isActive = index === 0;
+            const tabId = `subtab-np-${index}`;
+            const nomePratica = n.nomePratica || `Avaliação ${index + 1}`;
+            navHtml += `<button class="subnav-button ${isActive ? 'active' : ''}" data-subtab-id="${tabId}">${nomePratica}</button>`;
+
+            const keyM = Object.keys(n).find(k => /MÉDIA\s*\(NOTA FINAL\)[:]?/i.test(k)) || null;
+            const keyC = Object.keys(n).find(k => /COMENTÁRIOS\s*DO\(A\)\s*SUPERVISOR\(A\)[:]?/i.test(k)) || null;
+            const mediaFinal = parseNota(n[keyM]);
+            const comentario = n[keyC] || 'Sem comentários.';
+            const comentarioEscapado = comentario.replace(/'/g, "\\'").replace(/"/g, "\"").replace(/\n/g, "\\n");
+            const dataFormatada = n['Data/Hora'] ? new Date(String(n['Data/Hora']).replace(/-/g,'/')).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : 'N/A';
+            let numericalScores = [];
+            let checklistScores = [];
+            
+            Object.entries(n).forEach(([key, value]) => {
+                const isIgnored = /DATA\/HORA|EMAILHC|NOMECOMPLETO|CURSO|SUPERVISOR|UNIDADE|PERIODO|TURNO|MÉDIA\s*\(NOTA FINAL\)|COMENTÁRIOS\s*DO\(A\)\s*SUPERVISOR\(A\)|O SUPERVISOR ESTÁ CIENTE|NOMEPRATICA/i.test(key.toUpperCase().trim());
+                if (!isIgnored && value) {
+                    const parsedValue = parseNota(value);
+                    if (!isNaN(parsedValue) && parsedValue > 0 && String(value).trim().match(/^[\d,.]+$/)) {
+                        numericalScores.push({ label: key.replace(/:/g, ''), value: parsedValue });
+                    } else if (String(value).trim() !== '' && String(value).trim() !== '0') {
+                        checklistScores.push({ label: key.replace(/:/g, ''), value: value });
+                    }
+                }
+            });
+            numericalScores.sort((a, b) => b.value - a.value);
+
+            contentHtml += `
+                <div id="${tabId}" class="sub-tab-content ${isActive ? 'active' : ''}">
+                    <div class="content-card p-6 lg:p-8">
+                        <div class="evaluation-header">
+                            <div class="evaluation-details">
+                                <h3 class="font-display text-xl font-bold text-slate-900 mb-4 col-span-2">${nomePratica}</h3>
+                                <dl>
+                                    <div><dt>Supervisor</dt><dd>${n.Supervisor || 'N/A'}</dd></div>
+                                    <div><dt>Data</dt><dd>${dataFormatada}</dd></div>
+                                    <div><dt>Unidade</dt><dd>${n.Unidade || 'N/A'}</dd></div>
+                                    <div><dt>Período</dt><dd>${n.Periodo || 'N/A'}</dd></div>
+                                </dl>
+                            </div>
+                            <div class="text-center sm:text-right flex-shrink-0">
+                                <p class="kpi-label">Nota Final</p>
+                                <p class="kpi-value">${mediaFinal.toFixed(1)}</p>
+                            </div>
+                        </div>
+                        <div class="evaluation-layout mt-6">
+                            <div class="skills-barchart-container">
+                                <h4 class="evaluation-section-title">Notas de Desempenho (0-10)</h4>
+                                ${numericalScores.length > 0 ? numericalScores.map(score => `
+                                    <div class="bar-chart-item">
+                                        <div class="flex justify-between items-center">
+                                            <span class="bar-label" title="${score.label}">${score.label}</span>
+                                            <span class="bar-value">${score.value.toFixed(1)}</span>
+                                        </div>
+                                        <div class="bar-bg mt-1">
+                                            <div class="bar-fill" style="width: ${score.value * 10}%;"></div>
+                                        </div>
+                                    </div>
+                                `).join('') : '<p class="text-sm text-slate-500 italic">Nenhuma nota numérica registrada.</p>'}
+                            </div>
+                            <div class="skills-checklist-container">
+                                <h4 class="evaluation-section-title">Checklist de Habilidades</h4>
+                                ${checklistScores.length > 0 ? checklistScores.map(skill => `
+                                    <div class="skill-checklist-item">
+                                        <span class="skill-question">${skill.label}</span>
+                                        <span class="skill-answer" title="${skill.value}">${skill.value}</span>
+                                    </div>
+                                `).join('') : '<p class="text-sm text-slate-500 italic">Nenhum item de checklist registrado.</p>'}
+                            </div>
+                            <div class="evaluation-comments">
+                                <div class="flex justify-between items-center">
+                                    <h4 class="evaluation-section-title mb-4">Comentários do Supervisor</h4>
+                                    <button class="gemini-analysis-button" data-loading="false" data-comment="${comentarioEscapado}">
+                                        ✨ Analisar Comentário
+                                    </button>
+                                </div>
+                                <p>${comentario}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        tabContainer.innerHTML = `
+            ${summaryHtml}
+            <h3 class="text-xl font-bold text-slate-800 mb-4 mt-10">Relatórios Detalhados</h3>
+            <div id="student-detail-subnav-container" class="subnav-container">
+                ${navHtml}
+            </div>
+            <div id="student-detail-subnav-content">
+                ${contentHtml}
+            </div>
+        `;
+        
+        if (notasP.length > 0) {
+            switchStudentSubTab('subtab-np-0');
+        }
+    }
+    
+    // --- [ORION] Funções da API Gemini (Mantidas do seu arquivo) ---
+    
+    function showGeminiModal(title, content) {
+        const modal = document.getElementById('gemini-modal');
+        document.getElementById('gemini-modal-title').innerText = title;
+        document.getElementById('gemini-modal-content').innerHTML = content;
+        modal.style.display = 'flex';
+        setTimeout(() => modal.classList.add('show'), 10);
+    }
+
+    function closeGeminiModal() {
+        const modal = document.getElementById('gemini-modal');
+        modal.classList.remove('show');
+        setTimeout(() => {
+            modal.style.display = 'none';
+            document.getElementById('gemini-modal-content').innerHTML = ''; 
+        }, 300); 
+    }
+
+    async function handleAnalisarComentario(button, commentText) {
+        if (button.dataset.loading === 'true') return;
+
+        button.dataset.loading = 'true';
+        button.disabled = true;
+        button.innerHTML = 'A analisar...';
+
+        showGeminiModal('✨ A analisar Avaliação', '<div class="gemini-loader"></div>');
+
+        const systemPrompt = `
+            Aja como um coordenador de ensino de fisioterapia altamente experiente. 
+            A sua tarefa é analisar o comentário de avaliação de um supervisor sobre um aluno. 
+            Extraia os pontos-chave de forma concisa.
+            Responda APENAS com um objeto JSON válido, sem \`\`\`json ou qualquer outro texto.
+            O formato deve ser:
+            {
+                "pontosFortes": ["lista de elogios ou habilidades dominadas"],
+                "pontosAMelhorar": ["lista de críticas ou áreas de dificuldade"],
+                "feedbackGeral": "um resumo de uma frase sobre a avaliação"
+            }
+            Se uma categoria (pontosFortes ou pontosAMelhorar) não for mencionada, retorne um array vazio [].
+        `;
+
+        try {
+            const analysisJsonString = await callGeminiAPI(systemPrompt, commentText);
+            const analysis = JSON.parse(analysisJsonString);
+            
+            let html = '';
+
+            if (analysis.pontosFortes && analysis.pontosFortes.length > 0) {
+                html += '<h3>Pontos Fortes</h3><ul>';
+                analysis.pontosFortes.forEach(p => { html += `<li>${p}</li>`; });
+                html += '</ul>';
+            } else {
+                html += '<h3>Pontos Fortes</h3><p>Nenhum ponto forte específico mencionado.</p>';
+            }
+
+            if (analysis.pontosAMelhorar && analysis.pontosAMelhorar.length > 0) {
+                html += '<h3>Pontos a Melhorar</h3><ul>';
+                analysis.pontosAMelhorar.forEach(p => { html += `<li>${p}</li>`; });
+                html += '</ul>';
+            } else {
+                html += '<h3>Pontos a Melhorar</h3><p>Nenhum ponto a melhorar específico mencionado.</p>';
+            }
+
+            html += '<h3>Feedback Geral</h3>';
+            html += `<p>${analysis.feedbackGeral || 'Não foi possível gerar um resumo.'}</p>`;
+
+            showGeminiModal('✨ Análise da Avaliação', html);
+
+        } catch (error) {
+            console.error("Erro ao analisar comentário:", error);
+            showGeminiModal('Erro na Análise', `<p>Não foi possível analisar o comentário. Verifique a consola para mais detalhes. Erro: ${error.message}</p>`);
+        } finally {
+            button.dataset.loading = 'false';
+            button.disabled = false;
+            button.innerHTML = '✨ Analisar Comentário';
+        }
+    }
+
+    async function callGeminiAPI(systemPrompt, userQuery) {
+        
+        // [ORION - ALERTA DE SEGURANÇA CRÍTICO MANTIDO]
+        const apiKey = "AIzaSyAKZVcyv3ELzll3WG4cz4z0NuKU3rzfGqc"; // Sua chave
+
+        if (apiKey.startsWith("SUA_API_KEY")) {
+                throw new Error("API Key não configurada.");
+        }
+
+        const modelName = "gemini-1.5-flash-latest"; 
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+
+        const payload = {
+            contents: [{ parts: [{ text: userQuery }] }],
+            systemInstruction: { parts: [{ text: systemPrompt }] },
+            generationConfig: {
+                responseMimeType: "application/json",
+                temperature: 0.2
+            }
+        };
+
+        const options = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        };
+
+        const response = await fetchWithRetry(apiUrl, options);
+        
+        if (!response.ok) {
+                const errData = await response.json();
+                const errMsg = errData.error?.message || response.statusText;
+                throw new Error(`Falha na API: ${errMsg}`);
+        }
+        
+        const result = await response.json();
+        const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+        
+        if (!text) {
+            throw new Error("Resposta da API vazia ou mal formatada.");
+        }
+        return text;
+    }
+
+    async function fetchWithRetry(url, options, retries = 3, delay = 1000) {
+        for (let i = 0; i < retries; i++) {
+            try {
+                const response = await fetch(url, options);
+                if (response.ok || (response.status >= 400 && response.status < 500)) {
+                    return response;
+                }
+            } catch (error) {
+            }
+            await new Promise(resolve => setTimeout(resolve, delay));
+            delay *= 2; 
+        }
+        return fetch(url, options);
+    }
+
+    // --- Inicia ---
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log("DOM Carregado. Configurando login e exibindo view de login.");
+        
+        const dateElem = document.getElementById('current-date');
+        if(dateElem) {
+            dateElem.textContent = new Date().toLocaleDateString('pt-BR', { dateStyle: 'full' });
+        }
+
+        setupEventHandlers(); 
+        
+        const token = sessionStorage.getItem('authToken');
+        if (token) {
+            console.log("Token encontrado. Tentando iniciar dashboard...");
+            showView('dashboard-view');
+            initDashboard();
+        } else {
+            console.log("Nenhum token. Exibindo view de login.");
+            showView('login-view');
+        }
+    });
+</script>
 </body>
 </html>
