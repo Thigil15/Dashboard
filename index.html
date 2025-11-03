@@ -3,40 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal do Ensino - Dashboard v26 (Gemini)</title>
+    <title>Portal do Ensino - v32 (Notas Dashboard)</title>
     <!-- Carrega o Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
     <style>
-        /* --- [NOVO v23] Paleta de Cores "InCor Institucional" --- */
+        /* --- Paleta de Cores "InCor Institucional" (v28 - Sidebar Branca) --- */
         :root {
             /* Fontes */
             --font-main: 'Inter', sans-serif;
             --font-display: 'Poppins', sans-serif;
 
-            /* [CORREÇÃO v24] Cores Base (Tema InCor) com Sidebar Branca */
+            /* Cores Base (Tema InCor com Sidebar Branca) */
             --body-bg: #F7F9FB; /* Cinza Neutro (Fundo) */
             --sidebar-bg: #ffffff; /* Fundo Branco */
-            --sidebar-text: var(--content-text-secondary); /* Texto Cinza */
+            --sidebar-text: #475569; /* Texto Cinza */
             --sidebar-text-active: var(--accent-blue); /* Texto Azul */
             --content-text-primary: #334155; /* Cinza Escuro (Títulos) */
             --content-text-secondary: #475569; /* Cinza Médio (Texto) */
             
             /* Cores de Destaque Vibrantes (InCor) */
-            --accent-blue: #0054B4; /* Azul Secundário InCor */
+            --accent-blue: #0033A0; /* Azul Principal InCor */
+            --accent-blue-secondary: #0054B4; /* Azul Secundário InCor */
             --accent-red: #E21E26;  /* Vermelho InCor */
             --accent-green: #16a34a; /* Verde (Sucesso) */
             --accent-yellow: #ca8a04; /* Amarelo (Atenção) */
+            --accent-orange: #f97316; /* Laranja para Notas Teóricas */
             
+            /* Cards e Bordas */
             --card-bg: rgba(255, 255, 255, 0.7); /* Branco @ 70% */
             --card-bg-darker: rgba(255, 255, 255, 0.9); /* Branco @ 90% */
             --card-border: 1px solid #E5E9EF; /* Borda Cinza Clara */
             --card-border-hover: 1px solid var(--accent-blue);
-            --card-shadow: 0 8px 32px 0 rgba(0, 51, 160, 0.08); /* Sombra Azulada Sutil */
+            --card-shadow: 0 8px 32px 0 rgba(0, 51, 160, 0.05); /* Sombra Azulada Sutil */
+            --card-shadow-hover: 0 10px 40px 0 rgba(0, 84, 180, 0.15), 0 0 20px 0 rgba(0, 84, 180, 0.1); /* Efeito Brilho/Halo Azul */
             
-            /* Transições */
+            /* Transições Rápidas */
             --transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            --transition-slow: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-slow: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         /* --- Estilos Globais --- */
@@ -47,10 +51,21 @@
             color: var(--content-text-secondary);
             -webkit-font-smoothing: antialiased; 
             -moz-osx-font-smoothing: grayscale; 
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
         
         h1, h2, h3, h4, .font-display { font-family: var(--font-display); color: var(--content-text-primary); font-weight: 600; }
-        h1 { font-size: 1.75rem; line-height: 2.25rem; }
+        main > .view-container > h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 2.5rem;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-blue-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 2rem;
+        }
         h2 { font-size: 1.25rem; line-height: 1.75rem; }
         h3 { font-size: 1.125rem; line-height: 1.75rem; }
 
@@ -72,7 +87,7 @@
             overflow: hidden;
         }
         .content-card:hover {
-            box-shadow: 0 12px 40px 0 rgba(0, 51, 160, 0.12);
+            box-shadow: var(--card-shadow-hover);
             transform: translateY(-4px);
             border: var(--card-border-hover);
         }
@@ -103,13 +118,13 @@
         .loader { 
             width: 50px; height: 50px; 
             border-radius: 50%; 
-            border: 4px solid var(--accent-blue); 
-            border-top-color: #0033A0; /* Azul Principal InCor */
+            border: 4px solid var(--accent-blue-secondary); 
+            border-top-color: var(--accent-blue);
             animation: spin 1s linear infinite; 
         }
         @keyframes spin { to { transform: rotate(360deg); } }
         #loading-overlay p { 
-            color: #0033A0; 
+            color: var(--accent-blue); 
             margin-top: 1.5rem; 
             font-family: var(--font-display);
             font-weight: 600; 
@@ -122,6 +137,7 @@
             align-items: center; 
             justify-content: center; 
             min-height: 100vh;
+            flex-grow: 1;
         }
         #login-card {
             background: var(--card-bg);
@@ -135,8 +151,8 @@
             max-width: 26rem;
             transition: var(--transition-slow);
         }
-        #login-card:hover { transform: none; box-shadow: 0 16px 50px 0 rgba(0, 51, 160, 0.15); border: var(--card-border-hover); }
-        #login-card h1 { font-family: var(--font-display); font-weight: 700; font-size: 2rem; color: #0033A0; }
+        #login-card:hover { transform: none; box-shadow: var(--card-shadow-hover); border: var(--card-border-hover); }
+        #login-card h1 { font-family: var(--font-display); font-weight: 700; font-size: 2rem; color: var(--accent-blue); }
         #login-card label { color: var(--content-text-secondary); font-weight: 500; }
         #login-card input {
             background: #ffffff;
@@ -150,13 +166,13 @@
             outline: none;
         }
         #login-card button[type="submit"] {
-            background-color: #0033A0;
+            background-image: linear-gradient(135deg, var(--accent-blue), var(--accent-blue-secondary));
             font-family: var(--font-display);
             font-weight: 600;
             padding: 0.75rem;
             transition: var(--transition-fast);
         }
-        #login-card button[type="submit"]:hover { background-color: var(--accent-blue); } 
+        #login-card button[type="submit"]:hover { background-image: linear-gradient(135deg, var(--accent-blue-secondary), var(--accent-blue)); box-shadow: 0 5px 15px -5px rgba(0, 51, 160, 0.5); transform: translateY(-2px); } 
         #login-error {
             display: none; 
             background-color: rgba(226, 30, 38, 0.1); 
@@ -169,20 +185,23 @@
             margin-top: 1rem;
         }
 
-        /* --- [CORREÇÃO v24] Sidebar (Tema Branco) --- */
+        /* --- Sidebar (Tema Branco) --- */
         #app-sidebar {
             width: 16rem;
-            background-color: var(--sidebar-bg); /* Fundo Branco */
-            border-right: 1px solid var(--card-border); /* Borda Cinza */
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--card-border);
             transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex; 
+            flex-direction: column; 
+            flex-shrink: 0; 
         }
-        .sidebar-logo-text { color: #0033A0; } /* Azul Principal */
+        .sidebar-logo-text { color: var(--accent-blue); }
         
         .sidebar-link {
             transition: var(--transition-fast);
             border-left: 4px solid transparent;
             padding: 0.75rem 1.5rem;
-            color: var(--sidebar-text); /* Texto Cinza */
+            color: var(--sidebar-text);
             display: flex;
             align-items: center;
             font-weight: 500;
@@ -195,20 +214,21 @@
             transition: var(--transition-fast);
         }
         .sidebar-link:hover {
-            background-color: rgba(0, 84, 180, 0.05); /* Fundo Azul Sutil */
-            color: var(--accent-blue); /* Texto Azul */
+            background-color: rgba(0, 84, 180, 0.05);
+            color: var(--sidebar-text-active);
         }
         .sidebar-link:hover svg { 
-            color: var(--accent-blue);
+            color: var(--sidebar-text-active);
+            transform: scale(1.1);
         }
         .sidebar-link.active {
-            background-color: rgba(0, 84, 180, 0.1); /* Fundo Azul Claro */
-            color: var(--accent-blue); /* Texto Azul */
+            background-color: rgba(0, 84, 180, 0.08);
+            color: var(--sidebar-text-active);
             border-left-color: var(--accent-blue);
             font-weight: 600;
         }
         .sidebar-link.active svg { 
-            color: var(--accent-blue);
+            color: var(--sidebar-text-active);
             opacity: 1;
         }
 
@@ -220,38 +240,40 @@
         #app-sidebar.collapsed .sidebar-link-text { display: none; }
         
         #sidebar-toggle { 
-            color: var(--sidebar-text); /* Cinza */
+            color: var(--sidebar-text);
             transition: var(--transition-fast); 
         }
         #sidebar-toggle:hover { color: var(--accent-blue); background-color: rgba(0, 84, 180, 0.1); }
         #app-sidebar.collapsed #sidebar-toggle { transform: rotate(180deg); }
 
         /* --- Conteúdo Principal (Layout) --- */
-        main { padding: 2rem; }
+        main { 
+            padding: 1.5rem 2rem; 
+            flex-grow: 1;
+        }
+        @media (max-width: 768px) {
+            main { padding: 1rem; }
+        }
         
         .view-container { 
-            animation: fadeInUp 0.5s var(--transition-slow) both;
+            animation: fadeInUp 0.3s var(--transition-slow) both;
         }
         @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(15px); }
+            from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* --- Layout Dashboard Geral (Grid) --- */
-        #content-dashboard .grid {
-            gap: 1.5rem;
-        }
+        /* Layout Dashboard (Cards Animados) */
         #content-dashboard .animated-card {
             opacity: 0;
-            animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            animation: fadeInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
         }
-        #content-dashboard .delay-100 { animation-delay: 0.1s; }
-        #content-dashboard .delay-200 { animation-delay: 0.2s; }
-        #content-dashboard .delay-300 { animation-delay: 0.3s; }
-        #content-dashboard .delay-400 { animation-delay: 0.4s; }
-        #content-dashboard .delay-500 { animation-delay: 0.5s; }
-        #content-dashboard .delay-600 { animation-delay: 0.6s; }
-        #content-dashboard .delay-700 { animation-delay: 0.7s; }
+        #content-dashboard .delay-100 { animation-delay: 0.05s; }
+        #content-dashboard .delay-200 { animation-delay: 0.1s; }
+        #content-dashboard .delay-300 { animation-delay: 0.15s; }
+        #content-dashboard .delay-400 { animation-delay: 0.2s; }
+        #content-dashboard .delay-500 { animation-delay: 0.25s; }
+        #content-dashboard .delay-600 { animation-delay: 0.3s; }
 
         /* --- KPIs (Cards Hero e Secundários) --- */
         .kpi-base-card {
@@ -263,7 +285,7 @@
         }
         .kpi-base-card:hover {
             transform: translateY(-3px);
-            box-shadow: var(--card-shadow);
+            box-shadow: var(--card-shadow-hover);
             border-color: var(--accent-blue);
         }
         .kpi-hero-card {
@@ -318,11 +340,11 @@
         #kpi-absent-label { color: var(--accent-red); }
         #kpi-absent { color: #991b1b; } 
 
+        /* Cores dos Ícones KPI */
         .kpi-icon-blue { background-color: rgba(0, 84, 180, 0.15); color: var(--accent-blue); }
         .kpi-icon-green { background-color: rgba(22, 163, 74, 0.15); color: var(--accent-green); }
         .kpi-icon-red { background-color: rgba(226, 30, 38, 0.1); color: var(--accent-red); }
-        .kpi-icon-orange { background-color: rgba(249, 115, 22, 0.15); color: #f97316; } 
-
+        .kpi-icon-orange { background-color: rgba(249, 115, 22, 0.15); color: var(--accent-orange); } 
 
         /* --- Lista Frequência Diária --- */
         #frequency-panel h3 {
@@ -348,15 +370,57 @@
         .donut-legend li { display: flex; align-items: center; margin-bottom: 0.5rem; }
         .legend-color-box { width: 12px; height: 12px; border-radius: 3px; margin-right: 0.75rem; flex-shrink: 0; }
 
-        /* --- Gráfico de Barras (Desempenho Teórico) --- */
-        .bar-chart-item { transition: var(--transition-fast); border-radius: 6px; padding: 0.4rem 0.5rem; }
-        .bar-chart-item:hover { background-color: rgba(238, 242, 255, 0.8); }
-        .bar-chart-item .bar-bg { background-color: #E5E9EF; height: 0.6rem; border-radius: 0.3rem; }
-        .bar-chart-item .bar-fill { height: 100%; border-radius: 0.3rem; transition: width 0.8s ease-out; }
-        .bar-fill-normal { background: var(--accent-blue); opacity: 0.6; } 
-        .bar-fill-media { background: var(--accent-blue); }
-        .bar-chart-item .bar-label { color: var(--content-text-secondary); font-size: 0.8rem; font-weight: 500;}
-        .bar-chart-item .bar-value { color: var(--content-text-primary); font-size: 0.8rem; font-weight: 600; }
+        /* --- Gráfico Radial (Médias Dashboard) --- */
+        #module-averages-chart {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        .radial-card-small {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--card-bg-darker);
+            border: 1px solid #ffffff;
+            border-radius: 0.75rem;
+            transition: var(--transition-fast);
+        }
+        .radial-card-small:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--card-shadow-hover);
+            border-color: var(--accent-blue);
+        }
+        .radial-progress-small { 
+            position: relative;
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            flex-shrink: 0;
+            background: conic-gradient(var(--progress-color, var(--accent-blue)) calc(var(--value) * 1%), #E5E9EF calc(var(--value) * 1%) 100%); 
+        }
+        .radial-progress-small::before { 
+            content: ''; 
+            position: absolute;
+            width: 70%; height: 70%;
+            background: var(--card-bg-darker); 
+            border-radius: 50%;
+        }
+        .radial-progress-small-value { 
+            position: relative;
+            font-family: var(--font-display);
+            color: var(--progress-color, var(--accent-blue)); 
+            font-size: 1rem;
+            font-weight: 700;
+        }
+        .radial-card-small .radial-label {
+            font-family: var(--font-display);
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--content-text-primary);
+            line-height: 1.3;
+        }
         
         /* --- Lista Ausências Recentes --- */
         #recent-absences-list li { transition: var(--transition-fast); padding: 0.8rem 0.5rem; border-bottom: 1px solid var(--card-border); }
@@ -369,7 +433,7 @@
         .badge-green { background-color: #dcfce7; color: #166534; border-color: #86efac;}
         .badge-yellow { background-color: #fef9c3; color: #854d0e; border-color: #fde047;}
         .badge-gray { background-color: #f1f5f9; color: #475569; border-color: #e2e8f0;}
-        .badge-red { background-color: rgba(226, 30, 38, 0.1); color: #991b1b; border-color: rgba(226, 30, 38, 0.2);}
+        .badge-red { background-color: rgba(226, 30, 38, 0.1); color: var(--accent-red); border-color: rgba(226, 30, 38, 0.2);}
 
         /* --- Lista de Alunos (View Alunos) --- */
         #search-student { 
@@ -387,7 +451,7 @@
             font-family: var(--font-display);
             font-size: 0.8rem; 
             font-weight: 600; 
-            color: #0033A0; /* Azul Principal */
+            color: var(--accent-blue);
             background-color: transparent; 
             padding: 0.5rem 0.25rem; 
             margin-top: 1.75rem; margin-bottom: 1rem; 
@@ -410,7 +474,7 @@
         }
         .student-card:hover { 
             transform: translateY(-5px) scale(1.02); 
-            box-shadow: var(--card-shadow);
+            box-shadow: var(--card-shadow-hover);
             border-color: var(--accent-blue); 
             z-index: 10; 
         }
@@ -420,12 +484,14 @@
             border-radius: 9999px; 
             object-fit: cover; 
             background-color: #E5E9EF; 
-            border: 2px solid white; 
-            box-shadow: 0 0 0 2px white, 0 0 0 4px rgba(0, 84, 180, 0.5); 
+            border: 2px solid var(--sidebar-bg); /* [ORION] Corrigido para var */
+            box-shadow: 0 0 0 2px var(--sidebar-bg), 0 0 0 4px rgba(0, 84, 180, 0.5); /* [ORION] Corrigido para var */
             margin-bottom: 0.75rem; 
             transition: var(--transition-fast);
         }
-        .student-card:hover img { box-shadow: 0 0 0 2px white, 0 0 0 4px var(--accent-blue); }
+        .student-card:hover img { 
+            box-shadow: 0 0 0 2px var(--sidebar-bg), 0 0 0 4px var(--accent-blue); /* [ORION] Corrigido para var */
+        }
         
         .student-card .student-name { font-size: 0.875rem; font-weight: 600; color: var(--content-text-primary); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 0.25rem; }
         .student-card .student-course { font-size: 0.75rem; color: var(--content-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
@@ -456,7 +522,7 @@
         }
         #back-to-dashboard:hover { color: #0033A0; } 
         
-        #student-header img {
+        #student-header img { 
             width: 5rem; height: 5rem;
             object-fit: cover;
             border-radius: 9999px;
@@ -471,13 +537,14 @@
         }
         #student-kpi-header .kpi-card:hover {
              transform: scale(1.03); 
-             box-shadow: var(--card-shadow); 
+             box-shadow: var(--card-shadow-hover); 
              border-color: var(--accent-blue);
              z-index: 5;
         }
         #student-kpi-header .kpi-label { font-size: 0.7rem; font-weight: 600; color: var(--content-text-secondary); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.1rem; }
         #student-kpi-header .kpi-value { font-family: var(--font-display); font-size: 1.8rem; font-weight: 700; color: var(--content-text-primary); line-height: 1.1; }
         #student-kpi-header .icon-bg { padding: 0.8rem; border-radius: 0.75rem; }
+        #kpi-pendentes, #kpi-total-faltas { color: var(--accent-red); }
 
 
         /* --- Abas (Tabs) --- */
@@ -507,7 +574,7 @@
             font-weight: 700; 
             border-bottom-color: var(--accent-blue); 
         }
-        .tab-content { display: none; animation: fadeInUp 0.4s var(--transition-slow) both; }
+        .tab-content { display: none; animation: fadeInUp 0.3s var(--transition-slow) both; }
         .tab-content.active { display: block; }
         
         /* --- Sub-Abas (Notas Práticas) --- */
@@ -536,33 +603,233 @@
             color: var(--content-text-primary);
         }
         .subnav-button.active {
-            background-color: #0033A0; /* Azul Principal */
+            background-image: linear-gradient(135deg, var(--accent-blue), var(--accent-blue-secondary));
             color: #ffffff;
-            box-shadow: 0 4px 10px rgba(0, 51, 160, 0.1);
+            box-shadow: 0 4px 10px rgba(0, 51, 160, 0.2);
         }
         .sub-tab-content {
             display: none;
-            animation: fadeInUp 0.4s var(--transition-slow) both;
+            animation: fadeInUp 0.3s var(--transition-slow) both;
         }
         .sub-tab-content.active {
             display: block;
         }
 
-        /* --- Layout Detalhado (Formulário de Notas) --- */
+        /* --- [v32] Painel Resumo Notas Práticas --- */
+        #practice-summary-dashboard {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+        @media (min-width: 1024px) {
+            #practice-summary-dashboard {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        /* [v32] Anel de Progresso Principal */
+        .summary-progress-card {
+            grid-column: 1 / -1; /* Ocupa tudo no mobile */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        @media (min-width: 768px) {
+             .summary-progress-card {
+                flex-direction: row;
+                text-align: left;
+                justify-content: flex-start;
+             }
+        }
+        @media (min-width: 1024px) {
+            .summary-progress-card {
+                grid-column: span 2 / span 2; /* Ocupa 2/3 no desktop */
+                padding: 2rem;
+            }
+        }
+        
+        .summary-progress-ring {
+            position: relative;
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            flex-shrink: 0;
+            background: conic-gradient(var(--accent-blue) calc(var(--value) * 1%), #E5E9EF calc(var(--value) * 1%) 100%);
+            transition: all 0.5s ease-out;
+        }
+        .summary-progress-ring::before {
+            content: '';
+            position: absolute;
+            width: 80%;
+            height: 80%;
+            background: var(--card-bg-darker);
+            border-radius: 50%;
+        }
+        .summary-progress-ring .value {
+            position: relative;
+            font-family: var(--font-display);
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--accent-blue);
+        }
+        .summary-progress-card .summary-text {
+            margin-top: 1rem;
+        }
+        @media (min-width: 768px) {
+            .summary-progress-card .summary-text {
+                margin-top: 0;
+                margin-left: 2rem;
+            }
+        }
+        .summary-progress-card .summary-text h3 {
+            font-size: 1.5rem;
+            line-height: 1.2;
+        }
+        .summary-progress-card .summary-text p {
+            font-size: 0.9rem;
+            color: var(--content-text-secondary);
+        }
+        
+        /* [v32] Cards de Competência */
+        .competency-card-container {
+            grid-column: 1 / -1; /* Ocupa tudo no mobile */
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+        @media (min-width: 768px) {
+            .competency-card-container {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        @media (min-width: 1024px) {
+            .competency-card-container {
+                grid-column: 1 / -1; /* Ocupa tudo no desktop (abaixo do anel) */
+            }
+        }
+        @media (min-width: 1280px) { /* xl */
+            .competency-card-container {
+                grid-column: span 1 / span 1; /* Ocupa 1/3 no desktop grande */
+                grid-template-columns: 1fr; /* Volta a ser coluna */
+            }
+            .summary-progress-card {
+                 grid-column: span 2 / span 2;
+            }
+        }
+
+        .competency-card {
+            padding: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .competency-card .icon {
+            flex-shrink: 0;
+            padding: 0.75rem;
+            border-radius: 0.625rem;
+        }
+        .competency-card .icon svg {
+            width: 1.5rem;
+            height: 1.5rem;
+        }
+        .competency-card .value {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .competency-card .label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--content-text-secondary);
+        }
+        
+        /* [v32] Gráfico de Evolução */
+        .evolution-chart-card {
+            grid-column: 1 / -1;
+        }
+        .evolution-chart-container {
+            display: flex;
+            gap: 1rem;
+            justify-content: space-around;
+            align-items: flex-end;
+            height: 120px;
+            padding: 1rem 0.5rem 0 0.5rem;
+            border-top: 1px solid var(--card-border);
+            margin-top: 1rem;
+        }
+        .evolution-bar {
+            flex: 1;
+            background-image: linear-gradient(180deg, var(--accent-blue-secondary), var(--accent-blue));
+            border-radius: 6px 6px 0 0;
+            text-align: center;
+            position: relative;
+            transition: all 0.3s ease-out;
+            opacity: 0;
+            transform: scaleY(0);
+            transform-origin: bottom;
+            animation: growBar 0.5s ease-out forwards;
+        }
+        @keyframes growBar {
+            from { opacity: 0; transform: scaleY(0); }
+            to { opacity: 1; transform: scaleY(1); }
+        }
+        .evolution-bar .bar-value {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s ease 0.3s;
+        }
+        .evolution-bar:hover .bar-value {
+            opacity: 1;
+        }
+        .evolution-bar .bar-label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--content-text-secondary);
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+        }
+
+        /* --- [v31] Layout de Notas Práticas (Relatório Detalhado) --- */
         .evaluation-layout {
             display: grid;
-            grid-template-columns: repeat(1, 1fr);
-            gap: 1.5rem;
+            grid-template-columns: 1fr;
+            gap: 2rem;
         }
         @media (min-width: 1024px) { 
             .evaluation-layout {
-                grid-template-columns: repeat(3, 1fr);
+                grid-template-columns: 3fr 2fr; 
             }
         }
         .evaluation-header {
             grid-column: 1 / -1; 
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 1rem;
             padding-bottom: 1rem;
             border-bottom: 1px solid var(--card-border);
+        }
+        @media (min-width: 640px) {
+            .evaluation-header {
+                flex-direction: row;
+                align-items: center;
+            }
         }
         .evaluation-header .kpi-value {
              font-family: var(--font-display);
@@ -571,16 +838,16 @@
              color: var(--accent-blue); 
              line-height: 1;
         }
+        .evaluation-header .kpi-label {
+            color: var(--accent-blue);
+            font-weight: 600;
+        }
         .evaluation-details dl {
             display: grid;
-            grid-template-columns: repeat(1, 1fr);
-            gap: 0.75rem 1.5rem;
+            grid-template-columns: repeat(2, auto); 
+            gap: 0.5rem 1.5rem;
+            align-items: center;
         }
-         @media (min-width: 640px) { 
-            .evaluation-details dl {
-                grid-template-columns: repeat(2, 1fr);
-            }
-         }
         .evaluation-details dt {
             font-size: 0.8rem;
             font-weight: 500;
@@ -591,43 +858,75 @@
             font-weight: 600;
             color: var(--content-text-primary);
         }
-        .evaluation-scores {
-            lg:col-span-2; 
-        }
-        .evaluation-scores h4, .evaluation-comments h4 {
+        .evaluation-section-title {
             font-family: var(--font-display);
-            font-size: 1rem;
+            font-size: 1.1rem;
             font-weight: 600;
             color: var(--content-text-primary);
-            margin-bottom: 1rem;
+            margin-bottom: 1.25rem;
             padding-bottom: 0.5rem;
             border-bottom: 1px solid var(--card-border);
         }
-        .scores-list li {
+        .skills-barchart-container .bar-chart-item {
+            margin-bottom: 0.75rem;
+            transition: var(--transition-fast);
+            padding: 0.35rem 0.5rem;
+            border-radius: 0.375rem;
+        }
+        .skills-barchart-container .bar-chart-item:hover {
+            background-color: rgba(239, 246, 255, 0.8);
+        }
+        .skills-barchart-container .bar-label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--content-text-secondary);
+            margin-bottom: 0.25rem;
+        }
+        .skills-barchart-container .bar-value {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+        }
+        .skills-barchart-container .bar-bg {
+            background-color: #E5E9EF;
+            border-radius: 99px;
+            height: 0.75rem;
+            overflow: hidden;
+        }
+        .skills-barchart-container .bar-fill {
+            background-image: linear-gradient(90deg, var(--accent-blue-secondary), var(--accent-blue));
+            height: 100%;
+            border-radius: 99px;
+            transition: width 0.5s ease-out;
+        }
+        .skills-checklist-container .skill-checklist-item {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            padding: 0.6rem 0.5rem;
+            align-items: flex-start;
             font-size: 0.85rem;
+            padding: 0.75rem 0.5rem;
             border-bottom: 1px solid rgba(229, 233, 239, 0.6);
-            transition: var(--transition-fast);
         }
-        .scores-list li:hover {
-            background-color: rgba(239, 246, 255, 0.7);
-        }
-        .scores-list li:last-child {
+        .skills-checklist-container .skill-checklist-item:last-child {
             border-bottom: none;
         }
-        .scores-list .score-label {
+        .skills-checklist-container .skill-question {
             color: var(--content-text-secondary);
             font-weight: 500;
             padding-right: 1rem;
+            line-height: 1.4;
         }
-        .scores-list .score-value {
+        .skills-checklist-container .skill-answer {
             font-weight: 600;
             color: var(--content-text-primary);
             text-align: right;
             flex-shrink: 0;
+            max-width: 50%;
+            line-height: 1.4;
+        }
+        .evaluation-comments {
+            grid-column: 1 / -1; 
+            margin-top: 1rem;
         }
         .evaluation-comments p {
             font-size: 0.9rem;
@@ -654,11 +953,11 @@
             width: 5rem; 
             text-align: center;
         }
-        .heatmap-day:hover { transform: scale(1.06); box-shadow: var(--card-shadow); border-color: var(--accent-blue); z-index: 10; position:relative; }
+        .heatmap-day:hover { transform: scale(1.06); box-shadow: var(--card-shadow-hover); border-color: var(--accent-blue); z-index: 10; position:relative; }
         .heatmap-day-date { font-family: var(--font-display); color: var(--content-text-secondary); border-color: #e2e8f0; background-color: transparent; font-size: 0.7rem; font-weight: 600; }
         .heatmap-day-status { color: var(--content-text-primary); font-weight: 600; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem; }
         
-        .heatmap-day[data-status="ausencia"] { background-color: rgba(226, 30, 38, 0.1); } .heatmap-day[data-status="ausencia"] .heatmap-day-status { color: #991b1b; }
+        .heatmap-day[data-status="ausencia"] { background-color: rgba(226, 30, 38, 0.1); } .heatmap-day[data-status="ausencia"] .heatmap-day-status { color: var(--accent-red); }
         .heatmap-day[data-status="folga"] { background-color: rgba(241, 245, 249, 0.8); opacity: 0.7; border-style: dashed; border-color: #E5E9EF; }
         .heatmap-day[data-status="reposicao"] { background-color: #dcfce7; } .heatmap-day[data-status="reposicao"] .heatmap-day-status { color: #15803d; }
         .heatmap-day[data-status="none"], .heatmap-day:not([data-status]) { background-color: rgba(241, 245, 249, 0.5); border-style: dotted; border-color: #E5E9EF; opacity: 0.6;} .heatmap-day[data-status="none"] .heatmap-day-status, .heatmap-day:not([data-status]) .heatmap-day-status { color: #a1a1aa; font-weight: 400;}
@@ -676,11 +975,11 @@
         #faltas-content table tbody tr:last-child td:first-child { border-bottom-left-radius: 0.75rem; }
         #faltas-content table tbody tr:last-child td:last-child { border-bottom-right-radius: 0.75rem; }
         
-        /* --- Gráfico Radial (Notas Teóricas) --- */
+        /* --- Gráfico Radial (Notas Teóricas Aluno) --- */
         .radial-progress-container {
             display: grid;
             grid-template-columns: 1fr;
-            gap: 1rem;
+            gap: 1.5rem;
         }
         @media (min-width: 768px) {
             .radial-progress-container {
@@ -699,7 +998,7 @@
             display: grid;
             place-items: center;
             flex-shrink: 0;
-            background: conic-gradient(var(--accent-blue) calc(var(--value) * 1%), #E5E9EF calc(var(--value) * 1%) 100%); 
+            background: conic-gradient(var(--accent-orange) calc(var(--value) * 1%), #E5E9EF calc(var(--value) * 1%) 100%); 
         }
         .radial-progress::before { 
             content: ''; 
@@ -711,7 +1010,7 @@
         .radial-progress-value { 
             position: relative;
             font-family: var(--font-display);
-            color: var(--accent-blue); 
+            color: var(--accent-orange); 
             font-size: 1.75rem;
             font-weight: 700;
         }
@@ -790,23 +1089,24 @@
             font-style: italic;
         }
         
-        /* --- [CORREÇÃO v24] Rodapé (Tema Branco) --- */
+        /* --- Rodapé (Tema Branco) --- */
         #app-footer {
-            background-color: #ffffff;
+            background-color: var(--sidebar-bg);
             color: var(--content-text-secondary);
-            padding: 2rem;
+            padding: 2rem 1.5rem;
             text-align: center;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             border-top: 1px solid var(--card-border);
-            margin-top: auto; 
+            margin-top: auto; /* Empurra para o final */
         }
         #app-footer a {
-            color: var(--accent-blue);
-            font-weight: 600;
+            color: var(--content-text-secondary);
+            font-weight: 500;
             transition: var(--transition-fast);
         }
         #app-footer a:hover {
-            color: #0033A0; /* Azul Principal */
+            color: var(--accent-blue);
+            text-decoration: underline;
         }
         /* Ícones do rodapé */
         #app-footer svg {
@@ -814,10 +1114,11 @@
             transition: var(--transition-fast);
         }
         #app-footer a:hover svg {
-            color: #0033A0;
+            color: var(--accent-blue);
+            transform: scale(1.15) rotate(5deg);
         }
 
-        /* --- [NOVO v26] Modal da API Gemini --- */
+        /* --- Modal da API Gemini --- */
         #gemini-modal {
             position: fixed;
             inset: 0;
@@ -825,7 +1126,7 @@
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             z-index: 10000;
-            display: none; /* Começa escondido */
+            display: none; 
             align-items: center;
             justify-content: center;
             padding: 1rem;
@@ -877,9 +1178,8 @@
         #gemini-modal-content {
             max-height: 60vh;
             overflow-y: auto;
-            padding-right: 0.5rem; /* Espaço para scrollbar */
+            padding-right: 0.5rem; 
         }
-        /* Estilos para o conteúdo da análise */
         #gemini-modal-content h3 {
             font-family: var(--font-display);
             font-size: 1rem;
@@ -914,7 +1214,7 @@
             margin: 2rem auto;
         }
 
-        /* --- [NOVO v26] Botão de Análise --- */
+        /* --- Botão de Análise --- */
         .gemini-analysis-button {
             font-family: var(--font-display);
             font-size: 0.75rem;
@@ -928,11 +1228,12 @@
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            margin-left: 1rem; /* Espaço ao lado do <h4> */
+            margin-left: 1rem; 
         }
         .gemini-analysis-button:hover {
             background-color: rgba(0, 84, 180, 0.2);
             color: #0033A0;
+            transform: translateY(-1px);
         }
         .gemini-analysis-button:disabled {
             opacity: 0.6;
@@ -948,7 +1249,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
 </head>
 
-<body>
+<body class="flex flex-col min-h-screen">
 
     <!-- Overlay de Loading -->
     <div id="loading-overlay">
@@ -990,10 +1291,10 @@
 
 
     <!-- View do Dashboard Principal (Começa escondida) -->
-    <div id="dashboard-view" class="view-container flex h-screen opacity-0 transition-opacity duration-500">
+    <div id="dashboard-view" class="view-container flex min-h-screen opacity-0 transition-opacity duration-500">
         
-        <!-- [CORREÇÃO v24] Sidebar (Tema Branco) -->
-        <aside id="app-sidebar" class="flex flex-col flex-shrink-0">
+        <!-- Sidebar (Tema Branco) -->
+        <aside id="app-sidebar">
             <div class="h-20 flex items-center justify-between px-6 border-b border-gray-200 flex-shrink-0">
                 <div class="flex items-center space-x-3 overflow-hidden">
                     <h1 class="text-xl font-bold sidebar-logo-text whitespace-nowrap">Ensino Fisio</h1>
@@ -1025,102 +1326,90 @@
         <div class="flex-1 flex flex-col overflow-hidden">
             <main class="flex-1 overflow-x-hidden overflow-y-auto p-6 lg:p-8">
 
-                <!-- View Principal: Dashboard -->
+                <!-- View Principal: Dashboard (Layout Reorganizado) -->
                 <div id="content-dashboard" class="view-container">
-                    <h1 class="text-3xl font-bold text-slate-900 mb-8">Dashboard Geral</h1>
+                    <h1>Dashboard Geral</h1>
                     
-                    <div class="grid grid-cols-12 gap-6">
-                        
-                        <div class="col-span-12 lg:col-span-8 space-y-6">
-                            
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div class="kpi-base-card kpi-hero-card animated-card delay-100">
-                                    <div class="icon-bg kpi-icon-blue">
-                                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M17 20h5v-2a3 3 0 00-5.356-2.121M17 20v-2m0 2H5a2 2 0 01-2-2v-5a2 2 0 012-2h14a2 2 0 012 2v5a2 2 0 01-2 2h-5m-4-8a3 3 0 100-6 3 3 0 000 6z" /></svg>
-                                    </div>
-                                    <div>
-                                        <p class="kpi-label">Total de Inscritos</p>
-                                        <p id="kpi-total-students" class="kpi-value">-</p>
-                                    </div>
-                                </div>
-                                <div class="kpi-base-card kpi-hero-card animated-card delay-200">
-                                    <div class="icon-bg kpi-icon-green">
-                                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                    </div>
-                                    <div>
-                                        <p class="kpi-label">Alunos Ativos</p>
-                                        <p id="kpi-active-students" class="kpi-value">-</p>
-                                    </div>
-                                </div>
-                                <div class="kpi-base-card kpi-hero-card animated-card delay-300">
-                                    <div class="icon-bg kpi-icon-orange">
-                                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                                    </div>
-                                    <div>
-                                        <p class="kpi-label">Média Teórica (Geral)</p>
-                                        <p id="kpi-avg-theoretical" class="kpi-value">-</p>
-                                    </div>
-                                </div>
-                                <div class="kpi-base-card kpi-hero-card animated-card delay-400">
-                                    <div class="icon-bg kpi-icon-blue">
-                                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                                    </div>
-                                    <div>
-                                        <p class="kpi-label">Média Prática (Geral)</p>
-                                        <p id="kpi-avg-practical" class="kpi-value">-</p>
-                                    </div>
-                                </div>
+                    <!-- KPIs Principais -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                        <div class="kpi-base-card kpi-hero-card animated-card delay-100">
+                            <div class="icon-bg kpi-icon-blue">
+                                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M17 20h5v-2a3 3 0 00-5.356-2.121M17 20v-2m0 2H5a2 2 0 01-2-2v-5a2 2 0 012-2h14a2 2 0 012 2v5a2 2 0 01-2 2h-5m-4-8a3 3 0 100-6 3 3 0 000 6z" /></svg>
                             </div>
-                            
-                            <div class="content-card p-6 animated-card delay-500">
-                                <div class="flex justify-between items-center mb-5">
-                                    <h2 class="content-card-header mb-0 pb-0 border-b-0">Frequência Diária</h2>
-                                    <span id="current-date" class="text-sm font-medium text-slate-500"></span>
-                                </div>
-                                <div class="grid grid-cols-3 gap-4 mb-6">
-                                    <div class="kpi-base-card kpi-secondary-card"><span id="kpi-scaled-label" class="kpi-label">Escalados</span><p id="kpi-scaled" class="kpi-value">-</p></div>
-                                    <div class="kpi-base-card kpi-secondary-card"><span id="kpi-present-label" class="kpi-label">Presentes</span><p id="kpi-present" class="kpi-value">-</p></div>
-                                    <div class="kpi-base-card kpi-secondary-card"><span id="kpi-absent-label" class="kpi-label">Ausentes</span><p id="kpi-absent" class="kpi-value">-</p></div>
-                                </div>
-                                <div id="frequency-panel" class="space-y-4 max-h-[300px] overflow-y-auto text-sm pr-2"></div>
-                                <div id="last-update-timestamp" class="text-right mt-4"></div>
-                            </div>
-
-                             <div class="content-card p-6 animated-card delay-600">
-                                <h2 class="content-card-header">Desempenho Teórico (Médias Ativos)</h2>
-                                <div id="theoretical-avg-chart" class="space-y-2 max-h-[400px] overflow-y-auto pr-2"></div>
+                            <div>
+                                <p class="kpi-label">Total de Inscritos</p>
+                                <p id="kpi-total-students" class="kpi-value">-</p>
                             </div>
                         </div>
-
-                        <div class="col-span-12 lg:col-span-4 space-y-6">
-                            
-                            <div class="content-card p-6 animated-card delay-500">
-                                <h2 class="content-card-header">Distribuição por Curso (Ativos)</h2>
-                                <div id="course-distribution-chart" class="donut-chart-container min-h-[160px]"></div>
+                        <div class="kpi-base-card kpi-hero-card animated-card delay-200">
+                            <div class="icon-bg kpi-icon-green">
+                                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                             </div>
-                            
-                             <div class="kpi-base-card kpi-hero-card animated-card delay-600">
-                                <div class="icon-bg kpi-icon-red">
-                                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                                </div>
-                                <div>
-                                    <p class="kpi-label">Reposições Pendentes</p>
-                                    <p id="kpi-pending-replacements" class="kpi-value">-</p>
-                                </div>
-                            </div>
-                            
-                            <div class="content-card p-6 animated-card delay-700">
-                                <h2 class="content-card-header">Registros Recentes</h2>
-                                <ul id="recent-absences-list" class="space-y-2 text-sm max-h-[400px] overflow-y-auto"></ul>
+                            <div>
+                                <p class="kpi-label">Alunos Ativos</p>
+                                <p id="kpi-active-students" class="kpi-value">-</p>
                             </div>
                         </div>
+                        <div class="kpi-base-card kpi-hero-card animated-card delay-300">
+                            <div class="icon-bg kpi-icon-orange">
+                                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                            </div>
+                            <div>
+                                <p class="kpi-label">Média Teórica (Geral)</p>
+                                <p id="kpi-avg-theoretical" class="kpi-value">-</p>
+                            </div>
+                        </div>
+                        <div class="kpi-base-card kpi-hero-card animated-card delay-400">
+                            <div class="icon-bg kpi-icon-blue">
+                                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                            </div>
+                            <div>
+                                <p class="kpi-label">Média Prática (Geral)</p>
+                                <p id="kpi-avg-practical" class="kpi-value">-</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gráficos e Resumos -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                        <div class="content-card p-6 animated-card delay-500 lg:col-span-2">
+                            <h2 class="content-card-header">Médias Gerais dos Módulos (Ativos)</h2>
+                            <div id="module-averages-chart" class="min-h-[160px]">
+                                <!-- Gráficos radiais pequenos serão renderizados aqui -->
+                            </div>
+                        </div>
+                        <div class="content-card p-6 animated-card delay-600 lg:col-span-1">
+                            <h2 class="content-card-header">Distribuição por Curso (Ativos)</h2>
+                            <div id="course-distribution-chart" class="donut-chart-container min-h-[160px]"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Registros Recentes -->
+                    <div class="grid grid-cols-1 gap-6">
+                         <div class="content-card p-6 animated-card delay-600">
+                             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                 <div class="kpi-base-card kpi-hero-card">
+                                     <div class="icon-bg kpi-icon-red">
+                                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                     </div>
+                                     <div>
+                                         <p class="kpi-label">Reposições Pendentes</p>
+                                         <p id="kpi-pending-replacements" class="kpi-value">-</p>
+                                     </div>
+                                 </div>
+                                 <div class="md:col-span-2">
+                                     <h2 class="content-card-header mb-2 pb-2">Registros Recentes</h2>
+                                     <ul id="recent-absences-list" class="space-y-2 text-sm max-h-[200px] overflow-y-auto"></ul>
+                                 </div>
+                               </div>
+                         </div>
                     </div>
                 </div>
 
                 <!-- View: Lista de Alunos -->
                  <div id="content-alunos" class="view-container">
                      <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-                         <h1 class="text-3xl font-bold text-slate-900">Alunos</h1>
+                         <h1>Alunos</h1>
                          <input type="text" id="search-student" placeholder="Buscar aluno pelo nome..." class="border border-slate-300 rounded-lg px-4 py-2.5 text-sm w-full sm:w-auto max-w-xs transition shadow-sm">
                      </div>
                      <div id="student-list-panel" class="max-h-[calc(100vh-200px)] overflow-y-auto"></div>
@@ -1128,21 +1417,37 @@
 
                 <!-- View: Ponto -->
                  <div id="content-ponto" class="view-container">
-                     <h1 class="text-3xl font-bold text-slate-900 mb-6">Análise de Ponto</h1>
-                     <div class="content-card p-10 text-center">
-                         <h3 class="font-display text-lg text-slate-700">Em Desenvolvimento</h3>
-                         <p class="mt-2 text-slate-500">Esta seção abrigará futuros relatórios de frequência e pontualidade.</p>
+                     <h1>Análise de Ponto</h1>
+                     
+                     <!-- Painel de Frequência Diária (Movido do Dashboard) -->
+                     <div class="content-card p-6 animated-card delay-100">
+                         <div class="flex justify-between items-center mb-5">
+                             <h2 class="content-card-header mb-0 pb-0 border-b-0">Frequência Diária</h2>
+                             <span id="current-date" class="text-sm font-medium text-slate-500"></span>
+                         </div>
+                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                             <div class="kpi-base-card kpi-secondary-card"><span id="kpi-scaled-label" class="kpi-label">Escalados</span><p id="kpi-scaled" class="kpi-value">-</p></div>
+                             <div class="kpi-base-card kpi-secondary-card"><span id="kpi-present-label" class="kpi-label">Presentes</span><p id="kpi-present" class="kpi-value">-</p></div>
+                             <div class="kpi-base-card kpi-secondary-card"><span id="kpi-absent-label" class="kpi-label">Ausentes</span><p id="kpi-absent" class="kpi-value">-</p></div>
+                         </div>
+                         <div id="frequency-panel" class="space-y-4 max-h-[400px] overflow-y-auto text-sm pr-2"></div>
+                         <div id="last-update-timestamp" class="text-right mt-4"></div>
+                     </div>
+                     
+                     <div class="content-card p-10 text-center mt-6 animated-card delay-200">
+                         <h3 class="font-display text-lg text-slate-700">Relatórios Futuros</h3>
+                         <p class="mt-2 text-slate-500">Em breve: Gráficos de pontualidade e histórico de presença.</p>
                      </div>
                  </div>
 
             </main>
 
-            <!-- [CORREÇÃO v24] Rodapé (Tema Branco) -->
+            <!-- Rodapé (Tema Branco) -->
             <footer id="app-footer">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
                         <div class="text-center md:text-left">
-                            <h4 class="font-display font-bold text-gray-800 text-lg">ENSINO FISIO INCOR - 2025</h4>
+                            <h4 class="font-display font-bold text-slate-700 text-lg">ENSINO FISIO INCOR - 2025</h4>
                         </div>
                         <div class="text-center md:text-left space-y-1">
                             <p class="font-semibold">
@@ -1234,7 +1539,7 @@
                 <!-- Faltas -->
                 <div id="tab-faltas" class="tab-content content-card p-0 overflow-hidden">
                      <div class="p-6">
-                        <h3 class="content-card-header p-0 m-0 border-b-0">Registro de Ausências e Reposições</h3>
+                         <h3 class="content-card-header p-0 m-0 border-b-0">Registro de Ausências e Reposições</h3>
                     </div>
                     <div id="faltas-content" class="overflow-x-auto"></div>
                 </div>
@@ -1247,23 +1552,15 @@
                     </div>
                 </div>
                 
-                <!-- Notas Práticas -->
+                <!-- [NOVO v32] Notas Práticas (Dashboard + Detalhes) -->
                 <div id="tab-notas-p" class="tab-content">
-                    <h3 class="text-xl font-bold text-slate-800 mb-6">Avaliações Práticas</h3>
-                    
-                    <div id="student-detail-subnav-container" class="subnav-container">
-                        <!-- Botões das sub-abas -->
-                    </div>
-
-                    <div id="student-detail-subnav-content">
-                        <!-- Conteúdo das sub-abas -->
-                    </div>
+                    <!-- O conteúdo desta aba (sumário + sub-abas) é totalmente renderizado pelo JavaScript -->
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- [NOVO v26] Modal da API Gemini -->
+    <!-- Modal da API Gemini -->
     <div id="gemini-modal">
         <div class="gemini-modal-box">
             <div class="gemini-modal-header">
@@ -1271,7 +1568,6 @@
                 <button id="gemini-modal-close" title="Fechar">&times;</button>
             </div>
             <div id="gemini-modal-content">
-                <!-- O conteúdo da análise será injetado aqui -->
                 <div class="gemini-loader"></div>
             </div>
         </div>
@@ -1281,7 +1577,7 @@
     <!-- CLIENT-SIDE SCRIPT -->
     <script>
         // URL da API
-        const API_URL = "https://script.google.com/macros/s/AKfycbxq7vepPQ6F6qxPvXbLnINZbMkoBiMVRMwlfw5_O_pZMoNp-XcJijoX6DWM6g9SQhd3/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbz0ggDxcDPXe0h_GJeQ-NT_-INHMKkQ08PAGLp5QN2m7HKHfMlTqg6gsATMzrtRF48n/exec";
         
         // Estado global da aplicação
         const appState = {
@@ -1298,20 +1594,14 @@
             isSidebarCollapsed: false
         };
 
-        // --- [NOVO v22] Função Helper para Normalização ---
-        /**
-         * Normaliza uma string para comparação, removendo acentos, espaços e convertendo para minúsculas.
-         * @param {string} str A string para normalizar.
-         * @returns {string} A string normalizada.
-         */
+        // --- Função Helper para Normalização ---
         function normalizeString(str) {
             if (!str) return '';
             return str.trim().toLowerCase()
-                      .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                       .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         }
 
         // --- Funções Utilitárias (Loading/Erro) ---
-
         function showLoading(show) {
             const overlay = document.getElementById('loading-overlay');
             if (show) {
@@ -1348,7 +1638,6 @@
         }
         
         // --- Gerenciador de Views Centralizado ---
-
         function showView(viewIdToShow) {
             console.log(`[showView] Tentando mostrar view: ${viewIdToShow}`);
             const allViewIds = ['login-view', 'dashboard-view', 'student-detail-view'];
@@ -1357,15 +1646,16 @@
             allViewIds.forEach(id => {
                 const view = document.getElementById(id);
                 if (view) {
+                    let displayStyle = 'none';
                     if (view.id === viewIdToShow) {
-                        view.style.display = (id === 'dashboard-view' || id === 'login-view') ? 'flex' : 'block';
+                        displayStyle = (id === 'dashboard-view' || id === 'login-view') ? 'flex' : 'block';
+                        
                         view.style.animation = 'none';
                         view.offsetHeight;
                         view.style.animation = null; 
                         found = true;
-                    } else {
-                        view.style.display = 'none'; 
                     }
+                    view.style.display = displayStyle;
                 }
             });
 
@@ -1374,9 +1664,7 @@
             }
         }
 
-
         // --- INICIALIZAÇÃO E CARGA DE DADOS ---
-
         async function initDashboard() {
             console.log('[initDashboard] Iniciando Dashboard...');
             try {
@@ -1386,9 +1674,10 @@
 
                 console.log('[initDashboard] Dados carregados, iniciando renderização inicial...');
                 renderStudentList(appState.alunos);
-                computeAndRenderFrequency();
-                renderAtAGlance();
+                renderAtAGlance(); // Inclui renderModuleAverages()
                 renderRecentAbsences();
+                renderTabPonto(); // Renderiza a aba Ponto (que agora tem conteúdo)
+
                 console.log('[initDashboard] Renderização inicial completa.');
                 
                 switchMainTab('dashboard'); 
@@ -1415,8 +1704,19 @@
             document.getElementById('search-student').addEventListener('input', filterStudentList);
             setupStudentTabNavigation();
 
-            // Listener para sub-abas de Notas Práticas
-            document.getElementById('student-detail-subnav-container').addEventListener('click', (e) => {
+            // [ORION] Event Delegation para os cards de aluno
+            document.getElementById('student-list-panel').addEventListener('click', (e) => {
+                const card = e.target.closest('.student-card');
+                if (card) {
+                    const email = card.getAttribute('data-student-email');
+                    if (email) {
+                        showStudentDetail(email);
+                    }
+                }
+            });
+
+            // Event listener para as sub-abas (delegado ao #tab-notas-p)
+            document.getElementById('tab-notas-p').addEventListener('click', (e) => {
                 const button = e.target.closest('.subnav-button');
                 if (button && !button.classList.contains('active')) {
                     const tabId = button.getAttribute('data-subtab-id');
@@ -1424,15 +1724,21 @@
                 }
             });
 
-            // [NOVO v26] Listener para fechar o modal Gemini
+            // [ORION] Event Delegation para botões Gemini (caso existam múltiplos)
+            document.getElementById('student-tabs-content').addEventListener('click', (e) => {
+                 const button = e.target.closest('.gemini-analysis-button');
+                 if(button) {
+                    const comment = button.getAttribute('data-comment');
+                    handleAnalisarComentario(button, comment);
+                 }
+            });
+
             document.getElementById('gemini-modal-close').addEventListener('click', closeGeminiModal);
             document.getElementById('gemini-modal').addEventListener('click', (e) => {
-                // Fecha se clicar no overlay (fundo)
                 if (e.target.id === 'gemini-modal') {
                     closeGeminiModal();
                 }
             });
-
 
             console.log('[setupEventHandlers] Listeners configurados.');
         }
@@ -1445,8 +1751,9 @@
             const password = document.getElementById('login-password').value;
             const errorBox = document.getElementById('login-error');
             
+            // [ORION] Senha local (INSEGURO)
             const validEmail = 'thiago.dias@hc.fm.usp.br';
-            const validPass = 'Thiago1508';
+            const validPass = 'Thiago1508'; 
             
             if (email === validEmail && password === validPass) {
                 console.log("[handleLogin] Login bem-sucedido.");
@@ -1482,15 +1789,15 @@
             
             const notasRaw = data.notasPraticas || {};
             const normalized = Array.isArray(notasRaw)
-              ? notasRaw.reduce((acc, item, idx) => {
-                  const name = item.nomeAba || item.nomePratica || `NotasPraticas${idx + 1}`;
-                  acc[name] = { nomePratica: name, registros: item.registros || [] };
-                  return acc;
-                }, {})
-              : Object.entries(notasRaw).reduce((acc, [key, val]) => {
-                  acc[key] = { nomePratica: key, registros: val.registros || [] };
-                  return acc;
-                }, {});
+               ? notasRaw.reduce((acc, item, idx) => {
+                   const name = item.nomeAba || item.nomePratica || `NotasPraticas${idx + 1}`;
+                   acc[name] = { nomePratica: name, registros: item.registros || [] };
+                   return acc;
+                 }, {})
+               : Object.entries(notasRaw).reduce((acc, [key, val]) => {
+                   acc[key] = { nomePratica: key, registros: val.registros || [] };
+                   return acc;
+                 }, {});
 
             appState.notasPraticas = normalized;
             console.log("[onStaticDataLoaded] Notas Práticas Normalizadas:", appState.notasPraticas);
@@ -1500,7 +1807,6 @@
             
             console.log("[onStaticDataLoaded] Dados estáticos processados.");
         }
-
 
         async function fetchPontoHoje() {
             const timestampElem = document.getElementById('last-update-timestamp');
@@ -1517,7 +1823,7 @@
                 appState.pontoHojeMap.clear();
                 (d.hoje || []).forEach(p => { if(p && p.EmailHC) appState.pontoHojeMap.set(p.EmailHC, p); });
                 
-                computeAndRenderFrequency(); 
+                renderTabPonto(); 
                 
                 if (timestampElem) { timestampElem.textContent = `Última att: ${new Date().toLocaleTimeString('pt-BR')}`; }
              } catch(e){
@@ -1527,7 +1833,6 @@
         }
 
         // --- NAVEGAÇÃO PRINCIPAL ---
-
         function setupSidebarNavigation() {
             const sidebar = document.querySelector('#app-sidebar nav');
             sidebar.addEventListener('click', (e) => {
@@ -1564,9 +1869,7 @@
             window.scrollTo(0, 0);
         }
 
-
         // --- CÁLCULOS AUXILIARES ---
-
         function parseNota(notaStr) {
             if (notaStr === null || notaStr === undefined) return 0;
             const str = String(notaStr).trim();
@@ -1575,37 +1878,63 @@
             return isNaN(n) ? 0 : n;
         }
 
-        function calculateAveragesAndDistribution() {
-            const activeStudents = appState.alunos.filter(s => s.Status === 'Ativo');
-            
-            const activeNonR2Emails = new Set(
-                activeStudents
-                    .filter(s => s.Curso !== 'Residência - 2º ano' && s.Curso !== 'Residência  - 2º ano')
-                    .map(s => s.EmailHC)
+        // [ORION] Helper para centralizar a busca de dados do aluno
+        function findDataByStudent(emailNormalizado, alunoNomeNormalizado) {
+            // Escalas
+            const escalas = Object.values(appState.escalas).map(e => {
+                const a = (e.alunos || []).find(x => x && 
+                    ((x.EmailHC && normalizeString(x.EmailHC) === emailNormalizado) || 
+                     (x.NomeCompleto && normalizeString(x.NomeCompleto) === alunoNomeNormalizado))
+                );
+                return a ? { nomeEscala: e.nomeAba || 'Escala', ...a } : null;
+            }).filter(Boolean); // Filtra nulos
+
+            // Faltas
+            const faltas = appState.ausenciasReposicoes.filter(f => f && 
+                ((f.EmailHC && normalizeString(f.EmailHC) === emailNormalizado) || 
+                 (f.NomeCompleto && normalizeString(f.NomeCompleto) === alunoNomeNormalizado))
             );
 
+            // Notas Teóricas
+            const notasT = (appState.notasTeoricas.registros || []).find(n => n && 
+                ((n.EmailHC && normalizeString(n.EmailHC) === emailNormalizado) || 
+                 (n.NomeCompleto && normalizeString(n.NomeCompleto) === alunoNomeNormalizado))
+            );
+
+            // Notas Práticas
+            const notasP = Object.values(appState.notasPraticas).flatMap(p =>
+                (p.registros || []).filter(x => x && 
+                    ((x.EmailHC && normalizeString(x.EmailHC) === emailNormalizado) || 
+                     (x.NomeCompleto && normalizeString(x.NomeCompleto) === alunoNomeNormalizado))
+                ).map(i => ({ nomePratica: p.nomePratica, ...i }))
+            );
+
+            return { escalas, faltas, notasT, notasP };
+        }
+        
+        function calculateAveragesAndDistribution() {
+            const activeStudents = appState.alunos.filter(s => s.Status === 'Ativo');
+            const activeStudentMap = new Map();
+            activeStudents.forEach(s => {
+                if (s.EmailHC) activeStudentMap.set(normalizeString(s.EmailHC), s);
+                if (s.NomeCompleto) activeStudentMap.set(normalizeString(s.NomeCompleto), s);
+            });
+
             // --- Teóricas (com filtro R2) ---
-            let ttSum = 0; let ttCount = 0; const tSums = {}; const tCounts = {};
+            const tSums = {}; const tCounts = {};
             if(appState.notasTeoricas?.registros){
                 appState.notasTeoricas.registros.forEach(r => {
-                    const emailNormalizado = normalizeString(r.EmailHC);
-                    const nomeNormalizado = normalizeString(r.NomeCompleto);
-                    const isActiveNonR2 = activeStudents.some(s => 
-                        (s.Curso !== 'Residência - 2º ano' && s.Curso !== 'Residência  - 2º ano') &&
-                        (normalizeString(s.EmailHC) === emailNormalizado || normalizeString(s.NomeCompleto) === nomeNormalizado)
-                    );
+                    const rEmailNorm = normalizeString(r.EmailHC);
+                    const rNomeNorm = normalizeString(r.NomeCompleto);
+                    const student = activeStudentMap.get(rEmailNorm) || activeStudentMap.get(rNomeNorm);
 
-                    if(r && isActiveNonR2){
+                    if(student && student.Curso !== 'Residência - 2º ano' && student.Curso !== 'Residência  - 2º ano'){
                         Object.keys(r).forEach(k => {
                             if(!['SerialNumber','NomeCompleto','EmailHC','Curso'].includes(k) && k.trim() !== ''){
                                 const n = parseNota(r[k]);
                                 if(n > 0){
                                     tSums[k] = (tSums[k] || 0) + n;
                                     tCounts[k] = (tCounts[k] || 0) + 1;
-                                    if (!k.toUpperCase().includes('MÉDIA')) {
-                                        ttSum += n; 
-                                        ttCount++;
-                                    }
                                 }
                             }
                         });
@@ -1613,28 +1942,37 @@
                 });
             }
             const tAvgs = {};
-            Object.keys(tSums).forEach(k => { tAvgs[k] = tCounts[k] > 0 ? tSums[k] / tCounts[k] : 0; });
-            const oTAvg = ttCount > 0 ? ttSum / ttCount : 0; 
+            let oTSum = 0; let oTCount = 0;
+            Object.keys(tSums).forEach(k => { 
+                tAvgs[k] = tCounts[k] > 0 ? tSums[k] / tCounts[k] : 0; 
+                if (!k.toUpperCase().includes('MÉDIA')) {
+                    oTSum += (tSums[k] || 0);
+                    oTCount += (tCounts[k] || 0);
+                }
+            });
+            const oTAvg = oTCount > 0 ? oTSum / oTCount : 0;
             
             // --- Práticas (SEM filtro R2) ---
-            let tpSum = 0; let tpCount = 0;
+            const pSums = {}; const pCounts = {};
+            let oPSum = 0; let oPCount = 0;
             if(appState.notasPraticas && typeof appState.notasPraticas === 'object'){
                 Object.values(appState.notasPraticas).forEach(p => { 
+                    const pNome = p.nomePratica;
+                    if (!pSums[pNome]) { pSums[pNome] = 0; pCounts[pNome] = 0; }
                     if(p && p.registros){
                         p.registros.forEach(r => {
-                            // [CORREÇÃO v24] Filtra por EmailHC (agora correto) ou Nome
-                             const isActive = activeStudents.some(s => 
-                                (r.EmailHC && normalizeString(s.EmailHC) === normalizeString(r.EmailHC)) ||
-                                (r.NomeCompleto && normalizeString(s.NomeCompleto) === normalizeString(r.NomeCompleto))
-                             );
-
+                             const rEmailNorm = normalizeString(r.EmailHC);
+                             const rNomeNorm = normalizeString(r.NomeCompleto);
+                             const isActive = activeStudentMap.has(rEmailNorm) || activeStudentMap.has(rNomeNorm);
                             if(r && isActive){
                                 const kM = Object.keys(r).find(k => /MÉDIA\s*\(NOTA FINAL\)[:]?/i.test(k)) || null;
                                 if(kM){
                                     const n = parseNota(r[kM]);
                                     if(n > 0){
-                                        tpSum += n;
-                                        tpCount++;
+                                        pSums[pNome] += n;
+                                        pCounts[pNome]++;
+                                        oPSum += n;
+                                        oPCount++;
                                     }
                                 }
                             }
@@ -1642,27 +1980,38 @@
                     }
                 });
             }
-            const oPAvg = tpCount > 0 ? tpSum / tpCount : 0;
+            const pAvgs = {};
+            Object.keys(pSums).forEach(k => { pAvgs[k] = pCounts[k] > 0 ? pSums[k] / pCounts[k] : 0; });
+            const oPAvg = oPCount > 0 ? oPSum / oPCount : 0;
             
             // --- Distribuição (Todos os ativos) ---
             const cCounts = activeStudents.reduce((acc,s) => { const c = s.Curso || 'Sem Curso'; acc[c] = (acc[c] || 0) + 1; return acc; }, {});
             const tA = activeStudents.length;
             const cDist = Object.entries(cCounts).map(([c,n]) => ({course: c, count: n, percentage: tA > 0 ? (n/tA)*100 : 0})).sort((a,b) => b.count - a.count);
 
-            return {overallTheoreticalAvg: oTAvg, theoreticalAverages: tAvgs, overallPracticalAvg: oPAvg, courseDistribution: cDist};
+            return {
+                overallTheoreticalAvg: oTAvg, 
+                theoreticalAverages: tAvgs, 
+                overallPracticalAvg: oPAvg, 
+                practicalAverages: pAvgs, 
+                courseDistribution: cDist
+            };
         }
 
-
         // --- RENDERIZAÇÃO VIEW PRINCIPAL ---
-
         function renderAtAGlance() {
-            console.log("[renderAtAGlance] Iniciando...");
             try {
                 const tS = appState.alunos.length; 
                 const aS = appState.alunos.filter(s => s.Status === 'Ativo').length; 
                 const pR = appState.ausenciasReposicoes.filter(f => f && !f.DataReposicaoISO && (f.EmailHC || f.NomeCompleto)).length;
                 
-                const {overallTheoreticalAvg:oTAvg, theoreticalAverages:tAvgs, overallPracticalAvg:oPAvg, courseDistribution:cDist} = calculateAveragesAndDistribution();
+                const {
+                    overallTheoreticalAvg:oTAvg, 
+                    theoreticalAverages:tAvgs, 
+                    overallPracticalAvg:oPAvg, 
+                    practicalAverages:pAvgs, 
+                    courseDistribution:cDist
+                } = calculateAveragesAndDistribution();
                 
                 document.getElementById('kpi-total-students').textContent = tS;
                 document.getElementById('kpi-active-students').textContent = aS;
@@ -1671,8 +2020,7 @@
                 document.getElementById('kpi-avg-practical').textContent = oPAvg > 0 ? oPAvg.toFixed(1) : 'N/A';
                 
                 renderCourseDistributionChart(cDist);
-                renderTheoreticalAvgChart(tAvgs);
-                 console.log("[renderAtAGlance] Concluído.");
+                renderModuleAverages(tAvgs, pAvgs);
             } catch (e) { console.error("[renderAtAGlance] Erro:", e); showError("Erro ao renderizar visão geral."); }
         }
         
@@ -1685,52 +2033,80 @@
              c.innerHTML=`<div class="donut-chart" style="--chart-segments:${grad.substring(1)};"></div><div class="donut-legend"><ul>${leg.join('')}</ul></div>`;
         }
         
-        function renderTheoreticalAvgChart(averages) {
-            const p = document.getElementById('theoretical-avg-chart');
-            const sorted = Object.entries(averages)
-                                .filter(([s]) => s.toUpperCase().includes('MÉDIA'))
-                                .sort(([,a],[,b]) => b-a); 
-                                
-            if(sorted.length === 0){ p.innerHTML='<p class="text-slate-500 text-sm italic">S/ dados notas T.</p>'; return; } 
-            
-            p.innerHTML = sorted.map(([s,a]) => {
-                const bF = 'bar-fill-media';
-                const lC = 'text-blue-700 font-semibold';
-                const vC = 'text-blue-800 font-bold'; 
-                return `<div class="bar-chart-item text-xs rounded p-1.5 mt-2 pt-2 border-t border-blue-100"><div class="flex justify-between items-center mb-1"><span class="bar-label ${lC} truncate pr-2" title="${s}">${s}</span><span class="bar-value ${vC} w-8 text-right">${a.toFixed(1)}</span></div><div class="w-full h-2.5 bg-blue-100 rounded-full overflow-hidden bar-bg"><div class="h-full ${bF} rounded-full transition-all duration-500 ease-out" style="width:${a*10}%"></div></div></div>`;
-            }).join('');
+        function renderModuleAverages(tAvgs, pAvgs) {
+            const container = document.getElementById('module-averages-chart');
+            if (!container) return;
+            let html = '';
+            Object.entries(tAvgs)
+                .filter(([key]) => key.toUpperCase().includes('MÉDIA'))
+                .sort(([keyA], [keyB]) => keyA.localeCompare(keyB)) 
+                .forEach(([key, value]) => {
+                    if (value > 0) {
+                        html += `
+                        <div class="radial-card-small">
+                            <div class="radial-progress-small" style="--value:${value * 10}; --progress-color: var(--accent-orange);">
+                                <span class="radial-progress-small-value" style="color: var(--accent-orange);">${value.toFixed(1)}</span>
+                            </div>
+                            <div>
+                                <span class="radial-label">${key}</span>
+                                <span class="block text-xs text-slate-500">Média Teórica</span>
+                            </div>
+                        </div>
+                        `;
+                    }
+                });
+            Object.entries(pAvgs)
+                .sort(([keyA], [keyB]) => keyA.localeCompare(keyB)) 
+                .forEach(([key, value]) => {
+                    if (value > 0) {
+                        html += `
+                        <div class="radial-card-small">
+                            <div class="radial-progress-small" style="--value:${value * 10}; --progress-color: var(--accent-blue);">
+                                <span class="radial-progress-small-value" style="color: var(--accent-blue);">${value.toFixed(1)}</span>
+                            </div>
+                            <div>
+                                <span class="radial-label">${key}</span>
+                                <span class="block text-xs text-slate-500">Média Prática</span>
+                            </div>
+                        </div>
+                        `;
+                    }
+                });
+            if (html === '') {
+                container.innerHTML = '<p class="text-slate-500 text-sm italic col-span-full">Nenhuma média de módulo calculada para alunos ativos.</p>';
+                return;
+            }
+            container.innerHTML = html;
         }
 
         function renderRecentAbsences() {
-             console.log("[renderRecentAbsences] Iniciando...");
              try {
-                const l=document.getElementById('recent-absences-list'); 
-                if(!appState.ausenciasReposicoes||appState.ausenciasReposicoes.length===0){
-                    l.innerHTML='<li class="text-slate-500 italic p-2">Nenhum registro.</li>'; 
-                    return;
-                } 
-                const sorted=[...appState.ausenciasReposicoes]
-                    .filter(f => f.EmailHC || f.NomeCompleto) 
-                    .sort((a,b)=>{
-                        const dA=a.DataReposicaoISO||a.DataAusenciaISO; 
-                        const dB=b.DataReposicaoISO||b.DataAusenciaISO; 
-                        if(!dB)return -1; if(!dA)return 1; 
-                        return new Date(dB+'T00:00:00')-new Date(dA+'T00:00:00');
-                    }); 
+                 const l=document.getElementById('recent-absences-list'); 
+                 if(!appState.ausenciasReposicoes||appState.ausenciasReposicoes.length===0){
+                     l.innerHTML='<li class="text-slate-500 italic p-2">Nenhum registro.</li>'; 
+                     return;
+                 } 
+                 const sorted=[...appState.ausenciasReposicoes]
+                     .filter(f => f.EmailHC || f.NomeCompleto) 
+                     .sort((a,b)=>{
+                         const dA=a.DataReposicaoISO||a.DataAusenciaISO; 
+                         const dB=b.DataReposicaoISO||b.DataAusenciaISO; 
+                         if(!dB)return -1; if(!dA)return 1; 
+                         return new Date(dB+'T00:00:00')-new Date(dA+'T00:00:00');
+                     }); 
                 
-                l.innerHTML=sorted.slice(0,10).map(i=>{
-                    const al = appState.alunos.find(a => 
-                        (i.EmailHC && normalizeString(a.EmailHC) === normalizeString(i.EmailHC)) ||
-                        (i.NomeCompleto && normalizeString(a.NomeCompleto) === normalizeString(i.NomeCompleto))
-                    );
-                    const n = al ? al.NomeCompleto : (i.NomeCompleto || i.EmailHC); 
-                    const iP=!i.DataReposicaoISO; 
-                    const sB=iP?'<span class="badge badge-yellow ml-2">Pendente</span>':'<span class="badge badge-green ml-2">Reposto</span>'; 
-                    const dT=i.DataReposicaoISO||i.DataAusenciaISO; 
-                    const fD=dT?new Date(dT+'T00:00:00').toLocaleDateString('pt-BR'):'Data Indef.'; 
-                    return `<li class="text-xs"><div class="flex justify-between items-center mb-0.5"><span class="font-semibold text-slate-700 truncate pr-2" title="${n}">${n}</span><span class="text-slate-500 text-[11px] flex-shrink-0">${fD}</span></div><div class="flex justify-between items-center"><span class="text-slate-500 truncate pr-2" title="${i.Motivo||''}">${iP?'Ausência':'Reposição'} (${i.Local||'N/A'})</span>${sB}</div></li>`;
-                }).join('');
-                 console.log("[renderRecentAbsences] Concluído.");
+                 l.innerHTML=sorted.slice(0,5).map(i=>{
+                     const al = appState.alunos.find(a => 
+                         (i.EmailHC && normalizeString(a.EmailHC) === normalizeString(i.EmailHC)) ||
+                         (i.NomeCompleto && normalizeString(a.NomeCompleto) === normalizeString(i.NomeCompleto))
+                     );
+                     const n = al ? al.NomeCompleto : (i.NomeCompleto || i.EmailHC); 
+                     const iP=!i.DataReposicaoISO; 
+                     const sB=iP?'<span class="badge badge-yellow ml-2">Pendente</span>':'<span class="badge badge-green ml-2">Reposto</span>'; 
+                     const dT=i.DataReposicaoISO||i.DataAusenciaISO; 
+                     const fD=dT?new Date(dT+'T00:00:00').toLocaleDateString('pt-BR'):'Data Indef.'; 
+                     return `<li class="text-xs"><div class="flex justify-between items-center mb-0.5"><span class="font-semibold text-slate-700 truncate pr-2" title="${n}">${n}</span><span class="text-slate-500 text-[11px] flex-shrink-0">${fD}</span></div><div class="flex justify-between items-center"><span class="text-slate-500 truncate pr-2" title="${i.Motivo||''}">${iP?'Ausência':'Reposição'} (${i.Local||'N/A'})</span>${sB}</div></li>`;
+                 }).join('');
              } catch(e) { console.error("[renderRecentAbsences] Erro:", e); showError("Erro ao renderizar registros recentes."); }
         }
         
@@ -1738,16 +2114,22 @@
              for(const n in appState.escalas){const e=appState.escalas[n]; if(e.headersDay?.includes(appState.todayBR))return e;} console.warn(`Nenhuma escala hoje (${appState.todayBR})`); return null;
         }
         
-        function computeAndRenderFrequency() {
-            console.log("[computeAndRenderFrequency] Calculando frequência...");
+        function renderTabPonto() {
             try {
                 const p=document.getElementById('frequency-panel'); const kS=document.getElementById('kpi-scaled'); const kP=document.getElementById('kpi-present'); const kA=document.getElementById('kpi-absent'); 
+                
                 if (!p || !kS || !kP || !kA) {
-                    console.warn("[computeAndRenderFrequency] Painel de frequência não visível. Pulando renderização.");
+                    console.warn("[renderTabPonto] Painel de frequência não encontrado. Pulando renderização.");
                     return;
                 }
-                const s=findActiveScale(); if(!s){p.innerHTML=`<p class="text-slate-500 italic text-sm">Nenhuma escala hoje (${appState.todayBR}).</p>`; kS.textContent='0'; kP.textContent='0'; kA.textContent='0'; return;} const present=[]; const absent=[]; let scaled=0; 
                 
+                const s=findActiveScale(); 
+                if(!s){
+                    p.innerHTML=`<p class="text-slate-500 italic text-sm">Nenhuma escala hoje (${appState.todayBR}).</p>`; 
+                    kS.textContent='0'; kP.textContent='0'; kA.textContent='0'; return;
+                } 
+                
+                const present=[]; const absent=[]; let scaled=0; 
                 s.alunos.forEach(ae=>{
                     const d=ae.dias.find(x=>x.dataColuna===appState.todayBR); 
                     if(d?.status&&d.status!=='folga'&&d.status!=='ausencia' && d.status.toLowerCase().indexOf('descanso') === -1){
@@ -1765,12 +2147,10 @@
                 
                 kS.textContent=scaled; kP.textContent=present.length; kA.textContent=absent.length; 
                 p.innerHTML=`<div><h3 class="text-green-700">Presentes (${present.length})</h3><ul class="mt-2 text-xs text-slate-600 space-y-1.5">${present.length>0?present.map(s=>`<li class="flex justify-between items-center"><span class="truncate pr-2" title="${s.NomeCompleto}">${s.NomeCompleto}</span><span class="badge badge-green flex-shrink-0">${s.HoraEntrada}</span></li>`).join(''):'<li class="text-slate-400 italic">Nenhum.</li>'}</ul></div> <div class="mt-4"><h3 class="text-red-700">Ausentes (${absent.length})</h3><ul class="mt-2 text-xs text-slate-600 space-y-1.5">${absent.length>0?absent.map(s=>`<li class="flex justify-between items-center"><span class="truncate pr-2" title="${s.NomeCompleto}">${s.NomeCompleto}</span><span class="badge badge-red flex-shrink-0" title="Escala: ${s.StatusEscala}">Ausente</span></li>`).join(''):'<li class="text-slate-400 italic">Nenhum.</li>'}</ul></div>`;
-                console.log("[computeAndRenderFrequency] Frequência atualizada.");
-            } catch (e) { console.error("[computeAndRenderFrequency] Erro:", e); showError("Erro ao calcular frequência."); }
+            } catch (e) { console.error("[renderTabPonto] Erro:", e); showError("Erro ao calcular frequência."); }
         }
         
         function renderStudentList(students) {
-             console.log("[renderStudentList] Iniciando...");
              try {
                  const panel = document.getElementById('student-list-panel'); 
                  if (!panel) return;
@@ -1782,19 +2162,25 @@
                  
                  let html = ''; 
                  courses.forEach(c => { 
-                    html += `<div class="student-group" data-course="${c}"><h3 class="student-group-header">${c} (${grouped[c].length})</h3><div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-1">`; 
-                    
-                    grouped[c].sort((a,b) => a.NomeCompleto.localeCompare(b.NomeCompleto)).forEach(s => { 
-                        const img = s.FotoID ? `https://lh3.googleusercontent.com/d/${s.FotoID}=s96-c` : 'https://placehold.co/60x60/e2e8f0/64748b?text=?'; 
-                        const inactive = s.Status !== 'Ativo'; 
-                        const inactiveClass = inactive ? 'inactive-card' : ''; 
-                        const inactiveBadge = inactive ? '<span class="badge badge-red inactive-badge">Inativo</span>' : ''; 
-                        html += `<div class="student-card ${inactiveClass}" onclick="showStudentDetail('${s.EmailHC}')" data-student-email="${s.EmailHC}" data-student-name="${normalizeString(s.NomeCompleto)}">${inactiveBadge}<img src="${img}" alt="Foto" onerror="this.src='https://placehold.co/60x60/e2e8f0/64748b?text=?'"><p class="student-name">${s.NomeCompleto}</p><p class="student-course mt-0.5">${s.Curso}</p></div>`; 
-                    }); 
-                    html += `</div></div>`; 
+                     html += `<div class="student-group" data-course="${c}"><h3 class="student-group-header">${c} (${grouped[c].length})</h3><div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-1">`; 
+                     
+                     grouped[c].sort((a,b) => a.NomeCompleto.localeCompare(b.NomeCompleto)).forEach(s => { 
+                         const img = s.FotoID ? `https://lh3.googleusercontent.com/d/${s.FotoID}=s96-c` : 'https://placehold.co/60x60/e2e8f0/64748b?text=?'; 
+                         const inactive = s.Status !== 'Ativo'; 
+                         const inactiveClass = inactive ? 'inactive-card' : ''; 
+                         const inactiveBadge = inactive ? '<span class="badge badge-red inactive-badge">Inativo</span>' : ''; 
+                         
+                         // [ORION] Removido 'onclick' do HTML.
+                         html += `<div class="student-card ${inactiveClass}" data-student-email="${s.EmailHC}" data-student-name="${normalizeString(s.NomeCompleto)}">
+                                      ${inactiveBadge}
+                                      <img src="${img}" alt="Foto" onerror="this.src='https://placehold.co/60x60/e2e8f0/64748b?text=?'">
+                                      <p class="student-name">${s.NomeCompleto}</p>
+                                      <p class="student-course mt-0.5">${s.Curso}</p>
+                                  </div>`; 
+                     }); 
+                     html += `</div></div>`; 
                  }); 
                  panel.innerHTML = html;
-                 console.log("[renderStudentList] Lista renderizada.");
              } catch (e) { console.error("[renderStudentList] Erro:", e); showError("Erro ao renderizar lista de alunos."); }
         }
 
@@ -1886,19 +2272,23 @@
 
         function switchStudentSubTab(subTabId) {
             console.log(`[switchStudentSubTab] Trocando para sub-aba: ${subTabId}`);
-            document.querySelectorAll('.subnav-button').forEach(btn => {
-                btn.classList.toggle('active', btn.getAttribute('data-subtab-id') === subTabId);
-            });
-            document.querySelectorAll('.sub-tab-content').forEach(content => {
-                content.style.display = (content.id === subTabId) ? 'block' : 'none';
-                content.classList.toggle('active', content.id === subTabId);
-            });
+            const subNavContainer = document.getElementById('student-detail-subnav-container');
+            const subContentContainer = document.getElementById('student-detail-subnav-content');
+            
+            if (subNavContainer) {
+                subNavContainer.querySelectorAll('.subnav-button').forEach(btn => {
+                    btn.classList.toggle('active', btn.getAttribute('data-subtab-id') === subTabId);
+                });
+            }
+            if (subContentContainer) {
+                 subContentContainer.querySelectorAll('.sub-tab-content').forEach(content => {
+                    const isActive = content.id === subTabId;
+                    content.style.display = isActive ? 'block' : 'none';
+                    content.classList.toggle('active', isActive);
+                });
+            }
         }
 
-        /**
-         * [CORREÇÃO v25] Função principal de renderização do detalhe do aluno.
-         * Filtro de Notas Práticas AGORA USA APENAS EMAILHC.
-         */
         function showStudentDetail(email) {
             console.log(`[showStudentDetail] Exibindo detalhes para: ${email}`);
              try {
@@ -1907,80 +2297,18 @@
                     showError(`Aluno ${email} não encontrado no mapeamento.`);
                     return;
                 }
-
-                // --- Define IDs Normalizados ---
                 const emailNormalizado = normalizeString(email);
                 const alunoNomeNormalizado = normalizeString(info.NomeCompleto); 
-
-                // --- Busca Dados Relacionados ---
+                const { escalas, faltas, notasT, notasP } = findDataByStudent(emailNormalizado, alunoNomeNormalizado);
                 
-                // Escalas
-                const escalas = [];
-                for (const n in appState.escalas) {
-                    const e = appState.escalas[n];
-                    const a = (e.alunos || []).find(x => x && 
-                        ((x.EmailHC && normalizeString(x.EmailHC) === emailNormalizado) || 
-                         (x.NomeCompleto && normalizeString(x.NomeCompleto) === alunoNomeNormalizado))
-                    );
-                    if (a) { escalas.push({ nomeEscala: e.nomeAba || n, Supervisor: a.Supervisor, Unidade: a.Unidade, dias: a.dias });}
-                }
-                
-                // Faltas
-                const faltas = appState.ausenciasReposicoes.filter(f => f && 
-                    ((f.EmailHC && normalizeString(f.EmailHC) === emailNormalizado) || 
-                     (f.NomeCompleto && normalizeString(f.NomeCompleto) === alunoNomeNormalizado))
-                );
-                
-                // Notas Teóricas
-                const notasT = (appState.notasTeoricas.registros || []).find(n => n && 
-                    ((n.EmailHC && normalizeString(n.EmailHC) === emailNormalizado) || 
-                     (n.NomeCompleto && normalizeString(n.NomeCompleto) === alunoNomeNormalizado))
-                );
-                
-                // [CORREÇÃO v25] Notas Práticas (Filtra por EmailHC)
-                const notasP = []; 
-                Object.values(appState.notasPraticas).forEach(p => { 
-                    if (p && p.registros) {
-                        const r = (p.registros || []).filter(x => x && 
-                             (x.EmailHC && normalizeString(x.EmailHC) === emailNormalizado)
-                        );
-                        notasP.push(...r.map(i => ({ nomePratica: p.nomePratica, ...i })));
-                    }
-                });
-                
-                // --- Logs de Depuração ---
                 console.groupCollapsed(`[Debug Dados] Aluno: ${info.NomeCompleto} (Email: ${email})`);
-                console.log(`Email Normalizado: ${emailNormalizado}`);
-                console.log(`Nome Normalizado: ${alunoNomeNormalizado}`);
-                console.log("Escalas Encontradas:", escalas);
-                console.log("Faltas Encontradas:", faltas);
-                
-                console.group("Notas Teóricas");
-                if (notasT) {
-                    console.log("Registro encontrado.");
-                    console.table([notasT]);
-                } else {
-                    console.warn("Nenhum registro de nota teórica encontrado.");
-                }
+                console.log("Info:", info);
+                console.log("Escalas:", escalas);
+                console.log("Faltas:", faltas);
+                console.log("Notas Teóricas:", notasT);
+                console.log("Notas Práticas:", notasP);
                 console.groupEnd();
-                
-                console.group("Notas Práticas");
-                if (notasP.length > 0) {
-                    console.log(`Total de ${notasP.length} avaliações práticas encontradas.`);
-                    console.table(notasP.map(n => ({ 
-                        Pratica: n.nomePratica,
-                        EmailAlunoNoRegisto: n.EmailHC, 
-                        Supervisor: n.Supervisor, 
-                        Data: n['Data/Hora'], 
-                        Media: n[Object.keys(n).find(k => /MÉDIA\s*\(NOTA FINAL\)[:]?/i.test(k))] 
-                    })));
-                } else {
-                    console.warn("Nenhuma nota prática encontrada para este aluno após o filtro.");
-                }
-                console.groupEnd();
-                console.groupEnd(); // Fim do Debug Dados
 
-                // --- Renderiza Conteúdo ---
                 renderStudentHeader(info);
                 renderStudentDetailKPIs(faltas, notasP);
                 renderTabInfo(info);
@@ -1989,7 +2317,6 @@
                 renderTabNotasTeoricas(notasT); 
                 renderTabNotasPraticas(notasP); 
 
-                // --- Exibe a View ---
                 showView('student-detail-view');
                 switchStudentTab('info'); 
                 window.scrollTo(0, 0); 
@@ -2005,13 +2332,13 @@
         function renderStudentHeader(info) {
              const p=document.getElementById('student-header'); const i=info.FotoID?`https://lh3.googleusercontent.com/d/${info.FotoID}=s160-c`:'https://placehold.co/80x80/e8eef7/475569?text=?'; const s=info.Status==='Ativo'?'badge-green':'badge-red'; 
              p.innerHTML=`<img src="${i}" alt="Foto" onerror="this.src='https://placehold.co/80x80/e8eef7/475569?text=?'">
-                          <div class="flex-grow text-center sm:text-left mt-4 sm:mt-0">
-                             <h2 class="text-2xl lg:text-3xl font-bold text-slate-900">${info.NomeCompleto}</h2>
-                             <p class="text-base lg:text-lg text-slate-600 mt-1">${info.Curso}</p>
-                          </div>
-                          <div class="ml-auto flex-shrink-0 mt-4 sm:mt-0">
-                             <span class="badge ${s} text-base py-2 px-4">${info.Status}</span>
-                          </div>`;
+                           <div class="flex-grow text-center sm:text-left mt-4 sm:mt-0">
+                               <h2 class="text-2xl lg:text-3xl font-bold text-slate-900">${info.NomeCompleto}</h2>
+                               <p class="text-base lg:text-lg text-slate-600 mt-1">${info.Curso}</p>
+                           </div>
+                           <div class="ml-auto flex-shrink-0 mt-4 sm:mt-0">
+                               <span class="badge ${s} text-base py-2 px-4">${info.Status}</span>
+                           </div>`;
         }
 
         function renderStudentDetailKPIs(faltas, notasP) {
@@ -2036,15 +2363,15 @@
         }
         
         function renderTabInfo(info) {
-             const p=document.getElementById('tab-info'); p.innerHTML=`<dl class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6 text-sm"><div class="border-b border-slate-200 pb-3"><dt>Email</dt><dd>${info.EmailHC||'N/A'}</dd></div><div class="border-b border-slate-200 pb-3"><dt>Nascimento</dt><dd>${info.DataNascimento ? new Date(info.DataNascimento).toLocaleDateString('pt-BR') : 'N/A'}</dd></div><div class="border-b border-slate-200 pb-3"><dt>Sexo</dt><dd>${info.Sexo||'N/A'}</dd></div><div class="border-b border-slate-200 pb-3"><dt>Estado Civil</dt><dd>${info.EstadoCivil||'N/A'}</dd></div><div class="md:col-span-2 lg:col-span-1 border-b border-slate-200 pb-3"><dt>CREFITO</dt><dd>${info.Crefito||'N/A'}</dd></div></dl>`;
+             const p=document.getElementById('tab-info'); p.innerHTML=`<dl class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6 text-sm"><div class="border-b border-slate-200 pb-3"><dt>Email</dt><dd>${info.EmailHC||'N/A'}</dd></div><div class="border-b border-slate-200 pb-3"><dt>Nascimento</dt><dd>${info.DataNascimento ? new Date(info.DataNascimento).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : 'N/A'}</dd></div><div class="border-b border-slate-200 pb-3"><dt>Sexo</dt><dd>${info.Sexo||'N/A'}</dd></div><div class="border-b border-slate-200 pb-3"><dt>Estado Civil</dt><dd>${info.EstadoCivil||'N/A'}</dd></div><div class="md:col-span-2 lg:col-span-1 border-b border-slate-200 pb-3"><dt>CREFITO</dt><dd>${info.Crefito||'N/A'}</dd></div></dl>`;
         }
         
         function renderTabEscala(escalas) {
-             const p=document.getElementById('escala-heatmap-content'); if(!escalas||escalas.length===0){p.innerHTML='<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhum registro de escala encontrado.</p></div>'; return;} p.innerHTML=escalas.map(e=>`<div class="content-card p-6"><h4 class="text-base font-bold text-slate-800">${e.nomeEscala}</h4><p class="text-sm text-slate-500 mb-5"><strong>Unidade:</strong> ${e.Unidade||'N/A'} | <strong>Sup:</strong> ${e.Supervisor||'N/A'}</p><div class="flex flex-wrap gap-2">${e.dias.map(d=>`<div class="heatmap-day flex-grow" data-status="${d.status?d.status.toLowerCase():'none'}" title="${d.dataColuna}: ${d.status||'N/A'}"><span class="heatmap-day-date">${d.dataColuna}</span><span class="heatmap-day-status">${d.status||'N/A'}</span></div>`).join('')}</div></div>`).join('');
+             const p=document.getElementById('escala-heatmap-content'); if(!escalas||escalas.length===0){p.innerHTML='<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhum registro de escala encontrado.</p></div>'; return;} p.innerHTML=escalas.map(e=>`<div class="content-card p-6"><h4 class="text-base font-bold text-slate-800">${e.nomeEscala}</h4><p class="text-sm text-slate-500 mb-5"><strong>Unidade:</strong> ${e.Unidade||'N/A'} | <strong>Sup:</strong> ${e.Supervisor||'N/A'}</p><div class="flex flex-wrap gap-2">${e.dias.map(d=>`<div class="heatmap-day flex-grow" data-status="${d.status?normalizeString(d.status):'none'}" title="${d.dataColuna}: ${d.status||'N/A'}"><span class="heatmap-day-date">${d.dataColuna}</span><span class="heatmap-day-status">${d.status||'N/A'}</span></div>`).join('')}</div></div>`).join('');
         }
         
         function renderTabFaltas(faltas) {
-             const c=document.getElementById('faltas-content'); if(!faltas||faltas.length===0){c.innerHTML='<p class="text-slate-500 p-6 text-sm italic">Nenhum registro de falta.</p>'; return;} const h=`<table class="min-w-full"><thead><tr><th class="text-left">Status</th><th class="text-left">Ausência</th><th class="text-left">Reposição</th><th class="text-left">Local</th><th class="text-left">Motivo</th></tr></thead><tbody class="bg-white">${faltas.map(f=>{const iP=!f.DataReposicaoISO; const sB=iP?'<span class="badge badge-yellow">Pendente</span>':'<span class="badge badge-green">Completa</span>'; const dA=f.DataAusenciaISO?new Date(f.DataAusenciaISO+'T00:00:00').toLocaleDateString('pt-BR'):'-'; const dR=f.DataReposicaoISO?new Date(f.DataReposicaoISO+'T00:00:00').toLocaleDateString('pt-BR'):'-'; const mS=f.Motivo?(f.Motivo.length>40?f.Motivo.substring(0,40)+'...':f.Motivo):'-'; return `<tr><td>${sB}</td><td>${dA}</td><td>${dR}</td><td>${f.Local||'-'}</td><td title="${f.Motivo||''}">${mS}</td></tr>`;}).join('')}</tbody></table>`; c.innerHTML = h;
+             const c=document.getElementById('faltas-content'); if(!faltas||faltas.length===0){c.innerHTML='<p class="text-slate-500 p-6 text-sm italic">Nenhum registro de falta.</p>'; return;} const h=`<table class="min-w-full"><thead><tr><th class="text-left">Status</th><th class="text-left">Ausência</th><th class="text-left">Reposição</th><th class="text-left">Local</th><th class="text-left">Motivo</th></tr></thead><tbody class="bg-white">${faltas.map(f=>{const iP=!f.DataReposicaoISO; const sB=iP?'<span class="badge badge-yellow">Pendente</span>':'<span class="badge badge-green">Completa</span>'; const dA=f.DataAusenciaISO?new Date(f.DataAusenciaISO+'T00:00:00').toLocaleDateString('pt-BR', {timeZone: 'UTC'}):'-'; const dR=f.DataReposicaoISO?new Date(f.DataReposicaoISO+'T00:00:00').toLocaleDateString('pt-BR', {timeZone: 'UTC'}):'-'; const mS=f.Motivo?(f.Motivo.length>40?f.Motivo.substring(0,40)+'...':f.Motivo):'-'; return `<tr><td>${sB}</td><td>${dA}</td><td>${dR}</td><td>${f.Local||'-'}</td><td title="${f.Motivo||''}">${mS}</td></tr>`;}).join('')}</tbody></table>`; c.innerHTML = h;
         }
 
         function renderTabNotasTeoricas(notas) {
@@ -2126,94 +2453,207 @@
             p.innerHTML = html || '<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhuma nota válida encontrada para exibir.</p></div>';
         }
 
-        /**
-         * [NOVO v26] Renderiza a aba de Notas Práticas com o botão da Gemini API.
-         */
-        function renderTabNotasPraticas(notasP) {
-            console.log("[renderTabNotasPraticas] Dados recebidos:", notasP);
-            const subNavContainer = document.getElementById('student-detail-subnav-container');
-            const subContentContainer = document.getElementById('student-detail-subnav-content');
+        function calculatePracticeSummary(notasP) {
+            let overallSum = 0;
+            let overallCount = 0;
+            const competency = {
+                raciocinio: { sum: 0, count: 0 },
+                tecnica: { sum: 0, count: 0 },
+                profissionalismo: { sum: 0, count: 0 }
+            };
+            const last5Notes = [];
+            const map = {
+                raciocinio: [/1\.\s*CAPACIDADE DE AVALIAÇÃO/i, /2\.\s*PLANEJAMENTO E ORGANIZAÇÃO/i, /4\.\s*HABILIDADE DE ASSOCIAÇÃO/i],
+                tecnica: [/3\.\s*HABILIDADE NA EXECUÇÃO/i],
+                profissionalismo: [/5\.\s*HABILIDADE NO USO DE TERMOS/i, /8\.\s*COMUNICAÇÃO INTERPROFISSIONAL/i, /9\.\s*RELACIONAMENTO/i, /4\.\s*COMPORTAMENTO ÉTICO/i, /1\.\s*INICIATIVA/i, /2\.\s*INTERESSE/i, /3\.\s*RESPONSABILIDADE/i]
+            };
+            const sortedNotasP = [...notasP].sort((a, b) => {
+                const dateA = a['Data/Hora'] ? new Date(String(a['Data/Hora']).replace(/-/g,'/')) : new Date(0);
+                const dateB = b['Data/Hora'] ? new Date(String(b['Data/Hora']).replace(/-/g,'/')) : new Date(0);
+                return dateA - dateB; 
+            });
+            sortedNotasP.forEach(n => {
+                const kM = Object.keys(n).find(k => /MÉDIA\s*\(NOTA FINAL\)[:]?/i.test(k)) || null;
+                const media = parseNota(n[kM]);
+                if (media > 0) {
+                    overallSum += media;
+                    overallCount++;
+                    last5Notes.push({ label: n.nomePratica, value: media });
+                }
+                Object.keys(n).forEach(key => {
+                    const val = parseNota(n[key]);
+                    if (val > 0) {
+                        if (map.raciocinio.some(regex => regex.test(key))) {
+                            competency.raciocinio.sum += val;
+                            competency.raciocinio.count++;
+                        } else if (map.tecnica.some(regex => regex.test(key))) {
+                            competency.tecnica.sum += val;
+                            competency.tecnica.count++;
+                        } else if (map.profissionalismo.some(regex => regex.test(key))) {
+                            competency.profissionalismo.sum += val;
+                            competency.profissionalismo.count++;
+                        }
+                    }
+                });
+            });
+            return {
+                overallAvg: overallCount > 0 ? (overallSum / overallCount) : 0,
+                raciocinioAvg: competency.raciocinio.count > 0 ? (competency.raciocinio.sum / competency.raciocinio.count) : 0,
+                tecnicaAvg: competency.tecnica.count > 0 ? (competency.tecnica.sum / competency.tecnica.count) : 0,
+                profissionalismoAvg: competency.profissionalismo.count > 0 ? (competency.profissionalismo.sum / competency.profissionalismo.count) : 0,
+                last5Notes: last5Notes.slice(-5)
+            };
+        }
 
+
+        function renderTabNotasPraticas(notasP) {
+            console.log("[renderTabNotasPraticas v32] Dados recebidos:", notasP);
+            const tabContainer = document.getElementById('tab-notas-p');
+            
             if (!notasP || notasP.length === 0) {
-                subNavContainer.innerHTML = '';
-                subContentContainer.innerHTML = '<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhum registro de notas práticas encontrado.</p></div>';
+                tabContainer.innerHTML = '<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhum registro de notas práticas encontrado.</p></div>';
                 return;
             }
+            const summary = calculatePracticeSummary(notasP);
+            let summaryHtml = `
+                <div id="practice-summary-dashboard">
+                    <!-- Card Média Geral -->
+                    <div class="content-card summary-progress-card animated-card delay-100">
+                        <div class="summary-progress-ring" style="--value:${summary.overallAvg * 10}">
+                            <div class="value">${summary.overallAvg.toFixed(1)}</div>
+                        </div>
+                        <div class="summary-text">
+                            <h3>Média Geral Prática</h3>
+                            <p>${summary.overallAvg >= 8.5 ? 'Excelente desempenho' : (summary.overallAvg >= 7 ? 'Bom desempenho' : 'Precisa de atenção')}</p>
+                        </div>
+                    </div>
+                    <!-- Cards Competência -->
+                    <div class="competency-card-container animated-card delay-200">
+                        <div class="content-card kpi-base-card competency-card">
+                            <div class="icon" style="background-color: rgba(0, 84, 180, 0.1); color: var(--accent-blue);">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>
+                            </div>
+                            <div>
+                                <div class="value" style="color: var(--accent-blue);">${summary.raciocinioAvg.toFixed(1)}</div>
+                                <div class="label">Raciocínio Clínico</div>
+                            </div>
+                        </div>
+                        <div class="content-card kpi-base-card competency-card">
+                            <div class="icon" style="background-color: rgba(249, 115, 22, 0.15); color: var(--accent-orange);">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            </div>
+                            <div>
+                                <div class="value" style="color: var(--accent-orange);">${summary.tecnicaAvg.toFixed(1)}</div>
+                                <div class="label">Execução Técnica</div>
+                            </div>
+                        </div>
+                        <div class="content-card kpi-base-card competency-card">
+                            <div class="icon" style="background-color: rgba(22, 163, 74, 0.15); color: var(--accent-green);">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666lM18 18.72A8.954 8.954 0 0112 21a8.954 8.954 0 01-6-2.28m12 0A9.09 9.09 0 0012 15.092m6 2.28m-6-2.28a9.09 9.09 0 01-3.741-.479 3 3 0 01-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666mM6 18.72A8.954 8.954 0 0012 21a8.954 8.954 0 006-2.28m-12 0A9.09 9.09 0 0112 15.092m-6 2.28m6-2.28a9.09 9.09 0 00-3.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666m0 0L6 15.75M12 12a3 3 0 11-6 0 3 3 0 016 0zm-3 3a3 3 0 100-6 3 3 0 000 6z" /></svg>
+                            </div>
+                            <div>
+                                <div class="value" style="color: var(--accent-green);">${summary.profissionalismoAvg.toFixed(1)}</div>
+                                <div class="label">Profissionalismo</div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Gráfico de Evolução -->
+                    <div class="content-card p-6 evolution-chart-card animated-card delay-300">
+                        <h2 class="content-card-header mt-0 mb-2">Evolução das Notas Finais (Últimas 5)</h2>
+                        <div class="evolution-chart-container">
+                            ${summary.last5Notes.length > 0 ? summary.last5Notes.map((note, i) => `
+                                <div class="evolution-bar" style="height: ${note.value * 10}%; animation-delay: ${i * 0.1}s;">
+                                    <span class="bar-value">${note.value.toFixed(1)}</span>
+                                    <span class="bar-label">${note.label}</span>
+                                </div>
+                            `).join('') : '<p class="text-sm text-slate-500 italic">Não há notas finais suficientes para exibir a evolução.</p>'}
+                        </div>
+                    </div>
+                </div>
+            `;
 
             let navHtml = '';
             let contentHtml = '';
-
-            notasP.sort((a, b) => {
+            const sortedNotasPDesc = [...notasP].sort((a, b) => {
                 const dateA = a['Data/Hora'] ? new Date(String(a['Data/Hora']).replace(/-/g,'/')) : new Date(0);
                 const dateB = b['Data/Hora'] ? new Date(String(b['Data/Hora']).replace(/-/g,'/')) : new Date(0);
                 return dateB - dateA;
             });
 
-            notasP.forEach((n, index) => {
+            sortedNotasPDesc.forEach((n, index) => {
                 const isActive = index === 0;
                 const tabId = `subtab-np-${index}`;
                 const nomePratica = n.nomePratica || `Avaliação ${index + 1}`;
-
                 navHtml += `<button class="subnav-button ${isActive ? 'active' : ''}" data-subtab-id="${tabId}">${nomePratica}</button>`;
 
-                // [NOVO v23] Regex para Média e Comentário
                 const keyM = Object.keys(n).find(k => /MÉDIA\s*\(NOTA FINAL\)[:]?/i.test(k)) || null;
                 const keyC = Object.keys(n).find(k => /COMENTÁRIOS\s*DO\(A\)\s*SUPERVISOR\(A\)[:]?/i.test(k)) || null;
-                
                 const mediaFinal = parseNota(n[keyM]);
                 const comentario = n[keyC] || 'Sem comentários.';
-                // [NOVO v26] Escapa o comentário para o HTML
                 const comentarioEscapado = comentario.replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/\n/g, "\\n");
-
-                const dataFormatada = n['Data/Hora'] ? new Date(String(n['Data/Hora']).replace(/-/g,'/')).toLocaleDateString('pt-BR') : 'N/A';
-
-                let scoresHtml = '';
+                const dataFormatada = n['Data/Hora'] ? new Date(String(n['Data/Hora']).replace(/-/g,'/')).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : 'N/A';
+                let numericalScores = [];
+                let checklistScores = [];
+                
                 Object.entries(n).forEach(([key, value]) => {
-                    const keyUpper = key.toUpperCase().trim();
-                    const isIgnored = /DATA\/HORA|EMAILHC|NOMECOMPLETO|CURSO|SUPERVISOR|UNIDADE|PERIODO|TURNO|MÉDIA\s*\(NOTA FINAL\)|COMENTÁRIOS\s*DO\(A\)\s*SUPERVISOR\(A\)|O SUPERVISOR ESTÁ CIENTE|NOMEPRATICA/i.test(keyUpper);
-                    
+                    const isIgnored = /DATA\/HORA|EMAILHC|NOMECOMPLETO|CURSO|SUPERVISOR|UNIDADE|PERIODO|TURNO|MÉDIA\s*\(NOTA FINAL\)|COMENTÁRIOS\s*DO\(A\)\s*SUPERVISOR\(A\)|O SUPERVISOR ESTÁ CIENTE|NOMEPRATICA/i.test(key.toUpperCase().trim());
                     if (!isIgnored && value) {
-                         scoresHtml += `
-                            <li class="col-span-1">
-                                <span class="score-label">${key.replace(/:/g, '')}</span>
-                                <span class="score-value">${String(value).length > 20 ? String(value).substring(0,20)+'...' : value}</span>
-                            </li>
-                        `;
+                        const parsedValue = parseNota(value);
+                        if (!isNaN(parsedValue) && parsedValue > 0 && String(value).trim().match(/^[\d,.]+$/)) {
+                            numericalScores.push({ label: key.replace(/:/g, ''), value: parsedValue });
+                        } else if (String(value).trim() !== '' && String(value).trim() !== '0') {
+                            checklistScores.push({ label: key.replace(/:/g, ''), value: value });
+                        }
                     }
                 });
+                numericalScores.sort((a, b) => b.value - a.value);
 
                 contentHtml += `
                     <div id="${tabId}" class="sub-tab-content ${isActive ? 'active' : ''}">
                         <div class="content-card p-6 lg:p-8">
-                            <div class="evaluation-layout">
-                                <div class="evaluation-header flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                                    <div class="evaluation-details">
-                                        <h3 class="font-display text-xl font-bold text-slate-900 mb-4">${nomePratica}</h3>
-                                        <dl>
-                                            <div><dt>Supervisor</dt><dd>${n.Supervisor || 'N/A'}</dd></div>
-                                            <div><dt>Data</dt><dd>${dataFormatada}</dd></div>
-                                            <div><dt>Unidade</dt><dd>${n.Unidade || 'N/A'}</dd></div>
-                                            <div><dt>Período</dt><dd>${n.Periodo || 'N/A'}</dd></div>
-                                        </dl>
-                                    </div>
-                                    <div class="text-center sm:text-right flex-shrink-0">
-                                        <p class="kpi-label" style="color: var(--accent-blue);">Nota Final</p>
-                                        <p class="kpi-value">${mediaFinal.toFixed(1)}</p>
-                                    </div>
+                            <div class="evaluation-header">
+                                <div class="evaluation-details">
+                                    <h3 class="font-display text-xl font-bold text-slate-900 mb-4 col-span-2">${nomePratica}</h3>
+                                    <dl>
+                                        <div><dt>Supervisor</dt><dd>${n.Supervisor || 'N/A'}</dd></div>
+                                        <div><dt>Data</dt><dd>${dataFormatada}</dd></div>
+                                        <div><dt>Unidade</dt><dd>${n.Unidade || 'N/A'}</dd></div>
+                                        <div><dt>Período</dt><dd>${n.Periodo || 'N/A'}</dd></div>
+                                    </dl>
                                 </div>
-                                
-                                <div class="evaluation-scores lg:col-span-2">
-                                    <h4>Detalhes da Avaliação</h4>
-                                    <ul class="scores-list grid grid-cols-1 md:grid-cols-2 gap-x-4">
-                                        ${scoresHtml}
-                                    </ul>
+                                <div class="text-center sm:text-right flex-shrink-0">
+                                    <p class="kpi-label">Nota Final</p>
+                                    <p class="kpi-value">${mediaFinal.toFixed(1)}</p>
                                 </div>
-                                
-                                <div class="evaluation-comments lg:col-span-1">
+                            </div>
+                            <div class="evaluation-layout mt-6">
+                                <div class="skills-barchart-container">
+                                    <h4 class="evaluation-section-title">Notas de Desempenho (0-10)</h4>
+                                    ${numericalScores.length > 0 ? numericalScores.map(score => `
+                                        <div class="bar-chart-item">
+                                            <div class="flex justify-between items-center">
+                                                <span class="bar-label" title="${score.label}">${score.label}</span>
+                                                <span class="bar-value">${score.value.toFixed(1)}</span>
+                                            </div>
+                                            <div class="bar-bg mt-1">
+                                                <div class="bar-fill" style="width: ${score.value * 10}%;"></div>
+                                            </div>
+                                        </div>
+                                    `).join('') : '<p class="text-sm text-slate-500 italic">Nenhuma nota numérica registrada.</p>'}
+                                </div>
+                                <div class="skills-checklist-container">
+                                    <h4 class="evaluation-section-title">Checklist de Habilidades</h4>
+                                    ${checklistScores.length > 0 ? checklistScores.map(skill => `
+                                        <div class="skill-checklist-item">
+                                            <span class="skill-question">${skill.label}</span>
+                                            <span class="skill-answer" title="${skill.value}">${skill.value}</span>
+                                        </div>
+                                    `).join('') : '<p class="text-sm text-slate-500 italic">Nenhum item de checklist registrado.</p>'}
+                                </div>
+                                <div class="evaluation-comments">
                                     <div class="flex justify-between items-center">
-                                        <h4>Comentários</h4>
-                                        <!-- [NOVO v26] Botão Gemini -->
-                                        <button class="gemini-analysis-button" data-loading="false" onclick="handleAnalisarComentario(this, '${comentarioEscapado}')">
+                                        <h4 class="evaluation-section-title mb-4">Comentários do Supervisor</h4>
+                                        <button class="gemini-analysis-button" data-loading="false" data-comment="${comentarioEscapado}">
                                             ✨ Analisar Comentário
                                         </button>
                                     </div>
@@ -2225,46 +2665,41 @@
                 `;
             });
 
-            subNavContainer.innerHTML = navHtml;
-            subContentContainer.innerHTML = contentHtml;
-
+            tabContainer.innerHTML = `
+                ${summaryHtml}
+                <h3 class="text-xl font-bold text-slate-800 mb-4 mt-10">Relatórios Detalhados</h3>
+                <div id="student-detail-subnav-container" class="subnav-container">
+                    ${navHtml}
+                </div>
+                <div id="student-detail-subnav-content">
+                    ${contentHtml}
+                </div>
+            `;
+            
             if (notasP.length > 0) {
                 switchStudentSubTab('subtab-np-0');
             }
         }
         
-        // --- [NOVO v26] Funções da API Gemini ---
-
-        /**
-         * Exibe o modal Gemini com o título e conteúdo especificados.
-         * @param {string} title O título do modal.
-         * @param {string} content O conteúdo HTML para o modal.
-         */
+        // --- [ORION] Funções da API Gemini (Versão LOCAL INSEGURA) ---
+        
         function showGeminiModal(title, content) {
             const modal = document.getElementById('gemini-modal');
             document.getElementById('gemini-modal-title').innerText = title;
             document.getElementById('gemini-modal-content').innerHTML = content;
             modal.style.display = 'flex';
-            setTimeout(() => modal.classList.add('show'), 10); // Ativa a transição de opacidade
+            setTimeout(() => modal.classList.add('show'), 10);
         }
 
-        /**
-         * Fecha o modal Gemini.
-         */
         function closeGeminiModal() {
             const modal = document.getElementById('gemini-modal');
             modal.classList.remove('show');
             setTimeout(() => {
                 modal.style.display = 'none';
-                document.getElementById('gemini-modal-content').innerHTML = ''; // Limpa o conteúdo
-            }, 300); // Aguarda a transição
+                document.getElementById('gemini-modal-content').innerHTML = ''; 
+            }, 300); 
         }
 
-        /**
-         * Lida com o clique no botão "Analisar Comentário".
-         * @param {HTMLElement} button O botão que foi clicado.
-         * @param {string} commentText O texto do comentário a ser analisado.
-         */
         async function handleAnalisarComentario(button, commentText) {
             if (button.dataset.loading === 'true') return;
 
@@ -2272,7 +2707,6 @@
             button.disabled = true;
             button.innerHTML = 'A analisar...';
 
-            // Mostra o modal com o loader
             showGeminiModal('✨ A analisar Avaliação', '<div class="gemini-loader"></div>');
 
             const systemPrompt = `
@@ -2290,34 +2724,28 @@
             `;
 
             try {
+                // [ORION] Chamada local, como solicitado
                 const analysisJsonString = await callGeminiAPI(systemPrompt, commentText);
                 const analysis = JSON.parse(analysisJsonString);
                 
                 let html = '';
 
-                // Constrói HTML para Pontos Fortes
                 if (analysis.pontosFortes && analysis.pontosFortes.length > 0) {
                     html += '<h3>Pontos Fortes</h3><ul>';
-                    analysis.pontosFortes.forEach(p => {
-                        html += `<li>${p}</li>`;
-                    });
+                    analysis.pontosFortes.forEach(p => { html += `<li>${p}</li>`; });
                     html += '</ul>';
                 } else {
                     html += '<h3>Pontos Fortes</h3><p>Nenhum ponto forte específico mencionado.</p>';
                 }
 
-                // Constrói HTML para Pontos a Melhorar
                 if (analysis.pontosAMelhorar && analysis.pontosAMelhorar.length > 0) {
                     html += '<h3>Pontos a Melhorar</h3><ul>';
-                    analysis.pontosAMelhorar.forEach(p => {
-                        html += `<li>${p}</li>`;
-                    });
+                    analysis.pontosAMelhorar.forEach(p => { html += `<li>${p}</li>`; });
                     html += '</ul>';
                 } else {
                     html += '<h3>Pontos a Melhorar</h3><p>Nenhum ponto a melhorar específico mencionado.</p>';
                 }
 
-                // Constrói HTML para Feedback Geral
                 html += '<h3>Feedback Geral</h3>';
                 html += `<p>${analysis.feedbackGeral || 'Não foi possível gerar um resumo.'}</p>`;
 
@@ -2325,7 +2753,7 @@
 
             } catch (error) {
                 console.error("Erro ao analisar comentário:", error);
-                showGeminiModal('Erro na Análise', '<p>Não foi possível analisar o comentário. Verifique a consola para mais detalhes.</p>');
+                showGeminiModal('Erro na Análise', `<p>Não foi possível analisar o comentário. Verifique a consola para mais detalhes. Erro: ${error.message}</p>`);
             } finally {
                 button.dataset.loading = 'false';
                 button.disabled = false;
@@ -2333,26 +2761,30 @@
             }
         }
 
-        /**
-         * Faz a chamada à API Gemini com retentativas (exponential backoff).
-         * @param {string} systemPrompt O prompt do sistema.
-         * @param {string} userQuery O prompt do usuário (o comentário).
-         * @returns {Promise<string>} O texto da resposta da API (JSON stringificado).
-         */
         async function callGeminiAPI(systemPrompt, userQuery) {
-            const apiKey = "AIzaSyAKZVcyv3ELzll3WG4cz4z0NuKU3rzfGqc"; // [NOVO v27] Chave de API local inserida
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            
+            // [ORION - ALERTA DE SEGURANÇA CRÍTICO]
+            // Como solicitado, a API Key está local.
+            // ISTO É INSEGURO. NÃO USE EM PRODUÇÃO.
+            // A chave será visível para qualquer pessoa no navegador.
+            // Substitua a string abaixo pela sua chave.
+            const apiKey = "AIzaSyAKZVcyv3ELzll3WG4cz4z0NuKU3rzfGqc";
+
+            if (apiKey === "SUA_API_KEY_COMPLETA_VAI_AQUI") {
+                 throw new Error("API Key não configurada. Substitua 'SUA_API_KEY_COMPLETA_VAI_AQUI' no código.");
+            }
+
+            // [ORION - CORREÇÃO DE MODELO]
+            // Este é o nome de modelo correto para o endpoint v1beta que resolve os erros 404
+            const modelName = "gemini-2.5-flash-preview-09-2025";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
             const payload = {
-                contents: [{
-                    parts: [{ text: userQuery }]
-                }],
-                systemInstruction: {
-                    parts: [{ text: systemPrompt }]
-                },
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
                 generationConfig: {
                     responseMimeType: "application/json",
-                    temperature: 0.2 // Baixa temperatura para manter a análise objetiva
+                    temperature: 0.2
                 }
             };
 
@@ -2362,45 +2794,40 @@
                 body: JSON.stringify(payload)
             };
 
-            // Usa a função de retentativa
             const response = await fetchWithRetry(apiUrl, options);
+            
             if (!response.ok) {
-                throw new Error(`Falha na API: ${response.statusText}`);
+                 const errData = await response.json();
+                 const errMsg = errData.error?.message || response.statusText;
+                 throw new Error(`Falha na API: ${errMsg}`);
             }
-
+            
             const result = await response.json();
             const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-
+            
             if (!text) {
                 throw new Error("Resposta da API vazia ou mal formatada.");
             }
-            
             return text;
         }
 
-        /**
-         * Wrapper de Fetch com retentativa e exponential backoff.
-         */
         async function fetchWithRetry(url, options, retries = 3, delay = 1000) {
             for (let i = 0; i < retries; i++) {
                 try {
                     const response = await fetch(url, options);
-                    // Não faz retry em erros 4xx (ex: 400 Bad Request)
                     if (response.ok || (response.status >= 400 && response.status < 500)) {
                         return response;
                     }
-                    // Faz retry em erros 5xx (Server error) ou 429 (Rate limit)
-                    console.warn(`[fetchWithRetry] Falha na tentativa ${i + 1}/${retries}. Status: ${response.status}. Tentando novamente em ${delay}ms...`);
+                    // Se for 5xx, tenta novamente
                 } catch (error) {
-                    console.warn(`[fetchWithRetry] Erro de rede na tentativa ${i + 1}/${retries}. Tentando novamente em ${delay}ms...`, error.message);
+                    // Erro de rede, tenta novamente
                 }
                 await new Promise(resolve => setTimeout(resolve, delay));
-                delay *= 2; // Exponential backoff
+                delay *= 2; 
             }
             // Tenta a última vez
             return fetch(url, options);
         }
-
 
         // --- Inicia ---
         document.addEventListener('DOMContentLoaded', () => {
