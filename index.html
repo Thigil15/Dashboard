@@ -181,29 +181,124 @@
                  </div>
 
                 <!-- View: Ponto -->
-                 <div id="content-ponto" class="view-container">
-                     <h1>Análise de Ponto</h1>
-                     
-                     <!-- Painel de Frequência Diária (Movido do Dashboard) -->
-                     <div class="content-card p-6 animated-card delay-100">
-                         <div class="flex justify-between items-center mb-5">
-                             <h2 class="content-card-header mb-0 pb-0 border-b-0">Frequência Diária</h2>
-                             <span id="current-date" class="text-sm font-medium text-slate-500"></span>
-                         </div>
-                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                             <div class="kpi-base-card kpi-secondary-card"><span id="kpi-scaled-label" class="kpi-label">Escalados</span><p id="kpi-scaled" class="kpi-value">-</p></div>
-                             <div class="kpi-base-card kpi-secondary-card"><span id="kpi-present-label" class="kpi-label">Presentes</span><p id="kpi-present" class="kpi-value">-</p></div>
-                             <div class="kpi-base-card kpi-secondary-card"><span id="kpi-absent-label" class="kpi-label">Ausentes</span><p id="kpi-absent" class="kpi-value">-</p></div>
-                         </div>
-                         <div id="frequency-panel" class="space-y-4 max-h-[400px] overflow-y-auto text-sm pr-2"></div>
-                         <div id="last-update-timestamp" class="text-right mt-4"></div>
-                     </div>
-                     
-                     <div class="content-card p-10 text-center mt-6 animated-card delay-200">
-                         <h3 class="font-display text-lg text-slate-700">Relatórios Futuros</h3>
-                         <p class="mt-2 text-slate-500">Em breve: Gráficos de pontualidade e histórico de presença.</p>
-                     </div>
-                 </div>
+                <div id="content-ponto" class="view-container">
+                    <h1>Análise de Ponto</h1>
+
+                    <div class="content-card p-6 lg:p-8 animated-card delay-100 attendance-header-card">
+                        <div class="attendance-toolbar-header">
+                            <div>
+                                <h2 class="content-card-header mb-3 border-b-0">Painel Diário de Frequência</h2>
+                                <p class="attendance-subtitle">Visualize rapidamente quem registrou o ponto, atrasos e ausências.</p>
+                            </div>
+                            <div class="attendance-toolbar-meta">
+                                <span id="current-date" class="attendance-date">--</span>
+                                <span id="last-update-timestamp" class="attendance-update">Última atualização —</span>
+                            </div>
+                        </div>
+
+                        <div id="attendance-filters" class="attendance-filters">
+                            <button class="escala-pill active" data-filter="all">
+                                Todos
+                                <span class="pill-counter" id="filter-count-all">0</span>
+                            </button>
+                            <button class="escala-pill" data-filter="present">
+                                Presentes
+                                <span class="pill-counter" id="filter-count-present">0</span>
+                            </button>
+                            <button class="escala-pill" data-filter="late">
+                                Atrasos
+                                <span class="pill-counter" id="filter-count-late">0</span>
+                            </button>
+                            <button class="escala-pill" data-filter="absent">
+                                Faltas
+                                <span class="pill-counter" id="filter-count-absent">0</span>
+                            </button>
+                        </div>
+
+                        <div class="attendance-summary-grid">
+                            <div class="attendance-summary-card" data-status="scaled">
+                                <div class="summary-icon summary-icon-blue" aria-hidden="true">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M4.5 8.25h15M5.25 6h13.5a1.5 1.5 0 011.5 1.5v11.25A1.5 1.5 0 0118.75 20.25H5.25A1.5 1.5 0 013.75 18.75V7.5A1.5 1.5 0 015.25 6z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 11.25h3v3h-3z"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <span class="summary-label">Escalados</span>
+                                    <span id="kpi-scaled" class="summary-value">-</span>
+                                </div>
+                            </div>
+                            <div class="attendance-summary-card" data-status="present">
+                                <div class="summary-icon summary-icon-green" aria-hidden="true">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l5.25 5.25L19.5 8.25" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <span class="summary-label">Presentes</span>
+                                    <span id="kpi-present" class="summary-value">-</span>
+                                </div>
+                            </div>
+                            <div class="attendance-summary-card" data-status="late">
+                                <div class="summary-icon summary-icon-yellow" aria-hidden="true">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l3.5 2.5" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <span class="summary-label">Atrasos</span>
+                                    <span id="kpi-late" class="summary-value">-</span>
+                                </div>
+                            </div>
+                            <div class="attendance-summary-card" data-status="absent">
+                                <div class="summary-icon summary-icon-red" aria-hidden="true">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <span class="summary-label">Ausentes</span>
+                                    <span id="kpi-absent" class="summary-value">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="content-card p-0 animated-card delay-200 attendance-table-card">
+                        <div class="attendance-table-header">
+                            <h2 class="content-card-header mb-0">Detalhamento de Frequência</h2>
+                            <div class="attendance-search">
+                                <label for="attendance-search" class="sr-only">Buscar profissional</label>
+                                <input type="search" id="attendance-search" placeholder="Buscar por nome ou email" autocomplete="off">
+                            </div>
+                        </div>
+
+                        <div class="attendance-table-wrapper">
+                            <table class="attendance-table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Profissional</th>
+                                        <th scope="col">Escala</th>
+                                        <th scope="col">Registro</th>
+                                        <th scope="col">Status</th>
+                                        <th scope="col">Observações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="frequency-panel"></tbody>
+                            </table>
+                        </div>
+
+                        <div id="attendance-empty-state" class="attendance-empty-state" hidden>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 13l3 3L22 6" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 6h5l2 12h9" />
+                            </svg>
+                            <p>Nenhum registro encontrado para o filtro selecionado.</p>
+                        </div>
+                    </div>
+                </div>
 
             </main>
 
@@ -415,10 +510,13 @@
             escalas: {},
             ausenciasReposicoes: [],
             notasTeoricas: {},
-            notasPraticas: {}, 
+            notasPraticas: {},
             todayBR: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
             todayFullBR: new Date().toLocaleDateString('pt-BR'),
-            isSidebarCollapsed: false
+            isSidebarCollapsed: false,
+            attendanceRows: [],
+            attendanceFilter: 'all',
+            attendanceSearch: ''
         };
 
         // --- Função Helper para Normalização ---
@@ -426,6 +524,14 @@
             if (!str) return '';
             return str.trim().toLowerCase()
                        .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        }
+
+        function getInitials(name = '') {
+            if (!name) return '—';
+            const parts = name.trim().split(/\s+/).filter(Boolean);
+            if (parts.length === 0) return '—';
+            if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+            return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
         }
 
         // --- Funções Utilitárias (Loading/Erro) ---
@@ -566,6 +672,16 @@
                     closeGeminiModal();
                 }
             });
+
+            const attendanceFilters = document.getElementById('attendance-filters');
+            if (attendanceFilters) {
+                attendanceFilters.addEventListener('click', handleAttendanceFilterClick);
+            }
+
+            const attendanceSearchInput = document.getElementById('attendance-search');
+            if (attendanceSearchInput) {
+                attendanceSearchInput.addEventListener('input', handleAttendanceSearch);
+            }
 
             console.log('[setupEventHandlers] Listeners configurados.');
         }
@@ -908,9 +1024,9 @@
 
         function renderRecentAbsences() {
              try {
-                 const l=document.getElementById('recent-absences-list'); 
+                 const l=document.getElementById('recent-absences-list');
                  if(!appState.ausenciasReposicoes||appState.ausenciasReposicoes.length===0){
-                     l.innerHTML='<li class="text-slate-500 italic p-2">Nenhum registro.</li>'; 
+                     l.innerHTML='<li class="text-slate-500 italic p-2">Nenhum registro.</li>';
                      return;
                  } 
                  const sorted=[...appState.ausenciasReposicoes]
@@ -936,45 +1052,294 @@
                  }).join('');
              } catch(e) { console.error("[renderRecentAbsences] Erro:", e); showError("Erro ao renderizar registros recentes."); }
         }
-        
+
         function findActiveScale() {
              for(const n in appState.escalas){const e=appState.escalas[n]; if(e.headersDay?.includes(appState.todayBR))return e;} console.warn(`Nenhuma escala hoje (${appState.todayBR})`); return null;
         }
-        
+
+        function renderAttendanceRow(row) {
+            const initials = getInitials(row.name || row.email || '');
+            const emailLine = row.email ? `<span class="attendance-email">${row.email}</span>` : '';
+            const shiftLabel = row.shiftLabel ? `<span class="shift-pill">${row.shiftLabel}</span>` : '';
+            const shiftDetails = row.shiftDetails ? `<div class="shift-details">${row.shiftDetails}</div>` : '';
+
+            let timesHtml = '<span class="badge badge-gray">Sem registro</span>';
+            if (row.status !== 'absent') {
+                const times = [];
+                if (row.horaEntrada) {
+                    times.push(`<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l3.5 3"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>${row.horaEntrada}</span>`);
+                }
+                if (row.horaSaida) {
+                    times.push(`<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l2.5 1.5"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>${row.horaSaida}</span>`);
+                }
+                if (times.length > 0) {
+                    timesHtml = `<div class="attendance-times">${times.join('')}</div>`;
+                }
+            }
+
+            const statusBadgeClass = row.status === 'late' ? 'badge badge-yellow' : row.status === 'absent' ? 'badge badge-red' : 'badge badge-green';
+            const statusLabel = row.status === 'late' ? 'Atraso' : row.status === 'absent' ? 'Ausente' : 'Presente';
+
+            const observations = [];
+            if (row.status === 'late' && row.atrasoMinutos > 0) {
+                observations.push(`<strong>${row.atrasoMinutos} min de atraso</strong>`);
+            }
+            if (row.observacao) {
+                observations.push(row.observacao);
+            }
+            if (row.local) {
+                observations.push(`Local: ${row.local}`);
+            }
+            if (row.status === 'absent' && row.shiftDetails) {
+                observations.push(`Previsto: ${row.shiftDetails}`);
+            }
+            const observationContent = observations.length > 0 ? observations.join(' • ') : '—';
+
+            const searchKey = row.searchKey || '';
+
+            return `
+                <tr class="attendance-row" data-status="${row.status}" data-search="${searchKey}">
+                    <td data-label="Profissional">
+                        <div class="attendance-user">
+                            <div class="attendance-avatar">${initials}</div>
+                            <div>
+                                <span class="attendance-name">${row.name || row.email || '—'}</span>
+                                ${emailLine}
+                            </div>
+                        </div>
+                    </td>
+                    <td data-label="Escala">
+                        ${shiftLabel}
+                        ${shiftDetails}
+                    </td>
+                    <td data-label="Registro">
+                        ${timesHtml}
+                    </td>
+                    <td data-label="Status" class="attendance-status">
+                        <span class="${statusBadgeClass}">${statusLabel}</span>
+                    </td>
+                    <td data-label="Observações">
+                        <p class="attendance-observation">${observationContent}</p>
+                    </td>
+                </tr>
+            `;
+        }
+
+        function updateAttendanceCounters(counts = {}) {
+            const mapping = [
+                ['filter-count-all', counts.all || 0],
+                ['filter-count-present', counts.present || 0],
+                ['filter-count-late', counts.late || 0],
+                ['filter-count-absent', counts.absent || 0]
+            ];
+            mapping.forEach(([id, value]) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = value;
+            });
+        }
+
+        function handleAttendanceFilterClick(event) {
+            const button = event.target.closest('.escala-pill');
+            if (!button) return;
+            const filter = button.getAttribute('data-filter');
+            if (!filter) return;
+            appState.attendanceFilter = filter;
+            document.querySelectorAll('#attendance-filters .escala-pill').forEach((pill) => {
+                pill.classList.toggle('active', pill === button);
+            });
+            applyAttendanceFilter();
+        }
+
+        function handleAttendanceSearch(event) {
+            appState.attendanceSearch = normalizeString(event.target.value || '');
+            applyAttendanceFilter();
+        }
+
+        function applyAttendanceFilter() {
+            const tableBody = document.getElementById('frequency-panel');
+            const emptyState = document.getElementById('attendance-empty-state');
+            if (!tableBody) return;
+
+            const rows = Array.from(tableBody.querySelectorAll('.attendance-row'));
+            const searchTerm = appState.attendanceSearch || '';
+            const filter = appState.attendanceFilter || 'all';
+            let visible = 0;
+
+            rows.forEach((row) => {
+                const status = row.getAttribute('data-status');
+                const searchKey = row.getAttribute('data-search') || '';
+                let matchesFilter = filter === 'all';
+                if (!matchesFilter) {
+                    if (filter === 'present') {
+                        matchesFilter = status === 'present' || status === 'late';
+                    } else {
+                        matchesFilter = status === filter;
+                    }
+                }
+                const matchesSearch = !searchTerm || searchKey.includes(searchTerm);
+                if (matchesFilter && matchesSearch) {
+                    row.removeAttribute('hidden');
+                    visible++;
+                } else {
+                    row.setAttribute('hidden', 'hidden');
+                }
+            });
+
+            if (emptyState) {
+                const message = emptyState.querySelector('p');
+                if (!emptyState.dataset.defaultMessage && message) {
+                    emptyState.dataset.defaultMessage = message.textContent || '';
+                }
+                if (visible === 0) {
+                    emptyState.hidden = false;
+                    if (message) {
+                        message.textContent = appState.attendanceRows.length === 0
+                            ? `Nenhuma escala registrada para hoje (${appState.todayBR}).`
+                            : (emptyState.dataset.defaultMessage || 'Nenhum registro encontrado para o filtro selecionado.');
+                    }
+                } else {
+                    emptyState.hidden = true;
+                    if (message && emptyState.dataset.defaultMessage) {
+                        message.textContent = emptyState.dataset.defaultMessage;
+                    }
+                }
+            }
+        }
+
         function renderTabPonto() {
             try {
-                const p=document.getElementById('frequency-panel'); const kS=document.getElementById('kpi-scaled'); const kP=document.getElementById('kpi-present'); const kA=document.getElementById('kpi-absent'); 
-                
-                if (!p || !kS || !kP || !kA) {
-                    console.warn("[renderTabPonto] Painel de frequência não encontrado. Pulando renderização.");
+                const tableBody = document.getElementById('frequency-panel');
+                const emptyState = document.getElementById('attendance-empty-state');
+                const kScaled = document.getElementById('kpi-scaled');
+                const kPresent = document.getElementById('kpi-present');
+                const kLate = document.getElementById('kpi-late');
+                const kAbsent = document.getElementById('kpi-absent');
+
+                if (!tableBody || !kScaled || !kPresent || !kLate || !kAbsent) {
+                    console.warn('[renderTabPonto] Componentes da aba de ponto não encontrados.');
                     return;
                 }
-                
-                const s=findActiveScale(); 
-                if(!s){
-                    p.innerHTML=`<p class="text-slate-500 italic text-sm">Nenhuma escala hoje (${appState.todayBR}).</p>`; 
-                    kS.textContent='0'; kP.textContent='0'; kA.textContent='0'; return;
-                } 
-                
-                const present=[]; const absent=[]; let scaled=0; 
-                s.alunos.forEach(ae=>{
-                    const d=ae.dias.find(x=>x.dataColuna===appState.todayBR); 
-                    if(d?.status&&d.status!=='folga'&&d.status!=='ausencia' && d.status.toLowerCase().indexOf('descanso') === -1){
-                        scaled++; 
-                        const ai = appState.alunos.find(a => 
-                            (a.EmailHC && normalizeString(a.EmailHC) === normalizeString(ae.EmailHC)) ||
-                            (a.NomeCompleto && normalizeString(a.NomeCompleto) === normalizeString(ae.NomeCompleto))
-                        ) || ae;
-                        
-                        const pi=appState.pontoHojeMap.get(ai.EmailHC); 
-                        if(pi)present.push({...ai,HoraEntrada:pi.HoraEntrada,StatusEscala:d.status}); 
-                        else absent.push({...ai,StatusEscala:d.status});
+
+                if (emptyState && !emptyState.dataset.defaultMessage) {
+                    const message = emptyState.querySelector('p');
+                    if (message) emptyState.dataset.defaultMessage = message.textContent || '';
+                }
+
+                const activeScale = findActiveScale();
+                if (!activeScale) {
+                    tableBody.innerHTML = '';
+                    appState.attendanceRows = [];
+                    kScaled.textContent = '0';
+                    kPresent.textContent = '0';
+                    kLate.textContent = '0';
+                    kAbsent.textContent = '0';
+                    updateAttendanceCounters({ all: 0, present: 0, late: 0, absent: 0 });
+                    applyAttendanceFilter();
+                    return;
+                }
+
+                const rows = [];
+                let scaled = 0;
+
+                const students = activeScale.alunos || [];
+                students.forEach((scaledStudent) => {
+                    const dayInfo = scaledStudent.dias?.find((day) => day.dataColuna === appState.todayBR);
+                    const status = dayInfo?.status || '';
+                    const normalizedStatus = status ? status.toLowerCase() : '';
+                    if (!normalizedStatus || normalizedStatus === 'folga' || normalizedStatus === 'ausencia' || normalizedStatus.includes('descanso')) {
+                        return;
                     }
-                }); 
-                
-                kS.textContent=scaled; kP.textContent=present.length; kA.textContent=absent.length; 
-                p.innerHTML=`<div><h3 class="text-green-700">Presentes (${present.length})</h3><ul class="mt-2 text-xs text-slate-600 space-y-1.5">${present.length>0?present.map(s=>`<li class="flex justify-between items-center"><span class="truncate pr-2" title="${s.NomeCompleto}">${s.NomeCompleto}</span><span class="badge badge-green flex-shrink-0">${s.HoraEntrada}</span></li>`).join(''):'<li class="text-slate-400 italic">Nenhum.</li>'}</ul></div> <div class="mt-4"><h3 class="text-red-700">Ausentes (${absent.length})</h3><ul class="mt-2 text-xs text-slate-600 space-y-1.5">${absent.length>0?absent.map(s=>`<li class="flex justify-between items-center"><span class="truncate pr-2" title="${s.NomeCompleto}">${s.NomeCompleto}</span><span class="badge badge-red flex-shrink-0" title="Escala: ${s.StatusEscala}">Ausente</span></li>`).join(''):'<li class="text-slate-400 italic">Nenhum.</li>'}</ul></div>`;
-            } catch (e) { console.error("[renderTabPonto] Erro:", e); showError("Erro ao calcular frequência."); }
+                    scaled++;
+
+                    const aluno = appState.alunos.find((a) =>
+                        (a.EmailHC && normalizeString(a.EmailHC) === normalizeString(scaledStudent.EmailHC)) ||
+                        (a.NomeCompleto && normalizeString(a.NomeCompleto) === normalizeString(scaledStudent.NomeCompleto))
+                    ) || scaledStudent;
+
+                    const ponto = aluno.EmailHC ? appState.pontoHojeMap.get(aluno.EmailHC) : undefined;
+
+                    const shiftLabel = status || 'Escala';
+                    const horarioInicio = ponto?.HoraPrevistaEntrada || dayInfo?.horaInicio || dayInfo?.horaInicial || dayInfo?.horarioInicio;
+                    const horarioFim = ponto?.HoraPrevistaSaida || dayInfo?.horaFim || dayInfo?.horaFinal || dayInfo?.horarioFim;
+                    let shiftDetails = dayInfo?.horario || dayInfo?.hora || dayInfo?.horarioPrevisto || dayInfo?.horarioDetalhado || '';
+                    if (!shiftDetails) {
+                        const range = [horarioInicio, horarioFim].filter(Boolean);
+                        if (range.length === 2) shiftDetails = `${range[0]} às ${range[1]}`;
+                        else if (range.length === 1) shiftDetails = range[0];
+                    }
+                    const horaEntrada = ponto?.HoraEntrada || ponto?.HoraEntradaRegistrada || '';
+                    const horaSaida = ponto?.HoraSaida || ponto?.HoraSaidaRegistrada || '';
+
+                    const atrasoRaw = ponto?.AtrasoMinutos ?? ponto?.MinutosAtraso ?? ponto?.Atraso ?? 0;
+                    const atrasoNumero = parseInt(atrasoRaw, 10);
+                    const atrasoFlag = Number.isFinite(atrasoNumero) && atrasoNumero > 0;
+                    const atrasoByStatus = typeof ponto?.Status === 'string' && ponto.Status.toLowerCase().includes('atras');
+                    const atrasoBoolean = ponto?.EstaAtrasado || ponto?.Atrasado;
+                    const isLate = Boolean(atrasoFlag || atrasoByStatus || atrasoBoolean);
+
+                    const observacao = ponto?.Observacao || ponto?.Justificativa || '';
+                    const local = ponto?.Local || ponto?.Setor || ponto?.Unidade || '';
+
+                    const name = aluno.NomeCompleto || scaledStudent.NomeCompleto || aluno.EmailHC || scaledStudent.EmailHC || '';
+                    const email = aluno.EmailHC || scaledStudent.EmailHC || '';
+
+                    const statusLabelForSearch = ponto ? (isLate ? 'atraso' : 'presente') : 'ausente';
+                    const searchKey = normalizeString(`${name} ${email} ${shiftLabel} ${shiftDetails || ''} ${observacao || ''} ${local || ''} ${statusLabelForSearch}`).replace(/"/g, '');
+
+                    const row = {
+                        status: ponto ? (isLate ? 'late' : 'present') : 'absent',
+                        name,
+                        email,
+                        shiftLabel,
+                        shiftDetails,
+                        horaEntrada: ponto ? (horaEntrada || '') : '',
+                        horaSaida: ponto ? (horaSaida || '') : '',
+                        atrasoMinutos: isLate ? (Number.isFinite(atrasoNumero) ? atrasoNumero : null) : null,
+                        observacao,
+                        local,
+                        searchKey
+                    };
+
+                    rows.push(row);
+                });
+
+                const statusPriority = { present: 0, late: 1, absent: 2 };
+                rows.sort((a, b) => {
+                    const diff = (statusPriority[a.status] ?? 99) - (statusPriority[b.status] ?? 99);
+                    if (diff !== 0) return diff;
+                    const nameA = a.name || '';
+                    const nameB = b.name || '';
+                    return nameA.localeCompare(nameB, 'pt-BR', { sensitivity: 'base' });
+                });
+
+                const presentCount = rows.filter((row) => row.status === 'present' || row.status === 'late').length;
+                const lateCount = rows.filter((row) => row.status === 'late').length;
+                const absentCount = rows.filter((row) => row.status === 'absent').length;
+
+                kScaled.textContent = String(scaled);
+                kPresent.textContent = String(presentCount);
+                kLate.textContent = String(lateCount);
+                kAbsent.textContent = String(absentCount);
+
+                updateAttendanceCounters({
+                    all: rows.length,
+                    present: presentCount,
+                    late: lateCount,
+                    absent: absentCount
+                });
+
+                tableBody.innerHTML = rows.map(renderAttendanceRow).join('');
+                appState.attendanceRows = rows;
+
+                if (!document.getElementById('attendance-search')?.value) {
+                    appState.attendanceSearch = '';
+                }
+
+                applyAttendanceFilter();
+            } catch (e) {
+                console.error('[renderTabPonto] Erro:', e);
+                showError('Erro ao calcular frequência.');
+            }
         }
         
         function renderStudentList(students) {
