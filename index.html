@@ -182,120 +182,114 @@
 
                 <!-- View: Ponto -->
                 <div id="content-ponto" class="view-container">
-                    <h1>Análise de Ponto</h1>
+                    <h1>Registro de Ponto</h1>
 
-                    <div class="content-card p-6 lg:p-8 animated-card delay-100 attendance-header-card">
-                        <div class="attendance-toolbar-header">
+                    <div class="content-card p-6 lg:p-8 animated-card delay-100 ponto-panel">
+                        <div class="ponto-header">
                             <div>
-                                <h2 class="content-card-header mb-3 border-b-0">Painel Diário de Frequência</h2>
-                                <p class="attendance-subtitle">Visualize rapidamente quem registrou o ponto, atrasos e ausências.</p>
+                                <h2 class="content-card-header mb-2 border-b-0">Painel Diário de Frequência</h2>
+                                <p class="ponto-subtitle">Consulte presença, atrasos e faltas diretamente da planilha oficial.</p>
                             </div>
-                            <div class="attendance-toolbar-meta">
-                                <span id="current-date" class="attendance-date">--</span>
-                                <span id="last-update-timestamp" class="attendance-update">Última atualização —</span>
+                            <div class="ponto-meta">
+                                <span id="ponto-active-date" class="ponto-date-chip">--</span>
+                                <span id="ponto-last-sync" class="ponto-sync">Dados não carregados</span>
                             </div>
                         </div>
 
-                        <div id="attendance-filters" class="attendance-filters">
+                        <div class="ponto-toolbar">
+                            <div class="ponto-toolbar-group">
+                                <div class="ponto-field">
+                                    <label for="ponto-date-picker">Data</label>
+                                    <input type="date" id="ponto-date-picker" list="ponto-date-options">
+                                    <datalist id="ponto-date-options"></datalist>
+                                </div>
+                                <div class="ponto-field">
+                                    <label for="ponto-scale-select">Escala</label>
+                                    <select id="ponto-scale-select"></select>
+                                </div>
+                            </div>
+                            <div class="ponto-actions">
+                                <button id="ponto-refresh-button" class="ponto-ghost-button" type="button">Atualizar dados</button>
+                                <button id="ponto-past-toggle" class="ponto-solid-button" type="button">Ver Escalas Passadas</button>
+                            </div>
+                        </div>
+
+                        <div class="ponto-summary-grid">
+                            <div class="ponto-summary-card">
+                                <span class="ponto-summary-label">Escalados</span>
+                                <span id="ponto-count-total" class="ponto-summary-value">0</span>
+                            </div>
+                            <div class="ponto-summary-card is-green">
+                                <span class="ponto-summary-label">Presentes</span>
+                                <span id="ponto-count-present" class="ponto-summary-value">0</span>
+                            </div>
+                            <div class="ponto-summary-card is-amber">
+                                <span class="ponto-summary-label">Atrasos</span>
+                                <span id="ponto-count-late" class="ponto-summary-value">0</span>
+                            </div>
+                            <div class="ponto-summary-card is-red">
+                                <span class="ponto-summary-label">Faltas</span>
+                                <span id="ponto-count-absent" class="ponto-summary-value">0</span>
+                            </div>
+                        </div>
+
+                        <div id="ponto-filter-bar" class="ponto-filter-bar">
                             <button class="escala-pill active" data-filter="all">
                                 Todos
-                                <span class="pill-counter" id="filter-count-all">0</span>
+                                <span class="pill-counter" id="ponto-filter-total">0</span>
                             </button>
                             <button class="escala-pill" data-filter="present">
                                 Presentes
-                                <span class="pill-counter" id="filter-count-present">0</span>
+                                <span class="pill-counter" id="ponto-filter-present">0</span>
                             </button>
                             <button class="escala-pill" data-filter="late">
                                 Atrasos
-                                <span class="pill-counter" id="filter-count-late">0</span>
+                                <span class="pill-counter" id="ponto-filter-late">0</span>
                             </button>
                             <button class="escala-pill" data-filter="absent">
                                 Faltas
-                                <span class="pill-counter" id="filter-count-absent">0</span>
+                                <span class="pill-counter" id="ponto-filter-absent">0</span>
                             </button>
                         </div>
 
-                        <div class="attendance-summary-grid">
-                            <div class="attendance-summary-card" data-status="scaled">
-                                <div class="summary-icon summary-icon-blue" aria-hidden="true">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M4.5 8.25h15M5.25 6h13.5a1.5 1.5 0 011.5 1.5v11.25A1.5 1.5 0 0118.75 20.25H5.25A1.5 1.5 0 013.75 18.75V7.5A1.5 1.5 0 015.25 6z"/>
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 11.25h3v3h-3z"/>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <span class="summary-label">Escalados</span>
-                                    <span id="kpi-scaled" class="summary-value">-</span>
-                                </div>
-                            </div>
-                            <div class="attendance-summary-card" data-status="present">
-                                <div class="summary-icon summary-icon-green" aria-hidden="true">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l5.25 5.25L19.5 8.25" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <span class="summary-label">Presentes</span>
-                                    <span id="kpi-present" class="summary-value">-</span>
-                                </div>
-                            </div>
-                            <div class="attendance-summary-card" data-status="late">
-                                <div class="summary-icon summary-icon-yellow" aria-hidden="true">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l3.5 2.5" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <span class="summary-label">Atrasos</span>
-                                    <span id="kpi-late" class="summary-value">-</span>
-                                </div>
-                            </div>
-                            <div class="attendance-summary-card" data-status="absent">
-                                <div class="summary-icon summary-icon-red" aria-hidden="true">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <span class="summary-label">Ausentes</span>
-                                    <span id="kpi-absent" class="summary-value">-</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="content-card p-0 animated-card delay-200 attendance-table-card">
-                        <div class="attendance-table-header">
-                            <h2 class="content-card-header mb-0">Detalhamento de Frequência</h2>
-                            <div class="attendance-search">
-                                <label for="attendance-search" class="sr-only">Buscar profissional</label>
-                                <input type="search" id="attendance-search" placeholder="Buscar por nome ou email" autocomplete="off">
-                            </div>
+                        <div class="ponto-search-wrapper">
+                            <label class="sr-only" for="ponto-search-input">Buscar profissional</label>
+                            <input type="search" id="ponto-search-input" placeholder="Buscar por nome, escala ou horário" autocomplete="off">
                         </div>
 
-                        <div class="attendance-table-wrapper">
-                            <table class="attendance-table">
+                        <div id="ponto-loading-state" class="ponto-loading" hidden>Carregando registros do ponto...</div>
+
+                        <div class="ponto-table-wrapper">
+                            <table class="ponto-table">
                                 <thead>
                                     <tr>
-                                        <th scope="col">Profissional</th>
+                                        <th scope="col">Nome</th>
+                                        <th scope="col">Data</th>
+                                        <th scope="col">Hora de Entrada</th>
+                                        <th scope="col">Hora de Saída</th>
                                         <th scope="col">Escala</th>
-                                        <th scope="col">Registro</th>
-                                        <th scope="col">Status</th>
-                                        <th scope="col">Observações</th>
+                                        <th scope="col">Prática/Teórica</th>
                                     </tr>
                                 </thead>
-                                <tbody id="frequency-panel"></tbody>
+                                <tbody id="ponto-table-body"></tbody>
                             </table>
                         </div>
 
-                        <div id="attendance-empty-state" class="attendance-empty-state" hidden>
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 13l3 3L22 6" />
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 6h5l2 12h9" />
+                        <div id="ponto-empty-state" class="ponto-empty-state" hidden>
+                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
                             </svg>
-                            <p>Nenhum registro encontrado para o filtro selecionado.</p>
+                            <p>Nenhum registro encontrado para os filtros selecionados.</p>
+                        </div>
+                    </div>
+
+                    <div id="ponto-past-scales-panel" class="content-card p-0 animated-card delay-200 ponto-past-panel" hidden>
+                        <div class="ponto-past-header">
+                            <h2 class="content-card-header mb-0">Escalas anteriores</h2>
+                            <button id="ponto-close-past" class="ponto-ghost-button" type="button">Fechar</button>
+                        </div>
+                        <div id="ponto-past-scales-list" class="ponto-past-list">
+                            <p class="ponto-past-empty">Selecione “Atualizar dados” para carregar a planilha.</p>
                         </div>
                     </div>
                 </div>
@@ -502,24 +496,34 @@
         const API_URL = "https://script.google.com/macros/s/AKfycbz0ggDxcDPXe0h_GJeQ-NT_-INHMKkQ08PAGLp5QN2m7HKHfMlTqg6gsATMzrtRF48n/exec";
         
         // Estado global da aplicação
-        const appState = {
-            lastPontoUpdate: null,
-            alunos: [],
-            alunosMap: new Map(),
-            pontoHojeMap: new Map(),
-            escalas: {},
-            ausenciasReposicoes: [],
-            notasTeoricas: {},
-            notasPraticas: {},
-            todayBR: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-            todayFullBR: new Date().toLocaleDateString('pt-BR'),
-            isSidebarCollapsed: false,
-            attendanceRows: [],
-            attendanceFilter: 'all',
-            attendanceSearch: ''
-        };
 
-        // --- Função Helper para Normalização ---
+const appState = {
+    alunos: [],
+    alunosMap: new Map(),
+    pontoHojeMap: new Map(),
+    escalas: {},
+    ausenciasReposicoes: [],
+    notasTeoricas: {},
+    notasPraticas: {},
+    todayBR: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+    todayFullBR: new Date().toLocaleDateString('pt-BR'),
+    isSidebarCollapsed: false
+};
+
+const PONTO_CSV_PATH = 'Ponto.csv';
+const ATRASO_THRESHOLD_MINUTES = 10;
+const pontoState = {
+    rawRows: [],
+    byDate: new Map(),
+    dates: [],
+    selectedDate: '',
+    selectedScale: 'all',
+    filter: 'all',
+    search: '',
+    lastLoadedAt: null
+};
+
+// --- Função Helper para Normalização ---
         function normalizeString(str) {
             if (!str) return '';
             return str.trim().toLowerCase()
@@ -603,13 +607,13 @@
             try {
                 showLoading(true);
                 await fetchAllData();
-                await fetchPontoHoje(); 
+                await loadPontoCSV();
 
                 console.log('[initDashboard] Dados carregados, iniciando renderização inicial...');
                 renderStudentList(appState.alunos);
                 renderAtAGlance(); // Inclui renderModuleAverages()
                 renderRecentAbsences();
-                renderTabPonto(); // Renderiza a aba Ponto (que agora tem conteúdo)
+                refreshPontoView();
 
                 console.log('[initDashboard] Renderização inicial completa.');
                 
@@ -617,8 +621,7 @@
                 
                 document.querySelector('#dashboard-view').style.opacity = '1';
                 showLoading(false);
-
-                setInterval(fetchPontoHoje, 30000); 
+ 
                 console.log("[initDashboard] Inicialização completa. Live update iniciado.");
             } catch (error) {
                 const errorMessage = error.message || "Erro desconhecido";
@@ -673,14 +676,44 @@
                 }
             });
 
-            const attendanceFilters = document.getElementById('attendance-filters');
-            if (attendanceFilters) {
-                attendanceFilters.addEventListener('click', handleAttendanceFilterClick);
+            const pontoFilterBar = document.getElementById('ponto-filter-bar');
+            if (pontoFilterBar) {
+                pontoFilterBar.addEventListener('click', handlePontoFilterClick);
             }
 
-            const attendanceSearchInput = document.getElementById('attendance-search');
-            if (attendanceSearchInput) {
-                attendanceSearchInput.addEventListener('input', handleAttendanceSearch);
+            const pontoSearchInput = document.getElementById('ponto-search-input');
+            if (pontoSearchInput) {
+                pontoSearchInput.addEventListener('input', handlePontoSearch);
+            }
+
+            const pontoDatePicker = document.getElementById('ponto-date-picker');
+            if (pontoDatePicker) {
+                pontoDatePicker.addEventListener('change', handlePontoDateChange);
+            }
+
+            const pontoScaleSelect = document.getElementById('ponto-scale-select');
+            if (pontoScaleSelect) {
+                pontoScaleSelect.addEventListener('change', handlePontoScaleChange);
+            }
+
+            const pontoRefreshButton = document.getElementById('ponto-refresh-button');
+            if (pontoRefreshButton) {
+                pontoRefreshButton.addEventListener('click', () => loadPontoCSV(true));
+            }
+
+            const pontoPastToggle = document.getElementById('ponto-past-toggle');
+            if (pontoPastToggle) {
+                pontoPastToggle.addEventListener('click', togglePontoPastPanel);
+            }
+
+            const pontoPastClose = document.getElementById('ponto-close-past');
+            if (pontoPastClose) {
+                pontoPastClose.addEventListener('click', closePontoPastPanel);
+            }
+
+            const pontoPastList = document.getElementById('ponto-past-scales-list');
+            if (pontoPastList) {
+                pontoPastList.addEventListener('click', handlePontoPastItemClick);
             }
 
             console.log('[setupEventHandlers] Listeners configurados.');
@@ -749,30 +782,6 @@
             appState.alunos.forEach(a => { if(a && a.EmailHC) appState.alunosMap.set(a.EmailHC, a); });
             
             console.log("[onStaticDataLoaded] Dados estáticos processados.");
-        }
-
-        async function fetchPontoHoje() {
-            const timestampElem = document.getElementById('last-update-timestamp');
-            console.log(`[fetchPontoHoje] Buscando ponto desde: ${appState.lastPontoUpdate||'Início'}`);
-             try{
-                let u = `${API_URL}?action=getPontoHoje`;
-                const r = await fetch(u);
-                if (!r.ok) throw new Error(`Rede (getPontoHoje): ${r.statusText} (${r.status})`);
-                const d = await r.json();
-                if (!d.success) throw new Error(`API (getPontoHoje): ${d.error || 'Erro desconhecido'}`);
-                console.log('[fetchPontoHoje] Ponto recebido:', d.hoje);
-                
-                appState.lastPontoUpdate = d.lastUpdate;
-                appState.pontoHojeMap.clear();
-                (d.hoje || []).forEach(p => { if(p && p.EmailHC) appState.pontoHojeMap.set(p.EmailHC, p); });
-                
-                renderTabPonto(); 
-                
-                if (timestampElem) { timestampElem.textContent = `Última att: ${new Date().toLocaleTimeString('pt-BR')}`; }
-             } catch(e){
-                console.warn('[fetchPontoHoje] Falha atualizar freq:', e.message);
-                if (timestampElem) { timestampElem.textContent = `Falha na att: ${new Date().toLocaleTimeString('pt-BR')}`; }
-             }
         }
 
         // --- NAVEGAÇÃO PRINCIPAL ---
@@ -1057,291 +1066,592 @@
              for(const n in appState.escalas){const e=appState.escalas[n]; if(e.headersDay?.includes(appState.todayBR))return e;} console.warn(`Nenhuma escala hoje (${appState.todayBR})`); return null;
         }
 
-        function renderAttendanceRow(row) {
-            const initials = getInitials(row.name || row.email || '');
-            const emailLine = row.email ? `<span class="attendance-email">${row.email}</span>` : '';
-            const shiftLabel = row.shiftLabel ? `<span class="shift-pill">${row.shiftLabel}</span>` : '';
-            const shiftDetails = row.shiftDetails ? `<div class="shift-details">${row.shiftDetails}</div>` : '';
 
-            let timesHtml = '<span class="badge badge-gray">Sem registro</span>';
-            if (row.status !== 'absent') {
-                const times = [];
-                if (row.horaEntrada) {
-                    times.push(`<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l3.5 3"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>${row.horaEntrada}</span>`);
-                }
-                if (row.horaSaida) {
-                    times.push(`<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l2.5 1.5"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>${row.horaSaida}</span>`);
-                }
-                if (times.length > 0) {
-                    timesHtml = `<div class="attendance-times">${times.join('')}</div>`;
-                }
-            }
-
-            const statusBadgeClass = row.status === 'late' ? 'badge badge-yellow' : row.status === 'absent' ? 'badge badge-red' : 'badge badge-green';
-            const statusLabel = row.status === 'late' ? 'Atraso' : row.status === 'absent' ? 'Ausente' : 'Presente';
-
-            const observations = [];
-            if (row.status === 'late' && row.atrasoMinutos > 0) {
-                observations.push(`<strong>${row.atrasoMinutos} min de atraso</strong>`);
-            }
-            if (row.observacao) {
-                observations.push(row.observacao);
-            }
-            if (row.local) {
-                observations.push(`Local: ${row.local}`);
-            }
-            if (row.status === 'absent' && row.shiftDetails) {
-                observations.push(`Previsto: ${row.shiftDetails}`);
-            }
-            const observationContent = observations.length > 0 ? observations.join(' • ') : '—';
-
-            const searchKey = row.searchKey || '';
-
-            return `
-                <tr class="attendance-row" data-status="${row.status}" data-search="${searchKey}">
-                    <td data-label="Profissional">
-                        <div class="attendance-user">
-                            <div class="attendance-avatar">${initials}</div>
-                            <div>
-                                <span class="attendance-name">${row.name || row.email || '—'}</span>
-                                ${emailLine}
-                            </div>
-                        </div>
-                    </td>
-                    <td data-label="Escala">
-                        ${shiftLabel}
-                        ${shiftDetails}
-                    </td>
-                    <td data-label="Registro">
-                        ${timesHtml}
-                    </td>
-                    <td data-label="Status" class="attendance-status">
-                        <span class="${statusBadgeClass}">${statusLabel}</span>
-                    </td>
-                    <td data-label="Observações">
-                        <p class="attendance-observation">${observationContent}</p>
-                    </td>
-                </tr>
-            `;
+        function escapeHtml(value = '') {
+            if (value === null || value === undefined) return '';
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
         }
 
-        function updateAttendanceCounters(counts = {}) {
-            const mapping = [
-                ['filter-count-all', counts.all || 0],
-                ['filter-count-present', counts.present || 0],
-                ['filter-count-late', counts.late || 0],
-                ['filter-count-absent', counts.absent || 0]
-            ];
-            mapping.forEach(([id, value]) => {
-                const el = document.getElementById(id);
-                if (el) el.textContent = value;
-            });
-        }
+        function parseCSV(text) {
+            if (!text) return [];
+            const rows = [];
+            let current = [];
+            let field = '';
+            let insideQuotes = false;
 
-        function handleAttendanceFilterClick(event) {
-            const button = event.target.closest('.escala-pill');
-            if (!button) return;
-            const filter = button.getAttribute('data-filter');
-            if (!filter) return;
-            appState.attendanceFilter = filter;
-            document.querySelectorAll('#attendance-filters .escala-pill').forEach((pill) => {
-                pill.classList.toggle('active', pill === button);
-            });
-            applyAttendanceFilter();
-        }
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
 
-        function handleAttendanceSearch(event) {
-            appState.attendanceSearch = normalizeString(event.target.value || '');
-            applyAttendanceFilter();
-        }
-
-        function applyAttendanceFilter() {
-            const tableBody = document.getElementById('frequency-panel');
-            const emptyState = document.getElementById('attendance-empty-state');
-            if (!tableBody) return;
-
-            const rows = Array.from(tableBody.querySelectorAll('.attendance-row'));
-            const searchTerm = appState.attendanceSearch || '';
-            const filter = appState.attendanceFilter || 'all';
-            let visible = 0;
-
-            rows.forEach((row) => {
-                const status = row.getAttribute('data-status');
-                const searchKey = row.getAttribute('data-search') || '';
-                let matchesFilter = filter === 'all';
-                if (!matchesFilter) {
-                    if (filter === 'present') {
-                        matchesFilter = status === 'present' || status === 'late';
+                if (char === '"') {
+                    if (insideQuotes && text[i + 1] === '"') {
+                        field += '"';
+                        i++;
                     } else {
-                        matchesFilter = status === filter;
+                        insideQuotes = !insideQuotes;
                     }
-                }
-                const matchesSearch = !searchTerm || searchKey.includes(searchTerm);
-                if (matchesFilter && matchesSearch) {
-                    row.removeAttribute('hidden');
-                    visible++;
+                } else if (char === ',' && !insideQuotes) {
+                    current.push(field);
+                    field = '';
+                } else if ((char === '
+' || char === '
+') && !insideQuotes) {
+                    if (char === '
+' && text[i + 1] === '
+') {
+                        i++;
+                    }
+                    current.push(field);
+                    rows.push(current);
+                    current = [];
+                    field = '';
                 } else {
-                    row.setAttribute('hidden', 'hidden');
+                    field += char;
                 }
+            }
+
+            if (field.length > 0 || current.length > 0) {
+                current.push(field);
+                rows.push(current);
+            }
+
+            if (!rows.length) return [];
+            const headers = rows.shift().map((header) => header.trim());
+            return rows
+                .filter((row) => row.some((value) => value && value.trim().length > 0))
+                .map((row) => {
+                    const entry = {};
+                    headers.forEach((header, index) => {
+                        entry[header] = (row[index] || '').trim();
+                    });
+                    return entry;
+                });
+        }
+
+        function sanitizeTime(value = '') {
+            const trimmed = value.trim();
+            if (!trimmed) return '';
+            const parts = trimmed.split(':');
+            if (parts.length >= 2) {
+                return `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`;
+            }
+            return trimmed;
+        }
+
+        function toMinutes(time = '') {
+            if (!time) return null;
+            const parts = time.split(':');
+            if (parts.length < 2) return null;
+            const hours = parseInt(parts[0], 10);
+            const minutes = parseInt(parts[1], 10);
+            if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
+            return hours * 60 + minutes;
+        }
+
+        function formatDateBR(isoDate = '') {
+            if (!isoDate) return '--';
+            const [year, month, day] = isoDate.split('-');
+            if (!year || !month || !day) return isoDate;
+            return `${day}/${month}/${year}`;
+        }
+
+        function formatDateLabel(isoDate = '') {
+            if (!isoDate) return '--';
+            try {
+                const date = new Date(`${isoDate}T00:00:00`);
+                return date.toLocaleDateString('pt-BR', {
+                    weekday: 'long',
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                });
+            } catch (error) {
+                return formatDateBR(isoDate);
+            }
+        }
+
+        function processPontoRows(rows = []) {
+            const modalidadeKeys = ['Pratica/Teorica', 'Prática/Teórica', 'Pratica/Teórica', 'Prática/Teorica'];
+            const processed = rows.map((row) => {
+                const nome = row.NomeCompleto || row.Nome || '';
+                const dataBr = row.Data || row.DATA || '';
+                const isoDate = convertDateBRToISO(dataBr);
+                if (!isoDate) return null;
+
+                const escala = row.Escala || row.escala || '';
+                const modalidade = modalidadeKeys.map((key) => row[key]).find((value) => value) || '';
+                const horaEntradaRaw = (row.HoraEntrada || row.Entrada || '').trim();
+                const horaSaidaRaw = (row.HoraSaida || row.Saida || '').trim();
+                const horaEntrada = sanitizeTime(horaEntradaRaw);
+                const horaSaida = sanitizeTime(horaSaidaRaw);
+
+                return {
+                    rawSerial: row.SerialNumber || row.Serial || row.ID || '',
+                    nome,
+                    isoDate,
+                    dataBr,
+                    escala,
+                    modalidade,
+                    horaEntrada,
+                    horaSaida,
+                    horaEntradaMinutes: toMinutes(horaEntradaRaw || horaEntrada),
+                    escalaKey: normalizeString(escala || 'sem-escala')
+                };
+            }).filter(Boolean);
+
+            pontoState.rawRows = processed;
+            pontoState.byDate.clear();
+            processed.forEach((entry) => {
+                if (!pontoState.byDate.has(entry.isoDate)) {
+                    pontoState.byDate.set(entry.isoDate, []);
+                }
+                pontoState.byDate.get(entry.isoDate).push(entry);
             });
 
-            if (emptyState) {
-                const message = emptyState.querySelector('p');
-                if (!emptyState.dataset.defaultMessage && message) {
-                    emptyState.dataset.defaultMessage = message.textContent || '';
+            pontoState.dates = Array.from(pontoState.byDate.keys()).sort((a, b) => b.localeCompare(a));
+            const todayISO = new Date().toISOString().slice(0, 10);
+            pontoState.selectedDate = pontoState.byDate.has(todayISO)
+                ? todayISO
+                : (pontoState.dates[0] || todayISO);
+            pontoState.selectedScale = 'all';
+            pontoState.filter = 'all';
+            pontoState.search = '';
+
+            updatePontoHojeMap();
+        }
+
+        function convertDateBRToISO(value = '') {
+            const sanitized = value.trim();
+            if (!sanitized) return '';
+            const parts = sanitized.split(/[\/-]/);
+            if (parts.length !== 3) return '';
+            const [day, month, year] = parts;
+            if (!day || !month || !year) return '';
+            return `${year.padStart(4, '0')}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        }
+
+        function updatePontoHojeMap() {
+            const todayISO = new Date().toISOString().slice(0, 10);
+            appState.pontoHojeMap.clear();
+            const todaysRows = pontoState.byDate.get(todayISO) || [];
+            if (!todaysRows.length) return;
+
+            todaysRows.forEach((row) => {
+                const normName = normalizeString(row.nome);
+                const matchedStudent = appState.alunos.find((student) => normalizeString(student.NomeCompleto) === normName);
+                const key = matchedStudent?.EmailHC || row.nome || row.rawSerial;
+                if (key) {
+                    appState.pontoHojeMap.set(key, {
+                        NomeCompleto: row.nome,
+                        HoraEntrada: row.horaEntrada,
+                        HoraSaida: row.horaSaida,
+                        Escala: row.escala,
+                        DataISO: row.isoDate
+                    });
                 }
-                if (visible === 0) {
-                    emptyState.hidden = false;
-                    if (message) {
-                        message.textContent = appState.attendanceRows.length === 0
-                            ? `Nenhuma escala registrada para hoje (${appState.todayBR}).`
-                            : (emptyState.dataset.defaultMessage || 'Nenhum registro encontrado para o filtro selecionado.');
-                    }
-                } else {
-                    emptyState.hidden = true;
-                    if (message && emptyState.dataset.defaultMessage) {
-                        message.textContent = emptyState.dataset.defaultMessage;
-                    }
+            });
+        }
+
+        async function loadPontoCSV(showInlineSpinner = false) {
+            console.log('[loadPontoCSV] Iniciando carregamento do Ponto.csv...');
+            const loadingBanner = document.getElementById('ponto-loading-state');
+            if (loadingBanner) {
+                loadingBanner.hidden = false;
+                loadingBanner.textContent = showInlineSpinner ? 'Atualizando registros do ponto...' : 'Carregando registros do ponto...';
+            }
+
+            try {
+                const response = await fetch(`${PONTO_CSV_PATH}?_=${Date.now()}`);
+                if (!response.ok) {
+                    throw new Error(`Não foi possível carregar a planilha (${response.status})`);
+                }
+
+                const csvText = await response.text();
+                const parsedRows = parseCSV(csvText);
+                processPontoRows(parsedRows);
+                hydratePontoSelectors();
+                refreshPontoView();
+                updatePontoPastPanel();
+                pontoState.lastLoadedAt = new Date();
+                updatePontoMeta();
+                console.log(`[loadPontoCSV] Registros carregados: ${pontoState.rawRows.length}`);
+            } catch (error) {
+                console.error('[loadPontoCSV] Erro ao ler Ponto.csv:', error);
+                showError(`Falha ao carregar a planilha de ponto: ${error.message}`);
+                pontoState.rawRows = [];
+                pontoState.byDate.clear();
+                pontoState.dates = [];
+                pontoState.selectedDate = '';
+                pontoState.selectedScale = 'all';
+                pontoState.filter = 'all';
+                pontoState.search = '';
+                pontoState.lastLoadedAt = null;
+                refreshPontoView();
+                updatePontoPastPanel();
+                updatePontoMeta();
+            } finally {
+                if (loadingBanner) {
+                    loadingBanner.hidden = true;
                 }
             }
         }
 
-        function renderTabPonto() {
+        function hydratePontoSelectors() {
+            const dateInput = document.getElementById('ponto-date-picker');
+            const datalist = document.getElementById('ponto-date-options');
+            const searchInput = document.getElementById('ponto-search-input');
+
+            if (searchInput && !pontoState.search) {
+                searchInput.value = '';
+            }
+
+            if (dateInput) {
+                if (pontoState.dates.length > 0) {
+                    const sortedDates = [...pontoState.dates].sort((a, b) => a.localeCompare(b));
+                    dateInput.min = sortedDates[0];
+                    dateInput.max = sortedDates[sortedDates.length - 1];
+                    dateInput.value = pontoState.selectedDate;
+                } else {
+                    dateInput.value = '';
+                }
+            }
+
+            if (datalist) {
+                datalist.innerHTML = pontoState.dates
+                    .map((date) => `<option value="${date}">${formatDateBR(date)}</option>`)
+                    .join('');
+            }
+
+            document.querySelectorAll('#ponto-filter-bar .escala-pill').forEach((pill) => {
+                const filter = pill.getAttribute('data-filter');
+                pill.classList.toggle('active', filter === pontoState.filter);
+            });
+
+            updatePontoScaleOptions();
+        }
+
+        function updatePontoScaleOptions() {
+            const select = document.getElementById('ponto-scale-select');
+            if (!select) return;
+
+            const records = pontoState.byDate.get(pontoState.selectedDate) || [];
+            const uniqueScales = Array.from(new Set(records.map((entry) => entry.escala || 'Sem escala')))
+                .filter((value) => value && value.trim().length > 0)
+                .sort((a, b) => a.localeCompare(b, 'pt-BR'));
+
+            let options = '<option value="all">Todas as escalas</option>';
+            uniqueScales.forEach((scale) => {
+                options += `<option value="${escapeHtml(scale)}">${escapeHtml(scale)}</option>`;
+            });
+
+            select.innerHTML = options;
+            if (!uniqueScales.includes(pontoState.selectedScale)) {
+                pontoState.selectedScale = 'all';
+            }
+            select.value = pontoState.selectedScale;
+        }
+
+        function enrichPontoRows(rows = []) {
+            const baselineByScale = new Map();
+            rows.forEach((row) => {
+                if (Number.isFinite(row.horaEntradaMinutes)) {
+                    const current = baselineByScale.get(row.escalaKey);
+                    baselineByScale.set(row.escalaKey, current === undefined ? row.horaEntradaMinutes : Math.min(current, row.horaEntradaMinutes));
+                }
+            });
+
+            return rows.map((row) => {
+                const baseline = baselineByScale.get(row.escalaKey);
+                let status = 'absent';
+                let statusLabel = 'Falta';
+                let badgeClass = 'badge badge-red';
+                let delayMinutes = null;
+
+                if (Number.isFinite(row.horaEntradaMinutes)) {
+                    if (baseline !== undefined && baseline !== null) {
+                        const diff = Math.max(0, row.horaEntradaMinutes - baseline);
+                        delayMinutes = diff;
+                        if (diff > ATRASO_THRESHOLD_MINUTES) {
+                            status = 'late';
+                            statusLabel = diff ? `Atraso (+${diff} min)` : 'Atraso';
+                            badgeClass = 'badge badge-yellow';
+                        } else {
+                            status = 'present';
+                            statusLabel = 'Presente';
+                            badgeClass = 'badge badge-green';
+                        }
+                    } else {
+                        status = 'present';
+                        statusLabel = 'Presente';
+                        badgeClass = 'badge badge-green';
+                    }
+                }
+
+                const searchKey = normalizeString([
+                    row.nome,
+                    row.escala,
+                    row.modalidade,
+                    row.horaEntrada,
+                    row.horaSaida,
+                    statusLabel
+                ].filter(Boolean).join(' '));
+
+                return {
+                    ...row,
+                    status,
+                    statusLabel,
+                    badgeClass,
+                    delayMinutes,
+                    searchKey,
+                    dataBR: formatDateBR(row.isoDate)
+                };
+            });
+        }
+
+        function refreshPontoView() {
             try {
-                const tableBody = document.getElementById('frequency-panel');
-                const emptyState = document.getElementById('attendance-empty-state');
-                const kScaled = document.getElementById('kpi-scaled');
-                const kPresent = document.getElementById('kpi-present');
-                const kLate = document.getElementById('kpi-late');
-                const kAbsent = document.getElementById('kpi-absent');
+                const baseRecords = pontoState.byDate.get(pontoState.selectedDate) || [];
+                const records = pontoState.selectedScale === 'all'
+                    ? baseRecords
+                    : baseRecords.filter((row) => normalizeString(row.escala || 'sem-escala') === normalizeString(pontoState.selectedScale));
 
-                if (!tableBody || !kScaled || !kPresent || !kLate || !kAbsent) {
-                    console.warn('[renderTabPonto] Componentes da aba de ponto não encontrados.');
-                    return;
-                }
+                const enriched = enrichPontoRows(records);
+                const presentCount = enriched.filter((row) => row.status === 'present' || row.status === 'late').length;
+                const lateCount = enriched.filter((row) => row.status === 'late').length;
+                const absentCount = enriched.filter((row) => row.status === 'absent').length;
 
-                if (emptyState && !emptyState.dataset.defaultMessage) {
-                    const message = emptyState.querySelector('p');
-                    if (message) emptyState.dataset.defaultMessage = message.textContent || '';
-                }
-
-                const activeScale = findActiveScale();
-                if (!activeScale) {
-                    tableBody.innerHTML = '';
-                    appState.attendanceRows = [];
-                    kScaled.textContent = '0';
-                    kPresent.textContent = '0';
-                    kLate.textContent = '0';
-                    kAbsent.textContent = '0';
-                    updateAttendanceCounters({ all: 0, present: 0, late: 0, absent: 0 });
-                    applyAttendanceFilter();
-                    return;
-                }
-
-                const rows = [];
-                let scaled = 0;
-
-                const students = activeScale.alunos || [];
-                students.forEach((scaledStudent) => {
-                    const dayInfo = scaledStudent.dias?.find((day) => day.dataColuna === appState.todayBR);
-                    const status = dayInfo?.status || '';
-                    const normalizedStatus = status ? status.toLowerCase() : '';
-                    if (!normalizedStatus || normalizedStatus === 'folga' || normalizedStatus === 'ausencia' || normalizedStatus.includes('descanso')) {
-                        return;
-                    }
-                    scaled++;
-
-                    const aluno = appState.alunos.find((a) =>
-                        (a.EmailHC && normalizeString(a.EmailHC) === normalizeString(scaledStudent.EmailHC)) ||
-                        (a.NomeCompleto && normalizeString(a.NomeCompleto) === normalizeString(scaledStudent.NomeCompleto))
-                    ) || scaledStudent;
-
-                    const ponto = aluno.EmailHC ? appState.pontoHojeMap.get(aluno.EmailHC) : undefined;
-
-                    const shiftLabel = status || 'Escala';
-                    const horarioInicio = ponto?.HoraPrevistaEntrada || dayInfo?.horaInicio || dayInfo?.horaInicial || dayInfo?.horarioInicio;
-                    const horarioFim = ponto?.HoraPrevistaSaida || dayInfo?.horaFim || dayInfo?.horaFinal || dayInfo?.horarioFim;
-                    let shiftDetails = dayInfo?.horario || dayInfo?.hora || dayInfo?.horarioPrevisto || dayInfo?.horarioDetalhado || '';
-                    if (!shiftDetails) {
-                        const range = [horarioInicio, horarioFim].filter(Boolean);
-                        if (range.length === 2) shiftDetails = `${range[0]} às ${range[1]}`;
-                        else if (range.length === 1) shiftDetails = range[0];
-                    }
-                    const horaEntrada = ponto?.HoraEntrada || ponto?.HoraEntradaRegistrada || '';
-                    const horaSaida = ponto?.HoraSaida || ponto?.HoraSaidaRegistrada || '';
-
-                    const atrasoRaw = ponto?.AtrasoMinutos ?? ponto?.MinutosAtraso ?? ponto?.Atraso ?? 0;
-                    const atrasoNumero = parseInt(atrasoRaw, 10);
-                    const atrasoFlag = Number.isFinite(atrasoNumero) && atrasoNumero > 0;
-                    const atrasoByStatus = typeof ponto?.Status === 'string' && ponto.Status.toLowerCase().includes('atras');
-                    const atrasoBoolean = ponto?.EstaAtrasado || ponto?.Atrasado;
-                    const isLate = Boolean(atrasoFlag || atrasoByStatus || atrasoBoolean);
-
-                    const observacao = ponto?.Observacao || ponto?.Justificativa || '';
-                    const local = ponto?.Local || ponto?.Setor || ponto?.Unidade || '';
-
-                    const name = aluno.NomeCompleto || scaledStudent.NomeCompleto || aluno.EmailHC || scaledStudent.EmailHC || '';
-                    const email = aluno.EmailHC || scaledStudent.EmailHC || '';
-
-                    const statusLabelForSearch = ponto ? (isLate ? 'atraso' : 'presente') : 'ausente';
-                    const searchKey = normalizeString(`${name} ${email} ${shiftLabel} ${shiftDetails || ''} ${observacao || ''} ${local || ''} ${statusLabelForSearch}`).replace(/"/g, '');
-
-                    const row = {
-                        status: ponto ? (isLate ? 'late' : 'present') : 'absent',
-                        name,
-                        email,
-                        shiftLabel,
-                        shiftDetails,
-                        horaEntrada: ponto ? (horaEntrada || '') : '',
-                        horaSaida: ponto ? (horaSaida || '') : '',
-                        atrasoMinutos: isLate ? (Number.isFinite(atrasoNumero) ? atrasoNumero : null) : null,
-                        observacao,
-                        local,
-                        searchKey
-                    };
-
-                    rows.push(row);
-                });
-
-                const statusPriority = { present: 0, late: 1, absent: 2 };
-                rows.sort((a, b) => {
-                    const diff = (statusPriority[a.status] ?? 99) - (statusPriority[b.status] ?? 99);
-                    if (diff !== 0) return diff;
-                    const nameA = a.name || '';
-                    const nameB = b.name || '';
-                    return nameA.localeCompare(nameB, 'pt-BR', { sensitivity: 'base' });
-                });
-
-                const presentCount = rows.filter((row) => row.status === 'present' || row.status === 'late').length;
-                const lateCount = rows.filter((row) => row.status === 'late').length;
-                const absentCount = rows.filter((row) => row.status === 'absent').length;
-
-                kScaled.textContent = String(scaled);
-                kPresent.textContent = String(presentCount);
-                kLate.textContent = String(lateCount);
-                kAbsent.textContent = String(absentCount);
-
-                updateAttendanceCounters({
-                    all: rows.length,
+                updatePontoSummary({
+                    total: enriched.length,
                     present: presentCount,
                     late: lateCount,
                     absent: absentCount
                 });
+                updatePontoFilterCounters(enriched);
 
-                tableBody.innerHTML = rows.map(renderAttendanceRow).join('');
-                appState.attendanceRows = rows;
+                const searchTerm = pontoState.search || '';
+                const filter = pontoState.filter || 'all';
+                const filteredRows = enriched.filter((row) => {
+                    let matchesFilter = filter === 'all';
+                    if (!matchesFilter) {
+                        if (filter === 'present') {
+                            matchesFilter = row.status === 'present' || row.status === 'late';
+                        } else {
+                            matchesFilter = row.status === filter;
+                        }
+                    }
+                    const matchesSearch = !searchTerm || row.searchKey.includes(searchTerm);
+                    return matchesFilter && matchesSearch;
+                });
 
-                if (!document.getElementById('attendance-search')?.value) {
-                    appState.attendanceSearch = '';
-                }
-
-                applyAttendanceFilter();
-            } catch (e) {
-                console.error('[renderTabPonto] Erro:', e);
-                showError('Erro ao calcular frequência.');
+                renderPontoTable(filteredRows, enriched.length, baseRecords.length);
+                updatePontoMeta();
+            } catch (error) {
+                console.error('[refreshPontoView] Erro ao atualizar painel de ponto:', error);
+                showError('Erro ao atualizar o painel de ponto.');
             }
         }
-        
+
+        function updatePontoSummary(counts = {}) {
+            const mappings = [
+                ['ponto-count-total', counts.total || 0],
+                ['ponto-count-present', counts.present || 0],
+                ['ponto-count-late', counts.late || 0],
+                ['ponto-count-absent', counts.absent || 0]
+            ];
+            mappings.forEach(([id, value]) => {
+                const element = document.getElementById(id);
+                if (element) element.textContent = value;
+            });
+        }
+
+        function updatePontoFilterCounters(rows = []) {
+            const counters = {
+                'ponto-filter-total': rows.length,
+                'ponto-filter-present': rows.filter((row) => row.status === 'present' || row.status === 'late').length,
+                'ponto-filter-late': rows.filter((row) => row.status === 'late').length,
+                'ponto-filter-absent': rows.filter((row) => row.status === 'absent').length
+            };
+
+            Object.entries(counters).forEach(([id, value]) => {
+                const element = document.getElementById(id);
+                if (element) element.textContent = value;
+            });
+        }
+
+        function renderPontoTable(rows = [], enrichedCount = 0, totalBase = 0) {
+            const tbody = document.getElementById('ponto-table-body');
+            const emptyState = document.getElementById('ponto-empty-state');
+            if (!tbody || !emptyState) return;
+
+            if (rows.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.hidden = false;
+                const message = emptyState.querySelector('p');
+                if (message) {
+                    if (totalBase === 0) {
+                        message.textContent = pontoState.selectedDate
+                            ? `Nenhum registro encontrado para ${formatDateBR(pontoState.selectedDate)}.`
+                            : 'Nenhum registro disponível.';
+                    } else if (enrichedCount === 0) {
+                        message.textContent = 'Nenhum registro disponível para a escala selecionada.';
+                    } else {
+                        message.textContent = 'Nenhum registro encontrado para os filtros selecionados.';
+                    }
+                }
+                return;
+            }
+
+            emptyState.hidden = true;
+            tbody.innerHTML = rows.map(renderPontoRow).join('');
+        }
+
+        function renderPontoRow(row) {
+            const initials = getInitials(row.nome);
+            const escalaContent = row.escala && row.escala.trim().length > 0
+                ? `<span class="ponto-escala-pill">${escapeHtml(row.escala)}</span>`
+                : '<span class="ponto-escala-pill">Sem escala</span>';
+            const modalidadeContent = row.modalidade && row.modalidade.trim().length > 0
+                ? `<span class="ponto-modalidade">${escapeHtml(row.modalidade)}</span>`
+                : '<span class="ponto-modalidade">—</span>';
+            const serialLine = row.rawSerial ? `<span class="ponto-person-extra">ID: ${escapeHtml(row.rawSerial)}</span>` : '';
+
+            return `
+                <tr class="ponto-row" data-status="${row.status}" data-search="${row.searchKey}">
+                    <td data-label="Nome">
+                        <div class="ponto-person">
+                            <div class="ponto-avatar">${escapeHtml(initials)}</div>
+                            <div class="ponto-person-info">
+                                <span class="ponto-person-name">${escapeHtml(row.nome || '—')}</span>
+                                ${serialLine}
+                            </div>
+                        </div>
+                    </td>
+                    <td data-label="Data">${escapeHtml(row.dataBR)}</td>
+                    <td data-label="Hora de Entrada">${escapeHtml(row.horaEntrada || '—')}</td>
+                    <td data-label="Hora de Saída">${escapeHtml(row.horaSaida || '—')}</td>
+                    <td data-label="Escala">
+                        <div class="ponto-escala-cell">
+                            ${escalaContent}
+                            <span class="${row.badgeClass}">${escapeHtml(row.statusLabel)}</span>
+                        </div>
+                    </td>
+                    <td data-label="Prática/Teórica">${modalidadeContent}</td>
+                </tr>`;
+        }
+
+        function updatePontoMeta() {
+            const dateLabel = document.getElementById('ponto-active-date');
+            if (dateLabel) {
+                dateLabel.textContent = pontoState.selectedDate ? formatDateLabel(pontoState.selectedDate) : '--';
+            }
+            const syncLabel = document.getElementById('ponto-last-sync');
+            if (syncLabel) {
+                syncLabel.textContent = pontoState.lastLoadedAt
+                    ? `Atualizado ${pontoState.lastLoadedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+                    : 'Dados não carregados';
+            }
+        }
+
+        function updatePontoPastPanel() {
+            const list = document.getElementById('ponto-past-scales-list');
+            if (!list) return;
+
+            if (!pontoState.dates.length) {
+                list.innerHTML = '<p class="ponto-past-empty">Selecione “Atualizar dados” para carregar a planilha.</p>';
+                return;
+            }
+
+            const items = pontoState.dates.map((dateIso) => {
+                const records = pontoState.byDate.get(dateIso) || [];
+                const enriched = enrichPontoRows(records);
+                const present = enriched.filter((row) => row.status === 'present' || row.status === 'late').length;
+                const late = enriched.filter((row) => row.status === 'late').length;
+                const absent = enriched.filter((row) => row.status === 'absent').length;
+                const activeClass = dateIso === pontoState.selectedDate ? ' active' : '';
+                return `<button class="ponto-past-item${activeClass}" data-date="${dateIso}">
+                            <div>
+                                <strong>${escapeHtml(formatDateBR(dateIso))}</strong>
+                                <span>${present} presentes · ${late} atrasos · ${absent} faltas</span>
+                            </div>
+                            <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M7 5l5 5-5 5" />
+                            </svg>
+                        </button>`;
+            }).join('');
+
+            list.innerHTML = items;
+        }
+
+        function handlePontoFilterClick(event) {
+            const button = event.target.closest('.escala-pill');
+            if (!button) return;
+            const filter = button.getAttribute('data-filter');
+            if (!filter) return;
+
+            pontoState.filter = filter;
+            document.querySelectorAll('#ponto-filter-bar .escala-pill').forEach((pill) => {
+                pill.classList.toggle('active', pill === button);
+            });
+            refreshPontoView();
+        }
+
+        function handlePontoSearch(event) {
+            pontoState.search = normalizeString(event.target.value || '');
+            refreshPontoView();
+        }
+
+        function handlePontoDateChange(event) {
+            const value = event.target.value;
+            if (!value) return;
+            pontoState.selectedDate = value;
+            pontoState.selectedScale = 'all';
+            updatePontoScaleOptions();
+            refreshPontoView();
+            updatePontoPastPanel();
+        }
+
+        function handlePontoScaleChange(event) {
+            pontoState.selectedScale = event.target.value || 'all';
+            refreshPontoView();
+        }
+
+        function handlePontoPastItemClick(event) {
+            const button = event.target.closest('.ponto-past-item');
+            if (!button) return;
+            const date = button.getAttribute('data-date');
+            if (!date) return;
+            pontoState.selectedDate = date;
+            pontoState.selectedScale = 'all';
+            const dateInput = document.getElementById('ponto-date-picker');
+            if (dateInput) {
+                dateInput.value = date;
+            }
+            updatePontoScaleOptions();
+            refreshPontoView();
+            updatePontoPastPanel();
+        }
+
+        function togglePontoPastPanel() {
+            const panel = document.getElementById('ponto-past-scales-panel');
+            if (!panel) return;
+            if (panel.hasAttribute('hidden')) {
+                updatePontoPastPanel();
+                panel.removeAttribute('hidden');
+            } else {
+                panel.setAttribute('hidden', '');
+            }
+        }
+
+        function closePontoPastPanel() {
+            const panel = document.getElementById('ponto-past-scales-panel');
+            if (panel) {
+                panel.setAttribute('hidden', '');
+            }
+        }
         function renderStudentList(students) {
              try {
                  const panel = document.getElementById('student-list-panel'); 
