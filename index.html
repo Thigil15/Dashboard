@@ -483,8 +483,206 @@
     <!-- CLIENT-SIDE SCRIPT -->
     <script>
         // URL da API
-        const API_URL = "https://script.google.com/macros/s/AKfycbz0ggDxcDPXe0h_GJeQ-NT_-INHMKkQ08PAGLp5QN2m7HKHfMlTqg6gsATMzrtRF48n/exec";
-        
+        const API_URL = "https://script.google.com/macros/s/AKfycbzSI9GzESSFswr9buuDWSTCsQ8D4kSjiIWxOyoqsZrBp3fhc6gkwHyy68_PUNnpmMaF/exec";
+
+        function toPascalCaseKey(key = "") {
+            const raw = String(key || "").trim();
+            if (!raw) return "";
+            const pascalLike = /^[A-Z][A-Za-z0-9]*$/.test(raw) && raw !== raw.toUpperCase();
+            if (pascalLike) return raw;
+            const sanitized = raw
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                .replace(/[^A-Za-z0-9]+/g, "_")
+                .replace(/_{2,}/g, "_")
+                .replace(/^_+|_+$/g, "");
+            if (!sanitized) return raw;
+            const parts = sanitized.split("_").filter(Boolean);
+            if (!parts.length) return raw;
+            return parts.map((part, idx) => {
+                const lower = part.toLowerCase();
+                if (idx > 0 && lower.length <= 3) return lower.toUpperCase();
+                if (lower.length <= 3 && /^[A-Z0-9]+$/.test(part)) return part;
+                if (lower.length <= 3) return lower.toUpperCase();
+                return lower.charAt(0).toUpperCase() + lower.slice(1);
+            }).join("");
+        }
+
+        function addKeyVariants(target, key, value) {
+            if (!key) return;
+            if (!(key in target)) target[key] = value;
+            const pascal = toPascalCaseKey(key);
+            if (pascal && !(pascal in target)) target[pascal] = value;
+            if (pascal) {
+                const camel = pascal.charAt(0).toLowerCase() + pascal.slice(1);
+                if (!(camel in target)) target[camel] = value;
+                const snake = pascal.replace(/([A-Z])/g, (m, idx) => idx === 0 ? m.toLowerCase() : `_${m.toLowerCase()}`);
+                if (!(snake in target)) target[snake] = value;
+            }
+            const upper = key.toUpperCase();
+            if (!(upper in target)) target[upper] = value;
+        }
+
+        function deepNormalizeValue(value) {
+            if (Array.isArray(value)) {
+                return value.map(item => {
+                    if (item && typeof item === 'object') {
+                        return deepNormalizeObject(item);
+                    }
+                    return item;
+                });
+            }
+            if (value && typeof value === 'object') {
+                return deepNormalizeObject(value);
+            }
+            return value;
+        }
+
+        function deepNormalizeObject(obj) {
+            const normalized = {};
+            Object.entries(obj || {}).forEach(([key, val]) => {
+                const processed = deepNormalizeValue(val);
+                addKeyVariants(normalized, key, processed);
+            });
+            return normalized;
+        }
+
+        function normalizeSheetName(name) {
+            return String(name || "")
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                .replace(/[^A-Za-z0-9]+/g, "")
+                .toLowerCase();
+        }
+
+        function parseMaybeJson(value) {
+            if (typeof value !== 'string') return value;
+            const trimmed = value.trim();
+            if (!trimmed) return value;
+            if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+                try {
+                    return JSON.parse(trimmed);
+                } catch (error) {
+                    console.warn('[parseMaybeJson] Falha ao fazer parse de JSON potencial:', error);
+                }
+            }
+            return value;
+        }
+
+        function normalizeListValue(value) {
+            const parsed = parseMaybeJson(value);
+            if (Array.isArray(parsed)) {
+                return parsed.map(item => typeof item === 'string' ? item.trim() : item).filter(Boolean);
+            }
+            if (typeof parsed === 'string') {
+                return parsed.split(/[;,|]+/).map(s => s.trim()).filter(Boolean);
+            }
+            return [];
+        }
+
+        function coerceSheetRows(sheetData) {
+            if (!sheetData) return [];
+            if (Array.isArray(sheetData)) return sheetData;
+            if (Array.isArray(sheetData.rows)) return sheetData.rows;
+            if (Array.isArray(sheetData.registros)) return sheetData.registros;
+            if (Array.isArray(sheetData.data)) return sheetData.data;
+            if (typeof sheetData === 'object') {
+                const values = Object.values(sheetData);
+                if (values.every(item => item && typeof item === 'object')) {
+                    return values;
+                }
+            }
+            return [];
+        }
+
+        function coerceEscalas(source) {
+            if (!source) return {};
+            const result = {};
+            const handleEntry = (entry, fallbackName) => {
+                if (!entry || typeof entry !== 'object') return;
+                const normalizedEntry = deepNormalizeObject(entry);
+                let nomeEscala = normalizedEntry.nomeEscala || normalizedEntry.NomeEscala || normalizedEntry.escala || normalizedEntry.nome || fallbackName;
+                if (!nomeEscala) nomeEscala = fallbackName;
+                const copy = { ...normalizedEntry, nomeEscala };
+                copy.headersDay = normalizeListValue(copy.headersDay || copy.HeadersDay || copy.headers || copy.dias || copy.diasSemana);
+                copy.alunos = parseMaybeJson(copy.alunos || copy.Alunos);
+                if (Array.isArray(copy.alunos)) {
+                    copy.alunos = copy.alunos.map(item => item && typeof item === 'object' ? deepNormalizeObject(item) : item);
+                } else {
+                    copy.alunos = [];
+                }
+                result[nomeEscala] = copy;
+            };
+            if (Array.isArray(source)) {
+                source.forEach((entry, index) => handleEntry(entry, `Escala${index + 1}`));
+            } else if (typeof source === 'object') {
+                Object.entries(source).forEach(([key, value]) => handleEntry(value, key));
+            }
+            return result;
+        }
+
+        function isPracticeSheetName(normName) {
+            if (!normName) return false;
+            if (normName.includes('resumo') || normName.includes('template') || normName.includes('config')) return false;
+            if (normName.startsWith('np')) return true;
+            return normName.includes('pratica') || normName.includes('pratico');
+        }
+
+        function buildNotasPraticasMap(sheets) {
+            const result = {};
+            Object.entries(sheets || {}).forEach(([sheetName, sheetValue]) => {
+                const normName = normalizeSheetName(sheetName);
+                if (!isPracticeSheetName(normName)) return;
+                const rows = coerceSheetRows(sheetValue);
+                if (!rows.length) return;
+                const sample = rows[0] || {};
+                const nome = sample.nomePratica || sample.NomePratica || sample.pratica || sample.Prática || sample.Pratica || sample.Modulo || sample.NomeModulo || sheetName;
+                const registros = rows.map(row => row && typeof row === 'object' ? row : { Valor: row });
+                result[nome] = { nomePratica: nome, registros };
+            });
+            return result;
+        }
+
+        function transformSheetsPayload(apiResponse) {
+            const bySheet = apiResponse && apiResponse.bySheet ? apiResponse.bySheet : {};
+            const normalizedSheets = {};
+            Object.entries(bySheet).forEach(([sheetName, value]) => {
+                normalizedSheets[sheetName] = deepNormalizeValue(value);
+            });
+            const sheetIndex = {};
+            Object.keys(normalizedSheets).forEach((name) => {
+                sheetIndex[normalizeSheetName(name)] = name;
+            });
+            const pickSheet = (candidates = []) => {
+                for (const candidate of candidates) {
+                    const norm = normalizeSheetName(candidate);
+                    if (sheetIndex[norm]) {
+                        return normalizedSheets[sheetIndex[norm]];
+                    }
+                }
+                return null;
+            };
+            const alunos = coerceSheetRows(pickSheet(['Alunos', 'Lista de Alunos', 'Base Alunos'])).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
+            const ausenciasReposicoes = coerceSheetRows(pickSheet(['AusenciasReposicoes', 'Ausências e Reposições', 'Faltas'])).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
+            const notasTeoricasRows = coerceSheetRows(pickSheet(['NotasTeoricas', 'Notas Teoricas', 'Notas Teóricas'])).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
+            const escalasSource = pickSheet(['Escalas', 'EscalasDisponiveis', 'Escalas Alunos']);
+            const escalas = coerceEscalas(escalasSource);
+            const pontoRows = coerceSheetRows(pickSheet(['Ponto', 'Registros Ponto', 'Frequencia', 'Frequência'])).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
+            const notasPraticas = buildNotasPraticasMap(normalizedSheets);
+            return {
+                appData: {
+                    alunos,
+                    ausenciasReposicoes,
+                    notasTeoricas: { registros: notasTeoricasRows },
+                    notasPraticas,
+                    escalas,
+                    pontoRegistros: pontoRows,
+                    meta: apiResponse && apiResponse.meta ? apiResponse.meta : null
+                },
+                rawSheets: normalizedSheets,
+                pontoRows,
+                meta: apiResponse && apiResponse.meta ? apiResponse.meta : null
+            };
+        }
+
         // Estado global da aplicação
 
 const appState = {
@@ -495,6 +693,10 @@ const appState = {
     ausenciasReposicoes: [],
     notasTeoricas: {},
     notasPraticas: {},
+    pontoStaticRows: [],
+    rawSheets: {},
+    sheetMeta: null,
+    apiMode: 'auto',
     todayBR: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
     todayFullBR: new Date().toLocaleDateString('pt-BR'),
     isSidebarCollapsed: false
@@ -723,12 +925,41 @@ const pontoState = {
         async function fetchAllData() {
             console.log("[fetchAllData] Buscando dados estáticos...");
             try {
-                const r = await fetch(`${API_URL}?action=getAll`);
-                if (!r.ok) throw new Error(`Rede (getAll): ${r.statusText} (${r.status})`);
-                const d = await r.json();
-                if (!d.success) throw new Error(`API (getAll): ${d.error || 'Erro desconhecido'}`);
-                console.log("[fetchAllData] Dados estáticos recebidos:", d);
-                onStaticDataLoaded(d);
+                const url = new URL(API_URL);
+                url.searchParams.set('mode', 'objects');
+                url.searchParams.set('skipBlankRows', 'true');
+                url.searchParams.set('pretty', '0');
+                url.searchParams.set('action', 'getAll');
+
+                const response = await fetch(url.toString());
+                if (!response.ok) {
+                    throw new Error(`Rede (getAll): ${response.statusText} (${response.status})`);
+                }
+
+                const data = await response.json();
+
+                if (data && data.success === false) {
+                    throw new Error(data.error || 'Resposta inválida do backend.');
+                }
+
+                let payloadForApp = null;
+
+                if (data && data.success) {
+                    appState.apiMode = 'legacy';
+                    payloadForApp = data;
+                } else if (data && data.ok && data.bySheet) {
+                    const transformed = transformSheetsPayload(data);
+                    appState.apiMode = 'sheets';
+                    appState.rawSheets = transformed.rawSheets || {};
+                    appState.sheetMeta = transformed.meta || null;
+                    appState.pontoStaticRows = transformed.pontoRows || [];
+                    payloadForApp = transformed.appData;
+                } else {
+                    throw new Error('Formato de resposta desconhecido da API.');
+                }
+
+                console.log("[fetchAllData] Dados estáticos recebidos (modo:", appState.apiMode, ")");
+                onStaticDataLoaded(payloadForApp);
             } catch (e) {
                 console.error("[fetchAllData] Erro detalhado:", e);
                 throw new Error(`Falha ao buscar dados estáticos: ${e.message}`);
@@ -740,7 +971,15 @@ const pontoState = {
             appState.escalas = data.escalas || {};
             appState.ausenciasReposicoes = data.ausenciasReposicoes || [];
             appState.notasTeoricas = data.notasTeoricas || { registros: [] };
-            
+
+            if (Array.isArray(data.pontoRegistros)) {
+                appState.pontoStaticRows = data.pontoRegistros.map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
+            }
+
+            if (data.meta) {
+                appState.sheetMeta = data.meta;
+            }
+
             const notasRaw = data.notasPraticas || {};
             const normalized = Array.isArray(notasRaw)
                ? notasRaw.reduce((acc, item, idx) => {
@@ -749,7 +988,8 @@ const pontoState = {
                    return acc;
                  }, {})
                : Object.entries(notasRaw).reduce((acc, [key, val]) => {
-                   acc[key] = { nomePratica: key, registros: val.registros || [] };
+                   const nome = val && val.nomePratica ? val.nomePratica : key;
+                   acc[nome] = { nomePratica: nome, registros: (val && val.registros) || [] };
                    return acc;
                  }, {});
 
@@ -1789,6 +2029,63 @@ const pontoState = {
             refreshPontoView();
         }
 
+        function loadPontoDataFromLocal({ date, scale = 'all', adoptSelection = false } = {}) {
+            const normalizedDate = normalizeDateInput(date);
+            const scaleLabel = scale || 'all';
+            const scaleKey = normalizeScaleKey(scaleLabel);
+            const dateSet = new Set();
+            const scaleAccumulator = new Map();
+            const filteredRows = [];
+
+            (appState.pontoStaticRows || []).forEach((row) => {
+                const normalized = normalizePontoRecord(row, normalizedDate);
+                if (!normalized) return;
+                const iso = normalized.isoDate;
+                if (iso) {
+                    dateSet.add(iso);
+                }
+                const escalaLabel = row.Escala || row.escala || normalized.escala || '';
+                if (iso) {
+                    if (!scaleAccumulator.has(iso)) scaleAccumulator.set(iso, new Set());
+                    if (escalaLabel) scaleAccumulator.get(iso).add(escalaLabel);
+                }
+                const matchesDate = !normalizedDate || normalizedDate === iso;
+                const matchesScale = scaleKey === 'all' || normalizeScaleKey(escalaLabel) === scaleKey;
+                if (matchesDate && matchesScale) {
+                    filteredRows.push(row);
+                }
+            });
+
+            if (normalizedDate) {
+                dateSet.add(normalizedDate);
+                if (!scaleAccumulator.has(normalizedDate)) {
+                    scaleAccumulator.set(normalizedDate, new Set());
+                }
+                if (scaleLabel && scaleLabel !== 'all') {
+                    scaleAccumulator.get(normalizedDate).add(scaleLabel);
+                }
+            }
+
+            const availableDates = Array.from(dateSet).sort((a, b) => b.localeCompare(a));
+            const scalesByDate = new Map();
+            scaleAccumulator.forEach((set, iso) => {
+                scalesByDate.set(iso, Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR')));
+            });
+
+            const targetDate = normalizedDate || availableDates[0] || '';
+
+            applyPontoData(filteredRows, {
+                targetDate,
+                scale: scaleLabel,
+                availableDates,
+                scalesByDate,
+                lastUpdated: new Date(),
+                updateSelection: adoptSelection
+            });
+
+            return { success: true, selectedDate: targetDate, selectedScale: scaleLabel };
+        }
+
         async function loadPontoData({ date, scale = 'all', showInlineSpinner = false, useTodayEndpoint = false, adoptSelection = false } = {}) {
             const normalizedDate = normalizeDateInput(date);
             const scaleLabel = scale || 'all';
@@ -1805,6 +2102,10 @@ const pontoState = {
             pontoState.isLoading = true;
 
             try {
+                if (appState.apiMode === 'sheets') {
+                    return loadPontoDataFromLocal({ date: normalizedDate || date, scale: scaleLabel, adoptSelection });
+                }
+
                 const url = new URL(API_URL);
                 if (useTodayEndpoint) {
                     url.searchParams.set('action', 'getPontoHoje_');
