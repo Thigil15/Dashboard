@@ -522,85 +522,17 @@
             if (!(upper in target)) target[upper] = value;
         }
 
-        function collectKeyVariants(key) {
-            const collector = {};
-            addKeyVariants(collector, key, true);
-            return Object.keys(collector);
-        }
-
-        function setKeyVariants(target, key, value) {
-            if (!key) return;
-            const variants = {};
-            addKeyVariants(variants, key, value);
-            Object.entries(variants).forEach(([variantKey, variantValue]) => {
-                target[variantKey] = variantValue;
-            });
-        }
-
-        function getFirstNonEmptyValue(source, keys) {
-            if (!source || typeof source !== 'object') return '';
+        function pickFirstValue(obj, keys = []) {
+            if (!obj || typeof obj !== 'object') return undefined;
             for (const key of keys) {
-                if (!(key in source)) continue;
-                const value = source[key];
-                if (value === undefined || value === null) continue;
-                if (typeof value === 'string') {
-                    const trimmed = value.trim();
-                    if (trimmed) return trimmed;
-                } else if (value instanceof Date) {
-                    if (!Number.isNaN(value.getTime())) return value;
-                } else if (typeof value === 'number') {
-                    if (!Number.isNaN(value)) return value;
-                } else {
+                if (key in obj) {
+                    const value = obj[key];
+                    if (value === null || typeof value === 'undefined') continue;
+                    if (typeof value === 'string' && value.trim() === '') continue;
                     return value;
                 }
             }
-            return '';
-        }
-
-        function deriveIsoDate(value) {
-            const normalized = normalizeDateInput(value);
-            if (normalized) return normalized;
-            if (typeof value === 'string') {
-                const converted = convertDateBRToISO(value);
-                if (converted) return converted;
-            }
-            return '';
-        }
-
-        const AUSENCIA_ISO_KEYS = collectKeyVariants('DataAusenciaISO');
-        const AUSENCIA_SOURCE_KEYS = Array.from(new Set([
-            ...collectKeyVariants('DataDaAusencia'),
-            ...collectKeyVariants('DataAusencia')
-        ]));
-        const REPOSICAO_ISO_KEYS = collectKeyVariants('DataReposicaoISO');
-        const REPOSICAO_SOURCE_KEYS = Array.from(new Set([
-            ...collectKeyVariants('DataDaReposicao'),
-            ...collectKeyVariants('DataReposicao')
-        ]));
-
-        function ensureAusenciaReposicaoIso(records) {
-            if (!Array.isArray(records)) return [];
-            return records.map((entry) => {
-                if (!entry || typeof entry !== 'object') return entry;
-                const copy = { ...entry };
-                const ensureField = (isoKey, isoVariants, sourceVariants) => {
-                    let isoValue = getFirstNonEmptyValue(copy, isoVariants);
-                    if (isoValue) {
-                        const normalizedIso = deriveIsoDate(isoValue);
-                        isoValue = normalizedIso || isoValue;
-                    } else {
-                        const sourceValue = getFirstNonEmptyValue(copy, sourceVariants);
-                        if (!sourceValue) return;
-                        isoValue = deriveIsoDate(sourceValue);
-                    }
-                    if (isoValue) {
-                        setKeyVariants(copy, isoKey, isoValue);
-                    }
-                };
-                ensureField('DataAusenciaISO', AUSENCIA_ISO_KEYS, AUSENCIA_SOURCE_KEYS);
-                ensureField('DataReposicaoISO', REPOSICAO_ISO_KEYS, REPOSICAO_SOURCE_KEYS);
-                return copy;
-            });
+            return undefined;
         }
 
         function deepNormalizeValue(value) {
@@ -700,6 +632,89 @@
             return result;
         }
 
+        function aggregateEscalaSheets(normalizedSheets) {
+            const result = {};
+            if (!normalizedSheets || typeof normalizedSheets !== 'object') {
+                return result;
+            }
+
+            const escalaEntries = Object.entries(normalizedSheets)
+                .filter(([sheetName]) => /^escala\d+$/.test(normalizeSheetName(sheetName)))
+                .sort(([nameA], [nameB]) => {
+                    const numA = parseInt((nameA.match(/(\d+)/) || [])[1], 10) || 0;
+                    const numB = parseInt((nameB.match(/(\d+)/) || [])[1], 10) || 0;
+                    return numA - numB;
+                });
+
+            escalaEntries.forEach(([sheetName, sheetValue]) => {
+                const rows = coerceSheetRows(sheetValue)
+                    .map(row => (row && typeof row === 'object') ? deepNormalizeObject(row) : row)
+                    .filter(row => row && typeof row === 'object');
+
+                if (!rows.length) return;
+
+                const dayKeyRegex = /^(\d{1,2})_(\d{2})$/;
+                const dayKeyMap = new Map();
+                const firstRowKeys = Object.keys(rows[0]);
+
+                firstRowKeys.forEach((key) => {
+                    const match = key.match(dayKeyRegex);
+                    if (!match) return;
+                    const day = match[1].padStart(2, '0');
+                    const month = match[2].padStart(2, '0');
+                    const pretty = `${day}/${month}`;
+                    if (!dayKeyMap.has(key)) {
+                        dayKeyMap.set(key, pretty);
+                    }
+                });
+
+                const headersDay = Array.from(new Set(dayKeyMap.values()));
+                const alunos = rows.map((row) => {
+                    const clone = { ...row };
+                    dayKeyMap.forEach((pretty, normalizedKey) => {
+                        if (typeof clone[pretty] === 'undefined') {
+                            clone[pretty] = row[normalizedKey];
+                        }
+                    });
+                    return clone;
+                });
+
+                const match = sheetName.match(/(\d+)/);
+                const nomeEscala = match ? `Escala${match[1]}` : sheetName.replace(/\s+/g, '');
+
+                result[nomeEscala] = {
+                    nomeEscala,
+                    headersDay,
+                    alunos
+                };
+            });
+
+            return result;
+        }
+
+        function normalizeAusenciasReposicoes(records) {
+            if (!records) return [];
+            let list;
+            if (Array.isArray(records)) {
+                list = records;
+            } else if (typeof records === 'object') {
+                list = Object.values(records);
+            } else {
+                return [];
+            }
+            return list.map((record) => {
+                if (!record || typeof record !== 'object') return record;
+                const copy = { ...record };
+                const ausenciaRaw = pickFirstValue(copy, ['DataAusenciaISO', 'DataDaAusencia', 'Datadaausencia', 'datadaausencia', 'DATADAAUSENCIA', 'DATA_DA_AUSENCIA', 'DataAusencia', 'dataAusencia', 'dataDaAusencia', 'dataausencia']);
+                const reposicaoRaw = pickFirstValue(copy, ['DataReposicaoISO', 'DataDaReposicao', 'Datadareposicao', 'datadareposicao', 'DATADAREPOSICAO', 'DATA_DA_REPOSICAO', 'DataReposicao', 'dataReposicao', 'dataDaReposicao', 'datareposicao']);
+                const ausenciaISO = normalizeDateInput(ausenciaRaw);
+                const reposicaoISO = normalizeDateInput(reposicaoRaw);
+                if (ausenciaISO) copy.DataAusenciaISO = ausenciaISO;
+                if (reposicaoISO) copy.DataReposicaoISO = reposicaoISO;
+                return copy;
+            });
+        }
+
         function isPracticeSheetName(normName) {
             if (!normName) return false;
             if (normName.includes('resumo') || normName.includes('template') || normName.includes('config')) return false;
@@ -742,77 +757,14 @@
                 return null;
             };
             const alunos = coerceSheetRows(pickSheet(['Alunos', 'Lista de Alunos', 'Base Alunos'])).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
-            const ausenciasReposicoesRaw = coerceSheetRows(pickSheet(['AusenciasReposicoes', 'Ausências e Reposições', 'Faltas'])).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
-            const ausenciasReposicoes = ensureAusenciaReposicaoIso(ausenciasReposicoesRaw);
+            const ausenciasReposicoes = normalizeAusenciasReposicoes(
+                coerceSheetRows(pickSheet(['AusenciasReposicoes', 'Ausências e Reposições', 'Faltas']))
+                    .map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row)
+            );
             const notasTeoricasRows = coerceSheetRows(pickSheet(['NotasTeoricas', 'Notas Teoricas', 'Notas Teóricas'])).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
-            const escalas = {};
-            const escalaSheetPattern = /^escala(\d+)$/;
-            Object.entries(normalizedSheets).forEach(([sheetName, sheetValue]) => {
-                const normName = normalizeSheetName(sheetName);
-                const match = normName.match(escalaSheetPattern);
-                if (!match) return;
-
-                const escalaIndexRaw = match[1] || '';
-                const escalaIndex = escalaIndexRaw ? String(parseInt(escalaIndexRaw, 10)) : '';
-                const nomeEscala = escalaIndex ? `Escala${escalaIndex}` : 'Escala';
-                const rows = coerceSheetRows(sheetValue);
-                const headersDaySet = new Set();
-                const headersDay = [];
-
-                const alunos = rows.map((row) => {
-                    if (!row || typeof row !== 'object') return null;
-                    const normalizedRow = deepNormalizeObject(row);
-                    if (!normalizedRow.nomeEscala) {
-                        normalizedRow.nomeEscala = nomeEscala;
-                    }
-
-                    const keys = Object.keys(normalizedRow);
-                    keys.forEach((key) => {
-                        let dayMatch = key.match(/^(\d{1,2})_(\d{1,2})$/);
-                        let day;
-                        let month;
-                        if (dayMatch) {
-                            day = dayMatch[1];
-                            month = dayMatch[2];
-                        } else {
-                            const slashMatch = key.match(/^(\d{1,2})\/(\d{1,2})$/);
-                            if (!slashMatch) return;
-                            day = slashMatch[1];
-                            month = slashMatch[2];
-                        }
-
-                        const paddedDay = day.padStart(2, '0');
-                        const paddedMonth = month.padStart(2, '0');
-                        const prettyKey = `${paddedDay}/${paddedMonth}`;
-                        const normalizedKey = `${paddedDay}_${paddedMonth}`;
-                        const value = normalizedRow[key];
-
-                        if (!headersDaySet.has(prettyKey)) {
-                            headersDaySet.add(prettyKey);
-                            headersDay.push(prettyKey);
-                        }
-
-                        if (!(prettyKey in normalizedRow)) {
-                            normalizedRow[prettyKey] = value;
-                        }
-                        if (!(normalizedKey in normalizedRow)) {
-                            normalizedRow[normalizedKey] = value;
-                        }
-                    });
-
-                    return normalizedRow;
-                }).filter(Boolean);
-
-                escalas[nomeEscala] = {
-                    nomeEscala,
-                    headersDay,
-                    alunos,
-                };
-            });
-            if (Object.keys(escalas).length === 0) {
-                const escalasSource = pickSheet(['Escalas', 'EscalasDisponiveis', 'Escalas Alunos']);
-                Object.assign(escalas, coerceEscalas(escalasSource));
-            }
+            const escalasAggregated = aggregateEscalaSheets(normalizedSheets);
+            const escalasSource = pickSheet(['Escalas', 'EscalasDisponiveis', 'Escalas Alunos']);
+            const escalas = Object.keys(escalasAggregated).length ? escalasAggregated : coerceEscalas(escalasSource);
             const pontoRows = coerceSheetRows(pickSheet(['Ponto', 'Registros Ponto', 'Frequencia', 'Frequência'])).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
             const notasPraticas = buildNotasPraticasMap(normalizedSheets);
             return {
@@ -1117,8 +1069,7 @@ const pontoState = {
         function onStaticDataLoaded(data) {
             appState.alunos = data.alunos || [];
             appState.escalas = data.escalas || {};
-            const ausenciasReposicoes = ensureAusenciaReposicaoIso(data.ausenciasReposicoes || []);
-            appState.ausenciasReposicoes = ausenciasReposicoes;
+            appState.ausenciasReposicoes = normalizeAusenciasReposicoes(data.ausenciasReposicoes || []);
             appState.notasTeoricas = data.notasTeoricas || { registros: [] };
 
             if (Array.isArray(data.pontoRegistros)) {
