@@ -5,7 +5,7 @@ const DEFAULT_INCLUDE_HIDDEN = false;    // incluir abas ocultas?
 const DEFAULT_SKIP_BLANK_ROWS = true;    // pular linhas totalmente vazias?
 const DEFAULT_VALUE_MODE = 'RAW';        // RAW | DISPLAY | FORMULAS
 const API_KEY = 'CHANGE_ME';
-const ALLOWED_ORIGINS = ['*'];           // Apps Script não permite setHeader; mantenha requisições "simples" no front
+const ALLOWED_ORIGINS = ['*'];           // Apps Script não permite setHeader; mantenha requisições simples no front
 const WRITE_ALLOWED_SHEETS = [];         // deixe vazio para permitir todas
 
 /***** INTERNAL UTILS *****/
@@ -97,6 +97,15 @@ function resolveOrigin_(e) {
   return '*';
 }
 
+/** Pretty-print: ?pretty=true|1 => 2 espaços; ?pretty=<número> => n espaços; default 0 (compacto) */
+function getPrettyIndent_(e) {
+  if (!e || !e.parameter || typeof e.parameter.pretty === 'undefined') return 0;
+  const p = String(e.parameter.pretty).toLowerCase();
+  if (p === 'true' || p === '1') return 2;
+  const n = parseInt(p, 10);
+  return isNaN(n) || n < 0 ? 2 : n;
+}
+
 /**
  * IMPORTANTE: Apps Script NÃO permite setar headers arbitrários em ContentService.
  * Portanto, NÃO use .setHeader(). Mantenha as requisições do front "simples":
@@ -111,7 +120,8 @@ function withCors_(output, e) {
 function jsonResponse_(e, payload, status) {
   const body = (payload && typeof payload === 'object') ? payload : { ok: false, error: 'invalid_response' };
   if (typeof status !== 'undefined') body.status = status;
-  return withCors_(ContentService.createTextOutput(JSON.stringify(body)), e);
+  const indent = getPrettyIndent_(e);
+  return withCors_(ContentService.createTextOutput(JSON.stringify(body, null, indent)), e);
 }
 
 function errorResponse_(e, message, status, details) {
