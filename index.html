@@ -663,8 +663,74 @@
             const alunos = coerceSheetRows(pickSheet(['Alunos', 'Lista de Alunos', 'Base Alunos'])).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
             const ausenciasReposicoes = coerceSheetRows(pickSheet(['AusenciasReposicoes', 'Ausências e Reposições', 'Faltas'])).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
             const notasTeoricasRows = coerceSheetRows(pickSheet(['NotasTeoricas', 'Notas Teoricas', 'Notas Teóricas'])).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
-            const escalasSource = pickSheet(['Escalas', 'EscalasDisponiveis', 'Escalas Alunos']);
-            const escalas = coerceEscalas(escalasSource);
+            const escalas = {};
+            const escalaSheetPattern = /^escala(\d+)$/;
+            Object.entries(normalizedSheets).forEach(([sheetName, sheetValue]) => {
+                const normName = normalizeSheetName(sheetName);
+                const match = normName.match(escalaSheetPattern);
+                if (!match) return;
+
+                const escalaIndexRaw = match[1] || '';
+                const escalaIndex = escalaIndexRaw ? String(parseInt(escalaIndexRaw, 10)) : '';
+                const nomeEscala = escalaIndex ? `Escala${escalaIndex}` : 'Escala';
+                const rows = coerceSheetRows(sheetValue);
+                const headersDaySet = new Set();
+                const headersDay = [];
+
+                const alunos = rows.map((row) => {
+                    if (!row || typeof row !== 'object') return null;
+                    const normalizedRow = deepNormalizeObject(row);
+                    if (!normalizedRow.nomeEscala) {
+                        normalizedRow.nomeEscala = nomeEscala;
+                    }
+
+                    const keys = Object.keys(normalizedRow);
+                    keys.forEach((key) => {
+                        let dayMatch = key.match(/^(\d{1,2})_(\d{1,2})$/);
+                        let day;
+                        let month;
+                        if (dayMatch) {
+                            day = dayMatch[1];
+                            month = dayMatch[2];
+                        } else {
+                            const slashMatch = key.match(/^(\d{1,2})\/(\d{1,2})$/);
+                            if (!slashMatch) return;
+                            day = slashMatch[1];
+                            month = slashMatch[2];
+                        }
+
+                        const paddedDay = day.padStart(2, '0');
+                        const paddedMonth = month.padStart(2, '0');
+                        const prettyKey = `${paddedDay}/${paddedMonth}`;
+                        const normalizedKey = `${paddedDay}_${paddedMonth}`;
+                        const value = normalizedRow[key];
+
+                        if (!headersDaySet.has(prettyKey)) {
+                            headersDaySet.add(prettyKey);
+                            headersDay.push(prettyKey);
+                        }
+
+                        if (!(prettyKey in normalizedRow)) {
+                            normalizedRow[prettyKey] = value;
+                        }
+                        if (!(normalizedKey in normalizedRow)) {
+                            normalizedRow[normalizedKey] = value;
+                        }
+                    });
+
+                    return normalizedRow;
+                }).filter(Boolean);
+
+                escalas[nomeEscala] = {
+                    nomeEscala,
+                    headersDay,
+                    alunos,
+                };
+            });
+            if (Object.keys(escalas).length === 0) {
+                const escalasSource = pickSheet(['Escalas', 'EscalasDisponiveis', 'Escalas Alunos']);
+                Object.assign(escalas, coerceEscalas(escalasSource));
+            }
             const pontoRows = coerceSheetRows(pickSheet(['Ponto', 'Registros Ponto', 'Frequencia', 'Frequência'])).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
             const notasPraticas = buildNotasPraticasMap(normalizedSheets);
             return {
