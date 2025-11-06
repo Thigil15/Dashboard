@@ -1,12 +1,12 @@
 /***** CONFIG *****/
-const SPREADSHEET_ID = '';
+const SPREADSHEET_ID = '1Q9Qk0OV9oWsXPHi2viMTd2D2woScZm8pFDAjgORrM7A';
 const SPREADSHEET_URL = 'https://docs.google.com/spreadsheets/d/1Q9Qk0OV9oWsXPHi2viMTd2D2woScZm8pFDAjgORrM7A/edit?gid=0';
 const DEFAULT_INCLUDE_HIDDEN = false;    // incluir abas ocultas?
 const DEFAULT_SKIP_BLANK_ROWS = true;    // pular linhas totalmente vazias?
 const DEFAULT_VALUE_MODE = 'RAW';        // RAW | DISPLAY | FORMULAS
 const API_KEY = 'CHANGE_ME';
-const ALLOWED_ORIGINS = ['*'];
-const WRITE_ALLOWED_SHEETS = []; // deixe vazio para permitir todas
+const ALLOWED_ORIGINS = ['*'];           // Apps Script não permite setHeader; mantenha requisições "simples" no front
+const WRITE_ALLOWED_SHEETS = [];         // deixe vazio para permitir todas
 
 /***** INTERNAL UTILS *****/
 const ValueMode = Object.freeze({ RAW: 'RAW', DISPLAY: 'DISPLAY', FORMULAS: 'FORMULAS' });
@@ -97,21 +97,21 @@ function resolveOrigin_(e) {
   return '*';
 }
 
+/**
+ * IMPORTANTE: Apps Script NÃO permite setar headers arbitrários em ContentService.
+ * Portanto, NÃO use .setHeader(). Mantenha as requisições do front "simples":
+ *  - GET sem headers custom
+ *  - POST com 'text/plain' e API key na query (?key=...)
+ */
 function withCors_(output, e) {
-  const origin = resolveOrigin_(e);
-  return output
-    .setMimeType(ContentService.MimeType.JSON)
-    .setHeader('Access-Control-Allow-Origin', origin)
-    .setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-    .setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Api-Key')
-    .setHeader('Cache-Control', 'no-store')
-    .setHeader('Vary', 'Origin');
+  // Sem setHeader; apenas garanta JSON
+  return output.setMimeType(ContentService.MimeType.JSON);
 }
 
 function jsonResponse_(e, payload, status) {
-  const body = Object.prototype.toString.call(payload) === '[object Object]' ? payload : { ok: false, error: 'invalid_response' };
+  const body = (payload && typeof payload === 'object') ? payload : { ok: false, error: 'invalid_response' };
   if (typeof status !== 'undefined') body.status = status;
-  return withCors_(ContentService.createTextOutput(JSON.stringify(body, null, 2)), e);
+  return withCors_(ContentService.createTextOutput(JSON.stringify(body)), e);
 }
 
 function errorResponse_(e, message, status, details) {
@@ -463,6 +463,7 @@ function doPost(e) {
 }
 
 function doOptions(e) {
+  // Não é possível setar headers CORS aqui; mantenha o front sem preflight (sem headers custom).
   return jsonResponse_(e, { ok: true, ts: new Date().toISOString() });
 }
 
