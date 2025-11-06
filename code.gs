@@ -4,7 +4,7 @@ const SPREADSHEET_URL = 'https://docs.google.com/spreadsheets/d/1Q9Qk0OV9oWsXPHi
 const DEFAULT_INCLUDE_HIDDEN = false;    // incluir abas ocultas?
 const DEFAULT_SKIP_BLANK_ROWS = true;    // pular linhas totalmente vazias?
 const DEFAULT_VALUE_MODE = 'RAW';        // RAW | DISPLAY | FORMULAS
-const API_KEY = 'CHANGE_ME';
+const API_KEY = 'AIzaSyAKZVcyv3ELzll3WG4cz4z0NuKU3rzfGqc';
 const ALLOWED_ORIGINS = ['*'];           // Apps Script não permite setHeader; mantenha requisições simples no front
 const WRITE_ALLOWED_SHEETS = [];         // deixe vazio para permitir todas
 
