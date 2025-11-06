@@ -522,6 +522,87 @@
             if (!(upper in target)) target[upper] = value;
         }
 
+        function collectKeyVariants(key) {
+            const collector = {};
+            addKeyVariants(collector, key, true);
+            return Object.keys(collector);
+        }
+
+        function setKeyVariants(target, key, value) {
+            if (!key) return;
+            const variants = {};
+            addKeyVariants(variants, key, value);
+            Object.entries(variants).forEach(([variantKey, variantValue]) => {
+                target[variantKey] = variantValue;
+            });
+        }
+
+        function getFirstNonEmptyValue(source, keys) {
+            if (!source || typeof source !== 'object') return '';
+            for (const key of keys) {
+                if (!(key in source)) continue;
+                const value = source[key];
+                if (value === undefined || value === null) continue;
+                if (typeof value === 'string') {
+                    const trimmed = value.trim();
+                    if (trimmed) return trimmed;
+                } else if (value instanceof Date) {
+                    if (!Number.isNaN(value.getTime())) return value;
+                } else if (typeof value === 'number') {
+                    if (!Number.isNaN(value)) return value;
+                } else {
+                    return value;
+                }
+            }
+            return '';
+        }
+
+        function deriveIsoDate(value) {
+            const normalized = normalizeDateInput(value);
+            if (normalized) return normalized;
+            if (typeof value === 'string') {
+                const converted = convertDateBRToISO(value);
+                if (converted) return converted;
+            }
+            return '';
+        }
+
+        const AUSENCIA_ISO_KEYS = collectKeyVariants('DataAusenciaISO');
+        const AUSENCIA_SOURCE_KEYS = Array.from(new Set([
+            ...collectKeyVariants('DataDaAusencia'),
+            ...collectKeyVariants('DataAusencia')
+        ]));
+        const REPOSICAO_ISO_KEYS = collectKeyVariants('DataReposicaoISO');
+        const REPOSICAO_SOURCE_KEYS = Array.from(new Set([
+            ...collectKeyVariants('DataDaReposicao'),
+            ...collectKeyVariants('DataReposicao')
+        ]));
+
+        function ensureAusenciaReposicaoIso(records) {
+            if (!Array.isArray(records)) return [];
+            return records.map((entry) => {
+                if (!entry || typeof entry !== 'object') return entry;
+                const copy = { ...entry };
+                const ensureField = (isoKey, isoVariants, sourceVariants) => {
+                    let isoValue = getFirstNonEmptyValue(copy, isoVariants);
+                    if (isoValue) {
+                        const normalizedIso = deriveIsoDate(isoValue);
+                        isoValue = normalizedIso || isoValue;
+                    } else {
+                        const sourceValue = getFirstNonEmptyValue(copy, sourceVariants);
+                        if (!sourceValue) return;
+                        isoValue = deriveIsoDate(sourceValue);
+                    }
+                    if (isoValue) {
+                        setKeyVariants(copy, isoKey, isoValue);
+                    }
+                };
+                ensureField('DataAusenciaISO', AUSENCIA_ISO_KEYS, AUSENCIA_SOURCE_KEYS);
+                ensureField('DataReposicaoISO', REPOSICAO_ISO_KEYS, REPOSICAO_SOURCE_KEYS);
+                return copy;
+            });
+        }
+
         function deepNormalizeValue(value) {
             if (Array.isArray(value)) {
                 return value.map(item => {
@@ -661,7 +742,8 @@
                 return null;
             };
             const alunos = coerceSheetRows(pickSheet(['Alunos', 'Lista de Alunos', 'Base Alunos'])).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
-            const ausenciasReposicoes = coerceSheetRows(pickSheet(['AusenciasReposicoes', 'Ausências e Reposições', 'Faltas'])).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
+            const ausenciasReposicoesRaw = coerceSheetRows(pickSheet(['AusenciasReposicoes', 'Ausências e Reposições', 'Faltas'])).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
+            const ausenciasReposicoes = ensureAusenciaReposicaoIso(ausenciasReposicoesRaw);
             const notasTeoricasRows = coerceSheetRows(pickSheet(['NotasTeoricas', 'Notas Teoricas', 'Notas Teóricas'])).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
             const escalas = {};
             const escalaSheetPattern = /^escala(\d+)$/;
@@ -1035,7 +1117,8 @@ const pontoState = {
         function onStaticDataLoaded(data) {
             appState.alunos = data.alunos || [];
             appState.escalas = data.escalas || {};
-            appState.ausenciasReposicoes = data.ausenciasReposicoes || [];
+            const ausenciasReposicoes = ensureAusenciaReposicaoIso(data.ausenciasReposicoes || []);
+            appState.ausenciasReposicoes = ausenciasReposicoes;
             appState.notasTeoricas = data.notasTeoricas || { registros: [] };
 
             if (Array.isArray(data.pontoRegistros)) {
