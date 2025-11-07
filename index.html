@@ -514,8 +514,306 @@
     <!-- CLIENT-SIDE SCRIPT -->
     <script>
         // URL da API
-        const API_URL = "https://script.google.com/macros/s/AKfycbz0ggDxcDPXe0h_GJeQ-NT_-INHMKkQ08PAGLp5QN2m7HKHfMlTqg6gsATMzrtRF48n/exec";
-        
+        const API_URL = "https://script.google.com/macros/s/AKfycbxOmsYgWiMxrlxNinaRbe8GILEnb5XbEHm1wxJ7n1AMfPJa6YQwYYShya006s4BTJRk/exec";
+
+        function toPascalCaseKey(key = "") {
+            const raw = String(key || "").trim();
+            if (!raw) return "";
+            const pascalLike = /^[A-Z][A-Za-z0-9]*$/.test(raw) && raw !== raw.toUpperCase();
+            if (pascalLike) return raw;
+            const sanitized = raw
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                .replace(/[^A-Za-z0-9]+/g, "_")
+                .replace(/_{2,}/g, "_")
+                .replace(/^_+|_+$/g, "");
+            if (!sanitized) return raw;
+            const parts = sanitized.split("_").filter(Boolean);
+            if (!parts.length) return raw;
+            return parts.map((part, idx) => {
+                const lower = part.toLowerCase();
+                if (idx > 0 && lower.length <= 3) return lower.toUpperCase();
+                if (lower.length <= 3 && /^[A-Z0-9]+$/.test(part)) return part;
+                if (lower.length <= 3) return lower.toUpperCase();
+                return lower.charAt(0).toUpperCase() + lower.slice(1);
+            }).join("");
+        }
+
+        function addKeyVariants(target, key, value) {
+            if (!key) return;
+            if (!(key in target)) target[key] = value;
+            const pascal = toPascalCaseKey(key);
+            if (pascal && !(pascal in target)) target[pascal] = value;
+            if (pascal) {
+                const camel = pascal.charAt(0).toLowerCase() + pascal.slice(1);
+                if (!(camel in target)) target[camel] = value;
+                const snake = pascal.replace(/([A-Z])/g, (m, idx) => idx === 0 ? m.toLowerCase() : `_${m.toLowerCase()}`);
+                if (!(snake in target)) target[snake] = value;
+            }
+            const upper = key.toUpperCase();
+            if (!(upper in target)) target[upper] = value;
+        }
+
+        function pickFirstValue(obj, keys = []) {
+            if (!obj || typeof obj !== 'object') return undefined;
+            for (const key of keys) {
+                if (key in obj) {
+                    const value = obj[key];
+                    if (value === null || typeof value === 'undefined') continue;
+                    if (typeof value === 'string' && value.trim() === '') continue;
+                    return value;
+                }
+            }
+            return undefined;
+        }
+
+        function deepNormalizeValue(value) {
+            if (Array.isArray(value)) {
+                return value.map(item => {
+                    if (item && typeof item === 'object') {
+                        return deepNormalizeObject(item);
+                    }
+                    return item;
+                });
+            }
+            if (value && typeof value === 'object') {
+                return deepNormalizeObject(value);
+            }
+            return value;
+        }
+
+        function deepNormalizeObject(obj) {
+            const normalized = {};
+            Object.entries(obj || {}).forEach(([key, val]) => {
+                const processed = deepNormalizeValue(val);
+                addKeyVariants(normalized, key, processed);
+            });
+            return normalized;
+        }
+
+        function normalizeSheetName(name) {
+            return String(name || "")
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                .replace(/[^A-Za-z0-9]+/g, "")
+                .toLowerCase();
+        }
+
+        function parseMaybeJson(value) {
+            if (typeof value !== 'string') return value;
+            const trimmed = value.trim();
+            if (!trimmed) return value;
+            if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+                try {
+                    return JSON.parse(trimmed);
+                } catch (error) {
+                    console.warn('[parseMaybeJson] Falha ao fazer parse de JSON potencial:', error);
+                }
+            }
+            return value;
+        }
+
+        function normalizeListValue(value) {
+            const parsed = parseMaybeJson(value);
+            if (Array.isArray(parsed)) {
+                return parsed.map(item => typeof item === 'string' ? item.trim() : item).filter(Boolean);
+            }
+            if (typeof parsed === 'string') {
+                return parsed.split(/[;,|]+/).map(s => s.trim()).filter(Boolean);
+            }
+            return [];
+        }
+
+        function coerceSheetRows(sheetData) {
+            if (!sheetData) return [];
+            if (Array.isArray(sheetData)) return sheetData;
+            if (Array.isArray(sheetData.rows)) return sheetData.rows;
+            if (Array.isArray(sheetData.registros)) return sheetData.registros;
+            if (Array.isArray(sheetData.data)) return sheetData.data;
+            if (typeof sheetData === 'object') {
+                const values = Object.values(sheetData);
+                if (values.every(item => item && typeof item === 'object')) {
+                    return values;
+                }
+            }
+            return [];
+        }
+
+        function coerceEscalas(source) {
+            if (!source) return {};
+            const result = {};
+            const handleEntry = (entry, fallbackName) => {
+                if (!entry || typeof entry !== 'object') return;
+                const normalizedEntry = deepNormalizeObject(entry);
+                let nomeEscala = normalizedEntry.nomeEscala || normalizedEntry.NomeEscala || normalizedEntry.escala || normalizedEntry.nome || fallbackName;
+                if (!nomeEscala) nomeEscala = fallbackName;
+                const copy = { ...normalizedEntry, nomeEscala };
+                copy.headersDay = normalizeListValue(copy.headersDay || copy.HeadersDay || copy.headers || copy.dias || copy.diasSemana);
+                copy.alunos = parseMaybeJson(copy.alunos || copy.Alunos);
+                if (Array.isArray(copy.alunos)) {
+                    copy.alunos = copy.alunos.map(item => item && typeof item === 'object' ? deepNormalizeObject(item) : item);
+                } else {
+                    copy.alunos = [];
+                }
+                result[nomeEscala] = copy;
+            };
+            if (Array.isArray(source)) {
+                source.forEach((entry, index) => handleEntry(entry, `Escala${index + 1}`));
+            } else if (typeof source === 'object') {
+                Object.entries(source).forEach(([key, value]) => handleEntry(value, key));
+            }
+            return result;
+        }
+
+        function aggregateEscalaSheets(normalizedSheets) {
+            const result = {};
+            if (!normalizedSheets || typeof normalizedSheets !== 'object') {
+                return result;
+            }
+
+            const escalaEntries = Object.entries(normalizedSheets)
+                .filter(([sheetName]) => /^escala\d+$/.test(normalizeSheetName(sheetName)))
+                .sort(([nameA], [nameB]) => {
+                    const numA = parseInt((nameA.match(/(\d+)/) || [])[1], 10) || 0;
+                    const numB = parseInt((nameB.match(/(\d+)/) || [])[1], 10) || 0;
+                    return numA - numB;
+                });
+
+            escalaEntries.forEach(([sheetName, sheetValue]) => {
+                const rows = coerceSheetRows(sheetValue)
+                    .map(row => (row && typeof row === 'object') ? deepNormalizeObject(row) : row)
+                    .filter(row => row && typeof row === 'object');
+
+                if (!rows.length) return;
+
+                const dayKeyRegex = /^(\d{1,2})_(\d{2})$/;
+                const dayKeyMap = new Map();
+                const firstRowKeys = Object.keys(rows[0]);
+
+                firstRowKeys.forEach((key) => {
+                    const match = key.match(dayKeyRegex);
+                    if (!match) return;
+                    const day = match[1].padStart(2, '0');
+                    const month = match[2].padStart(2, '0');
+                    const pretty = `${day}/${month}`;
+                    if (!dayKeyMap.has(key)) {
+                        dayKeyMap.set(key, pretty);
+                    }
+                });
+
+                const headersDay = Array.from(new Set(dayKeyMap.values()));
+                const alunos = rows.map((row) => {
+                    const clone = { ...row };
+                    dayKeyMap.forEach((pretty, normalizedKey) => {
+                        if (typeof clone[pretty] === 'undefined') {
+                            clone[pretty] = row[normalizedKey];
+                        }
+                    });
+                    return clone;
+                });
+
+                const match = sheetName.match(/(\d+)/);
+                const nomeEscala = match ? `Escala${match[1]}` : sheetName.replace(/\s+/g, '');
+
+                result[nomeEscala] = {
+                    nomeEscala,
+                    headersDay,
+                    alunos
+                };
+            });
+
+            return result;
+        }
+
+        function normalizeAusenciasReposicoes(records) {
+            if (!records) return [];
+            let list;
+            if (Array.isArray(records)) {
+                list = records;
+            } else if (typeof records === 'object') {
+                list = Object.values(records);
+            } else {
+                return [];
+            }
+            return list.map((record) => {
+                if (!record || typeof record !== 'object') return record;
+                const copy = { ...record };
+                const ausenciaRaw = pickFirstValue(copy, ['DataAusenciaISO', 'DataDaAusencia', 'Datadaausencia', 'datadaausencia', 'DATADAAUSENCIA', 'DATA_DA_AUSENCIA', 'DataAusencia', 'dataAusencia', 'dataDaAusencia', 'dataausencia']);
+                const reposicaoRaw = pickFirstValue(copy, ['DataReposicaoISO', 'DataDaReposicao', 'Datadareposicao', 'datadareposicao', 'DATADAREPOSICAO', 'DATA_DA_REPOSICAO', 'DataReposicao', 'dataReposicao', 'dataDaReposicao', 'datareposicao']);
+                const ausenciaISO = normalizeDateInput(ausenciaRaw);
+                const reposicaoISO = normalizeDateInput(reposicaoRaw);
+                if (ausenciaISO) copy.DataAusenciaISO = ausenciaISO;
+                if (reposicaoISO) copy.DataReposicaoISO = reposicaoISO;
+                return copy;
+            });
+        }
+
+        function isPracticeSheetName(normName) {
+            if (!normName) return false;
+            if (normName.includes('resumo') || normName.includes('template') || normName.includes('config')) return false;
+            if (normName.startsWith('np')) return true;
+            return normName.includes('pratica') || normName.includes('pratico');
+        }
+
+        function buildNotasPraticasMap(sheets) {
+            const result = {};
+            Object.entries(sheets || {}).forEach(([sheetName, sheetValue]) => {
+                const normName = normalizeSheetName(sheetName);
+                if (!isPracticeSheetName(normName)) return;
+                const rows = coerceSheetRows(sheetValue);
+                if (!rows.length) return;
+                const sample = rows[0] || {};
+                const nome = sample.nomePratica || sample.NomePratica || sample.pratica || sample.Prática || sample.Pratica || sample.Modulo || sample.NomeModulo || sheetName;
+                const registros = rows.map(row => row && typeof row === 'object' ? row : { Valor: row });
+                result[nome] = { nomePratica: nome, registros };
+            });
+            return result;
+        }
+
+        function transformSheetsPayload(apiResponse) {
+            const bySheet = apiResponse && apiResponse.bySheet ? apiResponse.bySheet : {};
+            const normalizedSheets = {};
+            Object.entries(bySheet).forEach(([sheetName, value]) => {
+                normalizedSheets[sheetName] = deepNormalizeValue(value);
+            });
+            const sheetIndex = {};
+            Object.keys(normalizedSheets).forEach((name) => {
+                sheetIndex[normalizeSheetName(name)] = name;
+            });
+            const pickSheet = (candidates = []) => {
+                for (const candidate of candidates) {
+                    const norm = normalizeSheetName(candidate);
+                    if (sheetIndex[norm]) {
+                        return normalizedSheets[sheetIndex[norm]];
+                    }
+                }
+                return null;
+            };
+            const alunos = coerceSheetRows(pickSheet(['Alunos', 'Lista de Alunos', 'Base Alunos'])).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
+            const ausenciasReposicoes = normalizeAusenciasReposicoes(
+                coerceSheetRows(pickSheet(['AusenciasReposicoes', 'Ausências e Reposições', 'Faltas']))
+                    .map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row)
+            );
+            const notasTeoricasRows = coerceSheetRows(pickSheet(['NotasTeoricas', 'Notas Teoricas', 'Notas Teóricas'])).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
+            const escalasAggregated = aggregateEscalaSheets(normalizedSheets);
+            const escalasSource = pickSheet(['Escalas', 'EscalasDisponiveis', 'Escalas Alunos']);
+            const escalas = Object.keys(escalasAggregated).length ? escalasAggregated : coerceEscalas(escalasSource);
+            const pontoRows = coerceSheetRows(pickSheet(['Ponto', 'Registros Ponto', 'Frequencia', 'Frequência'])).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
+            const notasPraticas = buildNotasPraticasMap(normalizedSheets);
+            return {
+                appData: {
+                    alunos,
+                    ausenciasReposicoes,
+                    notasTeoricas: { registros: notasTeoricasRows },
+                    notasPraticas,
+                    escalas,
+                    pontoRegistros: pontoRows,
+                    meta: apiResponse && apiResponse.meta ? apiResponse.meta : null
+                },
+                rawSheets: normalizedSheets,
+                pontoRows,
+                meta: apiResponse && apiResponse.meta ? apiResponse.meta : null
+            };
+        }
+
         // Estado global da aplicação
 
 const appState = {
@@ -756,12 +1054,41 @@ const pontoState = {
         async function fetchAllData() {
             console.log("[fetchAllData] Buscando dados estáticos...");
             try {
-                const r = await fetch(`${API_URL}?action=getAll`);
-                if (!r.ok) throw new Error(`Rede (getAll): ${r.statusText} (${r.status})`);
-                const d = await r.json();
-                if (!d.success) throw new Error(`API (getAll): ${d.error || 'Erro desconhecido'}`);
-                console.log("[fetchAllData] Dados estáticos recebidos:", d);
-                onStaticDataLoaded(d);
+                const url = new URL(API_URL);
+                url.searchParams.set('mode', 'objects');
+                url.searchParams.set('skipBlankRows', 'true');
+                url.searchParams.set('pretty', '0');
+                url.searchParams.set('action', 'getAll');
+
+                const response = await fetch(url.toString());
+                if (!response.ok) {
+                    throw new Error(`Rede (getAll): ${response.statusText} (${response.status})`);
+                }
+
+                const data = await response.json();
+
+                if (data && data.success === false) {
+                    throw new Error(data.error || 'Resposta inválida do backend.');
+                }
+
+                let payloadForApp = null;
+
+                if (data && data.success) {
+                    appState.apiMode = 'legacy';
+                    payloadForApp = data;
+                } else if (data && data.ok && data.bySheet) {
+                    const transformed = transformSheetsPayload(data);
+                    appState.apiMode = 'sheets';
+                    appState.rawSheets = transformed.rawSheets || {};
+                    appState.sheetMeta = transformed.meta || null;
+                    appState.pontoStaticRows = transformed.pontoRows || [];
+                    payloadForApp = transformed.appData;
+                } else {
+                    throw new Error('Formato de resposta desconhecido da API.');
+                }
+
+                console.log("[fetchAllData] Dados estáticos recebidos (modo:", appState.apiMode, ")");
+                onStaticDataLoaded(payloadForApp);
             } catch (e) {
                 console.error("[fetchAllData] Erro detalhado:", e);
                 throw new Error(`Falha ao buscar dados estáticos: ${e.message}`);
@@ -771,9 +1098,17 @@ const pontoState = {
         function onStaticDataLoaded(data) {
             appState.alunos = data.alunos || [];
             appState.escalas = data.escalas || {};
-            appState.ausenciasReposicoes = data.ausenciasReposicoes || [];
+            appState.ausenciasReposicoes = normalizeAusenciasReposicoes(data.ausenciasReposicoes || []);
             appState.notasTeoricas = data.notasTeoricas || { registros: [] };
-            
+
+            if (Array.isArray(data.pontoRegistros)) {
+                appState.pontoStaticRows = data.pontoRegistros.map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
+            }
+
+            if (data.meta) {
+                appState.sheetMeta = data.meta;
+            }
+
             const notasRaw = data.notasPraticas || {};
             const normalized = Array.isArray(notasRaw)
                ? notasRaw.reduce((acc, item, idx) => {
@@ -782,7 +1117,8 @@ const pontoState = {
                    return acc;
                  }, {})
                : Object.entries(notasRaw).reduce((acc, [key, val]) => {
-                   acc[key] = { nomePratica: key, registros: val.registros || [] };
+                   const nome = val && val.nomePratica ? val.nomePratica : key;
+                   acc[nome] = { nomePratica: nome, registros: (val && val.registros) || [] };
                    return acc;
                  }, {});
 
