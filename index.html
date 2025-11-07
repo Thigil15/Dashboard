@@ -84,6 +84,10 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z" clip-rule="evenodd" /></svg>
                     <span class="sidebar-link-text whitespace-nowrap">Ponto</span>
                 </a>
+                <a href="#escala" data-tab="escala" class="sidebar-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-4" viewBox="0 0 20 20" fill="currentColor"><path d="M5 3a2 2 0 00-2 2v1.268a2 2 0 00.553 1.382l2.724 3.022a2 2 0 010 2.656L3.553 16.35A2 2 0 003 17.732V19a1 1 0 001 1h12a1 1 0 001-1v-1.268a2 2 0 00-.553-1.382l-2.724-3.022a2 2 0 010-2.656l2.724-3.022A2 2 0 0017 6.268V5a2 2 0 00-2-2H5z" /></svg>
+                    <span class="sidebar-link-text whitespace-nowrap">Escala</span>
+                </a>
             </nav>
         </aside>
 
@@ -282,6 +286,33 @@
                         </div>
                     </div>
 
+                </div>
+
+                <!-- View: Escala Atual -->
+                <div id="content-escala" class="view-container">
+                    <h1>Escala Atual</h1>
+
+                    <div class="content-card p-6 lg:p-8 escala-overview-card">
+                        <div class="escala-overview-header">
+                            <div>
+                                <h2 class="content-card-header mb-2 border-b-0">Distribuição por Turno</h2>
+                                <p class="escala-overview-subtitle">Acompanhe a escala oficial do dia e o status de presença dos 25 profissionais.</p>
+                            </div>
+                            <div class="escala-overview-meta">
+                                <span id="escala-overview-date" class="escala-overview-date">--</span>
+                                <div id="escala-overview-stats" class="escala-overview-stats"></div>
+                            </div>
+                        </div>
+
+                        <div id="escala-overview-grid" class="escala-overview-grid"></div>
+
+                        <div id="escala-overview-empty" class="escala-empty-state" hidden>
+                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12M8 12h12M8 17h6M5 7h.01M5 12h.01M5 17h.01" />
+                            </svg>
+                            <p>Nenhuma escala encontrada para a data selecionada.</p>
+                        </div>
+                    </div>
                 </div>
 
             </main>
@@ -800,6 +831,7 @@ const appState = {
 };
 
 const ATRASO_THRESHOLD_MINUTES = 10;
+const TOTAL_ESCALADOS = 25;
 const pontoState = {
     rawRows: [],
     byDate: new Map(),
@@ -1382,6 +1414,150 @@ const pontoState = {
         }
 
 
+        function isoToDayMonth(isoDate = '') {
+            const iso = normalizeDateInput(isoDate);
+            if (!iso) return '';
+            const [year, month, day] = iso.split('-');
+            if (!year || !month || !day) return '';
+            return `${day.padStart(2, '0')}/${month.padStart(2, '0')}`;
+        }
+
+        function normalizeHeaderDay(value = '') {
+            const str = String(value || '').trim();
+            if (!str) return '';
+            const parts = str.split(/[\/]/);
+            if (parts.length < 2) return '';
+            const day = parts[0].padStart(2, '0');
+            const month = parts[1].padStart(2, '0');
+            return `${day}/${month}`;
+        }
+
+        function getRosterForDate(dateIso) {
+            const iso = normalizeDateInput(dateIso);
+            if (!iso) return [];
+            const target = isoToDayMonth(iso);
+            if (!target) return [];
+
+            const rosterMap = new Map();
+            Object.values(appState.escalas || {}).forEach((escala = {}) => {
+                const headers = Array.isArray(escala.headersDay) ? escala.headersDay : [];
+                const matchesDate = headers.some((day) => normalizeHeaderDay(day) === target);
+                if (!matchesDate) return;
+
+                (escala.alunos || []).forEach((aluno) => {
+                    if (!aluno) return;
+                    const nomeNorm = normalizeString(aluno.NomeCompleto || aluno.nomeCompleto || aluno.Nome || aluno.nome);
+                    const emailNorm = normalizeString(aluno.EmailHC || aluno.Email || aluno.email);
+                    const serialRaw = aluno.SerialNumber || aluno.Serial || aluno.ID || aluno.Id || '';
+                    const serialNorm = normalizeString(serialRaw ? String(serialRaw) : '');
+                    const key = nomeNorm || emailNorm || serialNorm;
+                    if (!key || rosterMap.has(key)) return;
+                    rosterMap.set(key, {
+                        ...aluno,
+                        __escalaNome: escala.nomeEscala || escala.nome || '',
+                        __headers: headers
+                    });
+                });
+            });
+
+            return Array.from(rosterMap.values());
+        }
+
+        function buildRosterNormalizedRecords(dateIso, scaleLabel = 'all') {
+            const iso = normalizeDateInput(dateIso);
+            if (!iso) return { normalizedRecords: [], rosterEntries: [] };
+
+            const roster = getRosterForDate(iso);
+            if (!roster.length) return { normalizedRecords: [], rosterEntries: [] };
+
+            const scaleKey = normalizeScaleKey(scaleLabel);
+            const normalizedRecords = [];
+            const rosterEntries = [];
+
+            roster.forEach((entry) => {
+                const escalaNome = entry.Escala || entry.escala || entry.__escalaNome || scaleLabel || '';
+                const escalaKey = normalizeScaleKey(escalaNome);
+                if (scaleKey !== 'all' && escalaKey !== scaleKey) return;
+
+                const record = normalizePontoRecord({
+                    NomeCompleto: entry.NomeCompleto || entry.nomeCompleto || entry.Nome || entry.nome || '',
+                    EmailHC: entry.EmailHC || entry.Email || entry.email || '',
+                    SerialNumber: entry.SerialNumber || entry.Serial || entry.ID || entry.Id || '',
+                    Escala: escalaNome,
+                    'Pratica/Teorica': entry['Pratica/Teorica'] || entry['Prática/Teórica'] || entry.Modalidade || entry.modalidade || entry.Tipo || entry.Turno || entry.Periodo || '',
+                    DataISO: iso
+                }, iso);
+
+                if (record) {
+                    if (!record.escala && escalaNome) {
+                        record.escala = escalaNome;
+                    }
+                    rosterEntries.push({
+                        ...entry,
+                        __escalaNome: escalaNome,
+                        __normalizedKeys: {
+                            nomeId: record.nomeId,
+                            email: record.emailNormalized,
+                            serial: record.serialNormalized
+                        }
+                    });
+                    normalizedRecords.push(record);
+                }
+            });
+
+            return { normalizedRecords, rosterEntries };
+        }
+
+        function buildPontoDataset(dateIso, scaleLabel = 'all') {
+            const iso = normalizeDateInput(dateIso);
+            const scale = scaleLabel || 'all';
+            if (!iso) return { rows: [], baseRecords: [], rosterEntries: [], rosterSize: 0 };
+
+            const baseRecords = getPontoRecords(iso, scale) || [];
+            const { normalizedRecords, rosterEntries } = buildRosterNormalizedRecords(iso, scale);
+            const combined = normalizedRecords.length ? mergeRecordLists(normalizedRecords, baseRecords) : baseRecords.slice();
+            const enrichedRows = enrichPontoRows(combined);
+
+            return { rows: enrichedRows, baseRecords, rosterEntries, rosterSize: rosterEntries.length };
+        }
+
+        function buildPontoRowLookup(rows = []) {
+            const map = new Map();
+            rows.forEach((row) => {
+                if (!row) return;
+                const primary = row.nomeId || row.id || row.emailNormalized || row.serialNormalized || '';
+                const keys = new Set([primary, row.nomeId, row.id, row.emailNormalized, row.serialNormalized]);
+                collectPontoIdentityAliases(row, primary).forEach((alias) => keys.add(alias));
+                keys.forEach((key) => {
+                    const normalized = normalizeString(key);
+                    if (normalized) {
+                        map.set(normalized, row);
+                    }
+                });
+            });
+            return map;
+        }
+
+        function determineRosterSlot(entry = {}) {
+            const turnoRaw = entry.Turno || entry.turno || entry.Periodo || entry['Período'] || entry.periodo || entry.Horario || entry.horario || '';
+            const turno = normalizeString(turnoRaw);
+            if (turno.includes('noite') || turno.includes('noturno')) return 'night';
+            if (turno.includes('tarde') || turno.includes('vespertino')) return 'afternoon';
+            if (turno.includes('manha') || turno.includes('manhã') || turno.includes('matutino')) return 'morning';
+
+            const curso = normalizeString(entry.Curso || '');
+            if (curso.includes('resid') || curso.includes('bolsa')) return 'morning';
+            if (curso.includes('especializa')) return 'afternoon';
+
+            const escalaNome = normalizeString(entry.Escala || entry.escala || entry.__escalaNome || '');
+            if (escalaNome.includes('noite') || escalaNome.includes('nt')) return 'night';
+            if (escalaNome.includes('tarde')) return 'afternoon';
+            if (escalaNome.includes('manha')) return 'morning';
+
+            return 'flex';
+        }
+
+
         function escapeHtml(value = '') {
             if (value === null || value === undefined) return '';
             return String(value)
@@ -1677,7 +1853,8 @@ const pontoState = {
             availableDates = [],
             scalesByDate = new Map(),
             lastUpdated = null,
-            updateSelection = false
+            updateSelection = false,
+            replaceExisting = false
         } = {}) {
             const normalizedDate = normalizeDateInput(targetDate);
             const scaleLabel = scale || 'all';
@@ -1698,10 +1875,37 @@ const pontoState = {
 
             grouped.forEach((rows, iso) => {
                 const existingAll = pontoState.byDate.get(iso) || [];
-                const mergedAll = scaleKey === 'all' ? rows.slice() : mergeRecordLists(existingAll, rows);
-                pontoState.byDate.set(iso, mergedAll);
+                let mergedAll;
+
+                if (replaceExisting) {
+                    if (scaleKey === 'all') {
+                        mergedAll = rows.slice();
+                        pontoState.byDate.set(iso, mergedAll);
+                        Array.from(pontoState.cache.keys()).forEach((key) => {
+                            if (key.startsWith(`${iso}__`)) {
+                                pontoState.cache.delete(key);
+                            }
+                        });
+                    } else {
+                        const filteredAll = existingAll.filter((row) => normalizeScaleKey(row.escala || 'sem-escala') !== scaleKey);
+                        mergedAll = mergeRecordLists(filteredAll, rows);
+                        pontoState.byDate.set(iso, mergedAll);
+                        pontoState.cache.delete(makePontoCacheKey(iso, scaleKey));
+                    }
+                } else {
+                    mergedAll = scaleKey === 'all' ? rows.slice() : mergeRecordLists(existingAll, rows);
+                    pontoState.byDate.set(iso, mergedAll);
+                }
+
+                if (!mergedAll) {
+                    mergedAll = scaleKey === 'all' ? rows.slice() : mergeRecordLists(existingAll, rows);
+                    pontoState.byDate.set(iso, mergedAll);
+                }
+
                 pontoState.cache.set(makePontoCacheKey(iso, 'all'), mergedAll);
-                pontoState.cache.set(makePontoCacheKey(iso, scaleKey), rows.slice());
+                if (scaleKey !== 'all') {
+                    pontoState.cache.set(makePontoCacheKey(iso, scaleKey), rows.slice());
+                }
             });
 
             const dateSet = new Set(pontoState.dates);
@@ -1978,6 +2182,8 @@ const pontoState = {
                     row.modalidade,
                     row.horaEntrada,
                     row.horaSaida,
+                    row.email,
+                    row.rawSerial,
                     statusLabel
                 ].filter(Boolean).join(' '));
 
@@ -1995,14 +2201,15 @@ const pontoState = {
 
         function refreshPontoView() {
             try {
-                const baseRecords = getPontoRecords(pontoState.selectedDate, pontoState.selectedScale);
-                const enriched = enrichPontoRows(baseRecords);
+                const dataset = buildPontoDataset(pontoState.selectedDate, pontoState.selectedScale);
+                const enriched = dataset.rows || [];
                 const presentCount = enriched.filter((row) => row.status === 'present' || row.status === 'late').length;
                 const lateCount = enriched.filter((row) => row.status === 'late').length;
                 const absentCount = enriched.filter((row) => row.status === 'absent').length;
+                const totalEscalados = Math.max(dataset.rosterSize || 0, enriched.length || 0, TOTAL_ESCALADOS);
 
                 updatePontoSummary({
-                    total: enriched.length,
+                    total: totalEscalados,
                     present: presentCount,
                     late: lateCount,
                     absent: absentCount
@@ -2024,11 +2231,197 @@ const pontoState = {
                     return matchesFilter && matchesSearch;
                 });
 
-                renderPontoTable(filteredRows, enriched.length, baseRecords.length);
+                renderPontoTable(filteredRows, enriched.length, (dataset.baseRecords || []).length);
                 updatePontoMeta();
+                renderEscalaOverview();
             } catch (error) {
                 console.error('[refreshPontoView] Erro ao atualizar painel de ponto:', error);
                 showError('Erro ao atualizar o painel de ponto.');
+            }
+        }
+
+        function renderEscalaOverview() {
+            const grid = document.getElementById('escala-overview-grid');
+            const emptyState = document.getElementById('escala-overview-empty');
+            const statsContainer = document.getElementById('escala-overview-stats');
+            const dateLabel = document.getElementById('escala-overview-date');
+
+            if (!grid || !emptyState || !statsContainer || !dateLabel) return;
+
+            const targetDate = normalizeDateInput(pontoState.selectedDate) || new Date().toISOString().slice(0, 10);
+            dateLabel.textContent = formatDateLabel(targetDate);
+
+            const dataset = buildPontoDataset(targetDate, 'all');
+            const rosterEntries = dataset.rosterEntries || [];
+            const lookup = buildPontoRowLookup(dataset.rows || []);
+
+            const counts = {
+                total: Math.max(rosterEntries.length || 0, (dataset.rows || []).length || 0, TOTAL_ESCALADOS),
+                present: 0,
+                late: 0,
+                absent: 0
+            };
+
+            if (!rosterEntries.length) {
+                grid.innerHTML = '';
+                emptyState.hidden = false;
+                emptyState.querySelector('p').textContent = 'Nenhuma escala encontrada para a data selecionada.';
+                statsContainer.innerHTML = `
+                    <div class="escala-stat-card">
+                        <span class="label">Escalados</span>
+                        <span class="value">${TOTAL_ESCALADOS}</span>
+                    </div>
+                    <div class="escala-stat-card is-green">
+                        <span class="label">Presentes</span>
+                        <span class="value">0</span>
+                    </div>
+                    <div class="escala-stat-card is-amber">
+                        <span class="label">Atrasos</span>
+                        <span class="value">0</span>
+                    </div>
+                    <div class="escala-stat-card is-red">
+                        <span class="label">Faltas</span>
+                        <span class="value">${TOTAL_ESCALADOS}</span>
+                    </div>
+                `;
+                return;
+            }
+
+            const groups = {
+                morning: [],
+                afternoon: [],
+                night: [],
+                flex: []
+            };
+
+            const sortedRoster = rosterEntries.slice().sort((a, b) => {
+                const nameA = (a.NomeCompleto || a.nome || '').toLocaleLowerCase('pt-BR');
+                const nameB = (b.NomeCompleto || b.nome || '').toLocaleLowerCase('pt-BR');
+                return nameA.localeCompare(nameB, 'pt-BR');
+            });
+
+            sortedRoster.forEach((entry) => {
+                const keys = entry.__normalizedKeys || {};
+                const possibleKeys = [
+                    keys.nomeId,
+                    keys.email,
+                    keys.serial,
+                    entry.EmailHC,
+                    entry.NomeCompleto,
+                    entry.SerialNumber
+                ];
+
+                let matchedRow = null;
+                for (const candidate of possibleKeys) {
+                    const normalized = normalizeString(candidate);
+                    if (normalized && lookup.has(normalized)) {
+                        matchedRow = lookup.get(normalized);
+                        break;
+                    }
+                }
+
+                const slot = determineRosterSlot(entry);
+                const bucket = groups[slot] ? slot : 'flex';
+                const status = matchedRow ? matchedRow.status : 'absent';
+                if (status === 'present') {
+                    counts.present += 1;
+                } else if (status === 'late') {
+                    counts.present += 1;
+                    counts.late += 1;
+                } else {
+                    counts.absent += 1;
+                }
+
+                groups[bucket].push({
+                    nome: entry.NomeCompleto || entry.nome || '—',
+                    email: entry.EmailHC || entry.Email || entry.email || '',
+                    curso: entry.Curso || '',
+                    escala: entry.__escalaNome || matchedRow?.escala || '',
+                    status: matchedRow ? matchedRow.status : 'absent',
+                    statusLabel: matchedRow ? matchedRow.statusLabel : 'Falta',
+                    badgeClass: matchedRow ? matchedRow.badgeClass : 'badge badge-red',
+                    horaEntrada: matchedRow?.horaEntrada || '',
+                    horaSaida: matchedRow?.horaSaida || ''
+                });
+            });
+
+            counts.absent = Math.max(counts.absent, Math.max(counts.total - counts.present, 0));
+
+            statsContainer.innerHTML = `
+                <div class="escala-stat-card">
+                    <span class="label">Escalados</span>
+                    <span class="value">${counts.total}</span>
+                </div>
+                <div class="escala-stat-card is-green">
+                    <span class="label">Presentes</span>
+                    <span class="value">${counts.present}</span>
+                </div>
+                <div class="escala-stat-card is-amber">
+                    <span class="label">Atrasos</span>
+                    <span class="value">${counts.late}</span>
+                </div>
+                <div class="escala-stat-card is-red">
+                    <span class="label">Faltas</span>
+                    <span class="value">${counts.absent}</span>
+                </div>
+            `;
+
+            const groupMeta = {
+                morning: { title: 'Turno da Manhã', description: 'Bolsistas e residentes', hours: '08h às 13h' },
+                afternoon: { title: 'Turno da Tarde', description: 'Especialização paga', hours: '13h às 18h' },
+                night: { title: 'Turno Noturno', description: 'Conforme escala vigente', hours: 'Horário flexível' },
+                flex: { title: 'Outros Turnos', description: 'Plantões e ajustes', hours: 'Definido na escala' }
+            };
+
+            const order = ['morning', 'afternoon', 'night', 'flex'];
+            const sections = order.map((key) => {
+                const items = groups[key];
+                if (!items || !items.length) return '';
+                const meta = groupMeta[key];
+                const listItems = items.map((item) => {
+                    const extraParts = [];
+                    if (item.curso) extraParts.push(item.curso);
+                    if (item.escala) extraParts.push(item.escala);
+                    const extraMarkup = extraParts.length
+                        ? `<span class="escala-person-extra">${escapeHtml(extraParts.join(' • '))}</span>`
+                        : '';
+                    const hours = item.horaEntrada
+                        ? `<span class="escala-person-hours">${escapeHtml(item.horaEntrada)}${item.horaSaida ? ` – ${escapeHtml(item.horaSaida)}` : ''}</span>`
+                        : '';
+
+                    return `
+                        <li class="escala-person">
+                            <div class="escala-person-info">
+                                <span class="escala-person-name">${escapeHtml(item.nome)}</span>
+                                ${item.email ? `<span class="escala-person-email">${escapeHtml(item.email)}</span>` : ''}
+                                ${extraMarkup}
+                            </div>
+                            <div class="escala-person-status">
+                                <span class="${item.badgeClass}">${escapeHtml(item.statusLabel)}</span>
+                                ${hours}
+                            </div>
+                        </li>
+                    `;
+                }).join('');
+
+                return `
+                    <section class="escala-column">
+                        <header>
+                            <div>
+                                <h3>${escapeHtml(meta.title)}</h3>
+                                <p>${escapeHtml(meta.description)}</p>
+                            </div>
+                            <span class="escala-column-hours">${escapeHtml(meta.hours)}</span>
+                        </header>
+                        <ul>${listItems}</ul>
+                    </section>
+                `;
+            }).filter(Boolean).join('');
+
+            grid.innerHTML = sections;
+            emptyState.hidden = Boolean(sections);
+            if (!sections) {
+                emptyState.querySelector('p').textContent = 'Nenhum profissional escalado para esta data.';
             }
         }
 
@@ -2094,7 +2487,8 @@ const pontoState = {
             const modalidadeContent = row.modalidade && row.modalidade.trim().length > 0
                 ? `<span class="ponto-modalidade">${escapeHtml(row.modalidade)}</span>`
                 : '<span class="ponto-modalidade">—</span>';
-            const serialLine = row.rawSerial ? `<span class="ponto-person-extra">ID: ${escapeHtml(row.rawSerial)}</span>` : '';
+            const emailLine = row.email ? `<span class="ponto-person-email">${escapeHtml(row.email)}</span>` : '';
+            const serialLine = row.rawSerial ? `<span class="ponto-person-extra">Crachá: ${escapeHtml(row.rawSerial)}</span>` : '';
 
             return `
                 <tr class="ponto-row" data-status="${row.status}" data-search="${row.searchKey}">
@@ -2103,6 +2497,7 @@ const pontoState = {
                             <div class="ponto-avatar">${escapeHtml(initials)}</div>
                             <div class="ponto-person-info">
                                 <span class="ponto-person-name">${escapeHtml(row.nome || '—')}</span>
+                                ${emailLine}
                                 ${serialLine}
                             </div>
                         </div>
@@ -2191,13 +2586,30 @@ const pontoState = {
             const autoScale = pontoState.autoScaleByDate.get(dateIso);
             const autoScaleKey = autoScale ? normalizeScaleKey(autoScale) : 'all';
             const currentScaleKey = normalizeScaleKey(scaleLabel);
-            const useTodayEndpoint = dateIso === todayISO && (currentScaleKey === 'all' || currentScaleKey === autoScaleKey);
-            await ensurePontoData(dateIso, scaleLabel, { showInlineSpinner: true, useTodayEndpoint });
+            const useTodayEndpointAll = dateIso === todayISO && (currentScaleKey === 'all' || currentScaleKey === autoScaleKey);
+
+            await ensurePontoData(dateIso, 'all', {
+                showInlineSpinner: true,
+                useTodayEndpoint: useTodayEndpointAll,
+                forceReload: true,
+                replaceExisting: true
+            });
+
+            if (scaleLabel !== 'all') {
+                const useTodayEndpointScale = dateIso === todayISO && currentScaleKey === autoScaleKey;
+                await ensurePontoData(dateIso, scaleLabel, {
+                    showInlineSpinner: false,
+                    useTodayEndpoint: useTodayEndpointScale,
+                    forceReload: true,
+                    replaceExisting: true
+                });
+            }
+
             hydratePontoSelectors();
             refreshPontoView();
         }
 
-        async function loadPontoData({ date, scale = 'all', showInlineSpinner = false, useTodayEndpoint = false, adoptSelection = false } = {}) {
+        async function loadPontoData({ date, scale = 'all', showInlineSpinner = false, useTodayEndpoint = false, adoptSelection = false, replaceExisting = false } = {}) {
             const normalizedDate = normalizeDateInput(date);
             const scaleLabel = scale || 'all';
             const scaleKey = normalizeScaleKey(scaleLabel);
@@ -2247,7 +2659,8 @@ const pontoState = {
                     availableDates: payload.availableDates,
                     scalesByDate: payload.scalesByDate,
                     lastUpdated,
-                    updateSelection: adoptSelection
+                    updateSelection: adoptSelection,
+                    replaceExisting
                 });
 
                 console.log(`[loadPontoData] Carregados ${(payload.records || []).length} registros (${resolvedScale || 'all'}) para ${resolvedDate || 'sem-data'}.`);
@@ -2265,14 +2678,33 @@ const pontoState = {
             }
         }
 
-        async function ensurePontoData(date, scale = 'all', { showInlineSpinner = false, useTodayEndpoint = false, adoptSelection = false } = {}) {
+        async function ensurePontoData(date, scale = 'all', { showInlineSpinner = false, useTodayEndpoint = false, adoptSelection = false, forceReload = false, replaceExisting = false } = {}) {
             const isoDate = normalizeDateInput(date);
             const scaleLabel = scale || 'all';
-            if (isoDate && hasCachedPontoData(isoDate, scaleLabel)) {
+            if (!forceReload && isoDate && hasCachedPontoData(isoDate, scaleLabel)) {
                 return { success: true, cached: true, selectedDate: isoDate, selectedScale: scaleLabel };
             }
             try {
-                return await loadPontoData({ date: isoDate, scale: scaleLabel, showInlineSpinner, useTodayEndpoint, adoptSelection });
+                if (forceReload && isoDate) {
+                    if (scaleLabel === 'all') {
+                        pontoState.byDate.delete(isoDate);
+                        Array.from(pontoState.cache.keys()).forEach((key) => {
+                            if (key.startsWith(`${isoDate}__`)) {
+                                pontoState.cache.delete(key);
+                            }
+                        });
+                    } else {
+                        pontoState.cache.delete(makePontoCacheKey(isoDate, scaleLabel));
+                    }
+                }
+                return await loadPontoData({
+                    date: isoDate,
+                    scale: scaleLabel,
+                    showInlineSpinner,
+                    useTodayEndpoint,
+                    adoptSelection,
+                    replaceExisting: replaceExisting || forceReload
+                });
             } catch (error) {
                 console.error('[ensurePontoData] Falha ao garantir dados de ponto:', error);
                 return null;
