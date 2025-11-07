@@ -789,14 +789,11 @@ const appState = {
     alunos: [],
     alunosMap: new Map(),
     pontoHojeMap: new Map(),
+    pontoHojeAliases: new Map(),
     escalas: {},
     ausenciasReposicoes: [],
     notasTeoricas: {},
     notasPraticas: {},
-    pontoStaticRows: [],
-    rawSheets: {},
-    sheetMeta: null,
-    apiMode: 'auto',
     todayBR: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
     todayFullBR: new Date().toLocaleDateString('pt-BR'),
     isSidebarCollapsed: false
@@ -1594,11 +1591,11 @@ const pontoState = {
 
         function getPontoRecordKey(row) {
             const datePart = row.isoDate || '';
-            const serial = row.rawSerial || '';
-            const email = row.email ? normalizeString(row.email) : '';
-            const name = normalizeString(row.nome || '');
+            const nameKey = row.nomeId || row.id || normalizeString(row.nome || '');
+            const serial = row.serialNormalized || normalizeString(row.rawSerial || '');
+            const email = row.emailNormalized || (row.email ? normalizeString(row.email) : '');
             const scale = normalizeString(row.escala || '');
-            return `${datePart}|${serial}|${email}|${name}|${scale}`;
+            return `${datePart}|${nameKey}|${serial}|${email}|${scale}`;
         }
 
         function mergeRecordLists(base = [], additions = []) {
@@ -1646,9 +1643,20 @@ const pontoState = {
             const horaSaidaRaw = (row.HoraSaida ?? row.Saida ?? row.horaSaida ?? '').toString();
             const horaEntrada = sanitizeTime(horaEntradaRaw);
             const horaSaida = sanitizeTime(horaSaidaRaw);
+            const rawSerialValue = row.SerialNumber || row.Serial || row.ID || row.Id || '';
+            const rawSerial = rawSerialValue !== null && rawSerialValue !== undefined ? String(rawSerialValue) : '';
+            const serialNormalized = rawSerial ? normalizeString(rawSerial) : '';
+            const emailValue = row.EmailHC || row.Email || row.email || '';
+            const email = emailValue || '';
+            const emailNormalized = email ? normalizeString(email) : '';
+            const nomeId = normalizeString(nome);
+            const primaryId = nomeId || serialNormalized || emailNormalized || '';
 
             return {
-                rawSerial: row.SerialNumber || row.Serial || row.ID || row.Id || '',
+                id: primaryId,
+                nomeId,
+                rawSerial,
+                serialNormalized,
                 nome,
                 isoDate,
                 dataBr: formatDateBR(isoDate),
@@ -1658,7 +1666,8 @@ const pontoState = {
                 horaSaida,
                 horaEntradaMinutes: toMinutes(horaEntradaRaw || horaEntrada),
                 escalaKey: normalizeString(escala || 'sem-escala'),
-                email: row.EmailHC || row.Email || row.email || ''
+                email,
+                emailNormalized
             };
         }
 
@@ -1789,25 +1798,84 @@ const pontoState = {
         function updatePontoHojeMap() {
             const todayISO = new Date().toISOString().slice(0, 10);
             appState.pontoHojeMap.clear();
+            if (!appState.pontoHojeAliases) {
+                appState.pontoHojeAliases = new Map();
+            } else {
+                appState.pontoHojeAliases.clear();
+            }
+
             let todaysRows = getPontoRecords(todayISO, 'all');
             if (!todaysRows.length) {
                 const scaleList = pontoState.scalesByDate.get(todayISO) || [];
                 todaysRows = scaleList.flatMap((scale) => getPontoRecords(todayISO, scale));
             }
+
             todaysRows.forEach((row) => {
-                const normName = normalizeString(row.nome);
-                const matchedStudent = appState.alunos.find((student) => normalizeString(student.NomeCompleto) === normName);
-                const key = matchedStudent?.EmailHC || row.email || row.nome || row.rawSerial;
-                if (key) {
-                    appState.pontoHojeMap.set(key, {
-                        NomeCompleto: row.nome,
-                        HoraEntrada: row.horaEntrada,
-                        HoraSaida: row.horaSaida,
-                        Escala: row.escala,
-                        DataISO: row.isoDate
-                    });
-                }
+                const primaryKey = row.nomeId || row.id || row.serialNormalized || row.emailNormalized;
+                if (!primaryKey) return;
+
+                const entry = {
+                    NomeCompleto: row.nome,
+                    NomeID: row.nomeId || '',
+                    Email: row.email || '',
+                    EmailNormalizado: row.emailNormalized || '',
+                    SerialNumber: row.rawSerial || '',
+                    SerialNormalizado: row.serialNormalized || '',
+                    HoraEntrada: row.horaEntrada,
+                    HoraSaida: row.horaSaida,
+                    Escala: row.escala,
+                    Modalidade: row.modalidade || '',
+                    DataISO: row.isoDate
+                };
+
+                appState.pontoHojeMap.set(primaryKey, entry);
+
+                const aliasKeys = collectPontoIdentityAliases(row, primaryKey);
+                aliasKeys.forEach((aliasKey) => {
+                    if (!appState.pontoHojeAliases.has(aliasKey)) {
+                        appState.pontoHojeAliases.set(aliasKey, primaryKey);
+                    }
+                });
             });
+        }
+
+        function collectPontoIdentityAliases(row = {}, primaryKey = '') {
+            const aliases = new Set();
+            const addAlias = (value) => {
+                const normalized = normalizeString(value);
+                if (!normalized || normalized === primaryKey) return;
+                aliases.add(normalized);
+            };
+
+            addAlias(row.nomeId || row.nome);
+            addAlias(row.email);
+            addAlias(row.emailNormalized);
+            addAlias(row.rawSerial);
+            addAlias(row.serialNormalized);
+
+            return Array.from(aliases);
+        }
+
+        function resolvePontoHojeRecordByKey(rawKey) {
+            const normalized = normalizeString(rawKey);
+            if (!normalized) return null;
+            if (appState.pontoHojeMap.has(normalized)) {
+                return appState.pontoHojeMap.get(normalized);
+            }
+            const aliasKey = appState.pontoHojeAliases?.get(normalized);
+            if (aliasKey && appState.pontoHojeMap.has(aliasKey)) {
+                return appState.pontoHojeMap.get(aliasKey);
+            }
+            return null;
+        }
+
+        function resolvePontoHojeRecordFromIdentity({ normName, normEmail, normSerial } = {}) {
+            const keys = [normName, normEmail, normSerial];
+            for (const key of keys) {
+                const record = resolvePontoHojeRecordByKey(key);
+                if (record) return record;
+            }
+            return null;
         }
 
         function hydratePontoSelectors() {
@@ -2129,63 +2197,6 @@ const pontoState = {
             refreshPontoView();
         }
 
-        function loadPontoDataFromLocal({ date, scale = 'all', adoptSelection = false } = {}) {
-            const normalizedDate = normalizeDateInput(date);
-            const scaleLabel = scale || 'all';
-            const scaleKey = normalizeScaleKey(scaleLabel);
-            const dateSet = new Set();
-            const scaleAccumulator = new Map();
-            const filteredRows = [];
-
-            (appState.pontoStaticRows || []).forEach((row) => {
-                const normalized = normalizePontoRecord(row, normalizedDate);
-                if (!normalized) return;
-                const iso = normalized.isoDate;
-                if (iso) {
-                    dateSet.add(iso);
-                }
-                const escalaLabel = row.Escala || row.escala || normalized.escala || '';
-                if (iso) {
-                    if (!scaleAccumulator.has(iso)) scaleAccumulator.set(iso, new Set());
-                    if (escalaLabel) scaleAccumulator.get(iso).add(escalaLabel);
-                }
-                const matchesDate = !normalizedDate || normalizedDate === iso;
-                const matchesScale = scaleKey === 'all' || normalizeScaleKey(escalaLabel) === scaleKey;
-                if (matchesDate && matchesScale) {
-                    filteredRows.push(row);
-                }
-            });
-
-            if (normalizedDate) {
-                dateSet.add(normalizedDate);
-                if (!scaleAccumulator.has(normalizedDate)) {
-                    scaleAccumulator.set(normalizedDate, new Set());
-                }
-                if (scaleLabel && scaleLabel !== 'all') {
-                    scaleAccumulator.get(normalizedDate).add(scaleLabel);
-                }
-            }
-
-            const availableDates = Array.from(dateSet).sort((a, b) => b.localeCompare(a));
-            const scalesByDate = new Map();
-            scaleAccumulator.forEach((set, iso) => {
-                scalesByDate.set(iso, Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR')));
-            });
-
-            const targetDate = normalizedDate || availableDates[0] || '';
-
-            applyPontoData(filteredRows, {
-                targetDate,
-                scale: scaleLabel,
-                availableDates,
-                scalesByDate,
-                lastUpdated: new Date(),
-                updateSelection: adoptSelection
-            });
-
-            return { success: true, selectedDate: targetDate, selectedScale: scaleLabel };
-        }
-
         async function loadPontoData({ date, scale = 'all', showInlineSpinner = false, useTodayEndpoint = false, adoptSelection = false } = {}) {
             const normalizedDate = normalizeDateInput(date);
             const scaleLabel = scale || 'all';
@@ -2202,10 +2213,6 @@ const pontoState = {
             pontoState.isLoading = true;
 
             try {
-                if (appState.apiMode === 'sheets') {
-                    return loadPontoDataFromLocal({ date: normalizedDate || date, scale: scaleLabel, adoptSelection });
-                }
-
                 const url = new URL(API_URL);
                 if (useTodayEndpoint) {
                     url.searchParams.set('action', 'getPontoHoje_');
@@ -2621,17 +2628,9 @@ const pontoState = {
                 const todayIso = new Date().toISOString().slice(0,10);
                 if (iso !== todayIso) return false;
 
-                const { normEmail } = _esc_getCurrentStudentKey();
-                let present = false;
-                // O map do ponto hoje tem chave EmailHC “exato”, então tente achar por email visível
-                if (appState.pontoHojeMap && appState.pontoHojeMap.size > 0) {
-                    for (const [key, val] of appState.pontoHojeMap.entries()) {
-                    if (_esc_norm(key) === normEmail) {
-                        present = true; break;
-                    }
-                    }
-                }
-                return present;
+                const { normEmail, normName } = _esc_getCurrentStudentKey();
+                const record = resolvePontoHojeRecordFromIdentity({ normEmail, normName });
+                return Boolean(record);
                 }
 
                 /** Cria elementos com classe utilitária. */
@@ -2794,7 +2793,10 @@ function renderTabEscala(escalas) {
         return;
     }
 
-    const alunoEmailNorm = normalizeString(document.querySelector('#tab-info dd')?.textContent || '');
+    const alunoEmailRaw = document.querySelector('#tab-info dd')?.textContent || '';
+    const alunoNomeRaw = document.querySelector('#student-header h2')?.textContent || '';
+    const alunoEmailNorm = normalizeString(alunoEmailRaw);
+    const alunoNomeNorm = normalizeString(alunoNomeRaw);
     
     $switcher.innerHTML = '';
     $periodLabel.textContent = 'Selecione uma escala';
@@ -2833,7 +2835,7 @@ function renderTabEscala(escalas) {
             $switcher.querySelectorAll('.escala-pill').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             
-            const escalaSummary = drawScaleGrid(escala, alunoEmailNorm, absentDatesTotal, makeupDatesTotal);
+            const escalaSummary = drawScaleGrid(escala, alunoEmailNorm, alunoNomeNorm, absentDatesTotal, makeupDatesTotal);
             _esc_renderSidebarSummary(escalaSummary, nome);
         });
         
@@ -2841,7 +2843,7 @@ function renderTabEscala(escalas) {
     });
 
     // 4. (Request 1) Função para desenhar o grid APENAS COM OS DIAS DA ESCALA
-    function drawScaleGrid(escala, emailNorm, absentDates, makeupDates) {
+    function drawScaleGrid(escala, emailNorm, nameNorm, absentDates, makeupDates) {
         
         const summary = {
             presenca: 0, plantao: 0, aula: 0, absent: 0, makeup: 0, off: 0,
@@ -2903,10 +2905,17 @@ function renderTabEscala(escalas) {
                 statusKey = 'absent';
                 isAusente = true;
             }
-            else if (iso === todayISO && appState.pontoHojeMap.has(emailNorm)) {
-                const pontoStatus = _esc_normalizeStatusKey(rawText); 
-                statusKey = (pontoStatus === 'plantao' || pontoStatus === 'aula') ? pontoStatus : 'presenca';
-                rawText = `Presente (${appState.pontoHojeMap.get(emailNorm).HoraEntrada})`;
+            else if (iso === todayISO) {
+                const pontoRecord = resolvePontoHojeRecordFromIdentity({
+                    normEmail: emailNorm,
+                    normName: nameNorm
+                });
+                if (pontoRecord) {
+                    const pontoStatus = _esc_normalizeStatusKey(rawText);
+                    statusKey = (pontoStatus === 'plantao' || pontoStatus === 'aula') ? pontoStatus : 'presenca';
+                    const horaEntradaPonto = pontoRecord.HoraEntrada || pontoRecord.horaEntrada || '';
+                    rawText = horaEntradaPonto ? `Presente (${horaEntradaPonto})` : 'Presente';
+                }
             }
 
             if (summary[statusKey] !== undefined) {
