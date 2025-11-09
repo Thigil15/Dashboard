@@ -1786,6 +1786,26 @@
     transition: var(--transition-fast);
 }
 
+.ponto-ghost-button.is-loading {
+    opacity: 0.7;
+    pointer-events: none;
+    position: relative;
+}
+
+.ponto-ghost-button.is-loading::after {
+    content: '';
+    position: absolute;
+    right: 0.85rem;
+    top: 50%;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 999px;
+    border: 2px solid rgba(0, 84, 180, 0.28);
+    border-top-color: var(--accent-blue);
+    animation: spin 0.75s linear infinite;
+    transform: translateY(-50%);
+}
+
 .ponto-ghost-button:hover {
     border-color: var(--accent-blue);
     box-shadow: 0 8px 20px rgba(0, 84, 180, 0.12);
@@ -2240,6 +2260,10 @@
     transition: var(--transition-fast);
 }
 
+.escala-preview-card {
+    gap: 1.75rem;
+}
+
 .escala-sheet-card.is-clickable {
     cursor: pointer;
 }
@@ -2307,6 +2331,27 @@
     color: var(--content-text-secondary);
 }
 
+.escala-preview-meta {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    color: var(--content-text-secondary);
+}
+
+.escala-preview-meta-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.escala-preview-date {
+    font-family: var(--font-display);
+    font-weight: 600;
+    color: var(--accent-blue);
+    font-size: 0.95rem;
+}
+
 .escala-sheet-period {
     font-family: var(--font-display);
     font-weight: 600;
@@ -2318,79 +2363,32 @@
     color: var(--content-text-primary);
 }
 
-.escala-sheet-table-wrapper {
-    width: 100%;
-    overflow-x: auto;
-    border-radius: 1rem;
+.escala-preview-viewer {
     border: 1px solid rgba(0, 51, 160, 0.08);
-    background: rgba(255, 255, 255, 0.92);
-    box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.82);
+    box-shadow: 0 18px 36px rgba(15, 23, 42, 0.08);
+    overflow: hidden;
+    min-height: 420px;
+    position: relative;
 }
 
-.escala-sheet-table {
+#escala-pdf-frame {
     width: 100%;
-    border-collapse: collapse;
-    min-width: 720px;
+    min-height: 520px;
+    border: none;
+    background: #fff;
 }
 
-.escala-sheet-table thead th {
-    font-size: 0.75rem;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--content-text-secondary);
-    font-weight: 600;
-    border-bottom: 1px solid rgba(0, 51, 160, 0.12);
+.escala-preview-viewer .escala-empty-state {
+    height: 100%;
+    margin: 0;
 }
 
-.escala-sheet-table th,
-.escala-sheet-table td {
-    padding: 0.85rem 1.1rem;
-    text-align: left;
-    font-size: 0.9rem;
-    color: var(--content-text-primary);
-}
-
-.escala-sheet-table tbody tr:nth-child(even) {
-    background: rgba(0, 83, 196, 0.04);
-}
-
-.escala-sheet-table tbody tr:hover {
-    background: rgba(0, 83, 196, 0.08);
-    transition: var(--transition-fast);
-}
-
-.escala-sheet-name {
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-}
-
-.escala-sheet-name-main {
-    font-weight: 600;
-    color: var(--content-text-primary);
-}
-
-.escala-sheet-email,
-.escala-sheet-extra {
-    display: block;
-    font-size: 0.78rem;
-    color: var(--content-text-secondary);
-}
-
-.escala-sheet-empty {
-    padding: 2.5rem 1.5rem;
-    gap: 0.85rem;
-}
-
-.escala-sheet-empty svg {
-    width: 36px;
-    height: 36px;
-    color: rgba(15, 23, 42, 0.35);
-}
-
-.escala-sheet-empty p {
-    color: var(--content-text-secondary);
-    font-weight: 500;
+@media (max-width: 768px) {
+    #escala-pdf-frame {
+        min-height: 420px;
+    }
 }
 
 @media (max-width: 768px) {
@@ -2401,10 +2399,17 @@
     .escala-sheet-actions {
         width: 100%;
         justify-content: flex-start;
+        flex-wrap: wrap;
+        gap: 0.75rem;
     }
 
-    .escala-sheet-table {
-        min-width: 600px;
+    .escala-sheet-actions .escala-sheet-button {
+        flex: 1 1 100%;
+    }
+
+    .escala-preview-meta {
+        flex-direction: column;
+        align-items: flex-start;
     }
 }
 
