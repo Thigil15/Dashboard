@@ -1,0 +1,14 @@
+[
+  {
+    "email": "thiago.dias@hc.fm.usp.br",
+    "password": "Thiago1508@",
+    "name": "Thiago Dias",
+    "role": "admin"
+  },
+  {
+    "email": "wallace.fontes@hc.fm.usp.br",
+    "password": "12345",
+    "name": "Wallace Fontes",
+    "role": "admin"
+  }
+]
