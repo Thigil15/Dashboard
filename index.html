@@ -544,7 +544,7 @@
     <!-- CLIENT-SIDE SCRIPT -->
     <script>
         // URL da API
-        const API_URL = "https://script.google.com/macros/s/AKfycbxOmsYgWiMxrlxNinaRbe8GILEnb5XbEHm1wxJ7n1AMfPJa6YQwYYShya006s4BTJRk/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbzfSL1on5MqPhoLdrgiQJFFHfMbK-UDjX_lKd8H09uk-Nxt-S1Shf-CLTm9_5GkhEAi/exec";
 
         function toPascalCaseKey(key = "") {
             const raw = String(key || "").trim();
@@ -1061,29 +1061,42 @@ const pontoState = {
 
             console.log('[setupEventHandlers] Listeners configurados.');
         }
-        
-        function handleLogin(event) {
-            event.preventDefault(); 
-            console.log("[handleLogin] Tentativa de login...");
-            
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-            const errorBox = document.getElementById('login-error');
-            
-            // [ORION] Senha local (INSEGURO)
-            const validEmail = 'thiago.dias@hc.fm.usp.br';
-            const validPass = 'Thiago1508'; 
-            
-            if (email === validEmail && password === validPass) {
-                console.log("[handleLogin] Login bem-sucedido.");
-                errorBox.style.display = 'none';
-                showView('dashboard-view'); 
-                initDashboard(); 
+
+        document.getElementById("login-form").addEventListener("submit", handleLogin);
+
+        async function handleLogin(event) {
+        event.preventDefault();
+        console.log("[handleLogin] Tentativa de login...");
+
+        const email = document.getElementById("login-email").value.trim();
+        const password = document.getElementById("login-password").value.trim();
+        const errorBox = document.getElementById("login-error");
+
+        try {
+            const response = await fetch("users.json");
+            const users = await response.json();
+
+            const user = users.find(u => u.email === email && u.password === password);
+
+            if (user) {
+            console.log("[handleLogin] Login bem-sucedido.");
+            errorBox.style.display = "none";
+
+            // chama a mesma lógica do código original
+            if (typeof showView === "function") showView("dashboard-view");
+            if (typeof initDashboard === "function") initDashboard();
+
+            localStorage.setItem("user", JSON.stringify(user));
             } else {
-                console.warn("[handleLogin] Falha no login.");
-                showError("Email ou senha inválidos.", true); 
+            console.warn("[handleLogin] Falha no login.");
+            showError("Email ou senha inválidos.", true);
             }
+        } catch (err) {
+            console.error("[handleLogin] Erro ao ler users.json:", err);
+            showError("Erro ao carregar dados de login.", true);
         }
+        }
+
 
         async function fetchAllData() {
             console.log("[fetchAllData] Buscando dados estáticos...");
