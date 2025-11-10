@@ -1,8 +1,9 @@
-/** Code.gs — Backend simples, compatível com o v32 do site (GET + action) */
+/** Code.gs — Backend atualizado: PontoPratica + PontoTeoria (compatível v32) */
 
 const SHEET_NAMES = {
   ALUNOS: 'Alunos',
-  PONTO: 'Ponto',
+  PONTOPRATICA: 'PontoPratica',
+  PONTOTEORIA: 'PontoTeoria',
   AUSENCIAS: 'AusenciasReposicoes',
   NOTAS_TEORICAS: 'NotasTeoricas',
   ESCALA1: 'Escala1', ESCALA2: 'Escala2', ESCALA3: 'Escala3',
@@ -129,52 +130,84 @@ function getAll_() {
   };
 }
 
-/** Hoje (dd/MM/yyyy) em America/Sao_Paulo) */
-function getPontoHoje_() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sh = ss.getSheetByName(SHEET_NAMES.PONTO);
-  if (!sh) return { success: false, message: "Aba 'Ponto' não encontrada." };
+/**
+ * Retorna todos os registros das abas PontoPratica e PontoTeoria
+ * com o campo adicional 'Pratica/Teoria' normalizado.
+ */
+function getCombinedPontoRecords_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var out = [];
 
-  const todayBR = Utilities.formatDate(new Date(), "America/Sao_Paulo", "dd/MM/yyyy");
-  const all = getSheetDataAsJSON_(sh);
-  const hoje = all.filter(p => {
-    const v = p.Data;
+  var sheetsToRead = [SHEET_NAMES.PONTOPRATICA, SHEET_NAMES.PONTOTEORIA];
+  sheetsToRead.forEach(function(sheetName) {
+    var sh = ss.getSheetByName(sheetName);
+    if (!sh) return;
+    var rows = getSheetDataAsJSON_(sh); // usa util existente
+    if (!rows || !rows.length) return;
+    // tipo sem acento e sem barra: 'Pratica' ou 'Teoria'
+    var tipo = (sheetName === SHEET_NAMES.PONTOPRATICA) ? 'Pratica' : 'Teoria';
+    rows.forEach(function(r) {
+      var copy = Object.assign({}, r);
+      // normaliza várias formas de campo final e garante igualdade
+      copy['Pratica/Teoria'] = (
+        (copy['Pratica/Teoria'] && String(copy['Pratica/Teoria']).toString().trim()) ||
+        (copy['Prática/Teórica'] && String(copy['Prática/Teórica']).toString().trim()) ||
+        (copy['Pratica'] && String(copy['Pratica']).toString().trim()) ||
+        (copy['Prática'] && String(copy['Prática']).toString().trim()) ||
+        (copy['Teoria'] && String(copy['Teoria']).toString().trim()) ||
+        (copy['Teórica'] && String(copy['Teórica']).toString().trim()) ||
+        tipo
+      );
+      // também padroniza para sem acento: 'Pratica' or 'Teoria'
+      var v = String(copy['Pratica/Teoria'] || '').trim();
+      if (/prá?tica/i.test(v)) copy['Pratica/Teoria'] = 'Pratica';
+      else if (/teór?ica|teoria/i.test(v)) copy['Pratica/Teoria'] = 'Teoria';
+      else copy['Pratica/Teoria'] = tipo;
+      out.push(copy);
+    });
+  });
+
+  return out;
+}
+
+/** Hoje (dd/MM/yyyy) em America/Sao_Paulo) — agora considera as duas abas */
+function getPontoHoje_() {
+  var todayBR = Utilities.formatDate(new Date(), "America/Sao_Paulo", "dd/MM/yyyy");
+  var all = getCombinedPontoRecords_();
+
+  var hoje = all.filter(function(p) {
+    var v = p.Data;
     if (v instanceof Date) {
       return Utilities.formatDate(v, "America/Sao_Paulo", "dd/MM/yyyy") === todayBR;
     }
     return String(v || '').trim() === todayBR;
   });
 
-  // opcional: expose também data ISO
-  const parts = todayBR.split('/');
-  const dataISO = `${parts[2]}-${parts[1]}-${parts[0]}`;
+  var parts = todayBR.split('/');
+  var dataISO = parts.length === 3 ? (parts[2] + '-' + parts[1] + '-' + parts[0]) : '';
 
   return {
     success: true,
-    hoje,
+    hoje: hoje,
     lastUpdate: new Date().toISOString(),
-    dataISO
+    dataISO: dataISO
   };
 }
 
-/** Filtra Ponto por Escala + Data (YYYY-MM-DD) */
+/** Filtra Ponto por Escala + Data (YYYY-MM-DD) — agora busca em ambas as abas */
 function getPontoPorEscala_(escala, dataISO) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sh = ss.getSheetByName(SHEET_NAMES.PONTO);
-  if (!sh) return { success: false, message: "Aba 'Ponto' não encontrada." };
-
-  const all = getSheetDataAsJSON_(sh);
+  var all = getCombinedPontoRecords_();
 
   // Converte ISO -> dd/MM/yyyy
-  let dataBR = '';
+  var dataBR = '';
   if (dataISO && /^\d{4}-\d{2}-\d{2}$/.test(dataISO)) {
-    const [y,m,d] = dataISO.split('-');
-    dataBR = `${d}/${m}/${y}`;
+    var parts = dataISO.split('-');
+    dataBR = parts[2] + '/' + parts[1] + '/' + parts[0];
   }
 
-  const registros = all.filter(p => {
+  var registros = all.filter(function(p) {
     // Data
-    let okDate = true;
+    var okDate = true;
     if (dataBR) {
       if (p.Data instanceof Date) {
         okDate = Utilities.formatDate(p.Data, "America/Sao_Paulo", "dd/MM/yyyy") === dataBR;
@@ -183,10 +216,11 @@ function getPontoPorEscala_(escala, dataISO) {
       }
     }
 
-    // Escala
-    let okEscala = true;
+    // Escala (case-insensitive)
+    var okEscala = true;
     if (escala && escala.trim() !== '') {
-      okEscala = String(p.Escala || '').trim().toLowerCase() === escala.trim().toLowerCase();
+      var valorEscala = String(p.Escala || p['Escala'] || '').trim().toLowerCase();
+      okEscala = valorEscala === escala.trim().toLowerCase();
     }
 
     return okDate && okEscala;
@@ -196,7 +230,53 @@ function getPontoPorEscala_(escala, dataISO) {
     success: true,
     escala: escala || 'all',
     data: dataISO || 'todas',
-    registros,
+    registros: registros,
     lastUpdate: new Date().toISOString()
   };
+}
+
+/* --- Extras: helper para escrita nas abas (opcional) --- */
+/**
+ * appendPontoPraticaRow: útil se for gravar via script (mantém ordem de colunas).
+ * A função detecta cabeçalho automaticamente e preenche nas colunas corretas.
+ */
+function appendPontoPraticaRow(obj) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(SHEET_NAMES.PONTOPRATICA);
+  if (!sh) throw new Error("Aba PontoPratica não encontrada");
+  var headers = sh.getDataRange().getValues()[0].map(h => String(h).trim());
+  var row = headers.map(h => {
+    if (h === 'Data') return obj.Data || '';
+    if (h === 'HoraEntrada') return obj.HoraEntrada || '';
+    if (h === 'HoraSaida') return obj.HoraSaida || '';
+    if (h === 'SerialNumber') return obj.SerialNumber || '';
+    if (h === 'NomeCompleto') return obj.NomeCompleto || '';
+    if (h === 'EmailHC') return obj.EmailHC || '';
+    if (h === 'Escala') return obj.Escala || '';
+    if (h === 'Pratica' || h === 'Pratica/Teoria' || h === 'Prática') return 'Pratica';
+    return obj[h] || '';
+  });
+  sh.appendRow(row);
+}
+
+/**
+ * appendPontoTeoriaRow: idem para PontoTeoria
+ */
+function appendPontoTeoriaRow(obj) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(SHEET_NAMES.PONTOTEORIA);
+  if (!sh) throw new Error("Aba PontoTeoria não encontrada");
+  var headers = sh.getDataRange().getValues()[0].map(h => String(h).trim());
+  var row = headers.map(h => {
+    if (h === 'Data') return obj.Data || '';
+    if (h === 'HoraEntrada') return obj.HoraEntrada || '';
+    if (h === 'HoraSaida') return obj.HoraSaida || '';
+    if (h === 'SerialNumber') return obj.SerialNumber || '';
+    if (h === 'NomeCompleto') return obj.NomeCompleto || '';
+    if (h === 'EmailHC') return obj.EmailHC || '';
+    if (h === 'Escala') return obj.Escala || '';
+    if (h === 'Teoria' || h === 'Pratica/Teoria' || h === 'Teórica') return 'Teoria';
+    return obj[h] || '';
+  });
+  sh.appendRow(row);
 }
