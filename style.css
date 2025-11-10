@@ -1667,8 +1667,7 @@
     .attendance-table-wrapper {
         padding: 0 1rem 1.25rem;
     }
-}
-
+    
 /* --- Aba de Ponto (Painel Diário CSV) --- */
 #content-ponto .animated-card {
     opacity: 0;
