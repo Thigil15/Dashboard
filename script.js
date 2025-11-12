@@ -1716,6 +1716,21 @@ const pontoState = {
             select.value = pontoState.selectedScale || 'all';
         }
 
+        function updateDateNavigationButtons() {
+            const prevButton = document.getElementById('ponto-prev-date');
+            const nextButton = document.getElementById('ponto-next-date');
+            
+            if (!prevButton || !nextButton || !pontoState.dates || pontoState.dates.length === 0) return;
+            
+            const currentIndex = pontoState.dates.indexOf(pontoState.selectedDate);
+            
+            // Prev button should be disabled if we're at the last date (oldest)
+            prevButton.disabled = currentIndex >= pontoState.dates.length - 1;
+            
+            // Next button should be disabled if we're at the first date (newest)
+            nextButton.disabled = currentIndex <= 0;
+        }
+
         function enrichPontoRows(rows = []) {
             const baselineByScale = new Map();
             rows.forEach((row) => {
@@ -2225,6 +2240,28 @@ const pontoState = {
             }
         }
 
+        function handlePontoPrevDate() {
+            if (!pontoState.dates || pontoState.dates.length === 0) return;
+            const currentIndex = pontoState.dates.indexOf(pontoState.selectedDate);
+            if (currentIndex < pontoState.dates.length - 1) {
+                const prevDate = pontoState.dates[currentIndex + 1];
+                pontoState.selectedDate = prevDate;
+                hydratePontoSelectors();
+                refreshPontoView();
+            }
+        }
+
+        function handlePontoNextDate() {
+            if (!pontoState.dates || pontoState.dates.length === 0) return;
+            const currentIndex = pontoState.dates.indexOf(pontoState.selectedDate);
+            if (currentIndex > 0) {
+                const nextDate = pontoState.dates[currentIndex - 1];
+                pontoState.selectedDate = nextDate;
+                hydratePontoSelectors();
+                refreshPontoView();
+            }
+        }
+
         async function loadPontoData({ date, scale = 'all', showInlineSpinner = false, useTodayEndpoint = false, adoptSelection = false, replaceExisting = false } = {}) {
             const normalizedDate = normalizeDateInput(date);
             const scaleLabel = scale || 'all';
@@ -2573,130 +2610,6 @@ const pontoState = {
              const p=document.getElementById('tab-info'); p.innerHTML=`<dl class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6 text-sm"><div class="border-b border-slate-200 pb-3"><dt>Email</dt><dd>${info.EmailHC||'N/A'}</dd></div><div class="border-b border-slate-200 pb-3"><dt>Nascimento</dt><dd>${info.DataNascimento ? new Date(info.DataNascimento).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : 'N/A'}</dd></div><div class="border-b border-slate-200 pb-3"><dt>Sexo</dt><dd>${info.Sexo||'N/A'}</dd></div><div class="border-b border-slate-200 pb-3"><dt>Estado Civil</dt><dd>${info.EstadoCivil||'N/A'}</dd></div><div class="md:col-span-2 lg:col-span-1 border-b border-slate-200 pb-3"><dt>CREFITO</dt><dd>${info.Crefito||'N/A'}</dd></div></dl>`;
         }
         
-                        /* ===============================
-                [ESCALAS] Calendar Pro - Helpers
-                =============================== */
-
-                /** Normaliza string para comparações. */
-                function _esc_norm(s) {
-                return (s || '').toString().trim().toLowerCase()
-                    .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                }
-
-                /** Pega nome e email do aluno atualmente aberto na tela (do header e da aba Info). */
-                function _esc_getCurrentStudentKey() {
-                const nameEl = document.querySelector('#student-header h2');
-                const name = nameEl ? nameEl.textContent.trim() : null;
-
-                // procura <dt>Email</dt> e lê o irmão <dd>
-                let email = null;
-                document.querySelectorAll('#tab-info dl dt').forEach(dt => {
-                    if (_esc_norm(dt.textContent) === 'email') {
-                    const dd = dt.parentElement?.querySelector('dd');
-                    if (dd) email = dd.textContent.trim();
-                    }
-                });
-
-                return {
-                    name,
-                    email,
-                    normName: _esc_norm(name),
-                    normEmail: _esc_norm(email)
-                };
-                }
-
-                /** Transforma 'dd/mm' em Date, inferindo ano perto do mês atual (heurística ±7 meses). */
-                function _esc_parseDMInferYear(dm, refDate = new Date()) {
-                if (!dm || !/^\d{1,2}\/\d{1,2}$/.test(dm)) return null;
-                const [dStr, mStr] = dm.split('/');
-                const d = parseInt(dStr, 10);
-                const m = parseInt(mStr, 10); // 1..12
-
-                // Heurística de ano: aproxima do mês atual
-                const nowM = refDate.getMonth() + 1; // 1..12
-                const nowY = refDate.getFullYear();
-                let y = nowY;
-
-                const delta = m - nowM; // -11..+11
-                if (delta >= 7) y = nowY - 1;
-                else if (delta <= -7) y = nowY + 1;
-
-                const date = new Date(y, m - 1, d);
-                if (isNaN(date.getTime())) return null;
-                return date;
-                }
-
-                /** Formata ano-mês-dia (YYYY-MM-DD). */
-                function _esc_iso(d) {
-                const y = d.getFullYear();
-                const m = String(d.getMonth() + 1).padStart(2, '0');
-                const day = String(d.getDate()).padStart(2, '0');
-                return `${y}-${m}-${day}`;
-                }
-
-                /** Nome do mês PT-BR, capitalizado. */
-                function _esc_monthLabel(year, month0) {
-                const dt = new Date(year, month0, 1);
-                const name = dt.toLocaleString('pt-BR', { month: 'long' });
-                return name.charAt(0).toUpperCase() + name.slice(1) + ` ${year}`;
-                }
-
-                /** Gera todos os YYYY-MM dos dias da escala, ordenados e únicos. */
-                function _esc_collectYearMonths(days) {
-                const set = new Set();
-                days.forEach(d => {
-                    if (d._date instanceof Date) {
-                    set.add(`${d._date.getFullYear()}-${String(d._date.getMonth()+1).padStart(2,'0')}`);
-                    }
-                });
-                return Array.from(set).sort();
-                }
-
-                /** Divide “YYYY-MM” em {year, month0}. */
-                function _esc_splitYM(ym) {
-                const [y, m] = ym.split('-');
-                return { year: parseInt(y, 10), month0: parseInt(m, 10) - 1 };
-                }
-
-                /** Agrupa faltas/reposições para o aluno atual em conjuntos de datas ISO. */
-                function _esc_buildAbsMakeupSets() {
-                const { normEmail, normName } = _esc_getCurrentStudentKey();
-                const abs = new Set();
-                const mak = new Set();
-
-                (appState.ausenciasReposicoes || []).forEach(f => {
-                    const fMail = _esc_norm(f.EmailHC);
-                    const fName = _esc_norm(f.NomeCompleto);
-                    const isThis =
-                    (normEmail && fMail && normEmail === fMail) ||
-                    (normName && fName && normName === fName);
-
-                    if (!isThis) return;
-
-                    if (f.DataAusenciaISO) abs.add(f.DataAusenciaISO);
-                    if (f.DataReposicaoISO) mak.add(f.DataReposicaoISO);
-                });
-
-                return { abs, mak };
-                }
-
-                /** Verifica se é “presente” no dia atual via Ponto Hoje (somente hoje). */
-                function _esc_isPresentTodayIso(iso) {
-                const todayIso = new Date().toISOString().slice(0,10);
-                if (iso !== todayIso) return false;
-
-                const { normEmail, normName } = _esc_getCurrentStudentKey();
-                const record = resolvePontoHojeRecordFromIdentity({ normEmail, normName });
-                return Boolean(record);
-                }
-
-                /** Cria elementos com classe utilitária. */
-                function _esc_el(tag, className, text) {
-                const el = document.createElement(tag);
-                if (className) el.className = className;
-                if (text !== undefined) el.textContent = text;
-                return el;
-                }
 /* =======================================================================
  * ORION: (Substituição) LÓGICA DA ABA DE ESCALA (v32.7 - Grid Simples)
  * Substitui os helpers de escala e a função renderTabEscala (Linha 2038)
