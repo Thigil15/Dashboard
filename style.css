@@ -1545,18 +1545,22 @@
 .compact-cal-grid {
     width: 100%;
     display: grid;
-    /* [OK] Mantemos o minmax(160px) da versão anterior */
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 12px;
-    align-items: stretch; /* Garante que todos na linha estiquem */
+    /* Larger minimum width for better readability */
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+    align-items: stretch;
     justify-items: stretch;
-
-    /* [REMOVIDO] max-height e overflow-y foram removidos */
+}
+@media (max-width: 768px) {
+    .compact-cal-grid { 
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); 
+        gap: 12px;
+    }
 }
 @media (max-width: 420px) {
     .compact-cal-grid { 
-        gap: 8px; 
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); 
+        gap: 10px; 
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); 
     }
 }
 
@@ -1565,60 +1569,83 @@
         .compact-tile {
             background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,0.96));
             border: 1px solid rgba(226,232,240,0.9);
-            border-radius: 8px;
-            padding: 8px;
-            min-height: 100px; 
+            border-radius: 10px;
+            padding: 10px;
+            min-height: 120px; 
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease;
-            box-shadow: 0 8px 20px rgba(2,6,23,0.03);
+            transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+            box-shadow: 0 8px 20px rgba(2,6,23,0.04);
             box-sizing: border-box;
-            
-            /* [REMOVIDO] Garantimos que 'width' e 'flex-shrink' NÃO estão aqui */
+            position: relative;
+            overflow: hidden;
         }
 
-.tile-header { display: flex; justify-content: space-between; align-items: center; }
+.tile-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(226,232,240,0.5);
+}
 .tile-weekday { 
-    font-size:0.8rem; 
-    color:var(--content-text-secondary); 
-    font-weight:700; 
-    text-transform:capitalize; 
+    font-size: 0.7rem; 
+    color: var(--content-text-secondary); 
+    font-weight: 700; 
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 .tile-date { 
-    font-size:0.8rem; 
-    color:var(--content-text-secondary); 
-    font-weight:700; 
+    font-size: 1.25rem; 
+    color: var(--accent-blue); 
+    font-weight: 800; 
+    font-family: var(--font-display);
+    line-height: 1;
 }
 .tile-body-text {
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: 0.9rem; /* Um pouco menor para caber mais */
+    font-size: 0.95rem;
     color: var(--content-text-primary);
-    line-height: 1.35;
+    line-height: 1.4;
     flex-grow: 1; 
-    margin-top: 8px;
-    margin-bottom: 8px;
-    overflow-wrap: break-word; /* Quebra o texto */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    margin-top: 4px;
+    margin-bottom: 4px;
+    overflow-wrap: break-word;
     word-wrap: break-word;
 }
-.tile-footer { display: flex; justify-content: flex-end; }
+.tile-footer { 
+    display: flex; 
+    justify-content: center; 
+    margin-top: 4px;
+}
 .classification-pill {
-    padding: 0.28rem 0.55rem;
+    padding: 0.3rem 0.65rem;
     border-radius: 999px;
-    font-weight: 800;
-    font-size: 0.72rem;
-    display:inline-flex;
-    align-items:center;
-    gap:0.35rem;
-    border:1px solid transparent;
-    text-transform:none;
+    font-weight: 700;
+    font-size: 0.65rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border: 1px solid transparent;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
 }
 .compact-tile:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 22px 48px rgba(2,6,23,0.08);
-    border-color: rgba(0,84,180,0.10);
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 24px 48px rgba(2,6,23,0.12);
+    border-color: rgba(0,84,180,0.25);
     z-index: 10;
+}
+.compact-tile:hover .tile-date {
+    color: var(--accent-blue-secondary);
 }
 
 /* --- Cores dos Status (v32.7) --- */

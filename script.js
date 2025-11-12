@@ -2655,45 +2655,66 @@ function _esc_iso(d) {
 
 /**
  * [HELPER] Calcula a duração em horas de um texto (ex: "07h-19h").
+ * Retorna um objeto com: { hours: number, startTime: string, endTime: string, isPlantao: boolean }
  */
 function _esc_calculateHours(rawText) {
-    if (!rawText) return 0;
+    if (!rawText) return { hours: 0, startTime: '', endTime: '', isPlantao: false };
     const s = rawText.replace(/(\d{1,2})h(\d{2})?/g, '$1:$2').replace(/h/g, ':00'); 
-    const regex = /(\d{1,2}):?(\d{0,2})\s*(-|às)\s*(\d{1,2}):?(\d{0,2})/;
+    const regex = /(\d{1,2}):?(\d{0,2})\s*(-|às|as|a)\s*(\d{1,2}):?(\d{0,2})/i;
     const match = s.match(regex);
 
-    if (!match) return 0; 
+    if (!match) return { hours: 0, startTime: '', endTime: '', isPlantao: false }; 
 
     let h1 = parseInt(match[1], 10);
     let m1 = parseInt(match[2] || '0', 10);
     let h2 = parseInt(match[4], 10);
     let m2 = parseInt(match[5] || '0', 10);
 
-    if (isNaN(h1) || isNaN(h2)) return 0;
+    if (isNaN(h1) || isNaN(h2)) return { hours: 0, startTime: '', endTime: '', isPlantao: false };
 
     const d1 = new Date(2000, 0, 1, h1, m1);
     const d2 = new Date(2000, 0, 1, h2, m2);
     let diff = (d2.getTime() - d1.getTime()) / (1000 * 60 * 60);
 
     if (diff < 0) { diff += 24; }
-    return diff;
+    
+    // Format times
+    const startTime = `${String(h1).padStart(2, '0')}:${String(m1).padStart(2, '0')}`;
+    const endTime = `${String(h2).padStart(2, '0')}:${String(m2).padStart(2, '0')}`;
+    
+    // Check if it's a plantão (12 hour shift, typically 07h-19h or 08h-20h, or 19h-07h)
+    const isPlantao = diff >= 11 && diff <= 13; // 11-13 hour shifts are considered plantão
+    
+    return { hours: diff, startTime, endTime, isPlantao };
 }
 
 /**
  * [HELPER] Classifica o texto bruto da escala em uma chave de status.
+ * Agora usa a informação de horas para detectar plantões automaticamente
  */
-function _esc_normalizeStatusKey(raw) {
+function _esc_normalizeStatusKey(raw, hoursInfo) {
     if (!raw || typeof raw !== 'string' || raw.trim() === '') return 'none';
     const s = normalizeString(raw);
     
+    // Priority checks first
     if (s.includes('ausencia') || s.includes('falta')) return 'absent';
     if (s.includes('reposi') || s.includes('reposição')) return 'makeup';
     if (s.includes('folga') || s.includes('descanso')) return 'off';
+    
+    // Check if explicitly marked as "aula"
     if (s.includes('aula')) return 'aula'; // Azul
-    if (/(07\s*(:?h)?\d{0,2}\s*(-|às)\s*19\s*(:?h)?\d{0,2})/.test(s) || /(19\s*(:?h)?\d{0,2}\s*(-|às)\s*07\s*(:?h)?\d{0,2})/.test(s)) {
+    
+    // Check if it's a plantão based on hours (12h shifts)
+    if (hoursInfo && hoursInfo.isPlantao) {
         return 'plantao'; // Roxo
     }
+    
+    // If has hours but not a plantão and not explicitly "aula", it's regular presence
+    if (hoursInfo && hoursInfo.hours > 0) return 'presenca'; // Verde
+    
+    // Fallback: if has any text, assume presence
     if (s.trim().length > 0) return 'presenca'; // Verde
+    
     return 'none';
 }
 
@@ -2727,22 +2748,22 @@ function _esc_calculateTotalBank(escalas, absentDatesTotal, makeupDatesTotal) {
             
             const iso = _esc_iso(dateObj);
             const rawText = escala[ddmm] || ''; 
-            const statusKey = _esc_normalizeStatusKey(rawText);
-            const horas = _esc_calculateHours(rawText);
+            const hoursInfo = _esc_calculateHours(rawText);
+            const statusKey = _esc_normalizeStatusKey(rawText, hoursInfo);
 
-            if (horas === 0) return;
+            if (hoursInfo.hours === 0) return;
 
             if (statusKey !== 'off' && statusKey !== 'none') {
-                totalDeveria += horas;
+                totalDeveria += hoursInfo.hours;
             }
             if (statusKey !== 'off' && statusKey !== 'none') {
                 const isAusente = absentDatesTotal.has(iso);
                 const isReposto = makeupDatesTotal.has(iso);
                 if (!isAusente || isReposto) {
-                     totalFeitas += horas;
+                     totalFeitas += hoursInfo.hours;
                 }
             } else if (statusKey === 'off' && makeupDatesTotal.has(iso)) {
-                totalFeitas += horas;
+                totalFeitas += hoursInfo.hours;
             }
         });
     });
@@ -2864,8 +2885,8 @@ function renderTabEscala(escalas) {
             
             const iso = _esc_iso(day.dateObj);
             let rawText = day.rawText;
-            let statusKey = _esc_normalizeStatusKey(rawText);
-            const horas = _esc_calculateHours(rawText);
+            const hoursInfo = _esc_calculateHours(rawText);
+            let statusKey = _esc_normalizeStatusKey(rawText, hoursInfo);
             
             let isAusente = false;
             let isReposto = false;
@@ -2885,7 +2906,7 @@ function renderTabEscala(escalas) {
                     normName: nameNorm
                 });
                 if (pontoRecord) {
-                    const pontoStatus = _esc_normalizeStatusKey(rawText);
+                    const pontoStatus = _esc_normalizeStatusKey(rawText, hoursInfo);
                     statusKey = (pontoStatus === 'plantao' || pontoStatus === 'aula') ? pontoStatus : 'presenca';
                     const horaEntradaPonto = pontoRecord.HoraEntrada || pontoRecord.horaEntrada || '';
                     rawText = horaEntradaPonto ? `Presente (${horaEntradaPonto})` : 'Presente';
@@ -2897,18 +2918,18 @@ function renderTabEscala(escalas) {
             }
 
             // Calcula horas
-            if (horas > 0) {
+            if (hoursInfo.hours > 0) {
                 if (statusKey !== 'off' && statusKey !== 'none') {
-                    summary.escalaDeveria += horas;
+                    summary.escalaDeveria += hoursInfo.hours;
                     if (!isAusente || isReposto) {
-                        summary.escalaFeitas += horas;
+                        summary.escalaFeitas += hoursInfo.hours;
                     }
                 } else if (statusKey === 'off' && isReposto) {
-                    summary.escalaFeitas += horas;
+                    summary.escalaFeitas += hoursInfo.hours;
                 }
             }
             
-            const tile = createTile(day.dateObj, rawText, statusKey);
+            const tile = createTile(day.dateObj, rawText, statusKey, hoursInfo);
             $grid.appendChild(tile);
         });
 
@@ -2950,7 +2971,7 @@ function renderTabEscala(escalas) {
     }
 
     // 6. Função para criar o HTML do "Tile" (com Header/Body/Footer)
-    function createTile(dateObj, rawText, statusKey) {
+    function createTile(dateObj, rawText, statusKey, hoursInfo) {
         const tile = document.createElement('div');
         tile.className = 'compact-tile';
         tile.setAttribute('data-status', statusKey);
@@ -2959,17 +2980,32 @@ function renderTabEscala(escalas) {
         const weekday = dateObj.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
         
         const humanStatus = _esc_getHumanLabel(statusKey);
-        const mainText = (rawText && rawText.trim() !== '') ? rawText.trim() : humanStatus;
         
-        tile.setAttribute('data-tip', mainText); // Tooltip
+        // Build the display text for the body
+        let bodyText = '';
+        if (hoursInfo && hoursInfo.startTime && hoursInfo.endTime) {
+            // Show the time range prominently
+            bodyText = `${hoursInfo.startTime} - ${hoursInfo.endTime}`;
+            // Add duration if significant
+            if (hoursInfo.hours >= 1) {
+                bodyText += `<br><span style="font-size: 0.75em; opacity: 0.8;">${hoursInfo.hours.toFixed(1)}h</span>`;
+            }
+        } else if (rawText && rawText.trim() !== '') {
+            bodyText = rawText.trim();
+        } else {
+            bodyText = humanStatus;
+        }
+        
+        const tooltipText = rawText && rawText.trim() !== '' ? rawText.trim() : humanStatus;
+        tile.setAttribute('data-tip', tooltipText); // Tooltip
 
         tile.innerHTML = `
             <div class="tile-header">
                 <span class="tile-weekday">${weekday}</span>
                 <span class="tile-date">${dayNumber}</span>
             </div>
-            <div class="tile-body-text" title="${mainText}">
-                ${mainText}
+            <div class="tile-body-text" title="${tooltipText}">
+                ${bodyText}
             </div>
             <div class="tile-footer">
                 <div class="classification-pill">${humanStatus}</div>
