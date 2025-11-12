@@ -5004,10 +5004,12 @@ const pontoState = {
                 dateLabel.textContent = pontoState.selectedDate ? formatDateLabel(pontoState.selectedDate) : '--';
             }
             const syncLabel = document.getElementById('ponto-last-sync');
-            if (syncLabel) {
-                syncLabel.textContent = pontoState.lastLoadedAt
+                const totalDates = pontoState.dates.length;
+                const dateInfo = totalDates > 1 ? ` • ${totalDates} datas disponíveis` : '';
+                const timeInfo = pontoState.lastLoadedAt
                     ? `Atualizado ${pontoState.lastLoadedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
                     : 'Dados não carregados';
+                syncLabel.textContent = timeInfo + dateInfo;
             }
         }
 
