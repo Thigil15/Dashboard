@@ -2225,6 +2225,28 @@ const pontoState = {
             }
         }
 
+        function handlePontoPrevDate() {
+            if (!pontoState.dates || pontoState.dates.length === 0) return;
+            const currentIndex = pontoState.dates.indexOf(pontoState.selectedDate);
+            if (currentIndex < pontoState.dates.length - 1) {
+                const prevDate = pontoState.dates[currentIndex + 1];
+                pontoState.selectedDate = prevDate;
+                hydratePontoSelectors();
+                refreshPontoView();
+            }
+        }
+
+        function handlePontoNextDate() {
+            if (!pontoState.dates || pontoState.dates.length === 0) return;
+            const currentIndex = pontoState.dates.indexOf(pontoState.selectedDate);
+            if (currentIndex > 0) {
+                const nextDate = pontoState.dates[currentIndex - 1];
+                pontoState.selectedDate = nextDate;
+                hydratePontoSelectors();
+                refreshPontoView();
+            }
+        }
+
         async function loadPontoData({ date, scale = 'all', showInlineSpinner = false, useTodayEndpoint = false, adoptSelection = false, replaceExisting = false } = {}) {
             const normalizedDate = normalizeDateInput(date);
             const scaleLabel = scale || 'all';
