@@ -1716,6 +1716,21 @@ const pontoState = {
             select.value = pontoState.selectedScale || 'all';
         }
 
+        function updateDateNavigationButtons() {
+            const prevButton = document.getElementById('ponto-prev-date');
+            const nextButton = document.getElementById('ponto-next-date');
+            
+            if (!prevButton || !nextButton || !pontoState.dates || pontoState.dates.length === 0) return;
+            
+            const currentIndex = pontoState.dates.indexOf(pontoState.selectedDate);
+            
+            // Prev button should be disabled if we're at the last date (oldest)
+            prevButton.disabled = currentIndex >= pontoState.dates.length - 1;
+            
+            // Next button should be disabled if we're at the first date (newest)
+            nextButton.disabled = currentIndex <= 0;
+        }
+
         function enrichPontoRows(rows = []) {
             const baselineByScale = new Map();
             rows.forEach((row) => {
