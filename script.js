@@ -514,6 +514,16 @@ const pontoState = {
                 pontoRefreshButton.addEventListener('click', handlePontoRefresh);
             }
 
+            const pontoPrevButton = document.getElementById('ponto-prev-date');
+            if (pontoPrevButton) {
+                pontoPrevButton.addEventListener('click', handlePontoPrevDate);
+            }
+
+            const pontoNextButton = document.getElementById('ponto-next-date');
+            if (pontoNextButton) {
+                pontoNextButton.addEventListener('click', handlePontoNextDate);
+            }
+
             console.log('[setupEventHandlers] Listeners configurados.');
         }
 
@@ -605,6 +615,8 @@ const pontoState = {
 
             if (Array.isArray(data.pontoRegistros)) {
                 appState.pontoStaticRows = data.pontoRegistros.map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
+                // Extract and populate all available dates from static ponto data
+                extractAndPopulatePontoDates(appState.pontoStaticRows);
             }
 
             if (data.meta) {
@@ -631,6 +643,75 @@ const pontoState = {
             appState.alunos.forEach(a => { if(a && a.EmailHC) appState.alunosMap.set(a.EmailHC, a); });
             
             console.log("[onStaticDataLoaded] Dados estáticos processados.");
+        }
+
+        function extractAndPopulatePontoDates(pontoRows) {
+            if (!Array.isArray(pontoRows) || pontoRows.length === 0) {
+                console.log("[extractAndPopulatePontoDates] Nenhum registro de ponto para processar.");
+                return;
+            }
+
+            const dateSet = new Set();
+            const groupedByDate = new Map();
+            
+            pontoRows.forEach(row => {
+                if (!row || typeof row !== 'object') return;
+                
+                // Try multiple date field variations
+                const candidates = [
+                    row.DataISO,
+                    row.dataISO,
+                    row.dataIso,
+                    row.dataiso,
+                    row.DataIso,
+                    row.data,
+                    row.Data,
+                    row.DATA,
+                    row['Data (ISO)'],
+                    row['DataISO']
+                ];
+                
+                let isoDate = '';
+                for (const candidate of candidates) {
+                    const normalized = normalizeDateInput(candidate);
+                    if (normalized) {
+                        isoDate = normalized;
+                        break;
+                    }
+                }
+                
+                if (isoDate) {
+                    dateSet.add(isoDate);
+                    
+                    // Group records by date for initial cache population
+                    if (!groupedByDate.has(isoDate)) {
+                        groupedByDate.set(isoDate, []);
+                    }
+                    groupedByDate.get(isoDate).push(row);
+                    
+                    // Also track scales per date
+                    const escala = row.Escala || row.escala || '';
+                    if (escala) {
+                        const existing = pontoState.scalesByDate.get(isoDate) || [];
+                        if (!existing.includes(escala)) {
+                            pontoState.scalesByDate.set(isoDate, [...existing, escala]);
+                        }
+                    }
+                }
+            });
+
+            // Populate pontoState with all dates
+            pontoState.dates = Array.from(dateSet).filter(Boolean).sort((a, b) => b.localeCompare(a));
+            
+            // Pre-populate byDate map with raw data
+            groupedByDate.forEach((rows, iso) => {
+                const normalized = rows.map(row => normalizePontoRecord(row, iso)).filter(Boolean);
+                pontoState.byDate.set(iso, normalized);
+                pontoState.cache.set(makePontoCacheKey(iso, 'all'), normalized);
+            });
+
+            console.log(`[extractAndPopulatePontoDates] ${pontoState.dates.length} datas encontradas:`, pontoState.dates.slice(0, 5));
+            console.log(`[extractAndPopulatePontoDates] ${pontoState.byDate.size} datas populadas no cache.`);
         }
 
         // --- NAVEGAÇÃO PRINCIPAL ---
@@ -1610,6 +1691,7 @@ const pontoState = {
             });
 
             updatePontoScaleOptions();
+            updateDateNavigationButtons();
         }
 
         function updatePontoScaleOptions() {
@@ -3004,6 +3086,7 @@ const pontoState = {
             });
 
             updatePontoScaleOptions();
+            updateDateNavigationButtons();
         }
 
         function updatePontoScaleOptions() {
@@ -4514,6 +4597,7 @@ const pontoState = {
             });
 
             updatePontoScaleOptions();
+            updateDateNavigationButtons();
         }
 
         function updatePontoScaleOptions() {
@@ -4632,6 +4716,7 @@ const pontoState = {
                 renderPontoTable(filteredRows, enriched.length, (dataset.baseRecords || []).length);
                 updatePontoMeta();
                 renderEscalaOverview();
+                updateDateNavigationButtons();
             } catch (error) {
                 console.error('[refreshPontoView] Erro ao atualizar painel de ponto:', error);
                 showError('Erro ao atualizar o painel de ponto.');
@@ -4975,6 +5060,56 @@ const pontoState = {
             }
             hydratePontoSelectors();
             refreshPontoView();
+        }
+
+        async function handlePontoPrevDate() {
+            if (!pontoState.dates || pontoState.dates.length === 0) return;
+            
+            const currentIndex = pontoState.dates.indexOf(pontoState.selectedDate);
+            if (currentIndex === -1 || currentIndex >= pontoState.dates.length - 1) return;
+            
+            const prevDate = pontoState.dates[currentIndex + 1];
+            pontoState.selectedDate = prevDate;
+            pontoState.selectedScale = 'all';
+            pontoState.filter = 'all';
+            pontoState.search = '';
+            pontoState.searchRaw = '';
+            
+            await ensurePontoData(prevDate, 'all', { showInlineSpinner: true });
+            hydratePontoSelectors();
+            refreshPontoView();
+            updateDateNavigationButtons();
+        }
+
+        async function handlePontoNextDate() {
+            if (!pontoState.dates || pontoState.dates.length === 0) return;
+            
+            const currentIndex = pontoState.dates.indexOf(pontoState.selectedDate);
+            if (currentIndex <= 0) return;
+            
+            const nextDate = pontoState.dates[currentIndex - 1];
+            pontoState.selectedDate = nextDate;
+            pontoState.selectedScale = 'all';
+            pontoState.filter = 'all';
+            pontoState.search = '';
+            pontoState.searchRaw = '';
+            
+            await ensurePontoData(nextDate, 'all', { showInlineSpinner: true });
+            hydratePontoSelectors();
+            refreshPontoView();
+            updateDateNavigationButtons();
+        }
+
+        function updateDateNavigationButtons() {
+            const prevButton = document.getElementById('ponto-prev-date');
+            const nextButton = document.getElementById('ponto-next-date');
+            
+            if (!prevButton || !nextButton || !pontoState.dates || pontoState.dates.length === 0) return;
+            
+            const currentIndex = pontoState.dates.indexOf(pontoState.selectedDate);
+            
+            prevButton.disabled = currentIndex === -1 || currentIndex >= pontoState.dates.length - 1;
+            nextButton.disabled = currentIndex <= 0;
         }
 
         async function handlePontoRefresh() {

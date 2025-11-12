@@ -204,8 +204,20 @@
                             <div class="ponto-toolbar-group">
                                 <div class="ponto-field">
                                     <label for="ponto-date-picker">Data</label>
-                                    <input type="date" id="ponto-date-picker" list="ponto-date-options">
-                                    <datalist id="ponto-date-options"></datalist>
+                                    <div class="ponto-date-controls">
+                                        <button id="ponto-prev-date" class="ponto-nav-button" type="button" title="Data anterior">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                                            </svg>
+                                        </button>
+                                        <input type="date" id="ponto-date-picker" list="ponto-date-options">
+                                        <datalist id="ponto-date-options"></datalist>
+                                        <button id="ponto-next-date" class="ponto-nav-button" type="button" title="Próxima data">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </div>
                                 <div class="ponto-field">
                                     <label for="ponto-scale-select">Escala</label>
@@ -213,7 +225,12 @@
                                 </div>
                             </div>
                             <div class="ponto-actions">
-                                <button id="ponto-refresh-button" class="ponto-ghost-button" type="button">Atualizar dados</button>
+                                <button id="ponto-refresh-button" class="ponto-ghost-button" type="button">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" class="ponto-refresh-icon">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                    Atualizar
+                                </button>
                             </div>
                         </div>
 

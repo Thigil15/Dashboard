@@ -1768,6 +1768,53 @@
     box-shadow: 0 0 0 3px rgba(0, 84, 180, 0.16);
 }
 
+/* Date navigation controls */
+.ponto-date-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.ponto-nav-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 0.85rem;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--accent-blue);
+    transition: var(--transition-fast);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.ponto-nav-button svg {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.ponto-nav-button:hover:not(:disabled) {
+    background: rgba(0, 84, 180, 0.08);
+    border-color: var(--accent-blue);
+    transform: scale(1.05);
+}
+
+.ponto-nav-button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.ponto-nav-button:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+.ponto-field .ponto-date-controls input[type="date"] {
+    flex: 1;
+    min-width: 0;
+}
+
 .ponto-actions {
     display: flex;
     flex-wrap: wrap;
@@ -1783,26 +1830,28 @@
     border: 1px solid rgba(0, 84, 180, 0.2);
     background: rgba(255, 255, 255, 0.75);
     transition: var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.ponto-ghost-button .ponto-refresh-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    transition: transform 0.4s ease;
+}
+
+.ponto-ghost-button:hover .ponto-refresh-icon {
+    transform: rotate(180deg);
 }
 
 .ponto-ghost-button.is-loading {
     opacity: 0.7;
     pointer-events: none;
-    position: relative;
 }
 
-.ponto-ghost-button.is-loading::after {
-    content: '';
-    position: absolute;
-    right: 0.85rem;
-    top: 50%;
-    width: 1rem;
-    height: 1rem;
-    border-radius: 999px;
-    border: 2px solid rgba(0, 84, 180, 0.28);
-    border-top-color: var(--accent-blue);
-    animation: spin 0.75s linear infinite;
-    transform: translateY(-50%);
+.ponto-ghost-button.is-loading .ponto-refresh-icon {
+    animation: spin 1s linear infinite;
 }
 
 .ponto-ghost-button:hover {
@@ -1959,11 +2008,21 @@
     font-weight: 700;
     color: var(--accent-blue);
     padding: 0.95rem 1.1rem;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.25);
-    background: rgba(255, 255, 255, 0.75);
+    border-bottom: 2px solid rgba(0, 84, 180, 0.15);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 255, 0.95));
     position: sticky;
     top: 0;
     z-index: 1;
+    text-align: left;
+    vertical-align: middle;
+}
+
+.ponto-table thead th:first-child {
+    border-top-left-radius: 1.1rem;
+}
+
+.ponto-table thead th:last-child {
+    border-top-right-radius: 1.1rem;
 }
 
 .ponto-table tbody tr {
@@ -1994,11 +2053,25 @@
     font-size: 0.9rem;
     color: var(--content-text-secondary);
     border-bottom: 1px solid rgba(148, 163, 184, 0.15);
-    vertical-align: top;
+    vertical-align: middle;
+    text-align: left;
 }
 
 .ponto-table td:first-child {
     color: var(--content-text-primary);
+    font-weight: 500;
+}
+
+.ponto-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.ponto-table tbody tr:last-child td:first-child {
+    border-bottom-left-radius: 1.1rem;
+}
+
+.ponto-table tbody tr:last-child td:last-child {
+    border-bottom-right-radius: 1.1rem;
 }
 
 .ponto-person {
