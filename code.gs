@@ -120,19 +120,40 @@ function getAll_() {
   const notasT   = processNotasTeoricas_(ss.getSheetByName(SHEET_NAMES.NOTAS_TEORICAS));
   const notasP   = processNotasPraticas_(ss);
   const escalas  = processEscalas_(ss);
+  const pontoRegistros = getCombinedPontoRecords_();
   return {
     success: true,
     alunos,
     ausenciasReposicoes: ausRep,
     notasTeoricas: notasT,
     notasPraticas: notasP,
-    escalas
+    escalas,
+    pontoRegistros
   };
 }
 
 /**
+ * Helper: Converte Data (Date ou dd/MM/yyyy) para ISO (YYYY-MM-DD)
+ */
+function convertToISO_(value) {
+  if (!value) return '';
+  if (value instanceof Date) {
+    return Utilities.formatDate(value, "America/Sao_Paulo", "yyyy-MM-dd");
+  }
+  var str = String(value).trim();
+  // Se já está em formato ISO (YYYY-MM-DD)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+  // Se está em formato BR (dd/MM/yyyy)
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(str)) {
+    var parts = str.split('/');
+    return parts[2] + '-' + parts[1] + '-' + parts[0];
+  }
+  return '';
+}
+
+/**
  * Retorna todos os registros das abas PontoPratica e PontoTeoria
- * com o campo adicional 'Pratica/Teoria' normalizado.
+ * com o campo adicional 'Pratica/Teoria' normalizado e DataISO adicionado.
  */
 function getCombinedPontoRecords_() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -148,6 +169,13 @@ function getCombinedPontoRecords_() {
     var tipo = (sheetName === SHEET_NAMES.PONTOPRATICA) ? 'Pratica' : 'Teoria';
     rows.forEach(function(r) {
       var copy = Object.assign({}, r);
+      
+      // Normaliza o campo Data para ISO
+      var dataISO = convertToISO_(copy.Data || copy.data || copy.DATA);
+      if (dataISO) {
+        copy.DataISO = dataISO;
+      }
+      
       // normaliza várias formas de campo final e garante igualdade
       copy['Pratica/Teoria'] = (
         (copy['Pratica/Teoria'] && String(copy['Pratica/Teoria']).toString().trim()) ||

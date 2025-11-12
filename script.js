@@ -2139,9 +2139,13 @@ const pontoState = {
             }
             const syncLabel = document.getElementById('ponto-last-sync');
             if (syncLabel) {
-                syncLabel.textContent = pontoState.lastLoadedAt
+                const timeStr = pontoState.lastLoadedAt
                     ? `Atualizado ${pontoState.lastLoadedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
                     : 'Dados não carregados';
+                const dateCount = pontoState.dates && pontoState.dates.length > 0
+                    ? ` • ${pontoState.dates.length} ${pontoState.dates.length === 1 ? 'data disponível' : 'datas disponíveis'}`
+                    : '';
+                syncLabel.textContent = timeStr + dateCount;
             }
         }
 
