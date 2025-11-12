@@ -1,5 +1,5 @@
         // URL da API
-        const API_URL = "https://script.google.com/macros/s/AKfycbzfSL1on5MqPhoLdrgiQJFFHfMbK-UDjX_lKd8H09uk-Nxt-S1Shf-CLTm9_5GkhEAi/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycby7pAD6jt1FniGNS3vZoYMRCVq7DTEjHbaTdv_IUVNpCGLs83EtSi9KWXOVELeR1i7E/exec";
 
         function toPascalCaseKey(key = "") {
             const raw = String(key || "").trim();
