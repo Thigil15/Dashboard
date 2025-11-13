@@ -3738,45 +3738,67 @@ function renderTabEscala(escalas) {
 
         // --- Inicia ---
         document.addEventListener('DOMContentLoaded', () => {
-            console.log("DOM Carregado. Inicializando Firebase e configurando autenticação.");
+            console.log("DOM Carregado. Aguardando Firebase SDK...");
             
             // Setup event handlers first
             setupEventHandlers();
             
-            // Initialize Firebase
-            const firebaseReady = initializeFirebase();
-            if (!firebaseReady) {
-                console.error('Falha ao inicializar Firebase. Mostrando tela de login sem autenticação.');
-                showView('login-view');
-                return;
-            }
-            
-            // Setup Firebase Authentication State Observer
-            // This is the new entry point for the application
-            window.firebase.onAuthStateChanged(fbAuth, (user) => {
-                if (user) {
-                    // User is signed in
-                    console.log('[onAuthStateChanged] Usuário autenticado:', user.email);
-                    showView('dashboard-view');
-                    initDashboard();
-                } else {
-                    // User is signed out
-                    console.log('[onAuthStateChanged] Usuário não autenticado. Mostrando login.');
-                    
-                    // Clean up: cancel all database listeners
-                    cancelAllDatabaseListeners();
-                    
-                    // Clean up: clear appState
-                    appState.alunos = [];
-                    appState.alunosMap.clear();
-                    appState.escalas = {};
-                    appState.ausenciasReposicoes = [];
-                    appState.notasTeoricas = {};
-                    appState.notasPraticas = {};
-                    appState.pontoStaticRows = [];
-                    
-                    // Show login view
+            // Function to initialize app once Firebase is ready
+            const initializeApp = () => {
+                console.log("Inicializando Firebase e configurando autenticação.");
+                
+                // Initialize Firebase
+                const firebaseReady = initializeFirebase();
+                if (!firebaseReady) {
+                    console.error('Falha ao inicializar Firebase. Mostrando tela de login sem autenticação.');
                     showView('login-view');
+                    return;
                 }
-            });
+                
+                // Setup Firebase Authentication State Observer
+                // This is the new entry point for the application
+                window.firebase.onAuthStateChanged(fbAuth, (user) => {
+                    if (user) {
+                        // User is signed in
+                        console.log('[onAuthStateChanged] Usuário autenticado:', user.email);
+                        showView('dashboard-view');
+                        initDashboard();
+                    } else {
+                        // User is signed out
+                        console.log('[onAuthStateChanged] Usuário não autenticado. Mostrando login.');
+                        
+                        // Clean up: cancel all database listeners
+                        cancelAllDatabaseListeners();
+                        
+                        // Clean up: clear appState
+                        appState.alunos = [];
+                        appState.alunosMap.clear();
+                        appState.escalas = {};
+                        appState.ausenciasReposicoes = [];
+                        appState.notasTeoricas = {};
+                        appState.notasPraticas = {};
+                        appState.pontoStaticRows = [];
+                        
+                        // Show login view
+                        showView('login-view');
+                    }
+                });
+            };
+            
+            // Wait for Firebase SDK to be ready
+            if (window.firebase) {
+                // Already loaded (unlikely in module context, but possible)
+                initializeApp();
+            } else {
+                // Wait for firebaseReady event
+                window.addEventListener('firebaseReady', initializeApp, { once: true });
+                
+                // Fallback timeout in case event doesn't fire
+                setTimeout(() => {
+                    if (!window.firebase) {
+                        console.error('Timeout esperando Firebase SDK. Tentando inicializar mesmo assim...');
+                        initializeApp();
+                    }
+                }, 3000);
+            }
         });

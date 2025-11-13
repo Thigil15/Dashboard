@@ -601,6 +601,10 @@
             onValue,
             firebaseConfig
         };
+        
+        // Dispatch custom event to signal Firebase SDK is ready
+        window.dispatchEvent(new CustomEvent('firebaseReady'));
+        console.log('[Firebase SDK] Loaded and ready');
     </script>
     <script type="module" src="script.js"></script>
 </body>
