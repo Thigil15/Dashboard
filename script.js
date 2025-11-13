@@ -51,6 +51,27 @@
                 { path: 'exportAll/NotasTeoricas/dados', stateKey: 'notasTeoricas', processor: (data) => ({ registros: data || [] }) },
                 { path: 'exportAll/Ponto/dados', stateKey: 'pontoStaticRows', processor: (data) => {
                     const processed = (data || []).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
+                    
+                    // Log sample of available fields from first row for debugging
+                    if (processed.length > 0 && processed[0]) {
+                        const sampleFields = Object.keys(processed[0]);
+                        console.log(`[setupDatabaseListeners] ✅ Ponto carregado com ${processed.length} registros`);
+                        console.log('[setupDatabaseListeners] Campos disponíveis no Ponto:', sampleFields.slice(0, 15).join(', '));
+                        
+                        // Check for Prática/Teórica field variations
+                        const praticaTeoricaField = sampleFields.find(f => 
+                            f.toLowerCase().includes('pratica') || 
+                            f.toLowerCase().includes('teorica') ||
+                            f.toLowerCase().includes('modalidade')
+                        );
+                        if (praticaTeoricaField) {
+                            console.log(`[setupDatabaseListeners] ✅ Campo Prática/Teórica encontrado: "${praticaTeoricaField}"`);
+                        } else {
+                            console.warn('[setupDatabaseListeners] ⚠️ Campo Prática/Teórica NÃO encontrado');
+                            console.warn('[setupDatabaseListeners] Procurando por: Pratica/Teorica, Prática/Teórica, Modalidade, Tipo, Turno, Periodo');
+                        }
+                    }
+                    
                     extractAndPopulatePontoDates(processed);
                     return processed;
                 }},
@@ -59,19 +80,81 @@
                     // Extract escala sheets (Escala1, Escala2, etc.)
                     const escalasData = {};
                     if (data && typeof data === 'object') {
-                        Object.keys(data).forEach(key => {
-                            if (key.match(/^Escala\d+$/i)) {
-                                const escalaData = data[key];
-                                if (escalaData && escalaData.dados) {
-                                    escalasData[key] = {
-                                        nomeEscala: key,
-                                        alunos: escalaData.dados || [],
-                                        headersDay: [] // Will be populated from data structure
-                                    };
+                        const allKeys = Object.keys(data);
+                        const escalaKeys = allKeys.filter(key => key.match(/^Escala\d+$/i));
+                        
+                        if (escalaKeys.length === 0) {
+                            console.warn('[setupDatabaseListeners] ⚠️ Nenhuma escala encontrada em exportAll');
+                            console.warn('[setupDatabaseListeners] Procurando por abas que começam com "Escala" seguido de número (ex: Escala1, Escala2)');
+                            console.warn('[setupDatabaseListeners] Abas disponíveis:', allKeys.slice(0, 10).join(', '));
+                        }
+                        
+                        escalaKeys.forEach(key => {
+                            const escalaData = data[key];
+                            if (escalaData && escalaData.dados) {
+                                const alunos = escalaData.dados || [];
+                                
+                                // Extract headersDay from the first student record
+                                const headersDay = [];
+                                const dayKeyRegex = /^(\d{1,2})_(\d{2})$/;
+                                
+                                if (alunos.length > 0 && alunos[0]) {
+                                    const firstRow = alunos[0];
+                                    const dayKeyMap = new Map();
+                                    
+                                    Object.keys(firstRow).forEach((rowKey) => {
+                                        const match = rowKey.match(dayKeyRegex);
+                                        if (match) {
+                                            const day = match[1].padStart(2, '0');
+                                            const month = match[2].padStart(2, '0');
+                                            const pretty = `${day}/${month}`;
+                                            if (!dayKeyMap.has(rowKey)) {
+                                                dayKeyMap.set(rowKey, pretty);
+                                            }
+                                        }
+                                    });
+                                    
+                                    // Get unique formatted dates and sort them
+                                    const uniqueDates = Array.from(new Set(dayKeyMap.values()));
+                                    headersDay.push(...uniqueDates);
+                                    
+                                    // Add pretty-formatted keys to each student row for easier access
+                                    alunos.forEach((row) => {
+                                        if (row && typeof row === 'object') {
+                                            dayKeyMap.forEach((pretty, normalizedKey) => {
+                                                if (typeof row[pretty] === 'undefined') {
+                                                    row[pretty] = row[normalizedKey];
+                                                }
+                                            });
+                                        }
+                                    });
+                                    
+                                    // Log sample of available fields from first row for debugging
+                                    const sampleFields = Object.keys(firstRow).slice(0, 10).join(', ');
+                                    console.log(`[setupDatabaseListeners] ✅ Escala ${key} carregada:`, {
+                                        alunos: alunos.length,
+                                        dias: headersDay.length,
+                                        camposAmostra: sampleFields
+                                    });
+                                } else {
+                                    console.warn(`[setupDatabaseListeners] ⚠️ Escala ${key} não tem alunos`);
                                 }
+                                
+                                escalasData[key] = {
+                                    nomeEscala: key,
+                                    alunos: alunos,
+                                    headersDay: headersDay
+                                };
+                            } else {
+                                console.warn(`[setupDatabaseListeners] ⚠️ Escala ${key} não tem campo 'dados'`);
                             }
                         });
                     }
+                    
+                    if (Object.keys(escalasData).length === 0) {
+                        console.warn('[setupDatabaseListeners] ⚠️ Nenhuma escala válida foi processada');
+                    }
+                    
                     return Object.keys(escalasData).length > 0 ? escalasData : appState.escalas;
                 }}
             ];
@@ -170,7 +253,13 @@
             const unsubscribe = window.firebase.onValue(exportAllRef, (snapshot) => {
                 try {
                     const data = snapshot.val();
-                    if (!data) return;
+                    if (!data) {
+                        console.warn('[setupNotasPraticasListeners] ⚠️ Nenhum dado em exportAll para notas práticas');
+                        if (appState.dataLoadingState) {
+                            appState.dataLoadingState.notasPraticas = true;
+                        }
+                        return;
+                    }
                     
                     const notasPraticas = {};
                     
@@ -185,18 +274,34 @@
                                     nomePratica: nome,
                                     registros: sheetData.dados || []
                                 };
+                                console.log(`[setupNotasPraticasListeners] ✅ Notas práticas "${nome}" carregadas: ${sheetData.dados.length} registros`);
                             }
                         }
                     });
                     
                     if (Object.keys(notasPraticas).length > 0) {
                         appState.notasPraticas = notasPraticas;
-                        console.log('[setupNotasPraticasListeners] Notas práticas atualizadas:', Object.keys(notasPraticas));
+                        console.log('[setupNotasPraticasListeners] ✅ Total de notas práticas carregadas:', Object.keys(notasPraticas).length);
                         triggerUIUpdates('notasPraticas');
+                    } else {
+                        console.warn('[setupNotasPraticasListeners] ⚠️ Nenhuma aba de notas práticas encontrada em exportAll');
+                        console.warn('[setupNotasPraticasListeners] Procurando por abas que começam com "np" ou contêm "pratica"/"pratico"');
+                        console.warn('[setupNotasPraticasListeners] Abas disponíveis em exportAll:', Object.keys(data).filter(k => !k.match(/^(Alunos|NotasTeoricas|Ponto|AusenciasReposicoes|Escala\d+)$/i)));
                     }
+                    
+                    // Mark as loaded
+                    if (appState.dataLoadingState) {
+                        appState.dataLoadingState.notasPraticas = true;
+                    }
+                    checkAndHideLoadingOverlay();
                     
                 } catch (error) {
                     console.error('[setupNotasPraticasListeners] Erro:', error);
+                    // Mark as loaded even on error
+                    if (appState.dataLoadingState) {
+                        appState.dataLoadingState.notasPraticas = true;
+                    }
+                    checkAndHideLoadingOverlay();
                 }
             });
             
