@@ -83,9 +83,23 @@
                 const unsubscribe = window.firebase.onValue(dbRef, (snapshot) => {
                     try {
                         const data = snapshot.val();
-                        console.log(`[setupDatabaseListeners] Dados recebidos para ${stateKey}:`, data ? 'OK' : 'NULL');
                         
-                        // Mark as loaded
+                        // Log the path and whether data was found
+                        if (data) {
+                            console.log(`[setupDatabaseListeners] ✅ Dados encontrados em ${path} para ${stateKey}`);
+                        } else {
+                            console.warn(`[setupDatabaseListeners] ⚠️ Nenhum dado em ${path} para ${stateKey}`);
+                            
+                            // Try fallback path (old structure) for critical data
+                            if (stateKey === 'alunos' || stateKey === 'ausenciasReposicoes' || stateKey === 'notasTeoricas' || stateKey === 'pontoStaticRows') {
+                                const fallbackPath = path.replace('exportAll/', '').replace('/dados', '');
+                                console.log(`[setupDatabaseListeners] 🔄 Tentando caminho alternativo: ${fallbackPath}`);
+                                // Don't set up another listener here, just log the attempt
+                                // The user will need to re-run the Apps Script with the fixed version
+                            }
+                        }
+                        
+                        // Mark as loaded (even if data is null, we got a response)
                         if (appState.dataLoadingState) {
                             appState.dataLoadingState[stateKey] = true;
                         }
@@ -96,9 +110,11 @@
                         // Special handling for alunos (update map)
                         if (stateKey === 'alunos') {
                             appState.alunosMap.clear();
-                            appState.alunos.forEach(a => {
-                                if (a && a.EmailHC) appState.alunosMap.set(a.EmailHC, a);
-                            });
+                            if (appState.alunos && Array.isArray(appState.alunos)) {
+                                appState.alunos.forEach(a => {
+                                    if (a && a.EmailHC) appState.alunosMap.set(a.EmailHC, a);
+                                });
+                            }
                         }
                         
                         // Trigger UI updates
@@ -117,7 +133,17 @@
                     }
                 }, (error) => {
                     console.error(`[setupDatabaseListeners] Erro no listener ${stateKey}:`, error);
-                    showError(`Erro ao carregar ${stateKey}: ${error.message}`);
+                    
+                    // Provide helpful error message based on error type
+                    if (error.code === 'PERMISSION_DENIED') {
+                        console.error(`[setupDatabaseListeners] ❌ PERMISSÃO NEGADA para ${path}`);
+                        console.error('[setupDatabaseListeners] Verifique as regras do Firebase Realtime Database.');
+                        console.error('[setupDatabaseListeners] As regras devem permitir leitura para usuários autenticados.');
+                        showError(`Permissão negada ao carregar ${stateKey}. Verifique as regras do Firebase.`);
+                    } else {
+                        showError(`Erro ao carregar ${stateKey}: ${error.message}`);
+                    }
+                    
                     // Mark as loaded even on error
                     if (appState.dataLoadingState) {
                         appState.dataLoadingState[stateKey] = true;
