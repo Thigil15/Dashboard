@@ -89,6 +89,16 @@
                     <span class="sidebar-link-text whitespace-nowrap">Escala</span>
                 </a>
             </nav>
+            
+            <!-- Logout button at bottom of sidebar -->
+            <div class="px-4 py-4 border-t border-gray-200">
+                <button id="logout-button" class="sidebar-link w-full text-left" style="display: block; text-decoration: none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    <span class="sidebar-link-text whitespace-nowrap">Sair</span>
+                </button>
+            </div>
         </aside>
 
         <!-- Conteúdo Principal -->
@@ -559,6 +569,43 @@
 
 
     <!-- CLIENT-SIDE SCRIPT -->
-    <script src="script.js"></script>
+    <!-- Firebase SDK Imports -->
+    <script type="module">
+        // Import Firebase SDK
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { 
+            getAuth, 
+            onAuthStateChanged, 
+            signInWithEmailAndPassword, 
+            signOut 
+        } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { 
+            getDatabase, 
+            ref, 
+            onValue 
+        } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+
+        // Import Firebase configuration
+        import firebaseConfigModule from './firebase-config.js';
+        const firebaseConfig = firebaseConfigModule.firebaseConfig || firebaseConfigModule;
+
+        // Make Firebase functions globally available
+        window.firebase = {
+            initializeApp,
+            getAuth,
+            onAuthStateChanged,
+            signInWithEmailAndPassword,
+            signOut,
+            getDatabase,
+            ref,
+            onValue,
+            firebaseConfig
+        };
+        
+        // Dispatch custom event to signal Firebase SDK is ready
+        window.dispatchEvent(new CustomEvent('firebaseReady'));
+        console.log('[Firebase SDK] Loaded and ready');
+    </script>
+    <script type="module" src="script.js"></script>
 </body>
 </html>
