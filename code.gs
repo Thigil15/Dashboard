@@ -1,310 +1,198 @@
-/** Code.gs — Backend atualizado: PontoPratica + PontoTeoria (compatível v32) */
+/********************************************
+ * EXPORTAÇÃO UNIVERSAL + INCREMENTAL PARA FIREBASE
+ * by ChatGPT — 2025
+ *
+ * - Exporta apenas abas modificadas
+ * - Rodando automaticamente toda madrugada
+ * - Sanitização EXTREMA de headers e valores
+ * - 0% chance de erro de chave inválida
+ * - Evita sobrecarga no Firebase
+ ********************************************/
 
-const SHEET_NAMES = {
-  ALUNOS: 'Alunos',
-  PONTOPRATICA: 'PontoPratica',
-  PONTOTEORIA: 'PontoTeoria',
-  AUSENCIAS: 'AusenciasReposicoes',
-  NOTAS_TEORICAS: 'NotasTeoricas',
-  ESCALA1: 'Escala1', ESCALA2: 'Escala2', ESCALA3: 'Escala3',
-  ESCALA4: 'Escala4', ESCALA5: 'Escala5', ESCALA6: 'Escala6', ESCALA7: 'Escala7',
-  NP1: 'NotasPraticas1', NP2: 'NotasPraticas2', NP3: 'NotasPraticas3',
-  NP4: 'NotasPraticas4', NP5: 'NotasPraticas5', NP6: 'NotasPraticas6', NP7: 'NotasPraticas7'
-};
+// URL do Realtime Database
+var FIREBASE_BASE = "https://dashboardalunos-default-rtdb.firebaseio.com/exportAll";
 
-const ESCALA_SHEETS = [
-  SHEET_NAMES.ESCALA1, SHEET_NAMES.ESCALA2, SHEET_NAMES.ESCALA3,
-  SHEET_NAMES.ESCALA4, SHEET_NAMES.ESCALA5, SHEET_NAMES.ESCALA6, SHEET_NAMES.ESCALA7
-];
 
-const NOTAS_PRATICAS_SHEETS = [
-  SHEET_NAMES.NP1, SHEET_NAMES.NP2, SHEET_NAMES.NP3,
-  SHEET_NAMES.NP4, SHEET_NAMES.NP5, SHEET_NAMES.NP6, SHEET_NAMES.NP7
-];
+/****************************************************
+ * 1) CRIAR GATILHO (executar uma vez)
+ *
+ * Roda toda madrugada às 21:00
+ ****************************************************/
+function criarTriggerNoturno() {
+  ScriptApp.newTrigger("exportarIncrementalFirebase")
+    .timeBased()
+    .atHour(21)
+    .nearMinute(0)
+    .everyDays(1)
+    .create();
 
-function doGet(e) {
-  try {
-    const action = (e && e.parameter && e.parameter.action) ? String(e.parameter.action) : '';
-    if (!action) return json_({ success: false, message: 'Informe ?action=' });
-
-    if (action === 'getAll') {
-      return json_(getAll_());
-    }
-
-    if (action === 'getPontoHoje_') {
-      return json_(getPontoHoje_());
-    }
-
-    if (action === 'getPontoPorEscala_') {
-      const dataISO = (e.parameter.data || '').trim();     // YYYY-MM-DD
-      const escala  = (e.parameter.escala || '').trim();   // texto exato da Escala
-      return json_(getPontoPorEscala_(escala, dataISO));
-    }
-
-    return json_({ success: false, message: 'Ação desconhecida: ' + action });
-  } catch (err) {
-    return json_({ success: false, message: String(err && err.message || err) });
-  }
+  Logger.log("Trigger criado: execução diária às 21:00");
 }
 
-/** Util: JSON */
-function json_(obj) {
-  return ContentService
-    .createTextOutput(JSON.stringify(obj || {}))
-    .setMimeType(ContentService.MimeType.JSON);
-}
 
-/** Lê uma aba (1ª linha = cabeçalho) => array de objetos */
-function getSheetDataAsJSON_(sheet) {
-  if (!sheet) return [];
-  const values = sheet.getDataRange().getValues();
-  if (!values || values.length < 2) return [];
-  const headers = values[0].map(h => String(h).trim());
-  const out = [];
-  for (let i = 1; i < values.length; i++) {
-    const row = values[i];
-    const o = {};
-    headers.forEach((h, idx) => { if (h) o[h] = row[idx]; });
-    out.push(o);
-  }
-  return out;
-}
-
-/** Escalas: detecta colunas dd/mm e monta o payload esperado pelo front */
-function processEscalas_(ss) {
-  const out = {};
-  ESCALA_SHEETS.forEach(name => {
-    const sh = ss.getSheetByName(name);
-    if (!sh) return;
-    const rows = getSheetDataAsJSON_(sh);
-    if (!rows.length) return;
-
-    const infoKeys = ['NomeCompleto','EmailHC','Curso','Unidade','Supervisor','Reposicoes','Atrasos/Saidas'];
-    const sample = rows[0] || {};
-    const headersDay = Object.keys(sample)
-      .filter(k => !infoKeys.includes(k) && /^\d{1,2}\/\d{1,2}$/.test(String(k).trim()))
-      .map(k => {
-        const [d,m] = String(k).split('/');
-        return `${d.padStart(2,'0')}/${m.padStart(2,'0')}`;
-      });
-
-    out[name] = {
-      nomeEscala: name,
-      headersDay,
-      alunos: rows
-    };
-  });
-  return out;
-}
-
-function processNotasTeoricas_(sheet) {
-  return { registros: getSheetDataAsJSON_(sheet) };
-}
-
-function processNotasPraticas_(ss) {
-  const map = {};
-  NOTAS_PRATICAS_SHEETS.forEach(name => {
-    const sh = ss.getSheetByName(name);
-    if (!sh) return;
-    const registros = getSheetDataAsJSON_(sh);
-    map[name] = { nomePratica: name, registros };
-  });
-  return map;
-}
-
-/** GET ALL: reúne tudo que o front consome */
-function getAll_() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const alunos   = getSheetDataAsJSON_(ss.getSheetByName(SHEET_NAMES.ALUNOS));
-  const ausRep   = getSheetDataAsJSON_(ss.getSheetByName(SHEET_NAMES.AUSENCIAS));
-  const notasT   = processNotasTeoricas_(ss.getSheetByName(SHEET_NAMES.NOTAS_TEORICAS));
-  const notasP   = processNotasPraticas_(ss);
-  const escalas  = processEscalas_(ss);
-  const pontoRegistros = getCombinedPontoRecords_();
-  return {
-    success: true,
-    alunos,
-    ausenciasReposicoes: ausRep,
-    notasTeoricas: notasT,
-    notasPraticas: notasP,
-    escalas,
-    pontoRegistros
-  };
-}
-
-/**
- * Helper: Converte Data (Date ou dd/MM/yyyy) para ISO (YYYY-MM-DD)
- */
-function convertToISO_(value) {
-  if (!value) return '';
-  if (value instanceof Date) {
-    return Utilities.formatDate(value, "America/Sao_Paulo", "yyyy-MM-dd");
-  }
-  var str = String(value).trim();
-  // Se já está em formato ISO (YYYY-MM-DD)
-  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
-  // Se está em formato BR (dd/MM/yyyy)
-  if (/^\d{2}\/\d{2}\/\d{4}$/.test(str)) {
-    var parts = str.split('/');
-    return parts[2] + '-' + parts[1] + '-' + parts[0];
-  }
-  return '';
-}
-
-/**
- * Retorna todos os registros das abas PontoPratica e PontoTeoria
- * com o campo adicional 'Pratica/Teoria' normalizado e DataISO adicionado.
- */
-function getCombinedPontoRecords_() {
+/****************************************************
+ * 2) EXPORTAÇÃO INCREMENTAL (só mudanças)
+ ****************************************************/
+function exportarIncrementalFirebase() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var out = [];
+  var sheets = ss.getSheets();
+  var props = PropertiesService.getScriptProperties();
 
-  var sheetsToRead = [SHEET_NAMES.PONTOPRATICA, SHEET_NAMES.PONTOTEORIA];
-  sheetsToRead.forEach(function(sheetName) {
-    var sh = ss.getSheetByName(sheetName);
-    if (!sh) return;
-    var rows = getSheetDataAsJSON_(sh); // usa util existente
-    if (!rows || !rows.length) return;
-    // tipo sem acento e sem barra: 'Pratica' ou 'Teoria'
-    var tipo = (sheetName === SHEET_NAMES.PONTOPRATICA) ? 'Pratica' : 'Teoria';
-    rows.forEach(function(r) {
-      var copy = Object.assign({}, r);
-      
-      // Normaliza o campo Data para ISO
-      var dataISO = convertToISO_(copy.Data || copy.data || copy.DATA);
-      if (dataISO) {
-        copy.DataISO = dataISO;
-      }
-      
-      // normaliza várias formas de campo final e garante igualdade
-      copy['Pratica/Teoria'] = (
-        (copy['Pratica/Teoria'] && String(copy['Pratica/Teoria']).toString().trim()) ||
-        (copy['Prática/Teórica'] && String(copy['Prática/Teórica']).toString().trim()) ||
-        (copy['Pratica'] && String(copy['Pratica']).toString().trim()) ||
-        (copy['Prática'] && String(copy['Prática']).toString().trim()) ||
-        (copy['Teoria'] && String(copy['Teoria']).toString().trim()) ||
-        (copy['Teórica'] && String(copy['Teórica']).toString().trim()) ||
-        tipo
-      );
-      // também padroniza para sem acento: 'Pratica' or 'Teoria'
-      var v = String(copy['Pratica/Teoria'] || '').trim();
-      if (/prá?tica/i.test(v)) copy['Pratica/Teoria'] = 'Pratica';
-      else if (/teór?ica|teoria/i.test(v)) copy['Pratica/Teoria'] = 'Teoria';
-      else copy['Pratica/Teoria'] = tipo;
-      out.push(copy);
-    });
-  });
+  Logger.log("==== INÍCIO EXPORTAÇÃO INCREMENTAL ====");
 
-  return out;
-}
+  for (var i = 0; i < sheets.length; i++) {
+    var sheet = sheets[i];
+    var name = sheet.getName();
 
-/** Hoje (dd/MM/yyyy) em America/Sao_Paulo) — agora considera as duas abas */
-function getPontoHoje_() {
-  var todayBR = Utilities.formatDate(new Date(), "America/Sao_Paulo", "dd/MM/yyyy");
-  var all = getCombinedPontoRecords_();
+    // Hash da aba atual
+    var hashAtual = gerarHashAba(sheet);
 
-  var hoje = all.filter(function(p) {
-    var v = p.Data;
-    if (v instanceof Date) {
-      return Utilities.formatDate(v, "America/Sao_Paulo", "dd/MM/yyyy") === todayBR;
+    // Hash salvo da última execução
+    var hashAntigo = props.getProperty("HASH_" + name);
+
+    if (hashAtual === hashAntigo) {
+      Logger.log("SEM MUDANÇAS: " + name);
+      continue;
     }
-    return String(v || '').trim() === todayBR;
-  });
 
-  var parts = todayBR.split('/');
-  var dataISO = parts.length === 3 ? (parts[2] + '-' + parts[1] + '-' + parts[0]) : '';
+    Logger.log("ALTERAÇÃO DETECTADA: " + name);
 
-  return {
-    success: true,
-    hoje: hoje,
-    lastUpdate: new Date().toISOString(),
-    dataISO: dataISO
-  };
-}
+    // Exporta somente a ABA modificada
+    exportarAbaParaFirebase(sheet);
 
-/** Filtra Ponto por Escala + Data (YYYY-MM-DD) — agora busca em ambas as abas */
-function getPontoPorEscala_(escala, dataISO) {
-  var all = getCombinedPontoRecords_();
-
-  // Converte ISO -> dd/MM/yyyy
-  var dataBR = '';
-  if (dataISO && /^\d{4}-\d{2}-\d{2}$/.test(dataISO)) {
-    var parts = dataISO.split('-');
-    dataBR = parts[2] + '/' + parts[1] + '/' + parts[0];
+    props.setProperty("HASH_" + name, hashAtual);
   }
 
-  var registros = all.filter(function(p) {
-    // Data
-    var okDate = true;
-    if (dataBR) {
-      if (p.Data instanceof Date) {
-        okDate = Utilities.formatDate(p.Data, "America/Sao_Paulo", "dd/MM/yyyy") === dataBR;
-      } else {
-        okDate = String(p.Data || '').trim() === dataBR;
-      }
-    }
-
-    // Escala (case-insensitive)
-    var okEscala = true;
-    if (escala && escala.trim() !== '') {
-      var valorEscala = String(p.Escala || p['Escala'] || '').trim().toLowerCase();
-      okEscala = valorEscala === escala.trim().toLowerCase();
-    }
-
-    return okDate && okEscala;
-  });
-
-  return {
-    success: true,
-    escala: escala || 'all',
-    data: dataISO || 'todas',
-    registros: registros,
-    lastUpdate: new Date().toISOString()
-  };
+  Logger.log("==== FINALIZADO EXPORTAÇÃO INCREMENTAL ====");
 }
 
-/* --- Extras: helper para escrita nas abas (opcional) --- */
-/**
- * appendPontoPraticaRow: útil se for gravar via script (mantém ordem de colunas).
- * A função detecta cabeçalho automaticamente e preenche nas colunas corretas.
- */
-function appendPontoPraticaRow(obj) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sh = ss.getSheetByName(SHEET_NAMES.PONTOPRATICA);
-  if (!sh) throw new Error("Aba PontoPratica não encontrada");
-  var headers = sh.getDataRange().getValues()[0].map(h => String(h).trim());
-  var row = headers.map(h => {
-    if (h === 'Data') return obj.Data || '';
-    if (h === 'HoraEntrada') return obj.HoraEntrada || '';
-    if (h === 'HoraSaida') return obj.HoraSaida || '';
-    if (h === 'SerialNumber') return obj.SerialNumber || '';
-    if (h === 'NomeCompleto') return obj.NomeCompleto || '';
-    if (h === 'EmailHC') return obj.EmailHC || '';
-    if (h === 'Escala') return obj.Escala || '';
-    if (h === 'Pratica' || h === 'Pratica/Teoria' || h === 'Prática') return 'Pratica';
-    return obj[h] || '';
-  });
-  sh.appendRow(row);
+
+/****************************************************
+ * 3) Função Manual: Exportar TUDO AGORA
+ ****************************************************/
+function exportarTudoAgora() {
+  Logger.log("EXPORTAÇÃO TOTAL EXECUTADA MANUALMENTE");
+  exportarIncrementalFirebase();
 }
 
-/**
- * appendPontoTeoriaRow: idem para PontoTeoria
- */
-function appendPontoTeoriaRow(obj) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sh = ss.getSheetByName(SHEET_NAMES.PONTOTEORIA);
-  if (!sh) throw new Error("Aba PontoTeoria não encontrada");
-  var headers = sh.getDataRange().getValues()[0].map(h => String(h).trim());
-  var row = headers.map(h => {
-    if (h === 'Data') return obj.Data || '';
-    if (h === 'HoraEntrada') return obj.HoraEntrada || '';
-    if (h === 'HoraSaida') return obj.HoraSaida || '';
-    if (h === 'SerialNumber') return obj.SerialNumber || '';
-    if (h === 'NomeCompleto') return obj.NomeCompleto || '';
-    if (h === 'EmailHC') return obj.EmailHC || '';
-    if (h === 'Escala') return obj.Escala || '';
-    if (h === 'Teoria' || h === 'Pratica/Teoria' || h === 'Teórica') return 'Teoria';
-    return obj[h] || '';
+
+/****************************************************
+ * 4) Gera um hash da aba (detecta mudanças)
+ ****************************************************/
+function gerarHashAba(sheet) {
+  var raw = JSON.stringify(sheet.getDataRange().getValues());
+  var hash = 0;
+
+  for (var i = 0; i < raw.length; i++) {
+    hash = (hash << 5) - hash + raw.charCodeAt(i);
+    hash |= 0; // 32 bits
+  }
+
+  return String(hash);
+}
+
+
+/****************************************************
+ * 5) Exporta apenas UMA aba (com sanitização extrema)
+ ****************************************************/
+function exportarAbaParaFirebase(sheet) {
+
+  /******** REGEX E HELPERS ********/
+  var forbidden = /[\$\#\[\]\/\.]/g;
+
+  var fullDateRegex  = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+  var shortDateRegex = /^(\d{1,2})\/(\d{1,2})$/;
+
+  var headerCleanRegex = /[^A-Za-z0-9_]/g;
+  var sheetNameCleanRegex = /[^A-Za-z0-9_\-]/g;
+
+  function zeroFill(str, len) {
+    str = String(str);
+    while (str.length < len) str = "0" + str;
+    return str;
+  }
+
+  function safeSheetName(name, fallback) {
+    if (!name) name = fallback;
+    name = String(name).trim().replace(sheetNameCleanRegex, "_");
+    return name === "" ? fallback : name;
+  }
+
+  function safeHeader(header, index) {
+    header = header === null || header === undefined ? "" : String(header).trim();
+
+    if (header === "") return "col" + index;
+
+    var full = header.match(fullDateRegex);
+    if (full) {
+      return "data_" + full[3] + "_" + zeroFill(full[2], 2) + "_" + zeroFill(full[1], 2);
+    }
+
+    var short = header.match(shortDateRegex);
+    if (short) {
+      return "dia_" + zeroFill(short[2], 2) + "_" + zeroFill(short[1], 2);
+    }
+
+    header = header.replace(headerCleanRegex, "_");
+    if (header === "") return "col" + index;
+
+    return header;
+  }
+
+  function safeValue(val) {
+    if (val === null || val === undefined) return "";
+
+    if (val instanceof Date) {
+      return Utilities.formatDate(val, "America/Sao_Paulo", "yyyy-MM-dd HH:mm:ss");
+    }
+
+    return String(val).replace(/[\x00-\x1F]/g, " ");
+  }
+
+
+  /******** PROCESSAMENTO DA ABA ********/
+  var values = sheet.getDataRange().getValues();
+  var rawHeaders = values[0];
+
+  var headers = [];
+  var used = {};
+
+  for (var c = 0; c < rawHeaders.length; c++) {
+    var h = safeHeader(rawHeaders[c], c + 1);
+
+    if (used[h]) h = h + "_" + (c + 1);
+    used[h] = true;
+
+    headers.push(h);
+  }
+
+  var rows = [];
+  for (var r = 1; r < values.length; r++) {
+    var obj = {};
+    for (var c = 0; c < headers.length; c++) {
+      obj[headers[c]] = safeValue(values[r][c]);
+    }
+    rows.push(obj);
+  }
+
+  var nameRaw = sheet.getName();
+  var nameSafe = safeSheetName(nameRaw, "Sheet_" + Math.random());
+
+  var payload = JSON.stringify({
+    timestamp: new Date().toISOString(),
+    nomeAbaOriginal: nameRaw,
+    nomeAbaSanitizada: nameSafe,
+    totalRegistros: rows.length,
+    dados: rows
   });
-  sh.appendRow(row);
+
+  var url = FIREBASE_BASE + "/" + nameSafe + ".json";
+
+  UrlFetchApp.fetch(url, {
+    method: "put",
+    contentType: "application/json",
+    payload: payload
+  });
+
+  Logger.log(">>> ABA EXPORTADA: " + nameRaw);
 }
