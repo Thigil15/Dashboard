@@ -1,198 +1,132 @@
-/********************************************
- * EXPORTAÇÃO UNIVERSAL + INCREMENTAL PARA FIREBASE
- * by ChatGPT — 2025
- *
- * - Exporta apenas abas modificadas
- * - Rodando automaticamente toda madrugada
- * - Sanitização EXTREMA de headers e valores
- * - 0% chance de erro de chave inválida
- * - Evita sobrecarga no Firebase
- ********************************************/
+/**********************************************
+ * 🔧 CONFIGURAÇÕES GERAIS
+ **********************************************/
+const FIREBASE_URL = "https://dashboardalunos-default-rtdb.firebaseio.com/"; // ⚠️ Substitua pelo seu
+const FIREBASE_SECRET = PropertiesService.getScriptProperties().getProperty("FIREBASE_SECRET");
 
-// URL do Realtime Database
-var FIREBASE_BASE = "https://dashboardalunos-default-rtdb.firebaseio.com/exportAll";
+/**********************************************
+ * 📤 FUNÇÃO PRINCIPAL — Envia todas as abas alteradas
+ **********************************************/
+function enviarTodasAsAbasParaFirebase() {
+  if (!FIREBASE_SECRET) {
+    Logger.log("❌ ERRO: chave do Firebase não configurada. Rode salvarChaveFirebase() primeiro.");
+    SpreadsheetApp.getActiveSpreadsheet().toast("Erro: chave Firebase não configurada ❌", "Firebase", 6);
+    return;
+  }
 
+  const planilha = SpreadsheetApp.getActiveSpreadsheet();
+  const abas = planilha.getSheets();
+  let totalEnviadas = 0;
+  let totalIgnoradas = 0;
 
-/****************************************************
- * 1) CRIAR GATILHO (executar uma vez)
- *
- * Roda toda madrugada às 21:00
- ****************************************************/
-function criarTriggerNoturno() {
-  ScriptApp.newTrigger("exportarIncrementalFirebase")
-    .timeBased()
-    .atHour(21)
-    .nearMinute(0)
-    .everyDays(1)
-    .create();
+  for (let aba of abas) {
+    const nomeAba = sanitizeKey(aba.getName());
+    const dados = aba.getDataRange().getValues();
+    if (dados.length < 2) continue; // ignora abas vazias
 
-  Logger.log("Trigger criado: execução diária às 21:00");
-}
+    const cabecalhos = dados.shift().map(h => sanitizeKey(h));
+    const registros = [];
 
+    // Gera string para calcular hash
+    let conteudoConcatenado = "";
+    for (let i = 0; i < dados.length; i++) {
+      conteudoConcatenado += JSON.stringify(dados[i]);
+    }
 
-/****************************************************
- * 2) EXPORTAÇÃO INCREMENTAL (só mudanças)
- ****************************************************/
-function exportarIncrementalFirebase() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheets = ss.getSheets();
-  var props = PropertiesService.getScriptProperties();
+    const hashAtual = gerarHash(conteudoConcatenado);
+    const hashAnterior = getHashAnterior(nomeAba);
 
-  Logger.log("==== INÍCIO EXPORTAÇÃO INCREMENTAL ====");
-
-  for (var i = 0; i < sheets.length; i++) {
-    var sheet = sheets[i];
-    var name = sheet.getName();
-
-    // Hash da aba atual
-    var hashAtual = gerarHashAba(sheet);
-
-    // Hash salvo da última execução
-    var hashAntigo = props.getProperty("HASH_" + name);
-
-    if (hashAtual === hashAntigo) {
-      Logger.log("SEM MUDANÇAS: " + name);
+    if (hashAtual === hashAnterior) {
+      Logger.log("⏭️ Nenhuma alteração em: " + nomeAba);
+      totalIgnoradas++;
       continue;
     }
 
-    Logger.log("ALTERAÇÃO DETECTADA: " + name);
+    // Monta objetos
+    for (let i = 0; i < dados.length; i++) {
+      const linha = dados[i];
+      const obj = {};
+      for (let j = 0; j < cabecalhos.length; j++) {
+        obj[cabecalhos[j]] = linha[j];
+      }
+      registros.push(obj);
+    }
 
-    // Exporta somente a ABA modificada
-    exportarAbaParaFirebase(sheet);
+    const url = FIREBASE_URL + nomeAba + ".json?auth=" + FIREBASE_SECRET;
+    const opcoes = {
+      method: "put",
+      contentType: "application/json",
+      payload: JSON.stringify(registros),
+      muteHttpExceptions: true
+    };
 
-    props.setProperty("HASH_" + name, hashAtual);
+    try {
+      const resposta = UrlFetchApp.fetch(url, opcoes);
+      const status = resposta.getResponseCode();
+      if (status === 200) {
+        salvarHash(nomeAba, hashAtual);
+        Logger.log("✅ Enviado com sucesso: " + nomeAba);
+        totalEnviadas++;
+      } else {
+        Logger.log("⚠️ Falha ao enviar " + nomeAba + ": " + status);
+      }
+    } catch (erro) {
+      Logger.log("❌ Erro ao enviar " + nomeAba + ": " + erro);
+    }
   }
 
-  Logger.log("==== FINALIZADO EXPORTAÇÃO INCREMENTAL ====");
+  Logger.log("🚀 Envio concluído — Enviadas: " + totalEnviadas + " | Ignoradas: " + totalIgnoradas);
+  SpreadsheetApp.getActiveSpreadsheet().toast(`Firebase atualizado! ✅ Enviadas: ${totalEnviadas} | Ignoradas: ${totalIgnoradas}`, "Firebase Sync", 8);
 }
 
-
-/****************************************************
- * 3) Função Manual: Exportar TUDO AGORA
- ****************************************************/
-function exportarTudoAgora() {
-  Logger.log("EXPORTAÇÃO TOTAL EXECUTADA MANUALMENTE");
-  exportarIncrementalFirebase();
+/**********************************************
+ * 🧮 HASH (detecta alterações)
+ **********************************************/
+function gerarHash(texto) {
+  const digest = Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, texto);
+  return digest.map(b => (b + 256) % 256).map(b => ("0" + b.toString(16)).slice(-2)).join("");
 }
 
-
-/****************************************************
- * 4) Gera um hash da aba (detecta mudanças)
- ****************************************************/
-function gerarHashAba(sheet) {
-  var raw = JSON.stringify(sheet.getDataRange().getValues());
-  var hash = 0;
-
-  for (var i = 0; i < raw.length; i++) {
-    hash = (hash << 5) - hash + raw.charCodeAt(i);
-    hash |= 0; // 32 bits
-  }
-
-  return String(hash);
+function salvarHash(nomeAba, hash) {
+  PropertiesService.getScriptProperties().setProperty("HASH_" + nomeAba, hash);
 }
 
+function getHashAnterior(nomeAba) {
+  return PropertiesService.getScriptProperties().getProperty("HASH_" + nomeAba) || "";
+}
 
-/****************************************************
- * 5) Exporta apenas UMA aba (com sanitização extrema)
- ****************************************************/
-function exportarAbaParaFirebase(sheet) {
+/**********************************************
+ * 🧹 SANITIZAÇÃO DE CHAVES
+ **********************************************/
+function sanitizeKey(texto) {
+  if (!texto) return "";
+  return texto
+    .toString()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[.$#[\]/]/g, "_")
+    .replace(/[^a-zA-Z0-9_]/g, "")
+    .replace(/^_+|_+$/g, "");
+}
 
-  /******** REGEX E HELPERS ********/
-  var forbidden = /[\$\#\[\]\/\.]/g;
-
-  var fullDateRegex  = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
-  var shortDateRegex = /^(\d{1,2})\/(\d{1,2})$/;
-
-  var headerCleanRegex = /[^A-Za-z0-9_]/g;
-  var sheetNameCleanRegex = /[^A-Za-z0-9_\-]/g;
-
-  function zeroFill(str, len) {
-    str = String(str);
-    while (str.length < len) str = "0" + str;
-    return str;
-  }
-
-  function safeSheetName(name, fallback) {
-    if (!name) name = fallback;
-    name = String(name).trim().replace(sheetNameCleanRegex, "_");
-    return name === "" ? fallback : name;
-  }
-
-  function safeHeader(header, index) {
-    header = header === null || header === undefined ? "" : String(header).trim();
-
-    if (header === "") return "col" + index;
-
-    var full = header.match(fullDateRegex);
-    if (full) {
-      return "data_" + full[3] + "_" + zeroFill(full[2], 2) + "_" + zeroFill(full[1], 2);
+/**********************************************
+ * 🕒 GATILHO AUTOMÁTICO — Executa todo dia às 21h
+ **********************************************/
+function criarGatilhoDiario() {
+  // Apaga gatilhos antigos pra evitar duplicação
+  const gatilhos = ScriptApp.getProjectTriggers();
+  for (const t of gatilhos) {
+    if (t.getHandlerFunction() === "enviarTodasAsAbasParaFirebase") {
+      ScriptApp.deleteTrigger(t);
     }
-
-    var short = header.match(shortDateRegex);
-    if (short) {
-      return "dia_" + zeroFill(short[2], 2) + "_" + zeroFill(short[1], 2);
-    }
-
-    header = header.replace(headerCleanRegex, "_");
-    if (header === "") return "col" + index;
-
-    return header;
   }
 
-  function safeValue(val) {
-    if (val === null || val === undefined) return "";
+  // Cria novo gatilho diário às 21h
+  ScriptApp.newTrigger("enviarTodasAsAbasParaFirebase")
+    .timeBased()
+    .everyDays(1)
+    .atHour(21)
+    .create();
 
-    if (val instanceof Date) {
-      return Utilities.formatDate(val, "America/Sao_Paulo", "yyyy-MM-dd HH:mm:ss");
-    }
-
-    return String(val).replace(/[\x00-\x1F]/g, " ");
-  }
-
-
-  /******** PROCESSAMENTO DA ABA ********/
-  var values = sheet.getDataRange().getValues();
-  var rawHeaders = values[0];
-
-  var headers = [];
-  var used = {};
-
-  for (var c = 0; c < rawHeaders.length; c++) {
-    var h = safeHeader(rawHeaders[c], c + 1);
-
-    if (used[h]) h = h + "_" + (c + 1);
-    used[h] = true;
-
-    headers.push(h);
-  }
-
-  var rows = [];
-  for (var r = 1; r < values.length; r++) {
-    var obj = {};
-    for (var c = 0; c < headers.length; c++) {
-      obj[headers[c]] = safeValue(values[r][c]);
-    }
-    rows.push(obj);
-  }
-
-  var nameRaw = sheet.getName();
-  var nameSafe = safeSheetName(nameRaw, "Sheet_" + Math.random());
-
-  var payload = JSON.stringify({
-    timestamp: new Date().toISOString(),
-    nomeAbaOriginal: nameRaw,
-    nomeAbaSanitizada: nameSafe,
-    totalRegistros: rows.length,
-    dados: rows
-  });
-
-  var url = FIREBASE_BASE + "/" + nameSafe + ".json?auth=dashboard-thiago-230425";
-
-  UrlFetchApp.fetch(url, {
-    method: "put",
-    contentType: "application/json",
-    payload: payload
-  });
-
-  Logger.log(">>> ABA EXPORTADA: " + nameRaw);
+  Logger.log("🕒 Gatilho criado: execução diária às 21h.");
 }
