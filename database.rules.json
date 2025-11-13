@@ -1,0 +1,8 @@
+{
+  "rules": {
+    "exportAll": {
+      ".read": true,
+      ".write": "auth.uid === 'dashboard-thiago-230425'"
+    }
+  }
+}
