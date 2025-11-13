@@ -186,7 +186,7 @@ function exportarAbaParaFirebase(sheet) {
     dados: rows
   });
 
-  var url = FIREBASE_BASE + "/" + nameSafe + ".json";
+  var url = FIREBASE_BASE + "/" + nameSafe + ".json?auth=dashboard-thiago-230425";
 
   UrlFetchApp.fetch(url, {
     method: "put",
