@@ -1,4 +1,228 @@
-        // URL da API
+        // ====================================================================
+        // FIREBASE INITIALIZATION
+        // ====================================================================
+        
+        // Wait for window.firebase to be available (loaded by index.html)
+        let fbApp, fbAuth, fbDB;
+        const dbListenerUnsubscribes = []; // Store unsubscribe functions for cleanup
+        
+        // Initialize Firebase (will be called after window.firebase is available)
+        function initializeFirebase() {
+            if (!window.firebase) {
+                console.error('[Firebase] window.firebase not available yet');
+                return false;
+            }
+            
+            try {
+                fbApp = window.firebase.initializeApp(window.firebase.firebaseConfig);
+                fbAuth = window.firebase.getAuth(fbApp);
+                fbDB = window.firebase.getDatabase(fbApp);
+                console.log('[Firebase] Initialized successfully');
+                return true;
+            } catch (error) {
+                console.error('[Firebase] Initialization error:', error);
+                return false;
+            }
+        }
+        
+        // ====================================================================
+        // FIREBASE REALTIME DATABASE LISTENERS
+        // ====================================================================
+        
+        /**
+         * Setup real-time database listeners for all data paths
+         * This replaces the legacy fetchAllData() approach
+         */
+        function setupDatabaseListeners() {
+            console.log('[setupDatabaseListeners] Configurando listeners do Realtime Database...');
+            
+            if (!fbDB) {
+                console.error('[setupDatabaseListeners] Firebase Database não inicializado.');
+                return;
+            }
+            
+            // Cancel any existing listeners first (cleanup)
+            cancelAllDatabaseListeners();
+            
+            // Map database paths to appState keys
+            const pathMappings = [
+                { path: 'exportAll/Alunos/dados', stateKey: 'alunos', processor: (data) => data || [] },
+                { path: 'exportAll/AusenciasReposicoes/dados', stateKey: 'ausenciasReposicoes', processor: (data) => normalizeAusenciasReposicoes(data || []) },
+                { path: 'exportAll/NotasTeoricas/dados', stateKey: 'notasTeoricas', processor: (data) => ({ registros: data || [] }) },
+                { path: 'exportAll/Ponto/dados', stateKey: 'pontoStaticRows', processor: (data) => {
+                    const processed = (data || []).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
+                    extractAndPopulatePontoDates(processed);
+                    return processed;
+                }},
+                // Escalas - may need special handling
+                { path: 'exportAll', stateKey: 'escalas', processor: (data) => {
+                    // Extract escala sheets (Escala1, Escala2, etc.)
+                    const escalasData = {};
+                    if (data && typeof data === 'object') {
+                        Object.keys(data).forEach(key => {
+                            if (key.match(/^Escala\d+$/i)) {
+                                const escalaData = data[key];
+                                if (escalaData && escalaData.dados) {
+                                    escalasData[key] = {
+                                        nomeEscala: key,
+                                        alunos: escalaData.dados || [],
+                                        headersDay: [] // Will be populated from data structure
+                                    };
+                                }
+                            }
+                        });
+                    }
+                    return Object.keys(escalasData).length > 0 ? escalasData : appState.escalas;
+                }}
+            ];
+            
+            // Setup listener for each path
+            pathMappings.forEach(({ path, stateKey, processor }) => {
+                const dbRef = window.firebase.ref(fbDB, path);
+                
+                const unsubscribe = window.firebase.onValue(dbRef, (snapshot) => {
+                    try {
+                        const data = snapshot.val();
+                        console.log(`[setupDatabaseListeners] Dados recebidos para ${stateKey}:`, data ? 'OK' : 'NULL');
+                        
+                        // Process and update appState
+                        appState[stateKey] = processor(data);
+                        
+                        // Special handling for alunos (update map)
+                        if (stateKey === 'alunos') {
+                            appState.alunosMap.clear();
+                            appState.alunos.forEach(a => {
+                                if (a && a.EmailHC) appState.alunosMap.set(a.EmailHC, a);
+                            });
+                        }
+                        
+                        // Trigger UI updates
+                        triggerUIUpdates(stateKey);
+                        
+                    } catch (error) {
+                        console.error(`[setupDatabaseListeners] Erro ao processar ${stateKey}:`, error);
+                    }
+                }, (error) => {
+                    console.error(`[setupDatabaseListeners] Erro no listener ${stateKey}:`, error);
+                    showError(`Erro ao carregar ${stateKey}: ${error.message}`);
+                });
+                
+                // Store unsubscribe function
+                dbListenerUnsubscribes.push(unsubscribe);
+            });
+            
+            // Setup listeners for notas práticas (dynamic sheets)
+            setupNotasPraticasListeners();
+            
+            console.log('[setupDatabaseListeners] Listeners configurados com sucesso.');
+        }
+        
+        /**
+         * Setup listeners for dynamic practical grades sheets
+         */
+        function setupNotasPraticasListeners() {
+            const exportAllRef = window.firebase.ref(fbDB, 'exportAll');
+            
+            const unsubscribe = window.firebase.onValue(exportAllRef, (snapshot) => {
+                try {
+                    const data = snapshot.val();
+                    if (!data) return;
+                    
+                    const notasPraticas = {};
+                    
+                    // Find all sheets that match practical grades pattern
+                    Object.keys(data).forEach(sheetName => {
+                        const normName = normalizeSheetName(sheetName);
+                        if (isPracticeSheetName(normName)) {
+                            const sheetData = data[sheetName];
+                            if (sheetData && sheetData.dados) {
+                                const nome = sheetData.nomeAbaOriginal || sheetName;
+                                notasPraticas[nome] = {
+                                    nomePratica: nome,
+                                    registros: sheetData.dados || []
+                                };
+                            }
+                        }
+                    });
+                    
+                    if (Object.keys(notasPraticas).length > 0) {
+                        appState.notasPraticas = notasPraticas;
+                        console.log('[setupNotasPraticasListeners] Notas práticas atualizadas:', Object.keys(notasPraticas));
+                        triggerUIUpdates('notasPraticas');
+                    }
+                    
+                } catch (error) {
+                    console.error('[setupNotasPraticasListeners] Erro:', error);
+                }
+            });
+            
+            dbListenerUnsubscribes.push(unsubscribe);
+        }
+        
+        /**
+         * Cancel all active database listeners
+         */
+        function cancelAllDatabaseListeners() {
+            console.log(`[cancelAllDatabaseListeners] Cancelando ${dbListenerUnsubscribes.length} listeners...`);
+            dbListenerUnsubscribes.forEach(unsubscribe => {
+                if (typeof unsubscribe === 'function') {
+                    unsubscribe();
+                }
+            });
+            dbListenerUnsubscribes.length = 0; // Clear array
+        }
+        
+        /**
+         * Trigger UI updates based on data changes
+         */
+        function triggerUIUpdates(stateKey) {
+            // Only update if we're on the dashboard view
+            const dashboardView = document.getElementById('dashboard-view');
+            if (!dashboardView || dashboardView.style.display === 'none') {
+                return;
+            }
+            
+            console.log(`[triggerUIUpdates] Atualizando UI para: ${stateKey}`);
+            
+            switch (stateKey) {
+                case 'alunos':
+                    if (typeof renderStudentList === 'function') {
+                        renderStudentList(appState.alunos);
+                    }
+                    if (typeof renderAtAGlance === 'function') {
+                        renderAtAGlance();
+                    }
+                    break;
+                    
+                case 'ausenciasReposicoes':
+                    if (typeof renderRecentAbsences === 'function') {
+                        renderRecentAbsences();
+                    }
+                    if (typeof renderAtAGlance === 'function') {
+                        renderAtAGlance();
+                    }
+                    break;
+                    
+                case 'notasTeoricas':
+                case 'notasPraticas':
+                    if (typeof renderAtAGlance === 'function') {
+                        renderAtAGlance();
+                    }
+                    break;
+                    
+                case 'pontoStaticRows':
+                    // Ponto data updated - may need to refresh ponto view
+                    break;
+                    
+                default:
+                    // General update
+                    if (typeof renderAtAGlance === 'function') {
+                        renderAtAGlance();
+                    }
+            }
+        }
+        
+        // Legacy API URL (will be removed as part of migration)
         const API_URL = "https://script.google.com/macros/s/AKfycby7pAD6jt1FniGNS3vZoYMRCVq7DTEjHbaTdv_IUVNpCGLs83EtSi9KWXOVELeR1i7E/exec";
 
         function toPascalCaseKey(key = "") {
@@ -416,29 +640,28 @@ const pontoState = {
         }
 
         // --- INICIALIZAÇÃO E CARGA DE DADOS ---
-        async function initDashboard() {
-            console.log('[initDashboard] Iniciando Dashboard...');
+        function initDashboard() {
+            console.log('[initDashboard] Iniciando Dashboard com Firebase Realtime Database...');
             try {
                 showLoading(true);
-                await fetchAllData();
-                await initializePontoPanel();
-
-                console.log('[initDashboard] Dados carregados, iniciando renderização inicial...');
-                renderStudentList(appState.alunos);
-                renderAtAGlance(); // Inclui renderModuleAverages()
-                renderRecentAbsences();
-
-                console.log('[initDashboard] Renderização inicial completa.');
                 
-                switchMainTab('dashboard'); 
+                // Setup database listeners - data will arrive asynchronously
+                setupDatabaseListeners();
                 
+                // Initial UI setup
+                switchMainTab('dashboard');
                 document.querySelector('#dashboard-view').style.opacity = '1';
-                showLoading(false);
- 
-                console.log("[initDashboard] Inicialização completa. Live update iniciado.");
+                
+                // Loading will be hidden after first data arrives
+                // We'll hide it after a short delay to ensure at least some data is loaded
+                setTimeout(() => {
+                    showLoading(false);
+                    console.log("[initDashboard] Inicialização completa. Real-time updates ativos.");
+                }, 1000);
+                
             } catch (error) {
                 const errorMessage = error.message || "Erro desconhecido";
-                showError(`Falha Crítica na Inicialização: ${errorMessage}. Verifique a API e recarregue a página.`);
+                showError(`Falha Crítica na Inicialização: ${errorMessage}. Verifique a conexão e recarregue.`);
                 showLoading(false);
                 showView('login-view');
             }
@@ -488,6 +711,12 @@ const pontoState = {
                     closeGeminiModal();
                 }
             });
+            
+            // Logout button
+            const logoutButton = document.getElementById('logout-button');
+            if (logoutButton) {
+                logoutButton.addEventListener('click', handleLogout);
+            }
 
             const pontoFilterBar = document.getElementById('ponto-filter-bar');
             if (pontoFilterBar) {
@@ -530,36 +759,59 @@ const pontoState = {
         document.getElementById("login-form").addEventListener("submit", handleLogin);
 
         async function handleLogin(event) {
-        event.preventDefault();
-        console.log("[handleLogin] Tentativa de login...");
+            event.preventDefault();
+            console.log("[handleLogin] Tentativa de login com Firebase Authentication...");
 
-        const email = document.getElementById("login-email").value.trim();
-        const password = document.getElementById("login-password").value.trim();
-        const errorBox = document.getElementById("login-error");
+            const email = document.getElementById("login-email").value.trim();
+            const password = document.getElementById("login-password").value.trim();
+            const errorBox = document.getElementById("login-error");
 
-        try {
-            const response = await fetch("users.json");
-            const users = await response.json();
-
-            const user = users.find(u => u.email === email && u.password === password);
-
-            if (user) {
-            console.log("[handleLogin] Login bem-sucedido.");
-            errorBox.style.display = "none";
-
-            // chama a mesma lógica do código original
-            if (typeof showView === "function") showView("dashboard-view");
-            if (typeof initDashboard === "function") initDashboard();
-
-            localStorage.setItem("user", JSON.stringify(user));
-            } else {
-            console.warn("[handleLogin] Falha no login.");
-            showError("Email ou senha inválidos.", true);
+            if (!fbAuth) {
+                showError("Firebase não inicializado. Recarregue a página.", true);
+                return;
             }
-        } catch (err) {
-            console.error("[handleLogin] Erro ao ler users.json:", err);
-            showError("Erro ao carregar dados de login.", true);
+
+            try {
+                const userCredential = await window.firebase.signInWithEmailAndPassword(fbAuth, email, password);
+                console.log("[handleLogin] Login bem-sucedido via Firebase:", userCredential.user.email);
+                errorBox.style.display = "none";
+                // onAuthStateChanged will handle the rest (redirect to dashboard)
+            } catch (error) {
+                console.error("[handleLogin] Erro no login Firebase:", error);
+                let errorMessage = "Email ou senha inválidos.";
+                
+                // Provide more specific error messages
+                if (error.code === 'auth/user-not-found') {
+                    errorMessage = "Usuário não encontrado.";
+                } else if (error.code === 'auth/wrong-password') {
+                    errorMessage = "Senha incorreta.";
+                } else if (error.code === 'auth/invalid-email') {
+                    errorMessage = "Email inválido.";
+                } else if (error.code === 'auth/too-many-requests') {
+                    errorMessage = "Muitas tentativas falhadas. Tente novamente mais tarde.";
+                } else if (error.code === 'auth/network-request-failed') {
+                    errorMessage = "Erro de conexão. Verifique sua internet.";
+                }
+                
+                showError(errorMessage, true);
+            }
         }
+
+        // Logout function
+        function handleLogout() {
+            console.log("[handleLogout] Fazendo logout...");
+            if (!fbAuth) {
+                console.error("[handleLogout] Firebase não inicializado.");
+                return;
+            }
+            
+            window.firebase.signOut(fbAuth).then(() => {
+                console.log("[handleLogout] Logout bem-sucedido.");
+                // onAuthStateChanged will handle cleanup and redirect to login
+            }).catch((error) => {
+                console.error("[handleLogout] Erro ao fazer logout:", error);
+                showError("Erro ao fazer logout.");
+            });
         }
 
 
@@ -3486,7 +3738,45 @@ function renderTabEscala(escalas) {
 
         // --- Inicia ---
         document.addEventListener('DOMContentLoaded', () => {
-            console.log("DOM Carregado. Configurando login e exibindo view de login.");
-            setupEventHandlers(); 
-            showView('login-view');
+            console.log("DOM Carregado. Inicializando Firebase e configurando autenticação.");
+            
+            // Setup event handlers first
+            setupEventHandlers();
+            
+            // Initialize Firebase
+            const firebaseReady = initializeFirebase();
+            if (!firebaseReady) {
+                console.error('Falha ao inicializar Firebase. Mostrando tela de login sem autenticação.');
+                showView('login-view');
+                return;
+            }
+            
+            // Setup Firebase Authentication State Observer
+            // This is the new entry point for the application
+            window.firebase.onAuthStateChanged(fbAuth, (user) => {
+                if (user) {
+                    // User is signed in
+                    console.log('[onAuthStateChanged] Usuário autenticado:', user.email);
+                    showView('dashboard-view');
+                    initDashboard();
+                } else {
+                    // User is signed out
+                    console.log('[onAuthStateChanged] Usuário não autenticado. Mostrando login.');
+                    
+                    // Clean up: cancel all database listeners
+                    cancelAllDatabaseListeners();
+                    
+                    // Clean up: clear appState
+                    appState.alunos = [];
+                    appState.alunosMap.clear();
+                    appState.escalas = {};
+                    appState.ausenciasReposicoes = [];
+                    appState.notasTeoricas = {};
+                    appState.notasPraticas = {};
+                    appState.pontoStaticRows = [];
+                    
+                    // Show login view
+                    showView('login-view');
+                }
+            });
         });
