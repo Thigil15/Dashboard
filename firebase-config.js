@@ -9,15 +9,21 @@
 // 4. Copy the firebaseConfig object
 //
 // The databaseURL is already correct based on CodeFirebase.gs
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
+// Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "YOUR_FIREBASE_API_KEY", // Get from Firebase Console
+  apiKey: "AIzaSyCR3gZuiUUC-IMHduSGSuWWnFyn2sNYOEQ",
   authDomain: "dashboardalunos.firebaseapp.com",
   databaseURL: "https://dashboardalunos-default-rtdb.firebaseio.com",
   projectId: "dashboardalunos",
   storageBucket: "dashboardalunos.firebasestorage.app",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID", // Get from Firebase Console
-  appId: "YOUR_APP_ID" // Get from Firebase Console
+  messagingSenderId: "897767302445",
+  appId: "1:897767302445:web:61dc5f0c3419ac680adfa4"
 };
 
-export default firebaseConfig;
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
