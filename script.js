@@ -767,7 +767,8 @@ const pontoState = {
             const errorBox = document.getElementById("login-error");
 
             if (!fbAuth) {
-                showError("Firebase não inicializado. Recarregue a página.", true);
+                console.error("[handleLogin] Firebase Auth não está disponível. window.firebase:", window.firebase, "fbAuth:", fbAuth);
+                showError("Firebase não inicializado. Por favor, verifique sua conexão com a internet e recarregue a página. Se o problema persistir, abra o Console do navegador (F12) para mais detalhes.", true);
                 return;
             }
 
@@ -3750,8 +3751,13 @@ function renderTabEscala(escalas) {
                 // Initialize Firebase
                 const firebaseReady = initializeFirebase();
                 if (!firebaseReady) {
-                    console.error('Falha ao inicializar Firebase. Mostrando tela de login sem autenticação.');
+                    console.error('Falha ao inicializar Firebase. Verifique se:');
+                    console.error('1. Sua conexão com a internet está funcionando');
+                    console.error('2. O arquivo firebase-config.js tem as configurações corretas');
+                    console.error('3. Os scripts do Firebase SDK carregaram corretamente');
+                    console.error('Mostrando tela de login, mas o login não funcionará até que Firebase seja inicializado.');
                     showView('login-view');
+                    showError('Firebase falhou ao inicializar. Verifique o console (F12) para mais detalhes e recarregue a página.', false);
                     return;
                 }
                 
@@ -3796,7 +3802,13 @@ function renderTabEscala(escalas) {
                 // Fallback timeout in case event doesn't fire
                 setTimeout(() => {
                     if (!window.firebase) {
-                        console.error('Timeout esperando Firebase SDK. Tentando inicializar mesmo assim...');
+                        console.error('Timeout esperando Firebase SDK (3 segundos).');
+                        console.error('Os scripts do Firebase podem estar bloqueados ou falhando ao carregar.');
+                        console.error('Verifique:');
+                        console.error('  - Sua conexão com a internet');
+                        console.error('  - Se há bloqueadores de anúncios/scripts ativos');
+                        console.error('  - O console de rede (Network tab) para erros de carregamento');
+                        console.error('Tentando inicializar mesmo assim...');
                         initializeApp();
                     }
                 }, 3000);

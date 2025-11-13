@@ -1,8 +1,6 @@
-import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+// Firebase configuration for Portal do Ensino
+// This configuration is loaded by index.html and used by script.js
 
-// Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyCR3gZuiUUC-IMHduSGSuWWnFyn2sNYOEQ",
   authDomain: "dashboardalunos.firebaseapp.com",
@@ -13,5 +11,6 @@ const firebaseConfig = {
   appId: "1:897767302445:web:61dc5f0c3419ac680adfa4"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Export configuration for ES6 module import
+export default firebaseConfig;
+export { firebaseConfig };
