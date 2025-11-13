@@ -83,7 +83,26 @@
                 const unsubscribe = window.firebase.onValue(dbRef, (snapshot) => {
                     try {
                         const data = snapshot.val();
-                        console.log(`[setupDatabaseListeners] Dados recebidos para ${stateKey}:`, data ? 'OK' : 'NULL');
+                        
+                        // Log the path and whether data was found
+                        if (data) {
+                            console.log(`[setupDatabaseListeners] ✅ Dados encontrados em ${path} para ${stateKey}`);
+                        } else {
+                            console.warn(`[setupDatabaseListeners] ⚠️ Nenhum dado em ${path} para ${stateKey}`);
+                            
+                            // Try fallback path (old structure) for critical data
+                            if (stateKey === 'alunos' || stateKey === 'ausenciasReposicoes' || stateKey === 'notasTeoricas' || stateKey === 'pontoStaticRows') {
+                                const fallbackPath = path.replace('exportAll/', '').replace('/dados', '');
+                                console.log(`[setupDatabaseListeners] 🔄 Tentando caminho alternativo: ${fallbackPath}`);
+                                // Don't set up another listener here, just log the attempt
+                                // The user will need to re-run the Apps Script with the fixed version
+                            }
+                        }
+                        
+                        // Mark as loaded (even if data is null, we got a response)
+                        if (appState.dataLoadingState) {
+                            appState.dataLoadingState[stateKey] = true;
+                        }
                         
                         // Process and update appState
                         appState[stateKey] = processor(data);
@@ -91,20 +110,45 @@
                         // Special handling for alunos (update map)
                         if (stateKey === 'alunos') {
                             appState.alunosMap.clear();
-                            appState.alunos.forEach(a => {
-                                if (a && a.EmailHC) appState.alunosMap.set(a.EmailHC, a);
-                            });
+                            if (appState.alunos && Array.isArray(appState.alunos)) {
+                                appState.alunos.forEach(a => {
+                                    if (a && a.EmailHC) appState.alunosMap.set(a.EmailHC, a);
+                                });
+                            }
                         }
                         
                         // Trigger UI updates
                         triggerUIUpdates(stateKey);
                         
+                        // Check if all critical data has loaded, hide loading overlay
+                        checkAndHideLoadingOverlay();
+                        
                     } catch (error) {
                         console.error(`[setupDatabaseListeners] Erro ao processar ${stateKey}:`, error);
+                        // Mark as loaded even on error to prevent infinite loading
+                        if (appState.dataLoadingState) {
+                            appState.dataLoadingState[stateKey] = true;
+                        }
+                        checkAndHideLoadingOverlay();
                     }
                 }, (error) => {
                     console.error(`[setupDatabaseListeners] Erro no listener ${stateKey}:`, error);
-                    showError(`Erro ao carregar ${stateKey}: ${error.message}`);
+                    
+                    // Provide helpful error message based on error type
+                    if (error.code === 'PERMISSION_DENIED') {
+                        console.error(`[setupDatabaseListeners] ❌ PERMISSÃO NEGADA para ${path}`);
+                        console.error('[setupDatabaseListeners] Verifique as regras do Firebase Realtime Database.');
+                        console.error('[setupDatabaseListeners] As regras devem permitir leitura para usuários autenticados.');
+                        showError(`Permissão negada ao carregar ${stateKey}. Verifique as regras do Firebase.`);
+                    } else {
+                        showError(`Erro ao carregar ${stateKey}: ${error.message}`);
+                    }
+                    
+                    // Mark as loaded even on error
+                    if (appState.dataLoadingState) {
+                        appState.dataLoadingState[stateKey] = true;
+                    }
+                    checkAndHideLoadingOverlay();
                 });
                 
                 // Store unsubscribe function
@@ -170,6 +214,27 @@
                 }
             });
             dbListenerUnsubscribes.length = 0; // Clear array
+        }
+        
+        /**
+         * Check if critical data has loaded and hide loading overlay
+         */
+        function checkAndHideLoadingOverlay() {
+            if (!appState.dataLoadingState) return;
+            
+            // Check if critical data (alunos) has loaded
+            const criticalDataLoaded = appState.dataLoadingState.alunos;
+            
+            if (criticalDataLoaded) {
+                console.log('[checkAndHideLoadingOverlay] Dados críticos carregados, ocultando loading overlay.');
+                showLoading(false);
+                
+                // Log data loading status
+                console.log('[checkAndHideLoadingOverlay] Status de carregamento:', appState.dataLoadingState);
+                console.log('[checkAndHideLoadingOverlay] Alunos carregados:', appState.alunos.length);
+                console.log('[checkAndHideLoadingOverlay] Escalas carregadas:', Object.keys(appState.escalas).length);
+                console.log('[checkAndHideLoadingOverlay] Ausências carregadas:', appState.ausenciasReposicoes.length);
+            }
         }
         
         /**
@@ -533,12 +598,22 @@ const appState = {
     ausenciasReposicoes: [],
     notasTeoricas: {},
     notasPraticas: {},
+    pontoStaticRows: [], // Added: Missing property for ponto data
     todayBR: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
     todayFullBR: new Date().toLocaleDateString('pt-BR'),
     isSidebarCollapsed: false,
     escalaPreview: {
         pdfRawUrl: '',
         pdfViewerUrl: ''
+    },
+    // Track data loading state
+    dataLoadingState: {
+        alunos: false,
+        ausenciasReposicoes: false,
+        notasTeoricas: false,
+        notasPraticas: false,
+        pontoStaticRows: false,
+        escalas: false
     }
 };
 
@@ -644,6 +719,11 @@ const pontoState = {
             try {
                 showLoading(true);
                 
+                // Reset data loading state
+                Object.keys(appState.dataLoadingState).forEach(key => {
+                    appState.dataLoadingState[key] = false;
+                });
+                
                 // Setup database listeners - data will arrive asynchronously
                 setupDatabaseListeners();
                 
@@ -651,12 +731,31 @@ const pontoState = {
                 switchMainTab('dashboard');
                 document.querySelector('#dashboard-view').style.opacity = '1';
                 
-                // Loading will be hidden after first data arrives
-                // We'll hide it after a short delay to ensure at least some data is loaded
+                // Loading will be hidden when critical data arrives (via checkAndHideLoadingOverlay)
+                // But set a maximum timeout to prevent infinite loading
                 setTimeout(() => {
-                    showLoading(false);
-                    console.log("[initDashboard] Inicialização completa. Real-time updates ativos.");
-                }, 1000);
+                    console.log("[initDashboard] Timeout de 10 segundos atingido. Verificando estado dos dados...");
+                    
+                    // Check if any data was loaded
+                    const anyDataLoaded = Object.values(appState.dataLoadingState).some(loaded => loaded);
+                    
+                    if (!anyDataLoaded) {
+                        showLoading(false);
+                        console.warn("[initDashboard] AVISO: Nenhum dado foi carregado após 10 segundos!");
+                        console.warn("[initDashboard] Possíveis causas:");
+                        console.warn("  1. Não há dados em /exportAll no Firebase");
+                        console.warn("  2. Regras do Firebase estão bloqueando a leitura");
+                        console.warn("  3. Estrutura de dados está incorreta");
+                        console.warn("[initDashboard] Verifique o Firebase Console:");
+                        console.warn("  https://console.firebase.google.com/project/dashboardalunos/database/dashboardalunos-default-rtdb/data");
+                        
+                        // Show user-friendly error
+                        showError('Não foi possível carregar os dados do Firebase. Verifique se o App Script enviou os dados e se as regras do Firebase permitem leitura.', false);
+                    } else {
+                        console.log("[initDashboard] Inicialização completa. Real-time updates ativos.");
+                        showLoading(false);
+                    }
+                }, 10000); // 10 second timeout
                 
             } catch (error) {
                 const errorMessage = error.message || "Erro desconhecido";
@@ -1059,6 +1158,13 @@ const pontoState = {
                 const tS = appState.alunos.length; 
                 const aS = appState.alunos.filter(s => s.Status === 'Ativo').length; 
                 const pR = appState.ausenciasReposicoes.filter(f => f && !f.DataReposicaoISO && (f.EmailHC || f.NomeCompleto)).length;
+                
+                // Log data state for debugging
+                console.log('[renderAtAGlance] Renderizando dashboard com:', {
+                    totalAlunos: tS,
+                    alunosAtivos: aS,
+                    reposiçõesPendentes: pR
+                });
                 
                 const {
                     overallTheoreticalAvg:oTAvg, 
@@ -2257,7 +2363,29 @@ const pontoState = {
                  const panel = document.getElementById('student-list-panel'); 
                  if (!panel) return;
                  
-                 if (!students || students.length === 0) { panel.innerHTML = '<p class="text-slate-500 p-6 text-center">Nenhum aluno.</p>'; return; } 
+                 if (!students || students.length === 0) { 
+                     panel.innerHTML = `
+                         <div class="content-card p-8 text-center">
+                             <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                             </svg>
+                             <h3 class="mt-2 text-sm font-medium text-slate-900">Nenhum aluno encontrado</h3>
+                             <p class="mt-1 text-sm text-slate-500">
+                                 Os dados de alunos não foram carregados do Firebase.
+                             </p>
+                             <div class="mt-6 text-xs text-slate-600 text-left bg-slate-50 p-4 rounded-lg">
+                                 <p class="font-semibold mb-2">Possíveis soluções:</p>
+                                 <ol class="list-decimal list-inside space-y-1">
+                                     <li>Execute o Google Apps Script para enviar dados para o Firebase</li>
+                                     <li>Verifique se há dados em <code class="bg-white px-1 py-0.5 rounded">/exportAll/Alunos/dados</code> no Firebase Console</li>
+                                     <li>Verifique as regras do Firebase Realtime Database</li>
+                                     <li>Abra o console do navegador (F12) para ver mensagens de erro</li>
+                                 </ol>
+                             </div>
+                         </div>
+                     `; 
+                     return; 
+                 } 
                  
                  const grouped = students.reduce((acc, s) => { const c = s.Curso || 'Sem Curso'; if (!acc[c]) acc[c] = []; acc[c].push(s); return acc; }, {}); 
                  const courses = Object.keys(grouped).sort((a, b) => a.localeCompare(b));

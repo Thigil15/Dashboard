@@ -52,11 +52,17 @@ function enviarTodasAsAbasParaFirebase() {
       registros.push(obj);
     }
 
-    const url = FIREBASE_URL + nomeAba + ".json?auth=" + FIREBASE_SECRET;
+    // Send data to /exportAll/NomeAba/dados structure
+    const url = FIREBASE_URL + "exportAll/" + nomeAba + ".json?auth=" + FIREBASE_SECRET;
+    const payload = {
+      dados: registros,
+      nomeAbaOriginal: aba.getName(),
+      ultimaAtualizacao: new Date().toISOString()
+    };
     const opcoes = {
       method: "put",
       contentType: "application/json",
-      payload: JSON.stringify(registros),
+      payload: JSON.stringify(payload),
       muteHttpExceptions: true
     };
 
