@@ -245,6 +245,53 @@
         }
         
         /**
+         * Utility function to split concatenated field names into readable labels
+         * Converts: "AspiracaoNasotraquealQuantoARealizacao" -> "Aspiracao Nasotraqueal Quanto A Realizacao"
+         */
+        function splitConcatenatedFieldName(fieldName) {
+            if (!fieldName || typeof fieldName !== 'string') return fieldName;
+            
+            // Skip if it's a short field or already has spaces
+            if (fieldName.length < 20 || fieldName.includes(' ')) {
+                return fieldName;
+            }
+            
+            // First pass: Insert space before uppercase letters that follow lowercase letters
+            let result = fieldName.replace(/([a-z])([A-Z])/g, '$1 $2');
+            
+            // Second pass: Handle consecutive uppercase letters
+            // EEquipe -> E Equipe, ARealizacao -> A Realizacao
+            result = result.replace(/([A-Z])([A-Z][a-z])/g, '$1 $2');
+            
+            // Clean up common Portuguese articles and prepositions to lowercase
+            result = result
+                .replace(/\bDa\b/g, 'da')
+                .replace(/\bDe\b/g, 'de')
+                .replace(/\bDo\b/g, 'do')
+                .replace(/\bDos\b/g, 'dos')
+                .replace(/\bDas\b/g, 'das')
+                .replace(/\bE\b/g, 'e')
+                .replace(/\bA\b/g, 'a')
+                .replace(/\bO\b/g, 'o')
+                .replace(/\bNa\b/g, 'na')
+                .replace(/\bNo\b/g, 'no')
+                .replace(/\bNos\b/g, 'nos')
+                .replace(/\bNas\b/g, 'nas')
+                .replace(/\bEm\b/g, 'em')
+                .replace(/\bPor\b/g, 'por')
+                .replace(/\bCom\b/g, 'com')
+                .replace(/\bPara\b/g, 'para')
+                .replace(/\bQue\b/g, 'que');
+            
+            // Limit length for display (show first part + ellipsis if too long)
+            if (result.length > 80) {
+                result = result.substring(0, 77) + '...';
+            }
+            
+            return result.trim();
+        }
+
+        /**
          * [SISTEMA ÚNICO] Valida integridade de uma nota prática
          * Garante que os dados essenciais estão presentes e válidos
          */
@@ -3658,10 +3705,11 @@ function renderTabEscala(escalas) {
                                                 else if (score.value >= 7) barColor = '#6366f1';
                                                 else if (score.value < 6) barColor = '#ef4444';
                                                 
+                                                const displayLabel = splitConcatenatedFieldName(score.label);
                                                 return `
                                                     <div class="bar-chart-item">
                                                         <div class="flex justify-between items-center mb-2">
-                                                            <span class="bar-label font-medium text-sm text-slate-700" title="${score.label}">${score.label}</span>
+                                                            <span class="bar-label font-medium text-sm text-slate-700" title="${score.label}">${displayLabel}</span>
                                                             <span class="bar-value font-bold text-lg" style="color: ${barColor};">${score.value.toFixed(1)}</span>
                                                         </div>
                                                         <div class="bar-bg relative" style="height: 10px; background: #e2e8f0; border-radius: 5px; overflow: hidden;">
@@ -3683,12 +3731,14 @@ function renderTabEscala(escalas) {
                                             Checklist de Habilidades
                                         </h4>
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                            ${checklistScores.map(skill => `
+                                            ${checklistScores.map(skill => {
+                                                const displayLabel = splitConcatenatedFieldName(skill.label);
+                                                return `
                                                 <div class="skill-checklist-item p-3 bg-slate-50 rounded-lg border border-slate-200">
-                                                    <p class="skill-question text-sm font-medium text-slate-700 mb-1">${skill.label}</p>
+                                                    <p class="skill-question text-sm font-medium text-slate-700 mb-1" title="${skill.label}">${displayLabel}</p>
                                                     <p class="skill-answer text-sm text-slate-600" title="${skill.value}">${skill.value}</p>
                                                 </div>
-                                            `).join('')}
+                                            `;}).join('')}
                                         </div>
                                     </div>
                                 ` : ''}
