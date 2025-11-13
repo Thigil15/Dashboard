@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste - Formatação de Campos NotasPraticas</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .test-result {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border-left: 4px solid #667eea;
+        }
+        .label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        .value {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .original {
+            font-size: 12px;
+            color: #999;
+            font-family: monospace;
+        }
+        .success {
+            border-left-color: #10b981;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Teste de Formatação de Campos - NotasPraticas</h1>
+        
+        <div id="test-results"></div>
+    </div>
+
+    <script>
+        // Copy of the splitConcatenatedFieldName function from script.js
+        function splitConcatenatedFieldName(fieldName) {
+            if (!fieldName || typeof fieldName !== 'string') return fieldName;
+            
+            // Skip if it's a short field or already has spaces
+            if (fieldName.length < 20 || fieldName.includes(' ')) {
+                return fieldName;
+            }
+            
+            // First pass: Insert space before uppercase letters that follow lowercase letters
+            let result = fieldName.replace(/([a-z])([A-Z])/g, '$1 $2');
+            
+            // Second pass: Handle consecutive uppercase letters
+            // EEquipe -> E Equipe, ARealizacao -> A Realizacao
+            result = result.replace(/([A-Z])([A-Z][a-z])/g, '$1 $2');
+            
+            // Clean up common Portuguese articles and prepositions to lowercase
+            result = result
+                .replace(/\bDa\b/g, 'da')
+                .replace(/\bDe\b/g, 'de')
+                .replace(/\bDo\b/g, 'do')
+                .replace(/\bDos\b/g, 'dos')
+                .replace(/\bDas\b/g, 'das')
+                .replace(/\bE\b/g, 'e')
+                .replace(/\bA\b/g, 'a')
+                .replace(/\bO\b/g, 'o')
+                .replace(/\bNa\b/g, 'na')
+                .replace(/\bNo\b/g, 'no')
+                .replace(/\bNos\b/g, 'nos')
+                .replace(/\bNas\b/g, 'nas')
+                .replace(/\bEm\b/g, 'em')
+                .replace(/\bPor\b/g, 'por')
+                .replace(/\bCom\b/g, 'com')
+                .replace(/\bPara\b/g, 'para')
+                .replace(/\bQue\b/g, 'que');
+            
+            // Limit length for display (show first part + ellipsis if too long)
+            if (result.length > 80) {
+                result = result.substring(0, 77) + '...';
+            }
+            
+            return result.trim();
+        }
+
+        // Test cases - realistic field names from NotasPraticas
+        const testCases = [
+            {
+                original: "AspiracaoNasotraquealQuantoARealizacaoDaAspiracaoNasotraquealDeFormaSeguraEEficazOAlunoRealizaOProcedimentoComQueNivelDeAuxilio",
+                description: "Campo muito longo de Aspiração Nasotraqueal"
+            },
+            {
+                original: "RaciocinioClinioAvaliacaoInicialDoEstadoDoPaciente",
+                description: "Campo de Raciocínio Clínico"
+            },
+            {
+                original: "ExecucaoTecnicaPrecisaoNaRealizacaoDosProcedimentos",
+                description: "Campo de Execução Técnica"
+            },
+            {
+                original: "ProfissionalismoRelacionamentoComPacienteEEquipe",
+                description: "Campo de Profissionalismo"
+            },
+            {
+                original: "ComunicacaoComOPacienteEFamiliares",
+                description: "Campo de Comunicação"
+            },
+            {
+                original: "HigieneDasMaosAntesEAposOProcedimento",
+                description: "Campo de Higiene das Mãos"
+            },
+            {
+                original: "EmailHC",
+                description: "Campo curto (não deve ser modificado)"
+            },
+            {
+                original: "Nome Completo do Aluno",
+                description: "Campo com espaços (não deve ser modificado)"
+            },
+            {
+                original: "MÉDIA (NOTA FINAL)",
+                description: "Campo de média (não deve ser modificado)"
+            }
+        ];
+
+        // Run tests
+        const resultsContainer = document.getElementById('test-results');
+        
+        testCases.forEach((test, index) => {
+            const formatted = splitConcatenatedFieldName(test.original);
+            const isModified = formatted !== test.original;
+            
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'test-result' + (isModified ? ' success' : '');
+            resultDiv.innerHTML = `
+                <div class="label">Teste ${index + 1}: ${test.description}</div>
+                <div class="value"><strong>Formatado:</strong> ${formatted}</div>
+                <div class="original"><strong>Original:</strong> ${test.original}</div>
+                <div class="original"><strong>Status:</strong> ${isModified ? '✅ Formatado' : '➡️ Mantido original'}</div>
+            `;
+            
+            resultsContainer.appendChild(resultDiv);
+        });
+    </script>
+</body>
+</html>
