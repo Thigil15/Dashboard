@@ -222,8 +222,7 @@
             }
         }
         
-        // Legacy API URL (will be removed as part of migration)
-        const API_URL = "https://script.google.com/macros/s/AKfycby7pAD6jt1FniGNS3vZoYMRCVq7DTEjHbaTdv_IUVNpCGLs83EtSi9KWXOVELeR1i7E/exec";
+        // Legacy API URL removed - all data now comes from Firebase
 
         function toPascalCaseKey(key = "") {
             const raw = String(key || "").trim();
@@ -816,87 +815,8 @@ const pontoState = {
         }
 
 
-        async function fetchAllData() {
-            console.log("[fetchAllData] Buscando dados estáticos...");
-            try {
-                const url = new URL(API_URL);
-                url.searchParams.set('mode', 'objects');
-                url.searchParams.set('skipBlankRows', 'true');
-                url.searchParams.set('pretty', '0');
-                url.searchParams.set('action', 'getAll');
-
-                const response = await fetch(url.toString());
-                if (!response.ok) {
-                    throw new Error(`Rede (getAll): ${response.statusText} (${response.status})`);
-                }
-
-                const data = await response.json();
-
-                if (data && data.success === false) {
-                    throw new Error(data.error || 'Resposta inválida do backend.');
-                }
-
-                let payloadForApp = null;
-
-                if (data && data.success) {
-                    appState.apiMode = 'legacy';
-                    payloadForApp = data;
-                } else if (data && data.ok && data.bySheet) {
-                    const transformed = transformSheetsPayload(data);
-                    appState.apiMode = 'sheets';
-                    appState.rawSheets = transformed.rawSheets || {};
-                    appState.sheetMeta = transformed.meta || null;
-                    appState.pontoStaticRows = transformed.pontoRows || [];
-                    payloadForApp = transformed.appData;
-                } else {
-                    throw new Error('Formato de resposta desconhecido da API.');
-                }
-
-                console.log("[fetchAllData] Dados estáticos recebidos (modo:", appState.apiMode, ")");
-                onStaticDataLoaded(payloadForApp);
-            } catch (e) {
-                console.error("[fetchAllData] Erro detalhado:", e);
-                throw new Error(`Falha ao buscar dados estáticos: ${e.message}`);
-            }
-        }
-
-        function onStaticDataLoaded(data) {
-            appState.alunos = data.alunos || [];
-            appState.escalas = data.escalas || {};
-            appState.ausenciasReposicoes = normalizeAusenciasReposicoes(data.ausenciasReposicoes || []);
-            appState.notasTeoricas = data.notasTeoricas || { registros: [] };
-
-            if (Array.isArray(data.pontoRegistros)) {
-                appState.pontoStaticRows = data.pontoRegistros.map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
-                // Extract and populate all available dates from static ponto data
-                extractAndPopulatePontoDates(appState.pontoStaticRows);
-            }
-
-            if (data.meta) {
-                appState.sheetMeta = data.meta;
-            }
-
-            const notasRaw = data.notasPraticas || {};
-            const normalized = Array.isArray(notasRaw)
-               ? notasRaw.reduce((acc, item, idx) => {
-                   const name = item.nomeAba || item.nomePratica || `NotasPraticas${idx + 1}`;
-                   acc[name] = { nomePratica: name, registros: item.registros || [] };
-                   return acc;
-                 }, {})
-               : Object.entries(notasRaw).reduce((acc, [key, val]) => {
-                   const nome = val && val.nomePratica ? val.nomePratica : key;
-                   acc[nome] = { nomePratica: nome, registros: (val && val.registros) || [] };
-                   return acc;
-                 }, {});
-
-            appState.notasPraticas = normalized;
-            console.log("[onStaticDataLoaded] Notas Práticas Normalizadas:", appState.notasPraticas);
-
-            appState.alunosMap.clear();
-            appState.alunos.forEach(a => { if(a && a.EmailHC) appState.alunosMap.set(a.EmailHC, a); });
-            
-            console.log("[onStaticDataLoaded] Dados estáticos processados.");
-        }
+        // Legacy fetchAllData() function removed - all data now comes from Firebase Realtime Database
+        // Data is loaded via setupDatabaseListeners() which sets up real-time listeners
 
         function extractAndPopulatePontoDates(pontoRows) {
             if (!Array.isArray(pontoRows) || pontoRows.length === 0) {
@@ -1462,128 +1382,9 @@ const pontoState = {
             return '';
         }
 
-        function parseAvailableDates(raw) {
-            if (!raw) return [];
-            let values;
-            if (Array.isArray(raw)) {
-                values = raw;
-            } else if (typeof raw === 'string') {
-                values = raw.split(/[;,\s]+/).filter(Boolean);
-            } else if (typeof raw === 'object') {
-                values = Object.keys(raw);
-            } else {
-                values = [];
-            }
-            const isoDates = values
-                .map((value) => normalizeDateInput(value))
-                .filter(Boolean);
-            return Array.from(new Set(isoDates));
-        }
-
-        function parseAvailableScales(raw, fallbackDate) {
-            const map = new Map();
-            if (!raw) return map;
-
-            const ensureList = (value) => {
-                if (!value) return [];
-                if (Array.isArray(value)) return value;
-                if (typeof value === 'object') return Object.values(value);
-                return [value];
-            };
-
-            if (Array.isArray(raw) || typeof raw === 'string') {
-                const iso = normalizeDateInput(fallbackDate);
-                if (iso) {
-                    const sanitized = ensureList(raw)
-                        .map((item) => (item == null ? '' : String(item).trim()))
-                        .filter(Boolean);
-                    if (sanitized.length) {
-                        map.set(iso, Array.from(new Set(sanitized)));
-                    }
-                }
-                return map;
-            }
-
-            if (typeof raw === 'object') {
-                Object.entries(raw).forEach(([key, value]) => {
-                    const iso = normalizeDateInput(key) || normalizeDateInput(fallbackDate);
-                    if (!iso) return;
-                    const sanitized = ensureList(value)
-                        .map((item) => (item == null ? '' : String(item).trim()))
-                        .filter(Boolean);
-                    if (!sanitized.length) return;
-                    const existing = map.get(iso) || [];
-                    map.set(iso, Array.from(new Set([...existing, ...sanitized])));
-                });
-            }
-
-            return map;
-        }
-
-        function parseLastUpdated(value) {
-            if (!value) return null;
-            if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
-            const str = String(value).trim();
-            if (!str) return null;
-            if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
-                const iso = str.includes('T') ? str : str.replace(' ', 'T');
-                const date = new Date(iso);
-                if (!Number.isNaN(date.getTime())) return date;
-            }
-            const brMatch = str.match(/^(\d{2})[\/-](\d{2})[\/-](\d{4})(?:\s+(\d{2}:\d{2}(?::\d{2})?))?/);
-            if (brMatch) {
-                const [, day, month, year, time = '00:00'] = brMatch;
-                const normalizedTime = time.length === 5 ? `${time}:00` : time;
-                const date = new Date(`${year}-${month}-${day}T${normalizedTime}`);
-                if (!Number.isNaN(date.getTime())) return date;
-            }
-            const parsed = Date.parse(str);
-            return Number.isNaN(parsed) ? null : new Date(parsed);
-        }
-
-        function resolvePontoRecords(container) {
-            if (!container) return [];
-            if (Array.isArray(container)) return container;
-            const keys = ['registros', 'records', 'rows', 'lista', 'itens', 'values', 'dados'];
-            for (const key of keys) {
-                if (Array.isArray(container[key])) {
-                    return container[key];
-                }
-            }
-            if (Array.isArray(container.data) && container.data.every((item) => typeof item === 'object')) {
-                return container.data;
-            }
-            if (Array.isArray(container.hoje)) return container.hoje;
-            if (container.registrosPorEscala && typeof container.registrosPorEscala === 'object') {
-                const aggregated = [];
-                Object.values(container.registrosPorEscala).forEach((list) => {
-                    if (Array.isArray(list)) aggregated.push(...list);
-                });
-                if (aggregated.length) return aggregated;
-            }
-            if (Array.isArray(container.ponto)) return container.ponto;
-            return [];
-        }
-
-        function extractPontoPayload(response) {
-            const root = response || {};
-            const container = root.data || root.payload || root.result || root.hoje || root.ponto || root;
-            const records = resolvePontoRecords(container);
-            const selectedDateRaw = container?.dataISO ?? container?.dataIso ?? container?.DataISO ?? container?.data ?? container?.Data ?? root.dataISO ?? root.data ?? '';
-            const selectedScaleRaw = container?.escalaAtual ?? container?.escala ?? container?.Escala ?? container?.escalaSelecionada ?? root.escalaAtual ?? '';
-            const availableDates = parseAvailableDates(container?.datasDisponiveis ?? container?.datasISO ?? container?.datas ?? root.datasDisponiveis ?? root.datas);
-            const scalesByDate = parseAvailableScales(container?.escalasDisponiveis ?? container?.escalas ?? root.escalasDisponiveis, selectedDateRaw);
-            const lastUpdated = parseLastUpdated(container?.lastUpdated ?? container?.ultimaAtualizacao ?? container?.lastSync ?? container?.timestamp ?? root.lastUpdated ?? root.ultimaAtualizacao ?? root.lastSync ?? root.timestamp);
-
-            return {
-                records,
-                selectedDate: normalizeDateInput(selectedDateRaw),
-                selectedScale: typeof selectedScaleRaw === 'string' ? selectedScaleRaw : '',
-                availableDates,
-                scalesByDate,
-                lastUpdated
-            };
-        }
+        // Legacy helper functions removed (parseAvailableDates, parseAvailableScales, parseLastUpdated, resolvePontoRecords)
+        // These were only used by the removed extractPontoPayload() and applyPontoData() functions
+        // Legacy extractPontoPayload() removed - no longer needed with Firebase-only approach
 
         function normalizeScaleKey(scale) {
             return (!scale || scale === 'all') ? 'all' : normalizeString(scale);
@@ -1675,128 +1476,8 @@ const pontoState = {
             };
         }
 
-        function applyPontoData(records = [], {
-            targetDate = '',
-            scale = 'all',
-            availableDates = [],
-            scalesByDate = new Map(),
-            lastUpdated = null,
-            updateSelection = false,
-            replaceExisting = false
-        } = {}) {
-            const normalizedDate = normalizeDateInput(targetDate);
-            const scaleLabel = scale || 'all';
-            const scaleKey = normalizeScaleKey(scaleLabel);
-            const processed = (records || []).map((row) => normalizePontoRecord(row, normalizedDate)).filter(Boolean);
-            const grouped = new Map();
-
-            if (!processed.length && normalizedDate) {
-                grouped.set(normalizedDate, []);
-            }
-
-            processed.forEach((entry) => {
-                const iso = entry.isoDate || normalizedDate;
-                if (!iso) return;
-                if (!grouped.has(iso)) grouped.set(iso, []);
-                grouped.get(iso).push(entry);
-            });
-
-            grouped.forEach((rows, iso) => {
-                const existingAll = pontoState.byDate.get(iso) || [];
-                let mergedAll;
-
-                if (replaceExisting) {
-                    if (scaleKey === 'all') {
-                        mergedAll = rows.slice();
-                        pontoState.byDate.set(iso, mergedAll);
-                        Array.from(pontoState.cache.keys()).forEach((key) => {
-                            if (key.startsWith(`${iso}__`)) {
-                                pontoState.cache.delete(key);
-                            }
-                        });
-                    } else {
-                        const filteredAll = existingAll.filter((row) => normalizeScaleKey(row.escala || 'sem-escala') !== scaleKey);
-                        mergedAll = mergeRecordLists(filteredAll, rows);
-                        pontoState.byDate.set(iso, mergedAll);
-                        pontoState.cache.delete(makePontoCacheKey(iso, scaleKey));
-                    }
-                } else {
-                    mergedAll = scaleKey === 'all' ? rows.slice() : mergeRecordLists(existingAll, rows);
-                    pontoState.byDate.set(iso, mergedAll);
-                }
-
-                if (!mergedAll) {
-                    mergedAll = scaleKey === 'all' ? rows.slice() : mergeRecordLists(existingAll, rows);
-                    pontoState.byDate.set(iso, mergedAll);
-                }
-
-                pontoState.cache.set(makePontoCacheKey(iso, 'all'), mergedAll);
-                if (scaleKey !== 'all') {
-                    pontoState.cache.set(makePontoCacheKey(iso, scaleKey), rows.slice());
-                }
-            });
-
-            const dateSet = new Set(pontoState.dates);
-            (availableDates || []).forEach((dateValue) => {
-                const iso = normalizeDateInput(dateValue);
-                if (iso) dateSet.add(iso);
-            });
-            grouped.forEach((_, iso) => {
-                if (iso) dateSet.add(iso);
-            });
-            if (normalizedDate) {
-                dateSet.add(normalizedDate);
-            }
-            pontoState.dates = Array.from(dateSet).filter(Boolean).sort((a, b) => b.localeCompare(a));
-
-            if (!(scalesByDate instanceof Map)) {
-                scalesByDate = parseAvailableScales(scalesByDate, normalizedDate);
-            }
-
-            scalesByDate.forEach((list, dateKey) => {
-                const iso = normalizeDateInput(dateKey);
-                if (!iso) return;
-                const existing = new Set(pontoState.scalesByDate.get(iso) || []);
-                (list || []).forEach((item) => {
-                    if (item && typeof item === 'string') existing.add(item);
-                });
-                pontoState.scalesByDate.set(iso, Array.from(existing).sort((a, b) => a.localeCompare(b, 'pt-BR')));
-            });
-
-            grouped.forEach((rows, iso) => {
-                const existing = new Set(pontoState.scalesByDate.get(iso) || []);
-                rows.forEach((row) => {
-                    if (row.escala && row.escala.trim()) existing.add(row.escala);
-                });
-                if (scaleKey !== 'all' && scaleLabel) {
-                    existing.add(scaleLabel);
-                }
-                pontoState.scalesByDate.set(iso, Array.from(existing).sort((a, b) => a.localeCompare(b, 'pt-BR')));
-            });
-
-            pontoState.rawRows = Array.from(pontoState.byDate.values()).flat();
-            pontoState.lastLoadedAt = lastUpdated || new Date();
-
-            if (updateSelection) {
-                if (normalizedDate) {
-                    pontoState.selectedDate = normalizedDate;
-                    pontoState.autoScaleByDate.set(normalizedDate, scaleLabel || 'all');
-                }
-                pontoState.selectedScale = scaleLabel || 'all';
-            } else {
-                if (!pontoState.selectedDate && normalizedDate) {
-                    pontoState.selectedDate = normalizedDate;
-                }
-                if (normalizedDate && scaleKey !== 'all' && scaleLabel && !pontoState.autoScaleByDate.has(normalizedDate)) {
-                    pontoState.autoScaleByDate.set(normalizedDate, scaleLabel);
-                }
-                if (!pontoState.selectedScale) {
-                    pontoState.selectedScale = 'all';
-                }
-            }
-
-            updatePontoHojeMap();
-        }
+        // Legacy applyPontoData() removed - data organization now handled by Firebase listeners
+        // Data is processed via extractAndPopulatePontoDates() when loaded from Firebase
 
         function getPontoRecords(date, scale = 'all') {
             const iso = normalizeDateInput(date);
@@ -2519,114 +2200,35 @@ const pontoState = {
             }
         }
 
-        async function loadPontoData({ date, scale = 'all', showInlineSpinner = false, useTodayEndpoint = false, adoptSelection = false, replaceExisting = false } = {}) {
-            const normalizedDate = normalizeDateInput(date);
-            const scaleLabel = scale || 'all';
-            const scaleKey = normalizeScaleKey(scaleLabel);
-            const loadingBanner = document.getElementById('ponto-loading-state');
-            if (loadingBanner) {
-                loadingBanner.hidden = false;
-                loadingBanner.textContent = showInlineSpinner ? 'Atualizando registros do ponto...' : 'Carregando registros do ponto...';
-            }
-
-            if (pontoState.isLoading) {
-                console.warn('[loadPontoData] Requisição anterior ainda está em andamento.');
-            }
-            pontoState.isLoading = true;
-
-            try {
-                const url = new URL(API_URL);
-                if (useTodayEndpoint) {
-                    url.searchParams.set('action', 'getPontoHoje_');
-                } else {
-                    url.searchParams.set('action', 'getPontoPorEscala_');
-                    if (normalizedDate) {
-                        url.searchParams.set('data', normalizedDate);
-                    }
-                    if (scaleKey !== 'all') {
-                        url.searchParams.set('escala', scaleLabel);
-                    }
-                }
-
-                const response = await fetch(url.toString());
-                if (!response.ok) {
-                    throw new Error(`Rede (${url.searchParams.get('action')}): ${response.statusText} (${response.status})`);
-                }
-
-                const json = await response.json();
-                const payload = extractPontoPayload(json);
-                const hasUsefulData = (payload.records && payload.records.length)
-                    || (payload.availableDates && payload.availableDates.length)
-                    || payload.selectedDate
-                    || payload.selectedScale;
-                if (json && json.success === false) {
-                    if (hasUsefulData) {
-                        console.warn('[loadPontoData] Backend retornou success=false, utilizando dados disponíveis mesmo assim.');
-                    } else {
-                        throw new Error(json.error || 'Resposta inválida do backend.');
-                    }
-                }
-
-                const resolvedDate = payload.selectedDate || normalizedDate || (payload.availableDates[0] || '');
-                const resolvedScale = payload.selectedScale || scaleLabel || 'all';
-                const lastUpdated = payload.lastUpdated || new Date();
-
-                applyPontoData(payload.records || [], {
-                    targetDate: resolvedDate,
-                    scale: resolvedScale,
-                    availableDates: payload.availableDates,
-                    scalesByDate: payload.scalesByDate,
-                    lastUpdated,
-                    updateSelection: adoptSelection,
-                    replaceExisting
-                });
-
-                console.log(`[loadPontoData] Carregados ${(payload.records || []).length} registros (${resolvedScale || 'all'}) para ${resolvedDate || 'sem-data'}.`);
-
-                return { success: true, selectedDate: resolvedDate, selectedScale: resolvedScale };
-            } catch (error) {
-                console.error('[loadPontoData] Erro ao carregar dados de ponto:', error);
-                showError(`Falha ao carregar dados de ponto: ${error.message}`);
-                throw error;
-            } finally {
-                pontoState.isLoading = false;
-                if (loadingBanner) {
-                    loadingBanner.hidden = true;
-                }
-            }
-        }
+        // Legacy loadPontoData() removed - Ponto data now comes from Firebase Realtime Database
+        // Data is already loaded and cached via setupDatabaseListeners() and extractAndPopulatePontoDates()
 
         async function ensurePontoData(date, scale = 'all', { showInlineSpinner = false, useTodayEndpoint = false, adoptSelection = false, forceReload = false, replaceExisting = false } = {}) {
             const isoDate = normalizeDateInput(date);
             const scaleLabel = scale || 'all';
-            if (!forceReload && isoDate && hasCachedPontoData(isoDate, scaleLabel)) {
-                return { success: true, cached: true, selectedDate: isoDate, selectedScale: scaleLabel };
-            }
-            try {
-                if (forceReload && isoDate) {
-                    if (scaleLabel === 'all') {
-                        pontoState.byDate.delete(isoDate);
-                        Array.from(pontoState.cache.keys()).forEach((key) => {
-                            if (key.startsWith(`${isoDate}__`)) {
-                                pontoState.cache.delete(key);
-                            }
-                        });
-                    } else {
-                        pontoState.cache.delete(makePontoCacheKey(isoDate, scaleLabel));
-                    }
+            
+            // If forceReload is requested, clear the cache
+            // This allows the data to be re-filtered from the Firebase-loaded data
+            if (forceReload && isoDate) {
+                if (scaleLabel === 'all') {
+                    pontoState.cache.delete(makePontoCacheKey(isoDate, 'all'));
+                } else {
+                    pontoState.cache.delete(makePontoCacheKey(isoDate, scaleLabel));
                 }
-                return await loadPontoData({
-                    date: isoDate,
-                    scale: scaleLabel,
-                    showInlineSpinner,
-                    useTodayEndpoint,
-                    adoptSelection,
-                    replaceExisting: replaceExisting || forceReload
-                });
-            } catch (error) {
-                console.error('[ensurePontoData] Falha ao garantir dados de ponto:', error);
-                return null;
             }
+            
+            // Check if data exists in Firebase-loaded state
+            if (isoDate && pontoState.byDate.has(isoDate)) {
+                // Data exists from Firebase, just need to ensure it's cached for the requested scale
+                getPontoRecords(isoDate, scaleLabel); // This will cache it
+                return { success: true, cached: false, selectedDate: isoDate, selectedScale: scaleLabel };
+            }
+            
+            // Data not available yet - might still be loading from Firebase
+            // Return a success response with available dates
+            const availableDate = pontoState.dates.length > 0 ? pontoState.dates[0] : isoDate;
+            console.log(`[ensurePontoData] Data para ${isoDate} não disponível. Usando data disponível: ${availableDate}`);
+            return { success: true, selectedDate: availableDate, selectedScale: scaleLabel };
         }
 
         async function initializePontoPanel() {

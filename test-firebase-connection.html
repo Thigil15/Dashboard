@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Conexão Firebase</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .test-item {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 4px solid #ddd;
+        }
+        .test-item.pending {
+            background: #fff3cd;
+            border-color: #ffc107;
+        }
+        .test-item.success {
+            background: #d4edda;
+            border-color: #28a745;
+        }
+        .test-item.error {
+            background: #f8d7da;
+            border-color: #dc3545;
+        }
+        .test-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        .test-detail {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .data-preview {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔥 Teste de Conexão Firebase</h1>
+        <p>Este teste verifica se o site consegue se conectar ao Firebase Realtime Database.</p>
+        
+        <div id="test-results"></div>
+        
+        <button id="runTest" onclick="runTests()">▶️ Executar Testes</button>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getDatabase, ref, get, onValue } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+        
+        // Import config
+        import firebaseConfigModule from './firebase-config.js';
+        const firebaseConfig = firebaseConfigModule.firebaseConfig || firebaseConfigModule;
+        
+        // Make available globally for tests
+        window.firebaseTest = {
+            initializeApp,
+            getDatabase,
+            ref,
+            get,
+            onValue,
+            firebaseConfig
+        };
+        
+        window.dispatchEvent(new CustomEvent('firebaseTestReady'));
+    </script>
+
+    <script>
+        let testResults = [];
+        
+        function addTestResult(title, status, detail = '', data = null) {
+            testResults.push({ title, status, detail, data });
+            renderResults();
+        }
+        
+        function renderResults() {
+            const container = document.getElementById('test-results');
+            container.innerHTML = testResults.map(test => `
+                <div class="test-item ${test.status}">
+                    <div class="test-title">
+                        ${test.status === 'success' ? '✅' : test.status === 'error' ? '❌' : '⏳'} 
+                        ${test.title}
+                    </div>
+                    ${test.detail ? `<div class="test-detail">${test.detail}</div>` : ''}
+                    ${test.data ? `<div class="data-preview">${JSON.stringify(test.data, null, 2)}</div>` : ''}
+                </div>
+            `).join('');
+        }
+        
+        async function runTests() {
+            const button = document.getElementById('runTest');
+            button.disabled = true;
+            button.textContent = '🔄 Testando...';
+            testResults = [];
+            
+            try {
+                // Test 1: Firebase SDK loaded
+                addTestResult('1. Firebase SDK carregado', 'pending');
+                await new Promise(resolve => {
+                    if (window.firebaseTest) {
+                        resolve();
+                    } else {
+                        window.addEventListener('firebaseTestReady', resolve, { once: true });
+                    }
+                });
+                addTestResult('1. Firebase SDK carregado', 'success', 'Firebase SDK está disponível');
+                
+                // Test 2: Configuration valid
+                addTestResult('2. Configuração do Firebase', 'pending');
+                const config = window.firebaseTest.firebaseConfig;
+                if (!config.databaseURL || config.databaseURL.includes('PLACEHOLDER')) {
+                    throw new Error('databaseURL não configurado em firebase-config.js');
+                }
+                addTestResult('2. Configuração do Firebase', 'success', 
+                    `Database URL: ${config.databaseURL}`, 
+                    { projectId: config.projectId, databaseURL: config.databaseURL });
+                
+                // Test 3: Initialize Firebase
+                addTestResult('3. Inicializar Firebase', 'pending');
+                const app = window.firebaseTest.initializeApp(config);
+                const db = window.firebaseTest.getDatabase(app);
+                addTestResult('3. Inicializar Firebase', 'success', 'Firebase inicializado com sucesso');
+                
+                // Test 4: Check database connection
+                addTestResult('4. Conectar ao Realtime Database', 'pending');
+                const testRef = window.firebaseTest.ref(db, '.info/connected');
+                const snapshot = await window.firebaseTest.get(testRef);
+                const isConnected = snapshot.val();
+                if (isConnected) {
+                    addTestResult('4. Conectar ao Realtime Database', 'success', 
+                        'Conexão com Firebase estabelecida!');
+                } else {
+                    throw new Error('Não conectado ao Firebase');
+                }
+                
+                // Test 5: Check if exportAll exists
+                addTestResult('5. Verificar estrutura /exportAll', 'pending');
+                const exportAllRef = window.firebaseTest.ref(db, 'exportAll');
+                const exportAllSnapshot = await window.firebaseTest.get(exportAllRef);
+                
+                if (exportAllSnapshot.exists()) {
+                    const data = exportAllSnapshot.val();
+                    const keys = Object.keys(data || {});
+                    addTestResult('5. Verificar estrutura /exportAll', 'success', 
+                        `Encontrados ${keys.length} caminhos de dados`, 
+                        { caminhos: keys.slice(0, 10) });
+                } else {
+                    addTestResult('5. Verificar estrutura /exportAll', 'error', 
+                        '⚠️ O caminho /exportAll não existe ainda. O App Script precisa enviar dados primeiro.');
+                }
+                
+                // Test 6: Check for Alunos data
+                addTestResult('6. Verificar dados de Alunos', 'pending');
+                const alunosRef = window.firebaseTest.ref(db, 'exportAll/Alunos/dados');
+                const alunosSnapshot = await window.firebaseTest.get(alunosRef);
+                
+                if (alunosSnapshot.exists()) {
+                    const alunos = alunosSnapshot.val();
+                    const count = Array.isArray(alunos) ? alunos.length : Object.keys(alunos || {}).length;
+                    addTestResult('6. Verificar dados de Alunos', 'success', 
+                        `Encontrados ${count} alunos na base de dados`,
+                        { primeiroAluno: Array.isArray(alunos) ? alunos[0] : alunos[Object.keys(alunos)[0]] });
+                } else {
+                    addTestResult('6. Verificar dados de Alunos', 'error', 
+                        '⚠️ Dados de alunos não encontrados. Verifique se o App Script enviou os dados.');
+                }
+                
+                // Final summary
+                addTestResult('✨ Teste Completo', 'success', 
+                    'Todos os testes de conexão foram executados! Verifique os resultados acima.');
+                
+            } catch (error) {
+                addTestResult('❌ Erro no Teste', 'error', 
+                    `Erro: ${error.message}`, 
+                    { stack: error.stack });
+            } finally {
+                button.disabled = false;
+                button.textContent = '🔄 Executar Testes Novamente';
+            }
+        }
+        
+        // Auto-run on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                addTestResult('Pronto para testar', 'pending', 
+                    'Clique no botão para executar os testes de conexão');
+            }, 100);
+        });
+    </script>
+</body>
+</html>
