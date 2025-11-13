@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Campos de Dados Firebase</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .test-item {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 4px solid #ddd;
+        }
+        .test-item.pending {
+            background: #fff3cd;
+            border-color: #ffc107;
+        }
+        .test-item.success {
+            background: #d4edda;
+            border-color: #28a745;
+        }
+        .test-item.error {
+            background: #f8d7da;
+            border-color: #dc3545;
+        }
+        .test-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        .test-detail {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .data-preview {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        .success-summary {
+            background: #d4edda;
+            border: 1px solid #28a745;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔍 Teste de Campos de Dados Firebase</h1>
+        <p class="subtitle">
+            Este teste verifica se os campos específicos mencionados no problema estão sendo carregados corretamente:
+            <strong>NotasPraticas, PontoTeoria/PontoPratica, Escala1, Escala2, etc.</strong>
+        </p>
+        
+        <div id="test-results"></div>
+        
+        <button id="runTest" onclick="runTests()">▶️ Executar Testes de Campos</button>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getDatabase, ref, get } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+        
+        // Import config
+        import firebaseConfigModule from './firebase-config.js';
+        const firebaseConfig = firebaseConfigModule.firebaseConfig || firebaseConfigModule;
+        
+        // Make available globally for tests
+        window.firebaseTest = {
+            initializeApp,
+            getDatabase,
+            ref,
+            get,
+            firebaseConfig
+        };
+        
+        window.dispatchEvent(new CustomEvent('firebaseTestReady'));
+    </script>
+
+    <script>
+        let testResults = [];
+        
+        function addTestResult(title, status, detail = '', data = null) {
+            testResults.push({ title, status, detail, data });
+            renderResults();
+        }
+        
+        function renderResults() {
+            const container = document.getElementById('test-results');
+            container.innerHTML = testResults.map(test => `
+                <div class="test-item ${test.status}">
+                    <div class="test-title">
+                        ${test.status === 'success' ? '✅' : test.status === 'error' ? '❌' : '⏳'} 
+                        ${test.title}
+                    </div>
+                    ${test.detail ? `<div class="test-detail">${test.detail}</div>` : ''}
+                    ${test.data ? `<div class="data-preview">${JSON.stringify(test.data, null, 2)}</div>` : ''}
+                </div>
+            `).join('');
+        }
+        
+        async function runTests() {
+            const button = document.getElementById('runTest');
+            button.disabled = true;
+            button.textContent = '🔄 Testando...';
+            testResults = [];
+            
+            try {
+                // Initialize Firebase
+                addTestResult('0. Inicializando Firebase', 'pending');
+                await new Promise(resolve => {
+                    if (window.firebaseTest) {
+                        resolve();
+                    } else {
+                        window.addEventListener('firebaseTestReady', resolve, { once: true });
+                    }
+                });
+                
+                const app = window.firebaseTest.initializeApp(window.firebaseTest.firebaseConfig);
+                const db = window.firebaseTest.getDatabase(app);
+                addTestResult('0. Inicializando Firebase', 'success', 'Firebase inicializado com sucesso');
+                
+                // Test 1: Check exportAll structure
+                addTestResult('1. Verificar estrutura /exportAll', 'pending');
+                const exportAllRef = window.firebaseTest.ref(db, 'exportAll');
+                const exportAllSnapshot = await window.firebaseTest.get(exportAllRef);
+                
+                if (!exportAllSnapshot.exists()) {
+                    addTestResult('1. Verificar estrutura /exportAll', 'error', 
+                        '❌ O caminho /exportAll não existe. Execute o App Script primeiro!');
+                    throw new Error('exportAll não existe');
+                }
+                
+                const allData = exportAllSnapshot.val();
+                const allKeys = Object.keys(allData || {});
+                addTestResult('1. Verificar estrutura /exportAll', 'success', 
+                    `Encontrados ${allKeys.length} caminhos de dados`, 
+                    { todasAsAbas: allKeys });
+                
+                // Test 2: Check Escala1
+                addTestResult('2. Verificar Escala1', 'pending');
+                const escala1Ref = window.firebaseTest.ref(db, 'exportAll/Escala1');
+                const escala1Snapshot = await window.firebaseTest.get(escala1Ref);
+                
+                if (escala1Snapshot.exists()) {
+                    const escala1Data = escala1Snapshot.val();
+                    const alunos = escala1Data.dados || [];
+                    const firstStudent = alunos[0] || {};
+                    const fields = Object.keys(firstStudent);
+                    
+                    // Check for date columns (DD_MM format)
+                    const dateFields = fields.filter(f => /^\d{1,2}_\d{2}$/.test(f));
+                    
+                    addTestResult('2. Verificar Escala1', 'success', 
+                        `Encontrados ${alunos.length} alunos, ${dateFields.length} colunas de data`, 
+                        { 
+                            totalAlunos: alunos.length,
+                            colunasData: dateFields.slice(0, 10),
+                            camposAmostra: fields.slice(0, 15),
+                            primeiroAluno: firstStudent
+                        });
+                } else {
+                    addTestResult('2. Verificar Escala1', 'error', 
+                        '❌ Escala1 não encontrada em /exportAll/Escala1');
+                }
+                
+                // Test 3: Check Escala2
+                addTestResult('3. Verificar Escala2', 'pending');
+                const escala2Ref = window.firebaseTest.ref(db, 'exportAll/Escala2');
+                const escala2Snapshot = await window.firebaseTest.get(escala2Ref);
+                
+                if (escala2Snapshot.exists()) {
+                    const escala2Data = escala2Snapshot.val();
+                    const alunos = escala2Data.dados || [];
+                    const firstStudent = alunos[0] || {};
+                    const fields = Object.keys(firstStudent);
+                    const dateFields = fields.filter(f => /^\d{1,2}_\d{2}$/.test(f));
+                    
+                    addTestResult('3. Verificar Escala2', 'success', 
+                        `Encontrados ${alunos.length} alunos, ${dateFields.length} colunas de data`, 
+                        { 
+                            totalAlunos: alunos.length,
+                            colunasData: dateFields.slice(0, 10),
+                            camposAmostra: fields.slice(0, 15)
+                        });
+                } else {
+                    addTestResult('3. Verificar Escala2', 'error', 
+                        '⚠️ Escala2 não encontrada. Isso é normal se você só tem uma escala.');
+                }
+                
+                // Test 4: Check Ponto data for Prática/Teórica field
+                addTestResult('4. Verificar campo Prática/Teórica no Ponto', 'pending');
+                const pontoRef = window.firebaseTest.ref(db, 'exportAll/Ponto/dados');
+                const pontoSnapshot = await window.firebaseTest.get(pontoRef);
+                
+                if (pontoSnapshot.exists()) {
+                    const pontoData = pontoSnapshot.val();
+                    const pontoArray = Array.isArray(pontoData) ? pontoData : Object.values(pontoData);
+                    const firstRecord = pontoArray[0] || {};
+                    const fields = Object.keys(firstRecord);
+                    
+                    // Look for Prática/Teórica field variations
+                    const praticaTeoricaVariations = [
+                        'Pratica/Teorica',
+                        'Prática/Teórica',
+                        'PraticaTeorica',
+                        'PráticaTeórica',
+                        'Modalidade',
+                        'modalidade',
+                        'Tipo',
+                        'tipo',
+                        'Turno',
+                        'turno',
+                        'Periodo',
+                        'periodo'
+                    ];
+                    
+                    const foundField = fields.find(f => 
+                        praticaTeoricaVariations.some(v => 
+                            f.toLowerCase().replace(/[\/\s]/g, '') === v.toLowerCase().replace(/[\/\s]/g, '')
+                        )
+                    );
+                    
+                    if (foundField) {
+                        addTestResult('4. Verificar campo Prática/Teórica no Ponto', 'success', 
+                            `✅ Campo encontrado: "${foundField}"`, 
+                            { 
+                                campoEncontrado: foundField,
+                                valorExemplo: firstRecord[foundField],
+                                todosOsCampos: fields,
+                                totalRegistros: pontoArray.length
+                            });
+                    } else {
+                        addTestResult('4. Verificar campo Prática/Teórica no Ponto', 'error', 
+                            `❌ Campo Prática/Teórica NÃO encontrado. Verificou: ${praticaTeoricaVariations.join(', ')}`, 
+                            { camposDisponiveis: fields });
+                    }
+                } else {
+                    addTestResult('4. Verificar campo Prática/Teórica no Ponto', 'error', 
+                        '❌ Dados de Ponto não encontrados em /exportAll/Ponto/dados');
+                }
+                
+                // Test 5: Check for NotasPraticas (multiple sheets)
+                addTestResult('5. Verificar NotasPraticas (NP_*)', 'pending');
+                const notasPraticasKeys = allKeys.filter(key => {
+                    const normalized = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+                    return normalized.startsWith('np') || 
+                           normalized.includes('pratica') || 
+                           normalized.includes('pratico');
+                });
+                
+                if (notasPraticasKeys.length > 0) {
+                    const notasPraticasDetails = [];
+                    
+                    for (const key of notasPraticasKeys.slice(0, 5)) { // Test first 5
+                        const npRef = window.firebaseTest.ref(db, `exportAll/${key}/dados`);
+                        const npSnapshot = await window.firebaseTest.get(npRef);
+                        
+                        if (npSnapshot.exists()) {
+                            const npData = npSnapshot.val();
+                            const npArray = Array.isArray(npData) ? npData : Object.values(npData);
+                            notasPraticasDetails.push({
+                                aba: key,
+                                totalRegistros: npArray.length,
+                                campos: npArray[0] ? Object.keys(npArray[0]).slice(0, 10) : []
+                            });
+                        }
+                    }
+                    
+                    addTestResult('5. Verificar NotasPraticas (NP_*)', 'success', 
+                        `✅ Encontradas ${notasPraticasKeys.length} abas de notas práticas`, 
+                        { 
+                            todasAsAbas: notasPraticasKeys,
+                            detalhes: notasPraticasDetails
+                        });
+                } else {
+                    addTestResult('5. Verificar NotasPraticas (NP_*)', 'error', 
+                        '❌ Nenhuma aba de notas práticas encontrada. Procurando por abas que começam com "NP" ou contêm "pratica"');
+                }
+                
+                // Final summary
+                const successCount = testResults.filter(t => t.status === 'success').length;
+                const errorCount = testResults.filter(t => t.status === 'error').length;
+                
+                if (errorCount === 0) {
+                    addTestResult('✅ Todos os Testes Passaram!', 'success', 
+                        `Todos os ${successCount} testes foram bem-sucedidos. Os dados estão sendo carregados corretamente!`);
+                } else {
+                    addTestResult('⚠️ Alguns Testes Falharam', 'error', 
+                        `${successCount} testes passaram, ${errorCount} falharam. Verifique os detalhes acima e execute o App Script se necessário.`);
+                }
+                
+            } catch (error) {
+                addTestResult('❌ Erro no Teste', 'error', 
+                    `Erro: ${error.message}`, 
+                    { stack: error.stack });
+            } finally {
+                button.disabled = false;
+                button.textContent = '🔄 Executar Testes Novamente';
+            }
+        }
+        
+        // Initial message
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                addTestResult('Pronto para testar', 'pending', 
+                    'Clique no botão para verificar se os campos de dados estão carregando corretamente');
+            }, 100);
+        });
+    </script>
+</body>
+</html>
