@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Visual - Sistema de Notas Práticas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            padding: 2rem;
+            background-color: #F7F9FB;
+        }
+        .demo-section {
+            margin-bottom: 3rem;
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .demo-section h2 {
+            color: #0033A0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #0033A0;
+            padding-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body class="font-sans">
+    <div class="max-w-7xl mx-auto">
+        <header class="mb-8 text-center">
+            <h1 class="text-4xl font-bold mb-2" style="background: linear-gradient(135deg, #0033A0, #0054B4); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                🎓 Sistema de Notas Práticas - Nível USP
+            </h1>
+            <p class="text-slate-600">Teste visual das melhorias de interface profissional</p>
+            <div class="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-green-50 rounded-lg text-green-700 text-sm font-medium">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-2.25-3l3.75 3.75m0 0l-3.75 3.75m3.75-3.75H3" />
+                </svg>
+                Sistema de Validação Ativo
+            </div>
+        </header>
+
+        <!-- Seção 1: Badge de Validação -->
+        <div class="demo-section">
+            <h2>1️⃣ Badge de Validação</h2>
+            <p class="text-sm text-slate-600 mb-4">Indicador visual de que os dados foram validados pelo sistema único</p>
+            <div class="flex gap-4 flex-wrap">
+                <span class="px-3 py-1 text-xs bg-green-100 text-green-700 rounded-full font-medium">✓ Validado</span>
+                <span class="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-full font-medium">ID: a3f5b9c2</span>
+                <span class="px-3 py-1 text-xs bg-purple-100 text-purple-700 rounded-full font-medium">Timestamp: 2025-01-15 10:30</span>
+            </div>
+        </div>
+
+        <!-- Seção 2: Card de Média Geral -->
+        <div class="demo-section">
+            <h2>2️⃣ Card de Média Geral Profissional</h2>
+            <p class="text-sm text-slate-600 mb-4">Design com gradiente roxo moderno e anel de progresso animado</p>
+            <div class="content-card summary-progress-card animated-card delay-100" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; max-width: 600px;">
+                <div class="summary-progress-ring" style="--value:85; --ring-color: rgba(255,255,255,0.3); --fill-color: white;">
+                    <div class="value" style="color: white; font-size: 2.5rem; font-weight: 700;">8.5</div>
+                    <div style="color: rgba(255,255,255,0.9); font-size: 0.75rem; margin-top: -8px;">de 10.0</div>
+                </div>
+                <div class="summary-text">
+                    <h3 style="color: white; font-size: 1.25rem; font-weight: 600;">Média Geral Prática</h3>
+                    <p style="color: rgba(255,255,255,0.95); font-size: 0.95rem; margin-top: 0.25rem;">
+                        🌟 Excelente desempenho
+                    </p>
+                    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.2);">
+                        <div class="text-xs" style="color: rgba(255,255,255,0.85);">
+                            Baseado em 12 avaliações validadas
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção 3: Cards de Competência -->
+        <div class="demo-section">
+            <h2>3️⃣ Cards de Competência com Gradientes</h2>
+            <p class="text-sm text-slate-600 mb-4">Três pilares da avaliação com cores e ícones distintos</p>
+            <div class="competency-card-container animated-card delay-200" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+                <div class="content-card kpi-base-card competency-card" style="border-left: 4px solid #0054B4;">
+                    <div class="icon" style="background: linear-gradient(135deg, #0054B4 0%, #0073E6 100%); color: white; width: 3rem; height: 3rem; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center;">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
+                        </svg>
+                    </div>
+                    <div style="margin-left: 1rem;">
+                        <div class="value" style="color: #0054B4; font-size: 2rem; font-weight: 700;">8.7</div>
+                        <div class="label" style="font-weight: 600; color: #1e293b;">Raciocínio Clínico</div>
+                        <div class="text-xs text-slate-500 mt-1">Avaliação, planejamento e associação</div>
+                    </div>
+                </div>
+                
+                <div class="content-card kpi-base-card competency-card" style="border-left: 4px solid #F97316;">
+                    <div class="icon" style="background: linear-gradient(135deg, #F97316 0%, #FB923C 100%); color: white; width: 3rem; height: 3rem; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center;">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z" />
+                        </svg>
+                    </div>
+                    <div style="margin-left: 1rem;">
+                        <div class="value" style="color: #F97316; font-size: 2rem; font-weight: 700;">8.3</div>
+                        <div class="label" style="font-weight: 600; color: #1e293b;">Execução Técnica</div>
+                        <div class="text-xs text-slate-500 mt-1">Habilidade e precisão na execução</div>
+                    </div>
+                </div>
+                
+                <div class="content-card kpi-base-card competency-card" style="border-left: 4px solid #16A34A;">
+                    <div class="icon" style="background: linear-gradient(135deg, #16A34A 0%, #22C55E 100%); color: white; width: 3rem; height: 3rem; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center;">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+                        </svg>
+                    </div>
+                    <div style="margin-left: 1rem;">
+                        <div class="value" style="color: #16A34A; font-size: 2rem; font-weight: 700;">8.9</div>
+                        <div class="label" style="font-weight: 600; color: #1e293b;">Profissionalismo</div>
+                        <div class="text-xs text-slate-500 mt-1">Comunicação, ética e relacionamento</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção 4: Botão de Análise IA -->
+        <div class="demo-section">
+            <h2>4️⃣ Botão de Análise com IA</h2>
+            <p class="text-sm text-slate-600 mb-4">Botão com gradiente roxo e ícone para análise automática de feedback</p>
+            <button class="gemini-analysis-button">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+                Analisar com IA
+            </button>
+        </div>
+
+        <!-- Seção 5: Barras de Progresso Coloridas -->
+        <div class="demo-section">
+            <h2>5️⃣ Barras de Progresso com Cores Dinâmicas</h2>
+            <p class="text-sm text-slate-600 mb-4">Cores variam automaticamente baseadas no desempenho (verde > azul > âmbar > vermelho)</p>
+            <div style="display: grid; gap: 1.5rem;">
+                <div class="bar-chart-item">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-medium text-sm text-slate-700">Avaliação de Paciente</span>
+                        <span class="font-bold text-lg" style="color: #10b981;">9.5</span>
+                    </div>
+                    <div class="bar-bg relative" style="height: 10px; background: #e2e8f0; border-radius: 5px; overflow: hidden;">
+                        <div class="bar-fill" style="width: 95%; background: linear-gradient(90deg, #10b981 0%, #10b981cc 100%); height: 100%; border-radius: 5px;"></div>
+                    </div>
+                </div>
+                
+                <div class="bar-chart-item">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-medium text-sm text-slate-700">Execução de Técnica</span>
+                        <span class="font-bold text-lg" style="color: #6366f1;">7.8</span>
+                    </div>
+                    <div class="bar-bg relative" style="height: 10px; background: #e2e8f0; border-radius: 5px; overflow: hidden;">
+                        <div class="bar-fill" style="width: 78%; background: linear-gradient(90deg, #6366f1 0%, #6366f1cc 100%); height: 100%; border-radius: 5px;"></div>
+                    </div>
+                </div>
+                
+                <div class="bar-chart-item">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-medium text-sm text-slate-700">Comunicação</span>
+                        <span class="font-bold text-lg" style="color: #f59e0b;">6.5</span>
+                    </div>
+                    <div class="bar-bg relative" style="height: 10px; background: #e2e8f0; border-radius: 5px; overflow: hidden;">
+                        <div class="bar-fill" style="width: 65%; background: linear-gradient(90deg, #f59e0b 0%, #f59e0bcc 100%); height: 100%; border-radius: 5px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção 6: Status Badge -->
+        <div class="demo-section">
+            <h2>6️⃣ Badges de Status de Avaliação</h2>
+            <p class="text-sm text-slate-600 mb-4">Status visual com cores contextuais</p>
+            <div class="flex gap-3 flex-wrap">
+                <span class="px-4 py-2 rounded-full text-sm font-semibold" style="background-color: #10b98120; color: #10b981;">
+                    Excelente
+                </span>
+                <span class="px-4 py-2 rounded-full text-sm font-semibold" style="background-color: #3b82f620; color: #3b82f6;">
+                    Muito Bom
+                </span>
+                <span class="px-4 py-2 rounded-full text-sm font-semibold" style="background-color: #f59e0b20; color: #f59e0b;">
+                    Bom
+                </span>
+                <span class="px-4 py-2 rounded-full text-sm font-semibold" style="background-color: #ef444420; color: #ef4444;">
+                    Precisa Melhorar
+                </span>
+            </div>
+        </div>
+
+        <footer class="mt-12 text-center text-slate-500 text-sm">
+            <p>Sistema de Notas Práticas - Versão 33.0</p>
+            <p class="mt-1">Dashboard Ensino Fisio INCOR - USP</p>
+            <p class="mt-2">✅ Sistema de validação único implementado</p>
+        </footer>
+    </div>
+</body>
+</html>
