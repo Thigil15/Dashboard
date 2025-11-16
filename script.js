@@ -246,7 +246,7 @@
         
         /**
          * Utility function to split concatenated field names into readable labels
-         * Converts: "AspiracaoNasotraquealQuantoARealizacao" -> "Aspiracao Nasotraqueal Quanto A Realizacao"
+         * Converts: "AspiracaoNasotraquealQuantoARealizacao" -> "Aspiração nasotraqueal quanto a realização"
          */
         function splitConcatenatedFieldName(fieldName) {
             if (!fieldName || typeof fieldName !== 'string') return fieldName;
@@ -263,30 +263,21 @@
             // EEquipe -> E Equipe, ARealizacao -> A Realizacao
             result = result.replace(/([A-Z])([A-Z][a-z])/g, '$1 $2');
             
-            // Clean up common Portuguese articles and prepositions to lowercase
-            result = result
-                .replace(/\bDa\b/g, 'da')
-                .replace(/\bDe\b/g, 'de')
-                .replace(/\bDo\b/g, 'do')
-                .replace(/\bDos\b/g, 'dos')
-                .replace(/\bDas\b/g, 'das')
-                .replace(/\bE\b/g, 'e')
-                .replace(/\bA\b/g, 'a')
-                .replace(/\bO\b/g, 'o')
-                .replace(/\bNa\b/g, 'na')
-                .replace(/\bNo\b/g, 'no')
-                .replace(/\bNos\b/g, 'nos')
-                .replace(/\bNas\b/g, 'nas')
-                .replace(/\bEm\b/g, 'em')
-                .replace(/\bPor\b/g, 'por')
-                .replace(/\bCom\b/g, 'com')
-                .replace(/\bPara\b/g, 'para')
-                .replace(/\bQue\b/g, 'que');
+            // Capitalize first letter, lowercase the rest (except proper nouns)
+            // This creates a more natural sentence case
+            result = result.charAt(0).toUpperCase() + result.slice(1).toLowerCase();
             
-            // Limit length for display (show first part + ellipsis if too long)
-            if (result.length > 80) {
-                result = result.substring(0, 77) + '...';
-            }
+            // Restore capitalization for common acronyms and medical terms
+            result = result
+                .replace(/\busp\b/gi, 'USP')
+                .replace(/\bhc\b/gi, 'HC')
+                .replace(/\buti\b/gi, 'UTI')
+                .replace(/\bvm\b/gi, 'VM')
+                .replace(/\bcpap\b/gi, 'CPAP')
+                .replace(/\bvni\b/gi, 'VNI');
+            
+            // Do NOT truncate - show full field name
+            // User specifically requested full names, not truncated with "..."
             
             return result.trim();
         }
@@ -3573,20 +3564,47 @@ function renderTabEscala(escalas) {
             sortedNotasPDesc.forEach((n, index) => {
                 const isActive = index === 0;
                 const tabId = `subtab-np-${index}`;
-                const nomePratica = n.nomePratica || `Avaliação ${index + 1}`;
                 
-                // Adiciona badge de validação se tiver ID único
-                const validationBadge = n._uniqueId ? 
-                    `<span class="ml-2 px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full font-medium">✓ Validado</span>` : '';
+                // Create better button label with date and module number
+                let buttonLabel = n.nomePratica || `Avaliação ${index + 1}`;
                 
-                navHtml += `<button class="subnav-button ${isActive ? 'active' : ''}" data-subtab-id="${tabId}">${nomePratica}${validationBadge}</button>`;
-
+                // Extract module number if present (e.g., "NP_Modulo1" -> "Módulo 1")
+                const moduleMatch = buttonLabel.match(/modulo\s*(\d+)/i) || buttonLabel.match(/np[_-]?(\d+)/i);
+                const moduleNumber = moduleMatch ? parseInt(moduleMatch[1]) : null;
+                
+                // Format the date if available
+                if (n['Data/Hora']) {
+                    try {
+                        const dataObj = new Date(String(n['Data/Hora']).replace(/-/g,'/'));
+                        const dataFormatadaCurta = dataObj.toLocaleDateString('pt-BR', { 
+                            day: '2-digit', 
+                            month: '2-digit',
+                            timeZone: 'UTC' 
+                        });
+                        
+                        if (moduleNumber) {
+                            buttonLabel = `Módulo nº${String(moduleNumber).padStart(2, '0')} - ${dataFormatadaCurta}`;
+                        } else {
+                            // Use supervisor name or generic label if module number not found
+                            const supervisor = n.Supervisor ? ` (${n.Supervisor.split(' ')[0]})` : '';
+                            buttonLabel = `Avaliação ${index + 1} - ${dataFormatadaCurta}${supervisor}`;
+                        }
+                    } catch (e) {
+                        console.warn('[renderTabNotasPraticas] Erro ao formatar data do botão:', e);
+                    }
+                }
+                
+                navHtml += `<button class="subnav-button ${isActive ? 'active' : ''}" data-subtab-id="${tabId}">${buttonLabel}</button>`;
+                
                 const keyM = Object.keys(n).find(k => /MÉDIA\s*\(NOTA FINAL\)[:]?/i.test(k)) || null;
                 const keyC = Object.keys(n).find(k => /COMENTÁRIOS\s*DO\(A\)\s*SUPERVISOR\(A\)[:]?/i.test(k)) || null;
                 const mediaFinal = parseNota(n[keyM]);
                 const comentario = n[keyC] || 'Sem comentários registrados.';
                 const comentarioEscapado = comentario.replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/\n/g, "\\n");
                 const dataFormatada = n['Data/Hora'] ? new Date(String(n['Data/Hora']).replace(/-/g,'/')).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : 'N/A';
+                
+                // Keep original nomePratica for display in the content
+                const nomePratica = n.nomePratica || `Avaliação Prática ${index + 1}`;
                 
                 // Determine grade color and status
                 let gradeColor = '#0ea5e9'; // default blue
@@ -3651,11 +3669,11 @@ function renderTabEscala(escalas) {
                                     <div class="flex items-start justify-between mb-4">
                                         <div class="flex-1">
                                             <h3 class="font-display text-2xl font-bold text-slate-900 mb-2">${nomePratica}</h3>
-                                            <div class="flex items-center gap-2">
+                                            <div class="flex items-center gap-2 flex-wrap">
                                                 <span class="px-3 py-1 rounded-full text-xs font-semibold" style="background-color: ${gradeColor}20; color: ${gradeColor};">
                                                     ${gradeStatus}
                                                 </span>
-                                                ${n._uniqueId ? '<span class="px-3 py-1 bg-green-50 text-green-700 rounded-full text-xs font-semibold">✓ Validado</span>' : ''}
+                                                ${n._uniqueId ? '<span class="px-3 py-1 bg-green-50 text-green-700 rounded-full text-xs font-semibold inline-flex items-center gap-1"><svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>Validado</span>' : ''}
                                             </div>
                                         </div>
                                     </div>
