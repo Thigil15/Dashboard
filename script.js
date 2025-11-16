@@ -3366,8 +3366,7 @@ function renderTabEscala(escalas) {
         }
 
         function calculatePracticeSummary(notasP) {
-            console.log('[calculatePracticeSummary] Starting calculation with notasP:', notasP);
-            console.log('[calculatePracticeSummary] Number of evaluations:', notasP ? notasP.length : 0);
+            console.log('[calculatePracticeSummary] Calculating with', notasP ? notasP.length : 0, 'evaluations');
             
             let overallSum = 0;
             let overallCount = 0;
@@ -3418,14 +3417,8 @@ function renderTabEscala(escalas) {
                 return dateA - dateB; 
             });
             
-            console.log('[calculatePracticeSummary] Sorted evaluations:', sortedNotasP.length);
-            
             sortedNotasP.forEach((n, index) => {
-                console.log(`[calculatePracticeSummary] Processing evaluation ${index + 1}:`, n);
-                console.log(`[calculatePracticeSummary] Available keys:`, Object.keys(n));
-                
                 // More flexible pattern to find the average/media field
-                // Matches: "MÉDIA (NOTA FINAL)", "Media (Nota Final)", "MediaNotaFinal", "MEDIA_NOTA_FINAL", etc.
                 const kM = Object.keys(n).find(k => 
                     /MÉDIA.*NOTA.*FINAL/i.test(k) || 
                     /MEDIA.*NOTA.*FINAL/i.test(k) ||
@@ -3434,39 +3427,29 @@ function renderTabEscala(escalas) {
                     /NOTA.*FINAL/i.test(k)
                 ) || null;
                 
-                console.log(`[calculatePracticeSummary] Found media key: "${kM}"`);
-                console.log(`[calculatePracticeSummary] Media value from data: "${n[kM]}"`);
-                
                 const media = parseNota(n[kM]);
-                console.log(`[calculatePracticeSummary] Parsed media value: ${media}`);
                 
                 if (media > 0) {
                     overallSum += media;
                     overallCount++;
                     last5Notes.push({ label: n.nomePratica, value: media });
-                    console.log(`[calculatePracticeSummary] Added to overall: sum=${overallSum}, count=${overallCount}`);
                 }
                 
-                let competencyMatches = { raciocinio: 0, tecnica: 0, profissionalismo: 0 };
                 Object.keys(n).forEach(key => {
                     const val = parseNota(n[key]);
                     if (val > 0) {
                         if (map.raciocinio.some(regex => regex.test(key))) {
                             competency.raciocinio.sum += val;
                             competency.raciocinio.count++;
-                            competencyMatches.raciocinio++;
                         } else if (map.tecnica.some(regex => regex.test(key))) {
                             competency.tecnica.sum += val;
                             competency.tecnica.count++;
-                            competencyMatches.tecnica++;
                         } else if (map.profissionalismo.some(regex => regex.test(key))) {
                             competency.profissionalismo.sum += val;
                             competency.profissionalismo.count++;
-                            competencyMatches.profissionalismo++;
                         }
                     }
                 });
-                console.log(`[calculatePracticeSummary] Competency matches for evaluation ${index + 1}:`, competencyMatches);
             });
             
             const result = {
@@ -3477,11 +3460,12 @@ function renderTabEscala(escalas) {
                 last5Notes: last5Notes.slice(-5)
             };
             
-            console.log('[calculatePracticeSummary] Final results:', result);
-            console.log('[calculatePracticeSummary] Competency details:', {
-                raciocinio: `${competency.raciocinio.sum}/${competency.raciocinio.count} = ${result.raciocinioAvg}`,
-                tecnica: `${competency.tecnica.sum}/${competency.tecnica.count} = ${result.tecnicaAvg}`,
-                profissionalismo: `${competency.profissionalismo.sum}/${competency.profissionalismo.count} = ${result.profissionalismoAvg}`
+            console.log('[calculatePracticeSummary] Results:', {
+                overallAvg: result.overallAvg.toFixed(2),
+                raciocinioAvg: result.raciocinioAvg.toFixed(2),
+                tecnicaAvg: result.tecnicaAvg.toFixed(2),
+                profissionalismoAvg: result.profissionalismoAvg.toFixed(2),
+                evolutionPoints: result.last5Notes.length
             });
             
             return result;
