@@ -1380,7 +1380,14 @@ const pontoState = {
                              const rNomeNorm = normalizeString(r.NomeCompleto);
                              const isActive = activeStudentMap.has(rEmailNorm) || activeStudentMap.has(rNomeNorm);
                             if(r && isActive){
-                                const kM = Object.keys(r).find(k => /MÉDIA\s*\(NOTA FINAL\)[:]?/i.test(k)) || null;
+                                // More flexible pattern to find the average field
+                                const kM = Object.keys(r).find(k => 
+                                    /MÉDIA.*NOTA.*FINAL/i.test(k) || 
+                                    /MEDIA.*NOTA.*FINAL/i.test(k) ||
+                                    /MÉDIA.*FINAL/i.test(k) ||
+                                    /MEDIA.*FINAL/i.test(k) ||
+                                    /NOTA.*FINAL/i.test(k)
+                                ) || null;
                                 if(kM){
                                     const n = parseNota(r[kM]);
                                     if(n > 0){
@@ -2840,7 +2847,13 @@ const pontoState = {
              if(notasP.length>0){
                  let s=0; 
                  notasP.forEach(n=>{
-                     const k=Object.keys(n).find(k => /MÉDIA\s*\(NOTA FINAL\)[:]?/i.test(k)) || null; 
+                     const k=Object.keys(n).find(k => 
+                         /MÉDIA.*NOTA.*FINAL/i.test(k) || 
+                         /MEDIA.*NOTA.*FINAL/i.test(k) ||
+                         /MÉDIA.*FINAL/i.test(k) ||
+                         /MEDIA.*FINAL/i.test(k) ||
+                         /NOTA.*FINAL/i.test(k)
+                     ) || null; 
                      if(k){
                          let v=parseNota(n[k]); 
                          if(v>0){s+=v; countP++;}
@@ -3365,9 +3378,39 @@ function renderTabEscala(escalas) {
             };
             const last5Notes = [];
             const map = {
-                raciocinio: [/1\.\s*CAPACIDADE DE AVALIAÇÃO/i, /2\.\s*PLANEJAMENTO E ORGANIZAÇÃO/i, /4\.\s*HABILIDADE DE ASSOCIAÇÃO/i],
-                tecnica: [/3\.\s*HABILIDADE NA EXECUÇÃO/i],
-                profissionalismo: [/5\.\s*HABILIDADE NO USO DE TERMOS/i, /8\.\s*COMUNICAÇÃO INTERPROFISSIONAL/i, /9\.\s*RELACIONAMENTO/i, /4\.\s*COMPORTAMENTO ÉTICO/i, /1\.\s*INICIATIVA/i, /2\.\s*INTERESSE/i, /3\.\s*RESPONSABILIDADE/i]
+                // More flexible patterns that match various formats
+                raciocinio: [
+                    /CAPACIDADE.*AVALIAÇÃO/i,
+                    /AVALIAÇÃO.*INICIAL/i,
+                    /PLANEJAMENTO.*ORGANIZAÇÃO/i,
+                    /PLANEJAMENTO.*TRATAMENTO/i,
+                    /HABILIDADE.*ASSOCIAÇÃO/i,
+                    /RACIOCINIO.*CLINICO/i,
+                    /RACIOCÍNIO.*CLÍNICO/i
+                ],
+                tecnica: [
+                    /HABILIDADE.*EXECUÇÃO/i,
+                    /EXECUÇÃO.*TÉCNICA/i,
+                    /EXECUCAO.*TECNICA/i,
+                    /PRECISÃO.*REALIZAÇÃO/i,
+                    /PRECISAO.*REALIZACAO/i,
+                    /TÉCNICA.*PROCEDIMENTO/i,
+                    /TECNICA.*PROCEDIMENTO/i
+                ],
+                profissionalismo: [
+                    /HABILIDADE.*USO.*TERMOS/i,
+                    /COMUNICAÇÃO.*INTERPROFISSIONAL/i,
+                    /COMUNICACAO.*INTERPROFISSIONAL/i,
+                    /RELACIONAMENTO/i,
+                    /COMPORTAMENTO.*ÉTICO/i,
+                    /COMPORTAMENTO.*ETICO/i,
+                    /INICIATIVA/i,
+                    /INTERESSE/i,
+                    /RESPONSABILIDADE/i,
+                    /PROFISSIONALISMO/i,
+                    /ÉTICA/i,
+                    /ETICA/i
+                ]
             };
             const sortedNotasP = [...notasP].sort((a, b) => {
                 const dateA = a['Data/Hora'] ? new Date(String(a['Data/Hora']).replace(/-/g,'/')) : new Date(0);
@@ -3381,7 +3424,16 @@ function renderTabEscala(escalas) {
                 console.log(`[calculatePracticeSummary] Processing evaluation ${index + 1}:`, n);
                 console.log(`[calculatePracticeSummary] Available keys:`, Object.keys(n));
                 
-                const kM = Object.keys(n).find(k => /MÉDIA\s*\(NOTA FINAL\)[:]?/i.test(k)) || null;
+                // More flexible pattern to find the average/media field
+                // Matches: "MÉDIA (NOTA FINAL)", "Media (Nota Final)", "MediaNotaFinal", "MEDIA_NOTA_FINAL", etc.
+                const kM = Object.keys(n).find(k => 
+                    /MÉDIA.*NOTA.*FINAL/i.test(k) || 
+                    /MEDIA.*NOTA.*FINAL/i.test(k) ||
+                    /MÉDIA.*FINAL/i.test(k) ||
+                    /MEDIA.*FINAL/i.test(k) ||
+                    /NOTA.*FINAL/i.test(k)
+                ) || null;
+                
                 console.log(`[calculatePracticeSummary] Found media key: "${kM}"`);
                 console.log(`[calculatePracticeSummary] Media value from data: "${n[kM]}"`);
                 
@@ -3627,8 +3679,23 @@ function renderTabEscala(escalas) {
                 
                 navHtml += `<button class="subnav-button ${isActive ? 'active' : ''}" data-subtab-id="${tabId}">${buttonLabel}</button>`;
                 
-                const keyM = Object.keys(n).find(k => /MÉDIA\s*\(NOTA FINAL\)[:]?/i.test(k)) || null;
-                const keyC = Object.keys(n).find(k => /COMENTÁRIOS\s*DO\(A\)\s*SUPERVISOR\(A\)[:]?/i.test(k)) || null;
+                // More flexible pattern to find fields
+                const keyM = Object.keys(n).find(k => 
+                    /MÉDIA.*NOTA.*FINAL/i.test(k) || 
+                    /MEDIA.*NOTA.*FINAL/i.test(k) ||
+                    /MÉDIA.*FINAL/i.test(k) ||
+                    /MEDIA.*FINAL/i.test(k) ||
+                    /NOTA.*FINAL/i.test(k)
+                ) || null;
+                
+                const keyC = Object.keys(n).find(k => 
+                    /COMENTÁRIOS.*SUPERVISOR/i.test(k) ||
+                    /COMENTARIOS.*SUPERVISOR/i.test(k) ||
+                    /FEEDBACK.*SUPERVISOR/i.test(k) ||
+                    /OBSERVAÇÕES/i.test(k) ||
+                    /OBSERVACOES/i.test(k)
+                ) || null;
+                
                 const mediaFinal = parseNota(n[keyM]);
                 const comentario = n[keyC] || 'Sem comentários registrados.';
                 const comentarioEscapado = comentario.replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/\n/g, "\\n");
