@@ -1320,8 +1320,11 @@ const pontoState = {
          * @returns {string} Número formatado no padrão pt-BR
          */
         function formatarNota(value, decimals = 1) {
-            if (value === null || value === undefined || isNaN(value)) return 'N/A';
-            return value.toFixed(decimals).replace('.', ',');
+            if (value == null || isNaN(value)) return 'N/A';
+            return value.toLocaleString('pt-BR', { 
+                minimumFractionDigits: decimals, 
+                maximumFractionDigits: decimals 
+            });
         }
 
         // [ORION] Helper para centralizar a busca de dados do aluno
