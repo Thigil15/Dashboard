@@ -3372,169 +3372,7 @@ function renderTabEscala(escalas) {
             
             let overallSum = 0;
             let overallCount = 0;
-            const competency = {
-                raciocinio: { sum: 0, count: 0 },
-                tecnica: { sum: 0, count: 0 },
-                profissionalismo: { sum: 0, count: 0 }
-            };
             const last5Notes = [];
-            const map = {
-                // [ENHANCED MAPPING] Comprehensive patterns for Portuguese physiotherapy evaluations
-                raciocinio: [
-                    // Avaliação e Planejamento (Assessment & Planning)
-                    /CAPACIDADE.*AVALIAÇÃO/i,
-                    /CAPACIDADE.*AVALIACAO/i,
-                    /AVALIAÇÃO.*INICIAL/i,
-                    /AVALIACAO.*INICIAL/i,
-                    /AVALIACAO.*ESTADO/i,
-                    /AVALIACAO.*PACIENTE/i,
-                    /AVALIACAO.*CLINICA/i,
-                    /AVALIACAO.*FÍSICA/i,
-                    /AVALIACAO.*FISIOTERAPEUTICA/i,
-                    /PLANEJAMENTO.*ORGANIZAÇÃO/i,
-                    /PLANEJAMENTO.*ORGANIZACAO/i,
-                    /PLANEJAMENTO.*TRATAMENTO/i,
-                    /PLANEJAMENTO.*TERAPEUTICO/i,
-                    /HABILIDADE.*ASSOCIAÇÃO/i,
-                    /HABILIDADE.*ASSOCIACAO/i,
-                    /RACIOCINIO.*CLINICO/i,
-                    /RACIOCÍNIO.*CLÍNICO/i,
-                    /RACIOCINIO\s*CLINICO/i,
-                    /RACIOCINIO.*CLINIO/i,  // Common typo
-                    /RACIOCINIO.*ATENDIMENTO/i,
-                    /RACIOCINIO.*CASO/i,
-                    // Conhecimento e Análise (Knowledge & Analysis)
-                    /CONHECIMENTO.*TEORICO/i,
-                    /CONHECIMENTO.*TEÓRICO/i,
-                    /CONHECIMENTO.*APLICADO/i,
-                    /CONHECIMENTO.*CLINICO/i,
-                    /ANALISE.*PACIENTE/i,
-                    /ANÁLISE.*PACIENTE/i,
-                    /ANALISE.*CRITICA/i,
-                    /ANÁLISE.*CRÍTICA/i,
-                    /ANALISE.*CASO/i,
-                    /ANALISE.*SITUACAO/i,
-                    /INTERPRETACAO.*DADOS/i,
-                    /INTERPRETAÇÃO.*DADOS/i,
-                    /INTERPRETAR.*DADOS/i,
-                    /INTERPRETACAO.*RESULTADOS/i,
-                    /INTERPRETACAO.*MONITORIZACAO/i,
-                    /DIAGNOSTICO.*FUNCIONAL/i,
-                    /DIAGNÓSTICO.*FUNCIONAL/i,
-                    /DIAGNOSTICO.*FISIOTERAPEUTICO/i,
-                    /ESTABELECIMENTO.*DIAGNOSTICO/i,
-                    /TOMADA.*DECISÃO/i,
-                    /TOMADA.*DECISAO/i,
-                    /DECISAO.*CLINICA/i,
-                    // Organização e Priorização (Organization & Prioritization)
-                    /ORGANIZAÇÃO.*ATIVIDADES/i,
-                    /ORGANIZACAO.*ATIVIDADES/i,
-                    /PRIORIZAÇÃO/i,
-                    /PRIORIZACAO/i,
-                    /PRIORIDADE.*ATENDIMENTO/i,
-                    /RESOLUÇÃO.*PROBLEMA/i,
-                    /RESOLUCAO.*PROBLEMA/i,
-                    /PENSAMENTO.*CRITICO/i,
-                    /PENSAMENTO.*CRÍTICO/i,
-                    // Competências Específicas de Raciocínio
-                    /COMPETENCIA.*AVALIACAO/i,
-                    /COMPETENCIA.*DIAGNOSTICO/i,
-                    /COMPETENCIA.*PLANEJAMENTO/i,
-                    /CAPACIDADE.*INTERPRETAR/i,
-                    /CAPACIDADE.*ANALISAR/i,
-                    /CAPACIDADE.*PLANEJAR/i
-                ],
-                tecnica: [
-                    // Execução e Habilidade Técnica (Technical Execution & Skill)
-                    /HABILIDADE.*EXECUÇÃO/i,
-                    /HABILIDADE.*EXECUCAO/i,
-                    /EXECUÇÃO.*TÉCNICA/i,
-                    /EXECUCAO.*TECNICA/i,
-                    /EXECUCAO\s*TECNICA/i,
-                    /PRECISÃO.*REALIZAÇÃO/i,
-                    /PRECISAO.*REALIZACAO/i,
-                    /TÉCNICA.*PROCEDIMENTO/i,
-                    /TECNICA.*PROCEDIMENTO/i,
-                    /TECNICAS.*ESPECIFICAS/i,
-                    /TÉCNICAS.*ESPECÍFICAS/i,
-                    // Procedimentos Específicos (Specific Procedures)
-                    /ASPIRAÇÃO/i,
-                    /ASPIRACAO/i,
-                    /VENTILAÇÃO.*MECÂNICA/i,
-                    /VENTILACAO.*MECANICA/i,
-                    /POSICIONAMENTO/i,
-                    /MOBILIZAÇÃO/i,
-                    /MOBILIZACAO/i,
-                    /DESMAME/i,
-                    /TÉCNICAS.*FISIOTERAPIA/i,
-                    /TECNICAS.*FISIOTERAPIA/i,
-                    // Destreza e Precisão (Dexterity & Precision)
-                    /DESTREZA/i,
-                    /HABILIDADE.*MANUAL/i,
-                    /PRECISAO\s*NA/i,
-                    /PRECISÃO\s*NA/i,
-                    /SEGURANÇA.*PROCEDIMENTO/i,
-                    /SEGURANCA.*PROCEDIMENTO/i,
-                    /REALIZAÇÃO.*FORMA.*SEGURA/i,
-                    /REALIZACAO.*FORMA.*SEGURA/i,
-                    /NIVEL.*AUXILIO/i,
-                    /NÍVEL.*AUXÍLIO/i
-                ],
-                profissionalismo: [
-                    // Comunicação (Communication)
-                    /HABILIDADE.*USO.*TERMOS/i,
-                    /COMUNICAÇÃO.*INTERPROFISSIONAL/i,
-                    /COMUNICACAO.*INTERPROFISSIONAL/i,
-                    /COMUNICAÇÃO.*PACIENTE/i,
-                    /COMUNICACAO.*PACIENTE/i,
-                    /COMUNICAÇÃO.*EQUIPE/i,
-                    /COMUNICACAO.*EQUIPE/i,
-                    /RELACIONAMENTO/i,
-                    /REGISTRO.*PRONTUÁRIO/i,
-                    /REGISTRO.*PRONTUARIO/i,
-                    // Ética e Comportamento (Ethics & Behavior)
-                    /COMPORTAMENTO.*ÉTICO/i,
-                    /COMPORTAMENTO.*ETICO/i,
-                    /ÉTICA/i,
-                    /ETICA/i,
-                    /PROFISSIONALISMO/i,
-                    /POSTURA.*PROFISSIONAL/i,
-                    /RESPEITO/i,
-                    /EMPATIA/i,
-                    // Responsabilidade e Comprometimento (Responsibility & Commitment)
-                    /RESPONSABILIDADE/i,
-                    /PONTUALIDADE/i,
-                    /ASSIDUIDADE/i,
-                    /FREQUENCIA/i,
-                    /FREQUÊNCIA/i,
-                    /COMPARECIMENTO/i,
-                    /REGULARIDADE/i,
-                    /EXATIDÃO/i,
-                    /EXATIDAO/i,
-                    /COMPROMETIMENTO/i,
-                    /DEDICAÇÃO/i,
-                    /DEDICACAO/i,
-                    // Iniciativa e Interesse (Initiative & Interest)
-                    /INICIATIVA/i,
-                    /INTERESSE/i,
-                    /PROATIVIDADE/i,
-                    /BUSCA.*CONHECIMENTO/i,
-                    /AUTONOMIA/i,
-                    // Trabalho em Equipe (Teamwork)
-                    /TRABALHO.*EQUIPE/i,
-                    /COLABORAÇÃO/i,
-                    /COLABORACAO/i,
-                    /COOPERAÇÃO/i,
-                    /COOPERACAO/i
-                ]
-            };
-            // [DIAGNOSTIC] Arrays to track field categorization
-            const uncategorizedFields = [];
-            const categorizedFields = {
-                raciocinio: [],
-                tecnica: [],
-                profissionalismo: []
-            };
             
             const sortedNotasP = [...notasP].sort((a, b) => {
                 const dateA = a['Data/Hora'] ? new Date(String(a['Data/Hora']).replace(/-/g,'/')) : new Date(0);
@@ -3543,7 +3381,7 @@ function renderTabEscala(escalas) {
             });
             
             sortedNotasP.forEach((n, index) => {
-                // More flexible pattern to find the average/media field
+                // Find the average/media field
                 const kM = Object.keys(n).find(k => 
                     /MÉDIA.*NOTA.*FINAL/i.test(k) || 
                     /MEDIA.*NOTA.*FINAL/i.test(k) ||
@@ -3554,136 +3392,22 @@ function renderTabEscala(escalas) {
                 
                 const media = parseNota(n[kM]);
                 
-                // Changed from "media > 0" to "media >= 0" to include 0.0 scores in evolution
                 if (media >= 0 && !isNaN(media)) {
                     overallSum += media;
                     overallCount++;
                     last5Notes.push({ label: n.nomePratica, value: media });
                 }
-                
-                Object.keys(n).forEach(key => {
-                    // Skip final grade fields to avoid counting them multiple times
-                    const isFinalGrade = /MÉDIA.*NOTA.*FINAL|MEDIA.*NOTA.*FINAL|MÉDIA.*FINAL|MEDIA.*FINAL|NOTA.*FINAL/i.test(key);
-                    if (isFinalGrade) {
-                        return;
-                    }
-                    
-                    let val = parseNota(n[key]);
-                    let cleanKey = key;
-                    
-                    // Handle fields with numeric prefix (e.g., "0.0 Raciocínio Clínico...")
-                    // In this case, the score is in the key name, not the value
-                    const numericPrefixMatch = key.match(/^(\d+[\.,]?\d*)\s+(.+)$/);
-                    if (numericPrefixMatch) {
-                        val = parseNota(numericPrefixMatch[1]);
-                        cleanKey = numericPrefixMatch[2];
-                    }
-                    
-                    // Changed from "val > 0" to "val >= 0" to include 0.0 scores
-                    if (val >= 0 && !isNaN(val)) {
-                        let categorized = false;
-                        
-                        if (map.raciocinio.some(regex => regex.test(cleanKey))) {
-                            competency.raciocinio.sum += val;
-                            competency.raciocinio.count++;
-                            categorizedFields.raciocinio.push({ field: cleanKey, value: val });
-                            categorized = true;
-                        } else if (map.tecnica.some(regex => regex.test(cleanKey))) {
-                            competency.tecnica.sum += val;
-                            competency.tecnica.count++;
-                            categorizedFields.tecnica.push({ field: cleanKey, value: val });
-                            categorized = true;
-                        } else if (map.profissionalismo.some(regex => regex.test(cleanKey))) {
-                            competency.profissionalismo.sum += val;
-                            competency.profissionalismo.count++;
-                            categorizedFields.profissionalismo.push({ field: cleanKey, value: val });
-                            categorized = true;
-                        }
-                        
-                        // [DIAGNOSTIC] Track uncategorized fields with numerical scores
-                        if (!categorized) {
-                            uncategorizedFields.push({ field: cleanKey, value: val, nomePratica: n.nomePratica });
-                        }
-                    }
-                });
             });
             
             const result = {
                 overallAvg: overallCount > 0 ? (overallSum / overallCount) : 0,
-                raciocinioAvg: competency.raciocinio.count > 0 ? (competency.raciocinio.sum / competency.raciocinio.count) : 0,
-                tecnicaAvg: competency.tecnica.count > 0 ? (competency.tecnica.sum / competency.tecnica.count) : 0,
-                profissionalismoAvg: competency.profissionalismo.count > 0 ? (competency.profissionalismo.sum / competency.profissionalismo.count) : 0,
                 last5Notes: last5Notes.slice(-5)
             };
             
             console.log('[calculatePracticeSummary] Results:', {
                 overallAvg: result.overallAvg.toFixed(2),
-                raciocinioAvg: result.raciocinioAvg.toFixed(2),
-                tecnicaAvg: result.tecnicaAvg.toFixed(2),
-                profissionalismoAvg: result.profissionalismoAvg.toFixed(2),
                 evolutionPoints: result.last5Notes.length
             });
-            
-            // [DIAGNOSTIC] Log categorization details
-            console.log('[calculatePracticeSummary] Categorization Summary:');
-            console.log('  Raciocínio Clínico:', competency.raciocinio.count, 'fields');
-            if (competency.raciocinio.count > 0) {
-                console.log('    📝 Campos categorizados:');
-                categorizedFields.raciocinio.slice(0, 5).forEach(f => {
-                    console.log(`       - "${f.field}" = ${f.value}`);
-                });
-                if (categorizedFields.raciocinio.length > 5) {
-                    console.log(`       ... e mais ${categorizedFields.raciocinio.length - 5} campos`);
-                }
-            }
-            
-            console.log('  Execução Técnica:', competency.tecnica.count, 'fields');
-            if (competency.tecnica.count > 0) {
-                console.log('    📝 Campos categorizados:');
-                categorizedFields.tecnica.slice(0, 5).forEach(f => {
-                    console.log(`       - "${f.field}" = ${f.value}`);
-                });
-                if (categorizedFields.tecnica.length > 5) {
-                    console.log(`       ... e mais ${categorizedFields.tecnica.length - 5} campos`);
-                }
-            }
-            
-            console.log('  Profissionalismo:', competency.profissionalismo.count, 'fields');
-            if (competency.profissionalismo.count > 0) {
-                console.log('    📝 Campos categorizados:');
-                categorizedFields.profissionalismo.slice(0, 5).forEach(f => {
-                    console.log(`       - "${f.field}" = ${f.value}`);
-                });
-                if (categorizedFields.profissionalismo.length > 5) {
-                    console.log(`       ... e mais ${categorizedFields.profissionalismo.length - 5} campos`);
-                }
-            }
-            
-            if (uncategorizedFields.length > 0) {
-                console.warn('[calculatePracticeSummary] ⚠️ Uncategorized fields found:', uncategorizedFields.length);
-                console.warn('[calculatePracticeSummary] Complete list of uncategorized fields:');
-                
-                // Group by evaluation module for better analysis
-                const byModule = {};
-                uncategorizedFields.forEach(item => {
-                    if (!byModule[item.nomePratica]) {
-                        byModule[item.nomePratica] = [];
-                    }
-                    byModule[item.nomePratica].push(item);
-                });
-                
-                Object.entries(byModule).forEach(([moduleName, fields]) => {
-                    console.warn(`\n  📋 ${moduleName}:`);
-                    fields.forEach(item => {
-                        console.warn(`     - "${item.field}" = ${item.value}`);
-                    });
-                });
-                
-                console.warn('\n[calculatePracticeSummary] 💡 SUGESTÃO: Analise os campos acima e adicione padrões regex apropriados');
-                console.warn('[calculatePracticeSummary] 🎯 FOCO: Se houver campos que parecem ser de Raciocínio Clínico, adicione ao array "raciocinio"');
-            } else {
-                console.log('[calculatePracticeSummary] ✅ All fields successfully categorized!');
-            }
             
             return result;
         }
@@ -3799,43 +3523,7 @@ function renderTabEscala(escalas) {
                 </div>
             `;
             
-            // === COMPETENCY SHOWCASE === //
-            let competencyHtml = `
-                <div class="np-competency-showcase">
-                    <div class="np-competency-card reasoning">
-                        <div class="np-comp-icon-wrapper">
-                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
-                            </svg>
-                        </div>
-                        <div class="np-comp-score">${summary.raciocinioAvg.toFixed(1)}</div>
-                        <div class="np-comp-label">Raciocínio Clínico</div>
-                        <p class="np-comp-description">Avaliação, planejamento e associação de conhecimentos</p>
-                    </div>
-                    
-                    <div class="np-competency-card technical">
-                        <div class="np-comp-icon-wrapper">
-                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z" />
-                            </svg>
-                        </div>
-                        <div class="np-comp-score">${summary.tecnicaAvg.toFixed(1)}</div>
-                        <div class="np-comp-label">Execução Técnica</div>
-                        <p class="np-comp-description">Habilidade e precisão na execução de procedimentos</p>
-                    </div>
-                    
-                    <div class="np-competency-card professional">
-                        <div class="np-comp-icon-wrapper">
-                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
-                            </svg>
-                        </div>
-                        <div class="np-comp-score">${summary.profissionalismoAvg.toFixed(1)}</div>
-                        <div class="np-comp-label">Profissionalismo</div>
-                        <p class="np-comp-description">Comunicação, ética e relacionamento interpessoal</p>
-                    </div>
-                </div>
-            `;
+            // Competency showcase removed as per redesign requirements
             
             // === EVOLUTION CHART === //
             let evolutionHtml = `
@@ -4130,12 +3818,11 @@ function renderTabEscala(escalas) {
             tabContainer.innerHTML = `
                 ${heroHtml}
                 ${dashboardHtml}
-                ${competencyHtml}
                 ${evolutionHtml}
                 ${dividerHtml}
                 <div style="margin: 2.5rem 0 1.5rem;">
                     <h3 style="font-family: var(--font-display); font-size: 1.75rem; font-weight: 800; color: var(--content-text-primary); margin-bottom: 0.75rem;">Avaliações Detalhadas</h3>
-                    <p style="font-size: 1rem; color: var(--content-text-secondary);">Histórico completo com análise profunda de cada competência avaliada</p>
+                    <p style="font-size: 1rem; color: var(--content-text-secondary);">Histórico completo com análise profunda de cada avaliação</p>
                 </div>
                 <div class="np-tab-nav">
                     ${navHtml}

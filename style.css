@@ -3436,17 +3436,18 @@
 .np-skill-bar-item {
     padding: 1.25rem;
     border-radius: 12px;
-    background: rgba(248, 250, 252, 0.6);
+    background: white;
     margin-bottom: 1rem;
     transition: all 0.3s ease;
-    border: 1px solid transparent;
+    border: 2px solid rgba(226, 232, 240, 0.8);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
 }
 
 .np-skill-bar-item:hover {
     background: white;
-    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
-    border-color: rgba(0, 84, 180, 0.2);
-    transform: translateX(8px);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+    border-color: rgba(0, 84, 180, 0.4);
+    transform: translateY(-2px);
 }
 
 .np-skill-header {
@@ -3457,8 +3458,8 @@
 }
 
 .np-skill-name {
-    font-weight: 600;
-    color: var(--content-text-primary);
+    font-weight: 700;
+    color: #1e293b;
     font-size: 0.95rem;
 }
 
@@ -3693,28 +3694,30 @@
 .np-checklist-item {
     padding: 1.5rem;
     border-radius: 16px;
-    background: linear-gradient(135deg, rgba(248, 250, 252, 0.8), white);
-    border: 1px solid rgba(0, 84, 180, 0.08);
+    background: white;
+    border: 2px solid rgba(226, 232, 240, 0.8);
     transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
 }
 
 .np-checklist-item:hover {
-    transform: translateX(4px);
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
-    border-color: rgba(0, 84, 180, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+    border-color: rgba(0, 84, 180, 0.4);
 }
 
 .np-checklist-question {
     font-size: 0.9375rem;
-    font-weight: 600;
-    color: var(--content-text-primary);
+    font-weight: 700;
+    color: #1e293b;
     margin-bottom: 0.75rem;
     line-height: 1.5;
 }
 
 .np-checklist-answer {
     font-size: 0.875rem;
-    color: var(--content-text-secondary);
+    color: #475569;
+    font-weight: 500;
     line-height: 1.6;
     padding-left: 1rem;
     border-left: 3px solid var(--accent-blue);
