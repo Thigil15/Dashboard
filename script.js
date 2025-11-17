@@ -1327,6 +1327,42 @@ const pontoState = {
             });
         }
 
+        /**
+         * Formata nomes de módulos de notas práticas para exibição amigável
+         * Converte: "NotasPraticas3" → "Módulo de Avaliação Prática 03"
+         *           "NP_Modulo5" → "Módulo de Avaliação Prática 05"
+         *           "np3" → "Módulo de Avaliação Prática 03"
+         */
+        function formatarNomeModulo(nomeOriginal) {
+            if (!nomeOriginal) return 'Avaliação Prática';
+            
+            // Try to extract module number from various formats
+            const patterns = [
+                /NotasPraticas(\d+)/i,
+                /NP[_-]?(\d+)/i,
+                /Modulo[_-]?(\d+)/i,
+                /Pratica[_-]?(\d+)/i,
+                /^np(\d+)$/i,
+                /(\d+)/  // Fallback: any number
+            ];
+            
+            for (const pattern of patterns) {
+                const match = nomeOriginal.match(pattern);
+                if (match && match[1]) {
+                    const numero = String(match[1]).padStart(2, '0');
+                    return `Módulo de Avaliação Prática ${numero}`;
+                }
+            }
+            
+            // If no number found, return a cleaned version of the original name
+            return nomeOriginal
+                .replace(/NotasPraticas/gi, 'Avaliação Prática')
+                .replace(/NP[_-]?/gi, 'Avaliação Prática ')
+                .replace(/_/g, ' ')
+                .replace(/-/g, ' ')
+                .trim() || 'Avaliação Prática';
+        }
+
         // [ORION] Helper para centralizar a busca de dados do aluno
         function findDataByStudent(emailNormalizado, alunoNomeNormalizado) {
             // Escalas
@@ -3677,7 +3713,7 @@ function renderTabEscala(escalas) {
                 // Handle different variations of the date/time field
                 const dataHoraValue = n['Data/Hora'] || n['DataHora'] || n.dataHora;
                 const dataFormatada = dataHoraValue ? new Date(String(dataHoraValue).replace(/-/g,'/')).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : 'N/A';
-                const nomePratica = n.nomePratica || `Avaliação Prática ${index + 1}`;
+                const nomePratica = formatarNomeModulo(n.nomePratica) || `Avaliação Prática ${index + 1}`;
                 
                 // Determina cor e status baseado na nota
                 let gradeColor = '#3b82f6';
