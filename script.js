@@ -3383,11 +3383,18 @@ function renderTabEscala(escalas) {
                 raciocinio: [
                     // Avaliação e Planejamento (Assessment & Planning)
                     /CAPACIDADE.*AVALIAÇÃO/i,
+                    /CAPACIDADE.*AVALIACAO/i,
                     /AVALIAÇÃO.*INICIAL/i,
                     /AVALIACAO.*INICIAL/i,
+                    /AVALIACAO.*ESTADO/i,
+                    /AVALIACAO.*PACIENTE/i,
+                    /AVALIACAO.*CLINICA/i,
+                    /AVALIACAO.*FÍSICA/i,
+                    /AVALIACAO.*FISIOTERAPEUTICA/i,
                     /PLANEJAMENTO.*ORGANIZAÇÃO/i,
                     /PLANEJAMENTO.*ORGANIZACAO/i,
                     /PLANEJAMENTO.*TRATAMENTO/i,
+                    /PLANEJAMENTO.*TERAPEUTICO/i,
                     /HABILIDADE.*ASSOCIAÇÃO/i,
                     /HABILIDADE.*ASSOCIACAO/i,
                     /RACIOCINIO.*CLINICO/i,
@@ -3399,23 +3406,43 @@ function renderTabEscala(escalas) {
                     // Conhecimento e Análise (Knowledge & Analysis)
                     /CONHECIMENTO.*TEORICO/i,
                     /CONHECIMENTO.*TEÓRICO/i,
+                    /CONHECIMENTO.*APLICADO/i,
+                    /CONHECIMENTO.*CLINICO/i,
                     /ANALISE.*PACIENTE/i,
                     /ANÁLISE.*PACIENTE/i,
                     /ANALISE.*CRITICA/i,
                     /ANÁLISE.*CRÍTICA/i,
-                    /DIAGNÓSTICO.*FUNCIONAL/i,
-                    /DIAGNOSTICO.*FUNCIONAL/i,
-                    /INTERPRETAÇÃO.*DADOS/i,
+                    /ANALISE.*CASO/i,
+                    /ANALISE.*SITUACAO/i,
                     /INTERPRETACAO.*DADOS/i,
+                    /INTERPRETAÇÃO.*DADOS/i,
+                    /INTERPRETAR.*DADOS/i,
+                    /INTERPRETACAO.*RESULTADOS/i,
+                    /INTERPRETACAO.*MONITORIZACAO/i,
+                    /DIAGNOSTICO.*FUNCIONAL/i,
+                    /DIAGNÓSTICO.*FUNCIONAL/i,
+                    /DIAGNOSTICO.*FISIOTERAPEUTICO/i,
+                    /ESTABELECIMENTO.*DIAGNOSTICO/i,
                     /TOMADA.*DECISÃO/i,
                     /TOMADA.*DECISAO/i,
+                    /DECISAO.*CLINICA/i,
                     // Organização e Priorização (Organization & Prioritization)
                     /ORGANIZAÇÃO.*ATIVIDADES/i,
                     /ORGANIZACAO.*ATIVIDADES/i,
                     /PRIORIZAÇÃO/i,
                     /PRIORIZACAO/i,
+                    /PRIORIDADE.*ATENDIMENTO/i,
                     /RESOLUÇÃO.*PROBLEMA/i,
-                    /RESOLUCAO.*PROBLEMA/i
+                    /RESOLUCAO.*PROBLEMA/i,
+                    /PENSAMENTO.*CRITICO/i,
+                    /PENSAMENTO.*CRÍTICO/i,
+                    // Competências Específicas de Raciocínio
+                    /COMPETENCIA.*AVALIACAO/i,
+                    /COMPETENCIA.*DIAGNOSTICO/i,
+                    /COMPETENCIA.*PLANEJAMENTO/i,
+                    /CAPACIDADE.*INTERPRETAR/i,
+                    /CAPACIDADE.*ANALISAR/i,
+                    /CAPACIDADE.*PLANEJAR/i
                 ],
                 tecnica: [
                     // Execução e Habilidade Técnica (Technical Execution & Skill)
@@ -3600,19 +3627,60 @@ function renderTabEscala(escalas) {
             // [DIAGNOSTIC] Log categorization details
             console.log('[calculatePracticeSummary] Categorization Summary:');
             console.log('  Raciocínio Clínico:', competency.raciocinio.count, 'fields');
+            if (competency.raciocinio.count > 0) {
+                console.log('    📝 Campos categorizados:');
+                categorizedFields.raciocinio.slice(0, 5).forEach(f => {
+                    console.log(`       - "${f.field}" = ${f.value}`);
+                });
+                if (categorizedFields.raciocinio.length > 5) {
+                    console.log(`       ... e mais ${categorizedFields.raciocinio.length - 5} campos`);
+                }
+            }
+            
             console.log('  Execução Técnica:', competency.tecnica.count, 'fields');
+            if (competency.tecnica.count > 0) {
+                console.log('    📝 Campos categorizados:');
+                categorizedFields.tecnica.slice(0, 5).forEach(f => {
+                    console.log(`       - "${f.field}" = ${f.value}`);
+                });
+                if (categorizedFields.tecnica.length > 5) {
+                    console.log(`       ... e mais ${categorizedFields.tecnica.length - 5} campos`);
+                }
+            }
+            
             console.log('  Profissionalismo:', competency.profissionalismo.count, 'fields');
+            if (competency.profissionalismo.count > 0) {
+                console.log('    📝 Campos categorizados:');
+                categorizedFields.profissionalismo.slice(0, 5).forEach(f => {
+                    console.log(`       - "${f.field}" = ${f.value}`);
+                });
+                if (categorizedFields.profissionalismo.length > 5) {
+                    console.log(`       ... e mais ${categorizedFields.profissionalismo.length - 5} campos`);
+                }
+            }
             
             if (uncategorizedFields.length > 0) {
                 console.warn('[calculatePracticeSummary] ⚠️ Uncategorized fields found:', uncategorizedFields.length);
-                console.warn('[calculatePracticeSummary] Sample uncategorized fields:');
-                uncategorizedFields.slice(0, 10).forEach(item => {
-                    console.warn(`  - "${item.field}" = ${item.value} (from ${item.nomePratica})`);
+                console.warn('[calculatePracticeSummary] Complete list of uncategorized fields:');
+                
+                // Group by evaluation module for better analysis
+                const byModule = {};
+                uncategorizedFields.forEach(item => {
+                    if (!byModule[item.nomePratica]) {
+                        byModule[item.nomePratica] = [];
+                    }
+                    byModule[item.nomePratica].push(item);
                 });
-                if (uncategorizedFields.length > 10) {
-                    console.warn(`  ... and ${uncategorizedFields.length - 10} more`);
-                }
-                console.warn('[calculatePracticeSummary] 💡 Consider adding patterns to map these fields to competencies');
+                
+                Object.entries(byModule).forEach(([moduleName, fields]) => {
+                    console.warn(`\n  📋 ${moduleName}:`);
+                    fields.forEach(item => {
+                        console.warn(`     - "${item.field}" = ${item.value}`);
+                    });
+                });
+                
+                console.warn('\n[calculatePracticeSummary] 💡 SUGESTÃO: Analise os campos acima e adicione padrões regex apropriados');
+                console.warn('[calculatePracticeSummary] 🎯 FOCO: Se houver campos que parecem ser de Raciocínio Clínico, adicione ao array "raciocinio"');
             } else {
                 console.log('[calculatePracticeSummary] ✅ All fields successfully categorized!');
             }
