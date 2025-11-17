@@ -3105,12 +3105,26 @@
 
 /* === Evolution Chart Masterpiece === */
 .np-evolution-masterpiece {
-    background: white;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
     border-radius: 24px;
     padding: 2.5rem;
-    box-shadow: 0 15px 50px rgba(15, 23, 42, 0.1);
+    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(0, 84, 180, 0.08);
     margin-bottom: 3rem;
-    border: 1px solid rgba(0, 84, 180, 0.1);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    position: relative;
+    overflow: hidden;
+}
+
+.np-evolution-masterpiece::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(102, 126, 234, 0.05) 0%, transparent 70%);
+    pointer-events: none;
 }
 
 .np-evolution-header {
@@ -3404,6 +3418,11 @@
 /* === Skill Bars with Art === */
 .np-skills-section {
     margin-bottom: 2.5rem;
+    padding: 2rem;
+    background: linear-gradient(135deg, #fafbfc 0%, #ffffff 100%);
+    border-radius: 20px;
+    border: 2px solid rgba(226, 232, 240, 0.5);
+    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
 }
 
 .np-section-header {
@@ -3416,13 +3435,20 @@
 }
 
 .np-section-icon {
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 12px;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 14px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     display: grid;
     place-items: center;
     color: white;
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.np-section-header:hover .np-section-icon {
+    transform: rotate(5deg) scale(1.1);
+    box-shadow: 0 12px 28px rgba(102, 126, 234, 0.4);
 }
 
 .np-section-icon svg {
@@ -3432,9 +3458,13 @@
 
 .np-section-title {
     font-family: var(--font-display);
-    font-size: 1.375rem;
-    font-weight: 700;
+    font-size: 1.5rem;
+    font-weight: 800;
     color: var(--content-text-primary);
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .np-skill-bar-item {
