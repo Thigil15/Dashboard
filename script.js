@@ -48,7 +48,9 @@
             const pathMappings = [
                 { path: 'exportAll/Alunos/dados', stateKey: 'alunos', processor: (data) => data || [] },
                 { path: 'exportAll/AusenciasReposicoes/dados', stateKey: 'ausenciasReposicoes', processor: (data) => normalizeAusenciasReposicoes(data || []) },
-                { path: 'exportAll/NotasTeoricas/dados', stateKey: 'notasTeoricas', processor: (data) => ({ registros: data || [] }) },
+                { path: 'exportAll/NotasTeoricas/dados', stateKey: 'notasTeoricas', processor: (data) => ({ 
+                    registros: (data || []).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row)
+                }) },
                 { path: 'exportAll/Ponto/dados', stateKey: 'pontoStaticRows', processor: (data) => {
                     const processed = (data || []).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
                     
