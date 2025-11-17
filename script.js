@@ -3489,6 +3489,28 @@ function renderTabEscala(escalas) {
                 console.log('[renderTabNotasTeoricas] Chaves disponíveis:', Object.keys(notas).slice(0, 10));
             }
             
+            // Helper function to get value from notas object with accent-insensitive key matching
+            const getNotaValue = (materia) => {
+                // Try exact match first
+                if (notas[materia] !== undefined && notas[materia] !== null) {
+                    return notas[materia];
+                }
+                
+                // Try normalized match (remove accents)
+                const materiaNormalized = materia.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                const matchingKey = Object.keys(notas).find(k => {
+                    const kNormalized = k.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                    return kNormalized.toUpperCase() === materiaNormalized.toUpperCase();
+                });
+                
+                if (matchingKey) {
+                    console.log(`[renderTabNotasTeoricas] Encontrada correspondência: "${materia}" -> "${matchingKey}"`);
+                    return notas[matchingKey];
+                }
+                
+                return undefined;
+            };
+            
             const tabContainer = document.getElementById('notas-t-content-wrapper');
 
             // === EMPTY STATE ARTÍSTICO === //
@@ -3560,19 +3582,41 @@ function renderTabEscala(escalas) {
             let lowestGrade = 10;
             const moduleGrades = [];
 
-            // Processa todas as médias (chaves que contêm "MÉDIA")
-            const mediaKeys = Object.keys(notas).filter(k => k.toUpperCase().includes('MÉDIA'));
+            // Processa todas as médias (chaves que contêm "MÉDIA" ou "MEDIA" - normalizado sem acento)
+            const mediaKeys = Object.keys(notas).filter(k => {
+                const keyUpper = k.toUpperCase();
+                const keyNormalized = k.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+                return keyUpper.includes('MÉDIA') || keyNormalized.includes('MEDIA');
+            });
+            console.log('[renderTabNotasTeoricas] Chaves de médias encontradas:', mediaKeys);
+            console.log('[renderTabNotasTeoricas] Todas as chaves disponíveis:', Object.keys(notas));
             
             // Adiciona "Outras" se houver disciplinas complementares
-            if (mediaGroups['Disciplinas Complementares'].materias.some(m => notas[m] && parseNota(notas[m]) > 0)) {
+            if (mediaGroups['Disciplinas Complementares'].materias.some(m => {
+                const val = getNotaValue(m);
+                return val && parseNota(val) > 0;
+            })) {
+                console.log('[renderTabNotasTeoricas] Encontradas disciplinas complementares');
                 // Verifica se não existe uma chave de média para disciplinas complementares
                 if (!mediaKeys.some(k => k.toUpperCase().includes('OUTRAS') || k.toUpperCase().includes('COMPLEMENTARES'))) {
                     mediaKeys.push('Outras');
                 }
             }
 
-            // Se não há médias, mostra mensagem
-            if (mediaKeys.length === 0 && !mediaGroups['Disciplinas Complementares'].materias.some(m => notas[m] && parseNota(notas[m]) > 0)) {
+            // Verifica se há alguma nota individual (mesmo sem médias)
+            const hasIndividualGrades = Object.entries(mediaGroups).some(([groupName, group]) => 
+                group.materias.some(m => {
+                    const val = getNotaValue(m);
+                    return val && parseNota(val) > 0;
+                })
+            );
+            
+            console.log('[renderTabNotasTeoricas] Tem médias?', mediaKeys.length > 0);
+            console.log('[renderTabNotasTeoricas] Tem notas individuais?', hasIndividualGrades);
+
+            // Se não há médias NEM notas individuais, mostra mensagem
+            if (mediaKeys.length === 0 && !hasIndividualGrades) {
+                console.log('[renderTabNotasTeoricas] Nenhuma média ou nota encontrada, mostrando mensagem de vazio');
                 tabContainer.innerHTML = '<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhuma nota ou média encontrada neste registro.</p></div>';
                 return;
             }
@@ -3710,7 +3754,8 @@ function renderTabEscala(escalas) {
                     let sum = 0;
                     let count = 0;
                     materias.forEach(materia => {
-                        const nota = parseNota(notas[materia]);
+                        const val = getNotaValue(materia);
+                        const nota = parseNota(val);
                         if (nota > 0) {
                             sum += nota;
                             count++;
@@ -3721,10 +3766,12 @@ function renderTabEscala(escalas) {
                     // Para os outros módulos, procura pela chave de média
                     const fisioNumber = groupName.match(/I{1,4}$/)?.[0];
                     if (fisioNumber) {
-                        mediaKey = Object.keys(notas).find(k => 
-                            k.toUpperCase().includes('MÉDIA') && 
-                            k.toUpperCase().includes(`FISIO${fisioNumber.length}`)
-                        );
+                        mediaKey = Object.keys(notas).find(k => {
+                            const kUpper = k.toUpperCase();
+                            const kNormalized = k.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+                            return (kUpper.includes('MÉDIA') || kNormalized.includes('MEDIA')) && 
+                                   (kUpper.includes(`FISIO${fisioNumber.length}`) || kNormalized.includes(`FISIO${fisioNumber.length}`));
+                        });
                         if (mediaKey) {
                             mediaValue = parseNota(notas[mediaKey]);
                         }
@@ -3736,8 +3783,9 @@ function renderTabEscala(escalas) {
                 let hasDetails = false;
                 
                 materias.forEach(materia => {
-                    if (notas[materia] !== null && notas[materia] !== undefined && String(notas[materia]).trim() !== '') {
-                        const notaMateria = parseNota(notas[materia]);
+                    const val = getNotaValue(materia);
+                    if (val !== null && val !== undefined && String(val).trim() !== '') {
+                        const notaMateria = parseNota(val);
                         if (notaMateria > 0) {
                             const percentage = (notaMateria / 10) * 100;
                             let barColor = color;

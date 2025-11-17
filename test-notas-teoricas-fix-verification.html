@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Verificação: Fix NotasTeoricas</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .test-result {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .test-result.pass {
+            background: #d4edda;
+            border: 2px solid #c3e6cb;
+            color: #155724;
+        }
+        .test-result.fail {
+            background: #f8d7da;
+            border: 2px solid #f5c6cb;
+            color: #721c24;
+        }
+        .test-detail {
+            background: #e7f3ff;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            font-size: 0.9em;
+            font-weight: normal;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 0.85em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Teste de Verificação: Fix NotasTeoricas</h1>
+        <p>Este teste verifica se a correção para detecção de campos com acento está funcionando corretamente.</p>
+        
+        <button onclick="runTests()">▶️ Executar Testes</button>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        // Simula a função parseNota
+        function parseNota(notaStr) {
+            if (notaStr === null || notaStr === undefined) return 0;
+            const str = String(notaStr).trim();
+            if (str === '') return 0;
+            const n = parseFloat(str.replace('R$', '').replace(/\s/g, '').replace(',', '.'));
+            return isNaN(n) ? 0 : n;
+        }
+
+        // Simula a função toPascalCaseKey (do script.js)
+        function toPascalCaseKey(key = "") {
+            const raw = String(key || "").trim();
+            if (!raw) return "";
+            const pascalLike = /^[A-Z][A-Za-z0-9]*$/.test(raw) && raw !== raw.toUpperCase();
+            if (pascalLike) return raw;
+            const sanitized = raw
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                .replace(/[^A-Za-z0-9]+/g, "_")
+                .replace(/_{2,}/g, "_")
+                .replace(/^_+|_+$/g, "");
+            if (!sanitized) return raw;
+            const parts = sanitized.split("_").filter(Boolean);
+            if (!parts.length) return raw;
+            return parts.map((part, idx) => {
+                const lower = part.toLowerCase();
+                if (idx > 0 && lower.length <= 3) return lower.toUpperCase();
+                if (lower.length <= 3 && /^[A-Z0-9]+$/.test(part)) return part;
+                if (lower.length <= 3) return lower.toUpperCase();
+                return lower.charAt(0).toUpperCase() + lower.slice(1);
+            }).join("");
+        }
+
+        // Simula a função addKeyVariants
+        function addKeyVariants(target, key, value) {
+            if (!key) return;
+            if (!(key in target)) target[key] = value;
+            const pascal = toPascalCaseKey(key);
+            if (pascal && !(pascal in target)) target[pascal] = value;
+            if (pascal) {
+                const camel = pascal.charAt(0).toLowerCase() + pascal.slice(1);
+                if (!(camel in target)) target[camel] = value;
+                const snake = pascal.replace(/([A-Z])/g, (m, idx) => idx === 0 ? m.toLowerCase() : `_${m.toLowerCase()}`);
+                if (!(snake in target)) target[snake] = value;
+            }
+            const upper = key.toUpperCase();
+            if (!(upper in target)) target[upper] = value;
+        }
+
+        // Simula a função deepNormalizeObject
+        function deepNormalizeObject(obj) {
+            const normalized = {};
+            Object.entries(obj || {}).forEach(([key, val]) => {
+                addKeyVariants(normalized, key, val);
+            });
+            return normalized;
+        }
+
+        // Dados de teste simulando dados do Firebase
+        const testData = {
+            "MÉDIA FISIO1": "8.5",
+            "MÉDIA FISIO2": "9.0",
+            "Anatomopatologia": "8.0",
+            "Avaliação": "7.5",
+            "Bioética": "9.5",
+            "Saúde e politicas": "8.8"
+        };
+
+        // Helper function to get value from notas object with accent-insensitive key matching
+        function getNotaValue(notas, materia) {
+            // Try exact match first
+            if (notas[materia] !== undefined && notas[materia] !== null) {
+                return notas[materia];
+            }
+            
+            // Try normalized match (remove accents)
+            const materiaNormalized = materia.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            const matchingKey = Object.keys(notas).find(k => {
+                const kNormalized = k.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                return kNormalized.toUpperCase() === materiaNormalized.toUpperCase();
+            });
+            
+            if (matchingKey) {
+                return notas[matchingKey];
+            }
+            
+            return undefined;
+        }
+
+        function runTests() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<h2>Resultados dos Testes:</h2>';
+            
+            let passed = 0;
+            let failed = 0;
+            
+            // Normaliza os dados de teste
+            const normalizedData = deepNormalizeObject(testData);
+            
+            // Test 1: Verificar se a normalização criou as variantes corretas
+            resultsDiv.innerHTML += '<h3>Teste 1: Normalização de Chaves</h3>';
+            const test1Result = Object.keys(normalizedData).some(k => {
+                const kNorm = k.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+                return kNorm.includes('MEDIA') && kNorm.includes('FISIO1');
+            });
+            
+            if (test1Result) {
+                resultsDiv.innerHTML += '<div class="test-result pass">✅ PASSOU: Chaves normalizadas contêm variante sem acento</div>';
+                resultsDiv.innerHTML += `<div class="test-detail">Chaves encontradas: ${Object.keys(normalizedData).filter(k => k.includes('Fisio1')).join(', ')}</div>`;
+                passed++;
+            } else {
+                resultsDiv.innerHTML += '<div class="test-result fail">❌ FALHOU: Chaves normalizadas não contêm variante sem acento</div>';
+                failed++;
+            }
+            
+            // Test 2: Buscar chaves de MÉDIA com método corrigido
+            resultsDiv.innerHTML += '<h3>Teste 2: Busca de Chaves MÉDIA</h3>';
+            const mediaKeys = Object.keys(normalizedData).filter(k => {
+                const keyUpper = k.toUpperCase();
+                const keyNormalized = k.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+                return keyUpper.includes('MÉDIA') || keyNormalized.includes('MEDIA');
+            });
+            
+            if (mediaKeys.length > 0) {
+                resultsDiv.innerHTML += '<div class="test-result pass">✅ PASSOU: Chaves de MÉDIA foram encontradas</div>';
+                resultsDiv.innerHTML += `<div class="test-detail">Chaves encontradas: ${mediaKeys.join(', ')}</div>`;
+                passed++;
+            } else {
+                resultsDiv.innerHTML += '<div class="test-result fail">❌ FALHOU: Nenhuma chave de MÉDIA foi encontrada</div>';
+                failed++;
+            }
+            
+            // Test 3: Testar getNotaValue com campo que tem acento
+            resultsDiv.innerHTML += '<h3>Teste 3: Busca de Campo "Avaliação"</h3>';
+            const avaliacaoValue = getNotaValue(normalizedData, "Avaliação");
+            
+            if (avaliacaoValue !== undefined && parseNota(avaliacaoValue) === 7.5) {
+                resultsDiv.innerHTML += '<div class="test-result pass">✅ PASSOU: Campo "Avaliação" foi encontrado corretamente</div>';
+                resultsDiv.innerHTML += `<div class="test-detail">Valor encontrado: ${avaliacaoValue}</div>`;
+                passed++;
+            } else {
+                resultsDiv.innerHTML += '<div class="test-result fail">❌ FALHOU: Campo "Avaliação" não foi encontrado</div>';
+                resultsDiv.innerHTML += `<div class="test-detail">Valor retornado: ${avaliacaoValue}</div>`;
+                failed++;
+            }
+            
+            // Test 4: Testar getNotaValue com campo "Bioética"
+            resultsDiv.innerHTML += '<h3>Teste 4: Busca de Campo "Bioética"</h3>';
+            const bioeticaValue = getNotaValue(normalizedData, "Bioética");
+            
+            if (bioeticaValue !== undefined && parseNota(bioeticaValue) === 9.5) {
+                resultsDiv.innerHTML += '<div class="test-result pass">✅ PASSOU: Campo "Bioética" foi encontrado corretamente</div>';
+                resultsDiv.innerHTML += `<div class="test-detail">Valor encontrado: ${bioeticaValue}</div>`;
+                passed++;
+            } else {
+                resultsDiv.innerHTML += '<div class="test-result fail">❌ FALHOU: Campo "Bioética" não foi encontrado</div>';
+                resultsDiv.innerHTML += `<div class="test-detail">Valor retornado: ${bioeticaValue}</div>`;
+                failed++;
+            }
+            
+            // Test 5: Verificar todas as chaves disponíveis
+            resultsDiv.innerHTML += '<h3>Teste 5: Inspeção de Todas as Chaves</h3>';
+            resultsDiv.innerHTML += '<div class="test-detail"><strong>Chaves originais:</strong><pre>' + 
+                JSON.stringify(Object.keys(testData), null, 2) + '</pre></div>';
+            resultsDiv.innerHTML += '<div class="test-detail"><strong>Chaves após normalização:</strong><pre>' + 
+                JSON.stringify(Object.keys(normalizedData), null, 2) + '</pre></div>';
+            
+            // Summary
+            resultsDiv.innerHTML += `
+                <h2 style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #ddd;">Resumo</h2>
+                <div class="test-result ${failed === 0 ? 'pass' : 'fail'}">
+                    <strong>Total de Testes:</strong> ${passed + failed}<br>
+                    <strong>Passaram:</strong> ${passed}<br>
+                    <strong>Falharam:</strong> ${failed}<br>
+                    <strong>Status:</strong> ${failed === 0 ? '✅ TODOS OS TESTES PASSARAM!' : '❌ ALGUNS TESTES FALHARAM'}
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
