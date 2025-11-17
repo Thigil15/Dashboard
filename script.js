@@ -3458,7 +3458,7 @@ function renderTabEscala(escalas) {
             };
             
             console.log('[calculatePracticeSummary] Results:', {
-                overallAvg: result.overallAvg.toFixed(2),
+                overallAvg: formatarNota(result.overallAvg, 2),
                 evolutionPoints: result.last5Notes.length
             });
             
