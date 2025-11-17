@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste das Correções - Notas Práticas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/home/runner/work/Dashboard/Dashboard/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            padding: 2rem;
+            background-color: #F7F9FB;
+        }
+        .test-section {
+            margin-bottom: 3rem;
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .test-section h2 {
+            color: #0033A0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #0033A0;
+            padding-bottom: 0.5rem;
+        }
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+        .comparison > div {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 2px solid #e2e8f0;
+        }
+        .comparison .before {
+            background: #fef2f2;
+            border-color: #fca5a5;
+        }
+        .comparison .after {
+            background: #f0fdf4;
+            border-color: #86efac;
+        }
+        .label {
+            font-weight: 700;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        .before .label {
+            color: #dc2626;
+        }
+        .after .label {
+            color: #16a34a;
+        }
+    </style>
+</head>
+<body class="font-sans">
+    <div class="max-w-7xl mx-auto">
+        <header class="mb-8 text-center">
+            <h1 class="text-4xl font-bold mb-2" style="background: linear-gradient(135deg, #0033A0, #0054B4); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                ✅ Teste de Correções UI - Notas Práticas
+            </h1>
+            <p class="text-slate-600">Verificação visual das melhorias implementadas</p>
+        </header>
+
+        <!-- Correção 1: Média Geral Prática - Centralização -->
+        <div class="test-section">
+            <h2>1️⃣ Correção: Centralização da "Média Geral Prática"</h2>
+            <p class="text-sm text-slate-600 mb-4">A nota "8,8 de 10,0" agora está perfeitamente centralizada dentro do anel de progresso</p>
+            
+            <div style="max-width: 700px; margin: 0 auto;">
+                <div class="np-progress-masterpiece">
+                    <div class="np-progress-content">
+                        <div class="np-ring-container">
+                            <div class="np-progress-ring" style="--np-progress-percent: 88%;">
+                                <div class="np-ring-value">8,8</div>
+                                <div class="np-ring-subtitle">de 10,0</div>
+                            </div>
+                        </div>
+                        <div class="np-progress-text">
+                            <h2 class="np-progress-title">Média Geral Prática</h2>
+                            <p class="np-progress-description">
+                                ⭐ Excelente Desempenho
+                            </p>
+                            <div class="np-progress-meta">
+                                <svg class="np-progress-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <span class="np-progress-stats">
+                                    Baseado em <strong>5</strong> avaliações
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 p-4 bg-green-50 border-2 border-green-200 rounded-lg">
+                <h3 class="font-bold text-green-800 mb-2">✅ Mudanças Aplicadas:</h3>
+                <ul class="text-sm text-green-700 space-y-1">
+                    <li>• Adicionado <code>display: flex; flex-direction: column;</code> ao .np-ring-value</li>
+                    <li>• Adicionado <code>align-items: center; text-align: center;</code></li>
+                    <li>• Reduzido margin-top do subtitle de 0.5rem para 0.35rem</li>
+                    <li>• Reduzido font-size do subtitle de 1rem para 0.9rem</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Correção 2: Nota Final - Melhor Visibilidade -->
+        <div class="test-section">
+            <h2>2️⃣ Correção: Visibilidade da "Nota Final"</h2>
+            <p class="text-sm text-slate-600 mb-4">A label "Nota Final" agora tem melhor contraste e design aprimorado</p>
+            
+            <div class="comparison">
+                <div class="before">
+                    <div class="label">❌ ANTES</div>
+                    <div style="text-align: center;">
+                        <div style="width: 140px; height: 140px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: grid; place-items: center; margin: 0 auto 1rem; box-shadow: 0 12px 32px rgba(102, 126, 234, 0.3);">
+                            <div>
+                                <div style="font-family: var(--font-display); font-size: 3.5rem; font-weight: 900; color: white; line-height: 1;">9,0</div>
+                                <div style="font-size: 0.875rem; color: white; opacity: 0.9; font-weight: 600;">de 10,0</div>
+                            </div>
+                        </div>
+                        <!-- OLD STYLE: gray, hard to see -->
+                        <div style="font-size: 0.875rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">
+                            Nota Final
+                        </div>
+                    </div>
+                    <p class="text-xs text-red-600 mt-3 text-center">Cinza claro - difícil de ler</p>
+                </div>
+
+                <div class="after">
+                    <div class="label">✅ DEPOIS</div>
+                    <div class="np-grade-showcase" style="--np-eval-color: #667eea;">
+                        <div class="np-grade-circle">
+                            <div>
+                                <div class="np-grade-number">9,0</div>
+                                <div class="np-grade-denominator">de 10,0</div>
+                            </div>
+                        </div>
+                        <div class="np-grade-label">Nota Final</div>
+                    </div>
+                    <p class="text-xs text-green-600 mt-3 text-center">Gradiente colorido - destaque visual</p>
+                </div>
+            </div>
+
+            <div class="mt-6 p-4 bg-green-50 border-2 border-green-200 rounded-lg">
+                <h3 class="font-bold text-green-800 mb-2">✅ Mudanças Aplicadas:</h3>
+                <ul class="text-sm text-green-700 space-y-1">
+                    <li>• Aumentado font-size de 0.875rem para 1rem</li>
+                    <li>• Aumentado font-weight de 600 para 700 (mais negrito)</li>
+                    <li>• Mudado cor de cinza secundário para primário</li>
+                    <li>• Adicionado efeito de gradiente com background-clip: text</li>
+                    <li>• Texto agora usa a mesma cor do círculo (--np-eval-color)</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Correção 3: Nome do Módulo -->
+        <div class="test-section">
+            <h2>3️⃣ Correção: Formatação dos Nomes de Módulos</h2>
+            <p class="text-sm text-slate-600 mb-4">Os nomes técnicos agora são exibidos de forma amigável e descritiva</p>
+            
+            <div class="comparison">
+                <div class="before">
+                    <div class="label">❌ ANTES</div>
+                    <div class="space-y-3">
+                        <div class="p-3 bg-white rounded border-2 border-gray-200">
+                            <code class="text-red-600">NotasPraticas3</code>
+                        </div>
+                        <div class="p-3 bg-white rounded border-2 border-gray-200">
+                            <code class="text-red-600">NP_Modulo5</code>
+                        </div>
+                        <div class="p-3 bg-white rounded border-2 border-gray-200">
+                            <code class="text-red-600">np7</code>
+                        </div>
+                    </div>
+                    <p class="text-xs text-red-600 mt-3">Nomes técnicos confusos</p>
+                </div>
+
+                <div class="after">
+                    <div class="label">✅ DEPOIS</div>
+                    <div class="space-y-3">
+                        <div class="p-3 bg-white rounded border-2 border-green-200">
+                            <span class="text-green-700 font-semibold">Módulo de Avaliação Prática 03</span>
+                        </div>
+                        <div class="p-3 bg-white rounded border-2 border-green-200">
+                            <span class="text-green-700 font-semibold">Módulo de Avaliação Prática 05</span>
+                        </div>
+                        <div class="p-3 bg-white rounded border-2 border-green-200">
+                            <span class="text-green-700 font-semibold">Módulo de Avaliação Prática 07</span>
+                        </div>
+                    </div>
+                    <p class="text-xs text-green-600 mt-3">Nomes descritivos e amigáveis</p>
+                </div>
+            </div>
+
+            <div class="mt-6 p-4 bg-green-50 border-2 border-green-200 rounded-lg">
+                <h3 class="font-bold text-green-800 mb-2">✅ Mudanças Aplicadas:</h3>
+                <ul class="text-sm text-green-700 space-y-1">
+                    <li>• Criada função <code>formatarNomeModulo()</code></li>
+                    <li>• Suporta múltiplos padrões: NotasPraticas#, NP_#, Modulo#, np#</li>
+                    <li>• Números formatados com zero à esquerda (03, 05, 07)</li>
+                    <li>• Aplicado em todas as exibições de nome de módulo</li>
+                    <li>• Fallback inteligente para nomes sem número</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Resumo -->
+        <div class="test-section" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 2px solid #86efac;">
+            <h2 style="color: #16a34a; border-bottom-color: #16a34a;">📊 Resumo das Correções</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                <div class="text-center p-4 bg-white rounded-lg shadow">
+                    <div class="text-3xl mb-2">✅</div>
+                    <h3 class="font-bold text-gray-800 mb-1">Centralização</h3>
+                    <p class="text-sm text-gray-600">Score perfeitamente centrado no anel</p>
+                </div>
+                <div class="text-center p-4 bg-white rounded-lg shadow">
+                    <div class="text-3xl mb-2">✅</div>
+                    <h3 class="font-bold text-gray-800 mb-1">Visibilidade</h3>
+                    <p class="text-sm text-gray-600">Nota Final com gradiente vibrante</p>
+                </div>
+                <div class="text-center p-4 bg-white rounded-lg shadow">
+                    <div class="text-3xl mb-2">✅</div>
+                    <h3 class="font-bold text-gray-800 mb-1">Nomenclatura</h3>
+                    <p class="text-sm text-gray-600">Nomes de módulos descritivos</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    
+    <script>
+        // Test formatarNomeModulo function
+        function formatarNomeModulo(nomeOriginal) {
+            if (!nomeOriginal) return 'Avaliação Prática';
+            
+            const patterns = [
+                /NotasPraticas(\d+)/i,
+                /NP[_-]?(\d+)/i,
+                /Modulo[_-]?(\d+)/i,
+                /Pratica[_-]?(\d+)/i,
+                /^np(\d+)$/i,
+                /(\d+)/
+            ];
+            
+            for (const pattern of patterns) {
+                const match = nomeOriginal.match(pattern);
+                if (match && match[1]) {
+                    const numero = String(match[1]).padStart(2, '0');
+                    return `Módulo de Avaliação Prática ${numero}`;
+                }
+            }
+            
+            return nomeOriginal
+                .replace(/NotasPraticas/gi, 'Avaliação Prática')
+                .replace(/NP[_-]?/gi, 'Avaliação Prática ')
+                .replace(/_/g, ' ')
+                .replace(/-/g, ' ')
+                .trim() || 'Avaliação Prática';
+        }
+
+        // Log test results
+        console.log('Testing formatarNomeModulo:');
+        console.log('NotasPraticas3 ->', formatarNomeModulo('NotasPraticas3'));
+        console.log('NP_Modulo5 ->', formatarNomeModulo('NP_Modulo5'));
+        console.log('np7 ->', formatarNomeModulo('np7'));
+    </script>
+</body>
+</html>
