@@ -1382,12 +1382,32 @@ const pontoState = {
 
             // Notas Teóricas
             console.log('[findDataByStudent] Buscando Notas Teóricas para:', { emailNormalizado, alunoNomeNormalizado });
+            console.log('[findDataByStudent] appState.notasTeoricas:', appState.notasTeoricas);
+            console.log('[findDataByStudent] Tipo de appState.notasTeoricas:', typeof appState.notasTeoricas);
+            console.log('[findDataByStudent] Tem registros?', appState.notasTeoricas?.registros !== undefined);
             console.log('[findDataByStudent] Total de registros em notasTeoricas:', appState.notasTeoricas.registros?.length || 0);
             
+            // Handle different possible data structures
+            let notasTeoricasArray = [];
+            if (appState.notasTeoricas) {
+                if (Array.isArray(appState.notasTeoricas)) {
+                    // If notasTeoricas is already an array
+                    notasTeoricasArray = appState.notasTeoricas;
+                    console.log('[findDataByStudent] notasTeoricas é um array direto');
+                } else if (appState.notasTeoricas.registros && Array.isArray(appState.notasTeoricas.registros)) {
+                    // If notasTeoricas has a registros property
+                    notasTeoricasArray = appState.notasTeoricas.registros;
+                    console.log('[findDataByStudent] notasTeoricas tem propriedade registros');
+                } else if (typeof appState.notasTeoricas === 'object') {
+                    // If it's an object but not in expected structure
+                    console.warn('[findDataByStudent] ⚠️ notasTeoricas tem estrutura inesperada:', Object.keys(appState.notasTeoricas));
+                }
+            }
+            
             // Log first 3 records to see structure
-            if (appState.notasTeoricas.registros && appState.notasTeoricas.registros.length > 0) {
+            if (notasTeoricasArray.length > 0) {
                 console.log('[findDataByStudent] Primeiros 3 registros de notasTeoricas:', 
-                    appState.notasTeoricas.registros.slice(0, 3).map(r => ({
+                    notasTeoricasArray.slice(0, 3).map(r => ({
                         EmailHC: r?.EmailHC,
                         NomeCompleto: r?.NomeCompleto,
                         emailHC: r?.emailHC,
@@ -1400,7 +1420,7 @@ const pontoState = {
             }
             
             // Try multiple field name variants for robustness
-            const notasT = (appState.notasTeoricas.registros || []).find(n => {
+            const notasT = notasTeoricasArray.find(n => {
                 if (!n) return false;
                 
                 // Try EmailHC variants
@@ -1421,7 +1441,7 @@ const pontoState = {
             console.log('[findDataByStudent] Notas Teóricas encontradas:', notasT ? 'SIM' : 'NÃO');
             if (notasT) {
                 console.log('[findDataByStudent] Campos da nota teórica:', Object.keys(notasT));
-            } else if (appState.notasTeoricas.registros && appState.notasTeoricas.registros.length > 0) {
+            } else if (notasTeoricasArray.length > 0) {
                 console.warn('[findDataByStudent] ⚠️ ATENÇÃO: Existem registros de notas teóricas, mas nenhum match encontrado!');
                 console.warn('[findDataByStudent] Valores buscados:', { emailNormalizado, alunoNomeNormalizado });
             }
