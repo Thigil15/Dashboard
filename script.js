@@ -1390,20 +1390,40 @@ const pontoState = {
                     appState.notasTeoricas.registros.slice(0, 3).map(r => ({
                         EmailHC: r?.EmailHC,
                         NomeCompleto: r?.NomeCompleto,
+                        emailHC: r?.emailHC,
+                        nomeCompleto: r?.nomeCompleto,
                         EmailHC_normalized: r?.EmailHC ? normalizeString(r.EmailHC) : null,
-                        NomeCompleto_normalized: r?.NomeCompleto ? normalizeString(r.NomeCompleto) : null
+                        NomeCompleto_normalized: r?.NomeCompleto ? normalizeString(r.NomeCompleto) : null,
+                        allKeys: Object.keys(r || {}).slice(0, 10)
                     }))
                 );
             }
             
-            const notasT = (appState.notasTeoricas.registros || []).find(n => n && 
-                ((n.EmailHC && normalizeString(n.EmailHC) === emailNormalizado) || 
-                 (n.NomeCompleto && normalizeString(n.NomeCompleto) === alunoNomeNormalizado))
-            );
+            // Try multiple field name variants for robustness
+            const notasT = (appState.notasTeoricas.registros || []).find(n => {
+                if (!n) return false;
+                
+                // Try EmailHC variants
+                const emailFields = ['EmailHC', 'emailHC', 'emailhc', 'EMAILHC', 'Email', 'email'];
+                const hasMatchingEmail = emailFields.some(field => 
+                    n[field] && normalizeString(n[field]) === emailNormalizado
+                );
+                
+                // Try NomeCompleto variants
+                const nameFields = ['NomeCompleto', 'nomeCompleto', 'nomecompleto', 'NOMECOMPLETO', 'Nome', 'nome'];
+                const hasMatchingName = nameFields.some(field => 
+                    n[field] && normalizeString(n[field]) === alunoNomeNormalizado
+                );
+                
+                return hasMatchingEmail || hasMatchingName;
+            });
             
             console.log('[findDataByStudent] Notas Teóricas encontradas:', notasT ? 'SIM' : 'NÃO');
             if (notasT) {
                 console.log('[findDataByStudent] Campos da nota teórica:', Object.keys(notasT));
+            } else if (appState.notasTeoricas.registros && appState.notasTeoricas.registros.length > 0) {
+                console.warn('[findDataByStudent] ⚠️ ATENÇÃO: Existem registros de notas teóricas, mas nenhum match encontrado!');
+                console.warn('[findDataByStudent] Valores buscados:', { emailNormalizado, alunoNomeNormalizado });
             }
 
             // Notas Práticas - with deduplication
