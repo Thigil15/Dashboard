@@ -16,7 +16,7 @@ O site está **completamente configurado** para ler dados do Firebase Realtime D
 
 1. **Abra o arquivo de teste**
    ```
-   Abra: test-firebase-connection.html
+   Abra: tests/test-firebase-connection.html
    ```
 
 2. **Execute os testes**
@@ -30,7 +30,7 @@ O site está **completamente configurado** para ler dados do Firebase Realtime D
 
 4. **Acesse o site**
    ```
-   Abra: index.html
+   Abra: src/index.html
    Faça login com as credenciais do Firebase
    ```
 
@@ -40,28 +40,28 @@ O site está **completamente configurado** para ler dados do Firebase Realtime D
 
 ### Para Usuários
 
-- **[VERIFICACAO_RAPIDA.md](./VERIFICACAO_RAPIDA.md)** ⚡
+- **[VERIFICACAO_RAPIDA.md](./docs/VERIFICACAO_RAPIDA.md)** ⚡
   - Checklist rápido
   - Teste de 3 minutos
   - Problemas comuns
 
-- **[COMO_FUNCIONA_FIREBASE.md](./COMO_FUNCIONA_FIREBASE.md)** 📖
+- **[COMO_FUNCIONA_FIREBASE.md](./docs/COMO_FUNCIONA_FIREBASE.md)** 📖
   - Explicação completa
   - Como o sistema funciona
   - Perguntas frequentes
 
-- **[QUICK_START.md](./QUICK_START.md)** 🏁
+- **[QUICK_START.md](./docs/QUICK_START.md)** 🏁
   - Setup em 5 minutos
   - Para quem quer começar rápido
 
 ### Para Desenvolvedores
 
-- **[FIREBASE_SETUP.md](./FIREBASE_SETUP.md)** ⚙️
+- **[FIREBASE_SETUP.md](./docs/FIREBASE_SETUP.md)** ⚙️
   - Configuração detalhada
   - Troubleshooting avançado
   - Regras de segurança
 
-- **[MIGRATION_SUMMARY.md](./MIGRATION_SUMMARY.md)** 🔄
+- **[MIGRATION_SUMMARY.md](./docs/MIGRATION_SUMMARY.md)** 🔄
   - Detalhes técnicos
   - Arquitetura do sistema
   - Comparação antes/depois
@@ -82,24 +82,33 @@ O site está **completamente configurado** para ler dados do Firebase Realtime D
 
 ```
 Dashboard/
-├── index.html                      # Página principal
-├── script.js                       # Lógica da aplicação
-├── style.css                       # Estilos customizados
-├── firebase-config.js              # Configuração Firebase
+├── src/                           # Código fonte da aplicação
+│   ├── index.html                 # Página principal
+│   ├── script.js                  # Lógica da aplicação
+│   ├── style.css                  # Estilos customizados
+│   └── firebase-config.js         # Configuração Firebase
 │
-├── test-firebase-connection.html   # Ferramenta de teste
+├── tests/                         # Arquivos de teste
+│   ├── test-firebase-connection.html
+│   ├── test-data-fields.html
+│   ├── test-field-formatting.html
+│   └── test-notaspraticas-visual.html
 │
-├── README.md                       # Este arquivo
-├── VERIFICACAO_RAPIDA.md          # Checklist rápido
-├── COMO_FUNCIONA_FIREBASE.md      # Documentação completa
-├── QUICK_START.md                 # Início rápido
-├── FIREBASE_SETUP.md              # Setup detalhado
-├── MIGRATION_SUMMARY.md           # Detalhes técnicos
+├── scripts/                       # Google Apps Scripts
+│   ├── CodeFirebase.gs            # Script de exportação
+│   ├── Ponto.gs                   # Script de ponto
+│   └── PontoEscala                # Gerenciamento de escalas
 │
-├── CodeFirebase.gs                # Script de exportação (App Script)
-├── Ponto.gs                       # Script de ponto (App Script)
-├── PontoEscala                    # Gerenciamento de escalas
+├── docs/                          # Documentação
+│   ├── VERIFICACAO_RAPIDA.md      # Checklist rápido
+│   ├── COMO_FUNCIONA_FIREBASE.md  # Documentação completa
+│   ├── QUICK_START.md             # Início rápido
+│   ├── FIREBASE_SETUP.md          # Setup detalhado
+│   ├── MIGRATION_SUMMARY.md       # Detalhes técnicos
+│   └── ... (outras documentações)
 │
+├── README.md                      # Este arquivo
+├── package.json                   # Dependências
 └── users.json                     # [LEGADO] Não usado mais
 ```
 
@@ -182,7 +191,7 @@ setupDatabaseListeners() {
 
 ```bash
 # Abra no navegador:
-test-firebase-connection.html
+tests/test-firebase-connection.html
 ```
 
 Verifica:
@@ -194,7 +203,7 @@ Verifica:
 
 ### Teste Manual
 
-1. Abra `index.html`
+1. Abra `src/index.html`
 2. Faça login
 3. Navegue pelas abas:
    - Dashboard (KPIs, gráficos)
@@ -262,7 +271,7 @@ Verifica:
 
 2. **Configure Firebase** (se ainda não estiver)
    ```
-   Veja: FIREBASE_SETUP.md
+   Veja: docs/FIREBASE_SETUP.md
    ```
 
 3. **Crie usuários**
@@ -277,7 +286,7 @@ Verifica:
 
 5. **Abra o site**
    ```
-   Abra index.html no navegador
+   Abra src/index.html no navegador
    ```
 
 ---
@@ -329,9 +338,9 @@ const firebaseConfig = {
 
 ### Mais Problemas?
 
-- 📖 Leia: [VERIFICACAO_RAPIDA.md](./VERIFICACAO_RAPIDA.md)
-- 🔧 Veja: [FIREBASE_SETUP.md](./FIREBASE_SETUP.md)
-- 🧪 Execute: `test-firebase-connection.html`
+- 📖 Leia: [VERIFICACAO_RAPIDA.md](./docs/VERIFICACAO_RAPIDA.md)
+- 🔧 Veja: [FIREBASE_SETUP.md](./docs/FIREBASE_SETUP.md)
+- 🧪 Execute: `tests/test-firebase-connection.html`
 - 💻 Abra o Console (F12) e veja os erros
 
 ---
@@ -342,17 +351,17 @@ const firebaseConfig = {
 
 1. **Entenda a arquitetura**
    ```
-   Leia: MIGRATION_SUMMARY.md
+   Leia: docs/MIGRATION_SUMMARY.md
    ```
 
 2. **Configure seu ambiente**
    ```
-   Leia: FIREBASE_SETUP.md
+   Leia: docs/FIREBASE_SETUP.md
    ```
 
 3. **Teste suas mudanças**
    ```
-   Use: test-firebase-connection.html
+   Use: tests/test-firebase-connection.html
    ```
 
 4. **Siga as convenções**
@@ -384,12 +393,12 @@ const firebaseConfig = {
 ## 📞 Suporte
 
 ### Documentação
-- [VERIFICACAO_RAPIDA.md](./VERIFICACAO_RAPIDA.md) - Checklist rápido
-- [COMO_FUNCIONA_FIREBASE.md](./COMO_FUNCIONA_FIREBASE.md) - Guia completo
-- [FIREBASE_SETUP.md](./FIREBASE_SETUP.md) - Setup detalhado
+- [VERIFICACAO_RAPIDA.md](./docs/VERIFICACAO_RAPIDA.md) - Checklist rápido
+- [COMO_FUNCIONA_FIREBASE.md](./docs/COMO_FUNCIONA_FIREBASE.md) - Guia completo
+- [FIREBASE_SETUP.md](./docs/FIREBASE_SETUP.md) - Setup detalhado
 
 ### Ferramentas
-- `test-firebase-connection.html` - Teste automático
+- `tests/test-firebase-connection.html` - Teste automático
 
 ### Console do Navegador
 - Pressione F12
@@ -419,7 +428,7 @@ O sistema está **100% funcional** e configurado.
 
 ### Próximos Passos:
 
-1. ✅ Execute o teste: `test-firebase-connection.html`
+1. ✅ Execute o teste: `tests/test-firebase-connection.html`
 2. ✅ Configure usuários no Firebase (se necessário)
 3. ✅ Rode o App Script para enviar dados
 4. ✅ Faça login e aproveite!
