@@ -652,8 +652,9 @@
             position: absolute;
             width: 80%;
             height: 80%;
-            background: var(--card-bg-darker);
+            background: white;  /* Changed to pure white for better contrast */
             border-radius: 50%;
+            box-shadow: 0 0 0 1px rgba(102, 126, 234, 0.1);  /* Subtle inner border */
         }
         .summary-progress-ring .value {
             position: relative;
