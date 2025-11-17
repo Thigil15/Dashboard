@@ -3621,7 +3621,9 @@ function renderTabEscala(escalas) {
                 const mediaFinal = parseNota(n[keyM]);
                 const comentario = n[keyC] || 'Sem comentários registrados.';
                 const comentarioEscapado = comentario.replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/\n/g, "\\n");
-                const dataFormatada = n['Data/Hora'] ? new Date(String(n['Data/Hora']).replace(/-/g,'/')).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : 'N/A';
+                // Handle different variations of the date/time field
+                const dataHoraValue = n['Data/Hora'] || n['DataHora'] || n.dataHora;
+                const dataFormatada = dataHoraValue ? new Date(String(dataHoraValue).replace(/-/g,'/')).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : 'N/A';
                 const nomePratica = n.nomePratica || `Avaliação Prática ${index + 1}`;
                 
                 // Determina cor e status baseado na nota
