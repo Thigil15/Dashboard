@@ -52,10 +52,18 @@
             font-size: 2rem;
             font-weight: 700;
             line-height: 2.5rem;
-            background: linear-gradient(135deg, var(--accent-blue), var(--accent-blue-secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: var(--accent-blue); /* Fallback color */
             margin-bottom: 2rem;
+        }
+        
+        /* Apply gradient text effect only in supporting browsers */
+        @supports (background-clip: text) or (-webkit-background-clip: text) {
+            main > .view-container > h1 {
+                background: linear-gradient(135deg, var(--accent-blue), var(--accent-blue-secondary));
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+            }
         }
         h2 { font-size: 1.25rem; line-height: 1.75rem; }
         h3 { font-size: 1.125rem; line-height: 1.75rem; }
@@ -2772,13 +2780,20 @@
     font-family: var(--font-display);
     font-size: clamp(2rem, 5vw, 3.5rem);
     font-weight: 800;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #0054B4 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #667eea; /* Fallback color */
     margin-bottom: 1rem;
     line-height: 1.2;
     letter-spacing: -0.02em;
+}
+
+/* Apply gradient text effect only in supporting browsers */
+@supports (background-clip: text) or (-webkit-background-clip: text) {
+    .np-hero-title {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #0054B4 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
 }
 
 .np-hero-subtitle {
@@ -3056,13 +3071,19 @@
     font-family: var(--font-display);
     font-size: 2.75rem;
     font-weight: 900;
-    color: var(--np-card-color);
+    color: var(--np-card-color); /* Fallback color for browsers that don't support gradient text */
     line-height: 1;
     margin-bottom: 0.5rem;
-    background: var(--np-card-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+}
+
+/* Apply gradient text effect only in supporting browsers */
+@supports (background-clip: text) or (-webkit-background-clip: text) {
+    .np-comp-score {
+        background: var(--np-card-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
 }
 
 .np-comp-label {
@@ -3445,10 +3466,17 @@
     font-family: var(--font-display);
     font-size: 1.375rem;
     font-weight: 800;
-    background: linear-gradient(135deg, var(--np-skill-color) 0%, var(--np-skill-color)88 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--np-skill-color); /* Fallback color */
+}
+
+/* Apply gradient text effect only in supporting browsers */
+@supports (background-clip: text) or (-webkit-background-clip: text) {
+    .np-skill-value {
+        background: linear-gradient(135deg, var(--np-skill-color) 0%, var(--np-skill-color)88 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
 }
 
 .np-skill-progress {
