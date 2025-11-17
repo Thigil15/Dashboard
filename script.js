@@ -48,7 +48,9 @@
             const pathMappings = [
                 { path: 'exportAll/Alunos/dados', stateKey: 'alunos', processor: (data) => data || [] },
                 { path: 'exportAll/AusenciasReposicoes/dados', stateKey: 'ausenciasReposicoes', processor: (data) => normalizeAusenciasReposicoes(data || []) },
-                { path: 'exportAll/NotasTeoricas/dados', stateKey: 'notasTeoricas', processor: (data) => ({ registros: data || [] }) },
+                { path: 'exportAll/NotasTeoricas/dados', stateKey: 'notasTeoricas', processor: (data) => ({ 
+                    registros: (data || []).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row)
+                }) },
                 { path: 'exportAll/Ponto/dados', stateKey: 'pontoStaticRows', processor: (data) => {
                     const processed = (data || []).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
                     
@@ -1381,10 +1383,70 @@ const pontoState = {
             );
 
             // Notas Teóricas
-            const notasT = (appState.notasTeoricas.registros || []).find(n => n && 
-                ((n.EmailHC && normalizeString(n.EmailHC) === emailNormalizado) || 
-                 (n.NomeCompleto && normalizeString(n.NomeCompleto) === alunoNomeNormalizado))
-            );
+            console.log('[findDataByStudent] Buscando Notas Teóricas para:', { emailNormalizado, alunoNomeNormalizado });
+            console.log('[findDataByStudent] appState.notasTeoricas:', appState.notasTeoricas);
+            console.log('[findDataByStudent] Tipo de appState.notasTeoricas:', typeof appState.notasTeoricas);
+            console.log('[findDataByStudent] Tem registros?', appState.notasTeoricas?.registros !== undefined);
+            console.log('[findDataByStudent] Total de registros em notasTeoricas:', appState.notasTeoricas.registros?.length || 0);
+            
+            // Handle different possible data structures
+            let notasTeoricasArray = [];
+            if (appState.notasTeoricas) {
+                if (Array.isArray(appState.notasTeoricas)) {
+                    // If notasTeoricas is already an array
+                    notasTeoricasArray = appState.notasTeoricas;
+                    console.log('[findDataByStudent] notasTeoricas é um array direto');
+                } else if (appState.notasTeoricas.registros && Array.isArray(appState.notasTeoricas.registros)) {
+                    // If notasTeoricas has a registros property
+                    notasTeoricasArray = appState.notasTeoricas.registros;
+                    console.log('[findDataByStudent] notasTeoricas tem propriedade registros');
+                } else if (typeof appState.notasTeoricas === 'object') {
+                    // If it's an object but not in expected structure
+                    console.warn('[findDataByStudent] ⚠️ notasTeoricas tem estrutura inesperada:', Object.keys(appState.notasTeoricas));
+                }
+            }
+            
+            // Log first 3 records to see structure
+            if (notasTeoricasArray.length > 0) {
+                console.log('[findDataByStudent] Primeiros 3 registros de notasTeoricas:', 
+                    notasTeoricasArray.slice(0, 3).map(r => ({
+                        EmailHC: r?.EmailHC,
+                        NomeCompleto: r?.NomeCompleto,
+                        emailHC: r?.emailHC,
+                        nomeCompleto: r?.nomeCompleto,
+                        EmailHC_normalized: r?.EmailHC ? normalizeString(r.EmailHC) : null,
+                        NomeCompleto_normalized: r?.NomeCompleto ? normalizeString(r.NomeCompleto) : null,
+                        allKeys: Object.keys(r || {}).slice(0, 10)
+                    }))
+                );
+            }
+            
+            // Try multiple field name variants for robustness
+            const notasT = notasTeoricasArray.find(n => {
+                if (!n) return false;
+                
+                // Try EmailHC variants
+                const emailFields = ['EmailHC', 'emailHC', 'emailhc', 'EMAILHC', 'Email', 'email'];
+                const hasMatchingEmail = emailFields.some(field => 
+                    n[field] && normalizeString(n[field]) === emailNormalizado
+                );
+                
+                // Try NomeCompleto variants
+                const nameFields = ['NomeCompleto', 'nomeCompleto', 'nomecompleto', 'NOMECOMPLETO', 'Nome', 'nome'];
+                const hasMatchingName = nameFields.some(field => 
+                    n[field] && normalizeString(n[field]) === alunoNomeNormalizado
+                );
+                
+                return hasMatchingEmail || hasMatchingName;
+            });
+            
+            console.log('[findDataByStudent] Notas Teóricas encontradas:', notasT ? 'SIM' : 'NÃO');
+            if (notasT) {
+                console.log('[findDataByStudent] Campos da nota teórica:', Object.keys(notasT));
+            } else if (notasTeoricasArray.length > 0) {
+                console.warn('[findDataByStudent] ⚠️ ATENÇÃO: Existem registros de notas teóricas, mas nenhum match encontrado!');
+                console.warn('[findDataByStudent] Valores buscados:', { emailNormalizado, alunoNomeNormalizado });
+            }
 
             // Notas Práticas - with deduplication
             const notasPRaw = Object.values(appState.notasPraticas).flatMap(p =>
@@ -3384,10 +3446,22 @@ function renderTabEscala(escalas) {
          */
         function renderTabNotasTeoricas(notas) {
             console.log('[renderTabNotasTeoricas v35 - Theoretical Excellence] Dados recebidos:', notas);
+            console.log('[renderTabNotasTeoricas] Tipo:', typeof notas);
+            console.log('[renderTabNotasTeoricas] É null?', notas === null);
+            console.log('[renderTabNotasTeoricas] É undefined?', notas === undefined);
+            console.log('[renderTabNotasTeoricas] Número de chaves:', notas ? Object.keys(notas).length : 0);
+            if (notas) {
+                console.log('[renderTabNotasTeoricas] Chaves disponíveis:', Object.keys(notas).slice(0, 10));
+            }
+            
             const tabContainer = document.getElementById('notas-t-content-wrapper');
 
             // === EMPTY STATE ARTÍSTICO === //
             if (!notas || typeof notas !== 'object' || Object.keys(notas).length === 0) {
+                console.log('[renderTabNotasTeoricas] EMPTY STATE - Motivo:', 
+                    !notas ? 'notas é falsy' : 
+                    typeof notas !== 'object' ? 'notas não é objeto' : 
+                    'notas não tem chaves');
                 tabContainer.innerHTML = `
                     <div class="nt-empty-state">
                         <svg class="nt-empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">

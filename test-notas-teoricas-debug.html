@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug: Notas Teóricas Matching</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-left: 4px solid #4CAF50;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .test-result.pass {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .test-result.fail {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .test-result.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .input-group {
+            margin: 15px 0;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug: Notas Teóricas Matching</h1>
+        
+        <div class="section">
+            <h2>Teste de Normalização de Strings</h2>
+            <div class="input-group">
+                <label>String 1 (ex: EmailHC do aluno):</label>
+                <input type="text" id="string1" placeholder="exemplo@hc.fm.usp.br">
+            </div>
+            <div class="input-group">
+                <label>String 2 (ex: EmailHC do registro):</label>
+                <input type="text" id="string2" placeholder="Exemplo@HC.FM.USP.BR">
+            </div>
+            <button onclick="testNormalization()">Testar Normalização</button>
+            <div id="normResult"></div>
+        </div>
+        
+        <div class="section">
+            <h2>Teste de Estrutura de Dados Mock</h2>
+            <button onclick="testMockData()">Testar com Dados Mock</button>
+            <div id="mockResult"></div>
+        </div>
+        
+        <div class="section">
+            <h2>Simulação de Matching</h2>
+            <div class="input-group">
+                <label>Email do Aluno:</label>
+                <input type="text" id="searchEmail" placeholder="aluno@hc.fm.usp.br">
+            </div>
+            <div class="input-group">
+                <label>Nome do Aluno:</label>
+                <input type="text" id="searchName" placeholder="João da Silva">
+            </div>
+            <button onclick="testMatching()">Buscar no Mock</button>
+            <div id="matchResult"></div>
+        </div>
+    </div>
+
+    <script>
+        // Função de normalização (copiada do script.js)
+        function normalizeString(str) {
+            if (!str) return '';
+            return String(str)
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .trim()
+                .replace(/\s+/g, ' ');
+        }
+
+        function testNormalization() {
+            const str1 = document.getElementById('string1').value;
+            const str2 = document.getElementById('string2').value;
+            
+            const norm1 = normalizeString(str1);
+            const norm2 = normalizeString(str2);
+            
+            const match = norm1 === norm2;
+            
+            const result = document.getElementById('normResult');
+            result.innerHTML = `
+                <div class="test-result info">
+                    <strong>String 1:</strong> "${str1}"<br>
+                    <strong>Normalizada:</strong> "${norm1}"<br><br>
+                    <strong>String 2:</strong> "${str2}"<br>
+                    <strong>Normalizada:</strong> "${norm2}"<br><br>
+                    <strong>Match:</strong> ${match ? '✅ SIM' : '❌ NÃO'}
+                </div>
+            `;
+        }
+
+        // Dados mock para teste
+        const mockNotasTeoricas = {
+            registros: [
+                {
+                    EmailHC: "joao.silva@hc.fm.usp.br",
+                    NomeCompleto: "João da Silva",
+                    "MÉDIA FISIO1": 8.5,
+                    "MÉDIA FISIO2": 9.0,
+                    "Anatomopatologia": 8.0,
+                    "VM": 9.5
+                },
+                {
+                    EmailHC: "maria.santos@hc.fm.usp.br",
+                    NomeCompleto: "Maria dos Santos",
+                    "MÉDIA FISIO1": 7.5,
+                    "MÉDIA FISIO2": 8.0,
+                    "Anatomopatologia": 7.0,
+                    "VM": 8.5
+                },
+                {
+                    emailhc: "pedro.oliveira@hc.fm.usp.br",  // lowercase variant
+                    nomecompleto: "Pedro Oliveira",
+                    "MÉDIA FISIO1": 9.0,
+                    "MÉDIA FISIO2": 9.5,
+                    "Anatomopatologia": 9.0,
+                    "VM": 10.0
+                }
+            ]
+        };
+
+        function testMockData() {
+            const result = document.getElementById('mockResult');
+            result.innerHTML = `
+                <div class="test-result info">
+                    <strong>Estrutura dos Dados Mock:</strong>
+                    <pre>${JSON.stringify(mockNotasTeoricas, null, 2)}</pre>
+                    <strong>Total de registros:</strong> ${mockNotasTeoricas.registros.length}
+                </div>
+            `;
+        }
+
+        function findNotasByStudent(emailNormalizado, nomeNormalizado) {
+            const notasTeoricasArray = mockNotasTeoricas.registros || [];
+            
+            return notasTeoricasArray.find(n => {
+                if (!n) return false;
+                
+                // Try EmailHC variants
+                const emailFields = ['EmailHC', 'emailHC', 'emailhc', 'EMAILHC', 'Email', 'email'];
+                const hasMatchingEmail = emailFields.some(field => 
+                    n[field] && normalizeString(n[field]) === emailNormalizado
+                );
+                
+                // Try NomeCompleto variants
+                const nameFields = ['NomeCompleto', 'nomeCompleto', 'nomecompleto', 'NOMECOMPLETO', 'Nome', 'nome'];
+                const hasMatchingName = nameFields.some(field => 
+                    n[field] && normalizeString(n[field]) === nomeNormalizado
+                );
+                
+                return hasMatchingEmail || hasMatchingName;
+            });
+        }
+
+        function testMatching() {
+            const email = document.getElementById('searchEmail').value;
+            const name = document.getElementById('searchName').value;
+            
+            const emailNorm = normalizeString(email);
+            const nameNorm = normalizeString(name);
+            
+            console.log('Buscando:', { email, emailNorm, name, nameNorm });
+            
+            const found = findNotasByStudent(emailNorm, nameNorm);
+            
+            const result = document.getElementById('matchResult');
+            
+            if (found) {
+                result.innerHTML = `
+                    <div class="test-result pass">
+                        <strong>✅ ENCONTRADO!</strong><br>
+                        <pre>${JSON.stringify(found, null, 2)}</pre>
+                    </div>
+                `;
+            } else {
+                result.innerHTML = `
+                    <div class="test-result fail">
+                        <strong>❌ NÃO ENCONTRADO</strong><br>
+                        Valores buscados:<br>
+                        Email normalizado: "${emailNorm}"<br>
+                        Nome normalizado: "${nameNorm}"<br><br>
+                        Tente com um dos emails ou nomes do mock:<br>
+                        - joao.silva@hc.fm.usp.br / João da Silva<br>
+                        - maria.santos@hc.fm.usp.br / Maria dos Santos<br>
+                        - pedro.oliveira@hc.fm.usp.br / Pedro Oliveira
+                    </div>
+                `;
+            }
+        }
+
+        // Auto-populate with example
+        document.getElementById('string1').value = 'João da Silva';
+        document.getElementById('string2').value = 'JOÃO DA SILVA';
+    </script>
+</body>
+</html>
