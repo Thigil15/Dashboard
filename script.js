@@ -1084,6 +1084,7 @@ const pontoState = {
         
         function setupEventHandlers() {
             console.log('[setupEventHandlers] Configurando listeners...');
+            // Login form event listener - registered only once to prevent duplicate submissions
             document.getElementById('login-form').addEventListener('submit', handleLogin);
             setupSidebarNavigation();
             document.getElementById('sidebar-toggle').addEventListener('click', toggleSidebar); 
