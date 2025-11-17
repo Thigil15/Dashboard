@@ -56,7 +56,8 @@
 
 
     <!-- View do Dashboard Principal (Começa escondida) -->
-    <div id="dashboard-view" class="view-container flex min-h-screen opacity-0 transition-opacity duration-500">
+    <!-- CRITICAL FIX: Start hidden (display:none) to prevent flash of content before auth check -->
+    <div id="dashboard-view" class="view-container flex min-h-screen opacity-0 transition-opacity duration-500" style="display: none;">
         
         <!-- Sidebar (Tema Branco) -->
         <aside id="app-sidebar">
@@ -407,7 +408,8 @@
     </div>
 
     <!-- View: Detalhe do Aluno -->
-    <div id="student-detail-view" class="view-container">
+    <!-- CRITICAL FIX: Start hidden to prevent showing non-existent student on page load -->
+    <div id="student-detail-view" class="view-container" style="display: none;">
         <header>
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
                 <button id="back-to-dashboard" class="flex items-center text-sm font-medium group">
