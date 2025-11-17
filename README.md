@@ -30,7 +30,7 @@ O site está **completamente configurado** para ler dados do Firebase Realtime D
 
 4. **Acesse o site**
    ```
-   Abra: src/index.html
+   Abra: index.html
    Faça login com as credenciais do Firebase
    ```
 
@@ -82,11 +82,10 @@ O site está **completamente configurado** para ler dados do Firebase Realtime D
 
 ```
 Dashboard/
-├── src/                           # Código fonte da aplicação
-│   ├── index.html                 # Página principal
-│   ├── script.js                  # Lógica da aplicação
-│   ├── style.css                  # Estilos customizados
-│   └── firebase-config.js         # Configuração Firebase
+├── index.html                     # Página principal
+├── script.js                      # Lógica da aplicação
+├── style.css                      # Estilos customizados
+├── firebase-config.js             # Configuração Firebase
 │
 ├── tests/                         # Arquivos de teste
 │   ├── test-firebase-connection.html
@@ -203,7 +202,7 @@ Verifica:
 
 ### Teste Manual
 
-1. Abra `src/index.html`
+1. Abra `index.html`
 2. Faça login
 3. Navegue pelas abas:
    - Dashboard (KPIs, gráficos)
@@ -286,7 +285,7 @@ Verifica:
 
 5. **Abra o site**
    ```
-   Abra src/index.html no navegador
+   Abra index.html no navegador
    ```
 
 ---
