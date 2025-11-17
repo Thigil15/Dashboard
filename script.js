@@ -3436,15 +3436,31 @@ function renderTabEscala(escalas) {
                 }
                 
                 Object.keys(n).forEach(key => {
-                    const val = parseNota(n[key]);
+                    // Skip final grade fields to avoid counting them multiple times
+                    const isFinalGrade = /MÉDIA.*NOTA.*FINAL|MEDIA.*NOTA.*FINAL|MÉDIA.*FINAL|MEDIA.*FINAL|NOTA.*FINAL/i.test(key);
+                    if (isFinalGrade) {
+                        return;
+                    }
+                    
+                    let val = parseNota(n[key]);
+                    let cleanKey = key;
+                    
+                    // Handle fields with numeric prefix (e.g., "0.0 Raciocínio Clínico...")
+                    // In this case, the score is in the key name, not the value
+                    const numericPrefixMatch = key.match(/^(\d+[\.,]?\d*)\s+(.+)$/);
+                    if (numericPrefixMatch) {
+                        val = parseNota(numericPrefixMatch[1]);
+                        cleanKey = numericPrefixMatch[2];
+                    }
+                    
                     if (val > 0) {
-                        if (map.raciocinio.some(regex => regex.test(key))) {
+                        if (map.raciocinio.some(regex => regex.test(cleanKey))) {
                             competency.raciocinio.sum += val;
                             competency.raciocinio.count++;
-                        } else if (map.tecnica.some(regex => regex.test(key))) {
+                        } else if (map.tecnica.some(regex => regex.test(cleanKey))) {
                             competency.tecnica.sum += val;
                             competency.tecnica.count++;
-                        } else if (map.profissionalismo.some(regex => regex.test(key))) {
+                        } else if (map.profissionalismo.some(regex => regex.test(cleanKey))) {
                             competency.profissionalismo.sum += val;
                             competency.profissionalismo.count++;
                         }
@@ -3608,11 +3624,11 @@ function renderTabEscala(escalas) {
                                 </div>
                             ` : ''}
                         </div>
-                        <div class="evolution-chart-container" style="min-height: 200px;">
+                        <div class="evolution-chart-container">
                             ${summary.last5Notes.length > 0 ? summary.last5Notes.map((note, i) => `
-                                <div class="evolution-bar" style="height: ${note.value * 10}%; animation-delay: ${i * 0.1}s;">
-                                    <span class="bar-value" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 4px 8px; border-radius: 4px; font-weight: 600;">${note.value.toFixed(1)}</span>
-                                    <span class="bar-label" style="font-weight: 500;">${note.label.length > 20 ? note.label.substring(0, 20) + '...' : note.label}</span>
+                                <div class="evolution-bar" style="height: ${Math.max(note.value * 10, 10)}%; animation-delay: ${i * 0.1}s;">
+                                    <span class="bar-value">${note.value.toFixed(1)}</span>
+                                    <span class="bar-label">${note.label && note.label.length > 15 ? note.label.substring(0, 15) + '...' : (note.label || `Aval. ${i+1}`)}</span>
                                 </div>
                             `).join('') : '<p class="text-sm text-slate-500 italic text-center py-8">Não há notas finais suficientes para exibir a evolução.</p>'}
                         </div>
@@ -3709,13 +3725,29 @@ function renderTabEscala(escalas) {
                 let checklistScores = [];
                 
                 Object.entries(n).forEach(([key, value]) => {
-                    const isIgnored = /DATA\/HORA|EMAILHC|NOMECOMPLETO|CURSO|SUPERVISOR|UNIDADE|PERIODO|TURNO|MÉDIA\s*\(NOTA FINAL\)|COMENTÁRIOS\s*DO\(A\)\s*SUPERVISOR\(A\)|O SUPERVISOR ESTÁ CIENTE|NOMEPRATICA|_uniqueId|_sheetName|_validatedAt/i.test(key.toUpperCase().trim());
+                    // Enhanced ignore pattern to exclude MediaNotaFinal and variations
+                    const isIgnored = /DATA\/HORA|EMAILHC|NOMECOMPLETO|CURSO|SUPERVISOR|UNIDADE|PERIODO|TURNO|MÉDIA\s*\(NOTA FINAL\)|MÉDIA.*NOTA.*FINAL|MEDIA.*NOTA.*FINAL|MÉDIA.*FINAL|MEDIA.*FINAL|NOTA.*FINAL|COMENTÁRIOS\s*DO\(A\)\s*SUPERVISOR\(A\)|O SUPERVISOR ESTÁ CIENTE|NOMEPRATICA|_uniqueId|_sheetName|_validatedAt/i.test(key.toUpperCase().trim());
                     if (!isIgnored && value) {
+                        // Extract the actual field name if it starts with a number (score)
+                        // Example: "0.0 Raciocínio Clínico Avaliação, planejamento e associação"
+                        let cleanKey = key;
+                        const numericPrefixMatch = key.match(/^(\d+[\.,]?\d*)\s+(.+)$/);
+                        if (numericPrefixMatch) {
+                            // Key has a numeric prefix - use the score from prefix and text from suffix
+                            const scoreFromPrefix = parseNota(numericPrefixMatch[1]);
+                            const fieldNameFromSuffix = numericPrefixMatch[2];
+                            if (scoreFromPrefix > 0) {
+                                numericalScores.push({ label: fieldNameFromSuffix.replace(/:/g, ''), value: scoreFromPrefix });
+                                return; // Skip further processing for this field
+                            }
+                            cleanKey = fieldNameFromSuffix;
+                        }
+                        
                         const parsedValue = parseNota(value);
                         if (!isNaN(parsedValue) && parsedValue > 0 && String(value).trim().match(/^[\d,.]+$/)) {
-                            numericalScores.push({ label: key.replace(/:/g, ''), value: parsedValue });
+                            numericalScores.push({ label: cleanKey.replace(/:/g, ''), value: parsedValue });
                         } else if (String(value).trim() !== '' && String(value).trim() !== '0') {
-                            checklistScores.push({ label: key.replace(/:/g, ''), value: value });
+                            checklistScores.push({ label: cleanKey.replace(/:/g, ''), value: value });
                         }
                     }
                 });
