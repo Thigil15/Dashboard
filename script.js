@@ -48,8 +48,43 @@
             const pathMappings = [
                 { path: 'exportAll/Alunos/dados', stateKey: 'alunos', processor: (data) => data || [] },
                 { path: 'exportAll/AusenciasReposicoes/dados', stateKey: 'ausenciasReposicoes', processor: (data) => normalizeAusenciasReposicoes(data || []) },
-                { path: 'exportAll/NotasTeoricas/dados', stateKey: 'notasTeoricas', processor: (data) => ({ 
-                    registros: (data || []).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row)
+                { path: 'exportAll/NotasTeoricas', stateKey: 'notasTeoricas', processor: (data) => {
+                    // Handle both possible structures: direct array or object with 'dados' property
+                    let registros = [];
+                    if (!data) {
+                        console.log('[setupDatabaseListeners] NotasTeoricas: Nenhum dado encontrado');
+                        registros = [];
+                    } else if (Array.isArray(data)) {
+                        console.log('[setupDatabaseListeners] NotasTeoricas: Estrutura de array direto detectada');
+                        registros = data;
+                    } else if (data.dados && Array.isArray(data.dados)) {
+                        console.log('[setupDatabaseListeners] NotasTeoricas: Estrutura com propriedade "dados" detectada');
+                        registros = data.dados;
+                    } else if (typeof data === 'object') {
+                        console.warn('[setupDatabaseListeners] NotasTeoricas: Estrutura inesperada, tentando converter objeto em array');
+                        // Try to convert object to array if it has numbered keys
+                        const values = Object.values(data);
+                        if (values.length > 0 && values.every(v => v && typeof v === 'object')) {
+                            registros = values;
+                        } else {
+                            console.error('[setupDatabaseListeners] NotasTeoricas: Estrutura não reconhecida:', Object.keys(data));
+                            registros = [];
+                        }
+                    }
+                    
+                    const normalized = registros.map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
+                    console.log(`[setupDatabaseListeners] NotasTeoricas: ${normalized.length} registros processados e normalizados`);
+                    
+                    // Log sample data for debugging
+                    if (normalized.length > 0) {
+                        console.log('[setupDatabaseListeners] NotasTeoricas: Amostra do primeiro registro:', {
+                            EmailHC: normalized[0].EmailHC || normalized[0].emailHC || normalized[0].emailhc,
+                            NomeCompleto: normalized[0].NomeCompleto || normalized[0].nomeCompleto || normalized[0].nomecompleto,
+                            campos: Object.keys(normalized[0]).slice(0, 10).join(', ')
+                        });
+                    }
+                    
+                    return { registros: normalized };
                 }) },
                 { path: 'exportAll/Ponto/dados', stateKey: 'pontoStaticRows', processor: (data) => {
                     const processed = (data || []).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
