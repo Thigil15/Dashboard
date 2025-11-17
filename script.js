@@ -1047,8 +1047,9 @@ const pontoState = {
             });
 
             // Event listener para as sub-abas (delegado ao #tab-notas-p)
+            // Suporta tanto .subnav-button (antigo) quanto .np-tab-button (novo design)
             document.getElementById('tab-notas-p').addEventListener('click', (e) => {
-                const button = e.target.closest('.subnav-button');
+                const button = e.target.closest('.subnav-button, .np-tab-button');
                 if (button && !button.classList.contains('active')) {
                     const tabId = button.getAttribute('data-subtab-id');
                     switchStudentSubTab(tabId);
@@ -2771,11 +2772,12 @@ const pontoState = {
 
         function switchStudentSubTab(subTabId) {
             console.log(`[switchStudentSubTab] Trocando para sub-aba: ${subTabId}`);
-            const subNavContainer = document.getElementById('student-detail-subnav-container');
+            const subNavContainer = document.getElementById('student-detail-subnav-container') || document.querySelector('.np-tab-nav');
             const subContentContainer = document.getElementById('student-detail-subnav-content');
             
             if (subNavContainer) {
-                subNavContainer.querySelectorAll('.subnav-button').forEach(btn => {
+                // Suporta tanto .subnav-button (antigo) quanto .np-tab-button (novo)
+                subNavContainer.querySelectorAll('.subnav-button, .np-tab-button').forEach(btn => {
                     btn.classList.toggle('active', btn.getAttribute('data-subtab-id') === subTabId);
                 });
             }
@@ -3491,153 +3493,190 @@ function renderTabEscala(escalas) {
 
 
         /**
-         * [PROFISSIONAL] Renderiza a aba de Notas Práticas com design nível USP
+         * [MASTERPIECE] Renderiza a aba de Notas Práticas com design revolucionário e artístico
+         * Versão v34 - Art & Perfection Edition
          */
         function renderTabNotasPraticas(notasP) {
-            console.log("[renderTabNotasPraticas v33 - USP Level] Dados recebidos:", notasP);
+            console.log("[renderTabNotasPraticas v34 - Art & Perfection] Dados recebidos:", notasP);
             const tabContainer = document.getElementById('tab-notas-p');
             
+            // === EMPTY STATE ARTÍSTICO === //
             if (!notasP || notasP.length === 0) {
                 tabContainer.innerHTML = `
-                    <div class="content-card p-8 text-center">
-                        <div class="mb-6">
-                            <svg class="mx-auto h-16 w-16 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-semibold text-slate-700 mb-2">Nenhuma Avaliação Prática Registrada</h3>
-                        <p class="text-slate-500 text-sm max-w-md mx-auto">
-                            As avaliações práticas aparecem aqui quando os supervisores enviam os formulários de avaliação.
-                        </p>
-                        <div class="mt-6 p-4 bg-blue-50 rounded-lg text-left max-w-lg mx-auto">
-                            <p class="text-xs font-semibold text-blue-900 mb-2">ℹ️ Sistema de Validação Ativo</p>
-                            <p class="text-xs text-blue-700">
-                                Todas as notas práticas passam por validação rigorosa para garantir integridade dos dados.
+                    <div class="np-empty-state">
+                        <svg class="np-empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <div>
+                            <h3 class="np-empty-title">Nenhuma Avaliação Prática Registrada</h3>
+                            <p class="np-empty-description">
+                                As avaliações práticas aparecem aqui quando os supervisores enviam os formulários de avaliação.
                             </p>
+                            <div class="np-empty-badge">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                </svg>
+                                Sistema de Validação Ativo
+                            </div>
                         </div>
                     </div>
                 `;
                 return;
             }
             
-            // Verifica se tem dados com ID único (validados)
-            const hasValidatedData = notasP.some(n => n._uniqueId);
-            
+            // === CÁLCULO E PREPARAÇÃO DOS DADOS === //
             const summary = calculatePracticeSummary(notasP);
+            const hasValidatedData = notasP.some(n => n._uniqueId);
+            const totalValidated = hasValidatedData ? notasP.filter(n => n._uniqueId).length : 0;
+            const progressPercent = summary.overallAvg * 10;
             
-            // Header com informações de validação
-            let validationBadge = '';
-            if (hasValidatedData) {
-                const totalValidated = notasP.filter(n => n._uniqueId).length;
-                validationBadge = `
-                    <div class="flex items-center gap-2 px-3 py-1.5 bg-green-50 rounded-lg text-green-700 text-xs font-medium">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m4.5 0c-.621.504-1.125 1.045-1.5 1.5" />
-                        </svg>
-                        ${totalValidated}/${notasP.length} Avaliações Validadas
-                    </div>
-                `;
+            // Determina a mensagem de performance
+            let performanceMessage = '⚠ Precisa de atenção';
+            let performanceIcon = '⚠️';
+            if (summary.overallAvg >= 9.0) {
+                performanceMessage = '🌟 Excelência Excepcional';
+                performanceIcon = '🌟';
+            } else if (summary.overallAvg >= 8.5) {
+                performanceMessage = '⭐ Excelente Desempenho';
+                performanceIcon = '⭐';
+            } else if (summary.overallAvg >= 7.5) {
+                performanceMessage = '✓ Muito Bom';
+                performanceIcon = '✓';
+            } else if (summary.overallAvg >= 7.0) {
+                performanceMessage = '✓ Bom Desempenho';
+                performanceIcon = '✓';
             }
             
-            let summaryHtml = `
-                <div class="mb-8">
-                    <div class="flex justify-between items-center mb-6">
-                        <div>
-                            <h2 class="text-2xl font-bold text-slate-900">Avaliações Práticas</h2>
-                            <p class="text-slate-600 text-sm mt-1">Análise de desempenho em ambiente clínico</p>
-                        </div>
-                        ${validationBadge}
+            // Calcula tendência
+            const hasTrend = summary.last5Notes.length >= 2;
+            const isTrendingUp = hasTrend && summary.last5Notes[summary.last5Notes.length - 1].value > summary.last5Notes[0].value;
+            
+            // === HERO SECTION === //
+            let heroHtml = `
+                <div class="np-hero-section">
+                    <div class="np-hero-content">
+                        <h1 class="np-hero-title">Avaliações Práticas</h1>
+                        <p class="np-hero-subtitle">
+                            Análise profunda e visual do seu desempenho em ambiente clínico real
+                        </p>
+                        ${hasValidatedData ? `
+                            <div class="np-validation-badge">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                ${totalValidated}/${notasP.length} Avaliações Validadas
+                            </div>
+                        ` : ''}
                     </div>
                 </div>
-                
-                <div id="practice-summary-dashboard">
-                    <!-- Card Média Geral Aprimorado com Melhor Visibilidade -->
-                    <div class="content-card summary-progress-card animated-card delay-100" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);">
-                        <div class="summary-progress-ring" style="--value:${summary.overallAvg * 10}; --ring-color: rgba(255,255,255,0.25); --fill-color: white; background: conic-gradient(white calc(var(--value) * 1%), rgba(255,255,255,0.25) calc(var(--value) * 1%) 100%); box-shadow: 0 0 0 4px rgba(255,255,255,0.2);">
-                            <div class="value" style="color: #667eea; font-size: 2.5rem; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">${summary.overallAvg.toFixed(1)}</div>
-                            <div style="color: #667eea; font-size: 0.75rem; margin-top: -8px; font-weight: 600;">de 10.0</div>
-                        </div>
-                        <div class="summary-text">
-                            <h3 style="color: white; font-size: 1.25rem; font-weight: 600;">Média Geral Prática</h3>
-                            <p style="color: rgba(255,255,255,0.95); font-size: 0.95rem; margin-top: 0.25rem;">
-                                ${summary.overallAvg >= 8.5 ? '🌟 Excelente desempenho' : (summary.overallAvg >= 7 ? '✓ Bom desempenho' : '⚠ Precisa de atenção')}
-                            </p>
-                            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.2);">
-                                <div class="text-xs" style="color: rgba(255,255,255,0.85);">
-                                    Baseado em ${notasP.length} avaliação${notasP.length > 1 ? 'ões' : ''}
+            `;
+            
+            // === DASHBOARD PRINCIPAL === //
+            let dashboardHtml = `
+                <div class="np-dashboard-grid">
+                    <!-- Anel de Progresso Masterpiece -->
+                    <div class="np-progress-masterpiece">
+                        <div class="np-progress-content">
+                            <div class="np-ring-container">
+                                <div class="np-progress-ring" style="--np-progress-percent: ${progressPercent}%;">
+                                    <div class="np-ring-value">${summary.overallAvg.toFixed(1)}</div>
+                                    <div class="np-ring-subtitle">de 10.0</div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Cards de Competência Aprimorados -->
-                    <div class="competency-card-container animated-card delay-200">
-                        <div class="content-card kpi-base-card competency-card" style="border-left: 4px solid #0054B4;">
-                            <div class="icon" style="background: linear-gradient(135deg, #0054B4 0%, #0073E6 100%); color: white;">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
-                                </svg>
-                            </div>
-                            <div>
-                                <div class="value" style="color: #0054B4; font-size: 2rem; font-weight: 700;">${summary.raciocinioAvg.toFixed(1)}</div>
-                                <div class="label" style="font-weight: 600; color: #1e293b;">Raciocínio Clínico</div>
-                                <div class="text-xs text-slate-500 mt-1">Avaliação, planejamento e associação</div>
-                            </div>
-                        </div>
-                        <div class="content-card kpi-base-card competency-card" style="border-left: 4px solid #F97316;">
-                            <div class="icon" style="background: linear-gradient(135deg, #F97316 0%, #FB923C 100%); color: white;">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z" />
-                                </svg>
-                            </div>
-                            <div>
-                                <div class="value" style="color: #F97316; font-size: 2rem; font-weight: 700;">${summary.tecnicaAvg.toFixed(1)}</div>
-                                <div class="label" style="font-weight: 600; color: #1e293b;">Execução Técnica</div>
-                                <div class="text-xs text-slate-500 mt-1">Habilidade e precisão na execução</div>
-                            </div>
-                        </div>
-                        <div class="content-card kpi-base-card competency-card" style="border-left: 4px solid #16A34A;">
-                            <div class="icon" style="background: linear-gradient(135deg, #16A34A 0%, #22C55E 100%); color: white;">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
-                                </svg>
-                            </div>
-                            <div>
-                                <div class="value" style="color: #16A34A; font-size: 2rem; font-weight: 700;">${summary.profissionalismoAvg.toFixed(1)}</div>
-                                <div class="label" style="font-weight: 600; color: #1e293b;">Profissionalismo</div>
-                                <div class="text-xs text-slate-500 mt-1">Comunicação, ética e relacionamento</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Gráfico de Evolução Aprimorado -->
-                    <div class="content-card p-6 evolution-chart-card animated-card delay-300">
-                        <div class="flex justify-between items-center mb-4">
-                            <div>
-                                <h2 class="content-card-header mt-0 mb-1">Evolução de Desempenho</h2>
-                                <p class="text-sm text-slate-500">Tendência das últimas 5 avaliações</p>
-                            </div>
-                            ${summary.last5Notes.length > 0 ? `
-                                <div class="text-sm">
-                                    <span class="text-slate-600">Tendência:</span>
-                                    <span class="font-semibold ${summary.last5Notes.length >= 2 && summary.last5Notes[summary.last5Notes.length - 1].value > summary.last5Notes[0].value ? 'text-green-600' : 'text-slate-600'}">
-                                        ${summary.last5Notes.length >= 2 && summary.last5Notes[summary.last5Notes.length - 1].value > summary.last5Notes[0].value ? '↗ Crescente' : '→ Estável'}
+                            <div class="np-progress-text">
+                                <h2 class="np-progress-title">Média Geral Prática</h2>
+                                <p class="np-progress-description">
+                                    ${performanceMessage}
+                                </p>
+                                <div class="np-progress-meta">
+                                    <svg class="np-progress-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    <span class="np-progress-stats">
+                                        Baseado em <strong>${notasP.length}</strong> avaliação${notasP.length > 1 ? 'ões' : ''}
                                     </span>
                                 </div>
-                            ` : ''}
-                        </div>
-                        <div class="evolution-chart-container">
-                            ${summary.last5Notes.length > 0 ? summary.last5Notes.map((note, i) => `
-                                <div class="evolution-bar" style="height: ${Math.max(note.value * 10, 10)}%; animation-delay: ${i * 0.1}s;">
-                                    <span class="bar-value">${note.value.toFixed(1)}</span>
-                                    <span class="bar-label">${note.label && note.label.length > 15 ? note.label.substring(0, 15) + '...' : (note.label || `Aval. ${i+1}`)}</span>
-                                </div>
-                            `).join('') : '<p class="text-sm text-slate-500 italic text-center py-8">Não há notas finais suficientes para exibir a evolução.</p>'}
+                            </div>
                         </div>
                     </div>
                 </div>
             `;
+            
+            // === COMPETENCY SHOWCASE === //
+            let competencyHtml = `
+                <div class="np-competency-showcase">
+                    <div class="np-competency-card reasoning">
+                        <div class="np-comp-icon-wrapper">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
+                            </svg>
+                        </div>
+                        <div class="np-comp-score">${summary.raciocinioAvg.toFixed(1)}</div>
+                        <div class="np-comp-label">Raciocínio Clínico</div>
+                        <p class="np-comp-description">Avaliação, planejamento e associação de conhecimentos</p>
+                    </div>
+                    
+                    <div class="np-competency-card technical">
+                        <div class="np-comp-icon-wrapper">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z" />
+                            </svg>
+                        </div>
+                        <div class="np-comp-score">${summary.tecnicaAvg.toFixed(1)}</div>
+                        <div class="np-comp-label">Execução Técnica</div>
+                        <p class="np-comp-description">Habilidade e precisão na execução de procedimentos</p>
+                    </div>
+                    
+                    <div class="np-competency-card professional">
+                        <div class="np-comp-icon-wrapper">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+                            </svg>
+                        </div>
+                        <div class="np-comp-score">${summary.profissionalismoAvg.toFixed(1)}</div>
+                        <div class="np-comp-label">Profissionalismo</div>
+                        <p class="np-comp-description">Comunicação, ética e relacionamento interpessoal</p>
+                    </div>
+                </div>
+            `;
+            
+            // === EVOLUTION CHART === //
+            let evolutionHtml = `
+                <div class="np-evolution-masterpiece">
+                    <div class="np-evolution-header">
+                        <div class="np-evolution-title-group">
+                            <h3>Evolução de Desempenho</h3>
+                            <p>Acompanhamento das últimas 5 avaliações</p>
+                        </div>
+                        ${hasTrend ? `
+                            <div class="np-trend-indicator ${isTrendingUp ? '' : 'stable'}">
+                                <svg class="np-trend-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                    ${isTrendingUp 
+                                        ? '<path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />'
+                                        : '<path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14" />'
+                                    }
+                                </svg>
+                                ${isTrendingUp ? '↗ Tendência Crescente' : '→ Tendência Estável'}
+                            </div>
+                        ` : ''}
+                    </div>
+                    <div class="np-chart-canvas">
+                        ${summary.last5Notes.length > 0 ? summary.last5Notes.map((note, i) => `
+                            <div class="np-chart-bar">
+                                <div class="np-bar-fill" style="height: ${Math.max(note.value * 25, 40)}px;">
+                                    <div class="np-bar-value">${note.value.toFixed(1)}</div>
+                                </div>
+                                <div class="np-bar-label">${note.label && note.label.length > 18 ? note.label.substring(0, 18) + '...' : (note.label || `Avaliação ${i+1}`)}</div>
+                            </div>
+                        `).join('') : '<p style="text-align: center; color: var(--content-text-secondary); font-style: italic; padding: 2rem 0;">Não há dados suficientes para exibir a evolução.</p>'}
+                    </div>
+                </div>
+            `;
+            
+            // === DIVIDER === //
+            let dividerHtml = '<div class="np-section-divider"></div>';
 
+            // === NAVEGAÇÃO DE AVALIAÇÕES DETALHADAS === //
             let navHtml = '';
             let contentHtml = '';
             const sortedNotasPDesc = [...notasP].sort((a, b) => {
@@ -3650,14 +3689,11 @@ function renderTabEscala(escalas) {
                 const isActive = index === 0;
                 const tabId = `subtab-np-${index}`;
                 
-                // Create better button label with date and module number
+                // Cria um label melhor para o botão
                 let buttonLabel = n.nomePratica || `Avaliação ${index + 1}`;
-                
-                // Extract module number if present (e.g., "NP_Modulo1" -> "Módulo 1")
                 const moduleMatch = buttonLabel.match(/modulo\s*(\d+)/i) || buttonLabel.match(/np[_-]?(\d+)/i);
                 const moduleNumber = moduleMatch ? parseInt(moduleMatch[1]) : null;
                 
-                // Format the date if available
                 if (n['Data/Hora']) {
                     try {
                         const dataObj = new Date(String(n['Data/Hora']).replace(/-/g,'/'));
@@ -3668,9 +3704,8 @@ function renderTabEscala(escalas) {
                         });
                         
                         if (moduleNumber) {
-                            buttonLabel = `Módulo nº${String(moduleNumber).padStart(2, '0')} - ${dataFormatadaCurta}`;
+                            buttonLabel = `Módulo ${String(moduleNumber).padStart(2, '0')} - ${dataFormatadaCurta}`;
                         } else {
-                            // Use supervisor name or generic label if module number not found
                             const supervisor = n.Supervisor ? ` (${n.Supervisor.split(' ')[0]})` : '';
                             buttonLabel = `Avaliação ${index + 1} - ${dataFormatadaCurta}${supervisor}`;
                         }
@@ -3679,9 +3714,9 @@ function renderTabEscala(escalas) {
                     }
                 }
                 
-                navHtml += `<button class="subnav-button ${isActive ? 'active' : ''}" data-subtab-id="${tabId}">${buttonLabel}</button>`;
+                navHtml += `<button class="np-tab-button ${isActive ? 'active' : ''}" data-subtab-id="${tabId}">${buttonLabel}</button>`;
                 
-                // More flexible pattern to find fields
+                // Encontra campos importantes
                 const keyM = Object.keys(n).find(k => 
                     /MÉDIA.*NOTA.*FINAL/i.test(k) || 
                     /MEDIA.*NOTA.*FINAL/i.test(k) ||
@@ -3702,53 +3737,45 @@ function renderTabEscala(escalas) {
                 const comentario = n[keyC] || 'Sem comentários registrados.';
                 const comentarioEscapado = comentario.replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/\n/g, "\\n");
                 const dataFormatada = n['Data/Hora'] ? new Date(String(n['Data/Hora']).replace(/-/g,'/')).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : 'N/A';
-                
-                // Keep original nomePratica for display in the content
                 const nomePratica = n.nomePratica || `Avaliação Prática ${index + 1}`;
                 
-                // Determine grade color and status
-                let gradeColor = '#0ea5e9'; // default blue
+                // Determina cor e status baseado na nota
+                let gradeColor = '#3b82f6';
                 let gradeStatus = 'Satisfatório';
                 if (mediaFinal >= 9.0) {
-                    gradeColor = '#10b981'; // green
+                    gradeColor = '#10b981';
                     gradeStatus = 'Excelente';
                 } else if (mediaFinal >= 8.0) {
-                    gradeColor = '#3b82f6'; // blue
+                    gradeColor = '#6366f1';
                     gradeStatus = 'Muito Bom';
                 } else if (mediaFinal >= 7.0) {
-                    gradeColor = '#f59e0b'; // amber
+                    gradeColor = '#f59e0b';
                     gradeStatus = 'Bom';
                 } else if (mediaFinal < 7.0) {
-                    gradeColor = '#ef4444'; // red
+                    gradeColor = '#ef4444';
                     gradeStatus = 'Precisa Melhorar';
                 }
                 
+                // Processa as notas numéricas e checklist
                 let numericalScores = [];
                 let checklistScores = [];
                 
                 Object.entries(n).forEach(([key, value]) => {
-                    // Enhanced ignore pattern to exclude MediaNotaFinal and ALL variations
-                    // This prevents the final grade from appearing in the competencies section
                     const isIgnored = /DATA\/HORA|EMAILHC|NOMECOMPLETO|CURSO|SUPERVISOR|UNIDADE|PERIODO|TURNO|MÉDIA\s*\(NOTA FINAL\)|MÉDIA.*NOTA.*FINAL|MEDIA.*NOTA.*FINAL|MÉDIA.*FINAL|MEDIA.*FINAL|NOTA.*FINAL|MEDIANOTAFINAL|MediaNotaFinal|medianotafinal|COMENTÁRIOS\s*DO\(A\)\s*SUPERVISOR\(A\)|O SUPERVISOR ESTÁ CIENTE|NOMEPRATICA|_uniqueId|_sheetName|_validatedAt/i.test(key.toUpperCase().trim());
                     if (!isIgnored && value) {
-                        // Extract the actual field name if it starts with a number (score)
-                        // Example: "0.0 Raciocínio Clínico Avaliação, planejamento e associação"
                         let cleanKey = key;
                         const numericPrefixMatch = key.match(/^(\d+[\.,]?\d*)\s+(.+)$/);
                         if (numericPrefixMatch) {
-                            // Key has a numeric prefix - use the score from prefix and text from suffix
                             const scoreFromPrefix = parseNota(numericPrefixMatch[1]);
                             const fieldNameFromSuffix = numericPrefixMatch[2];
-                            // Changed from "scoreFromPrefix > 0" to ">= 0" to include 0.0 scores
                             if (scoreFromPrefix >= 0 && !isNaN(scoreFromPrefix)) {
                                 numericalScores.push({ label: fieldNameFromSuffix.replace(/:/g, ''), value: scoreFromPrefix });
-                                return; // Skip further processing for this field
+                                return;
                             }
                             cleanKey = fieldNameFromSuffix;
                         }
                         
                         const parsedValue = parseNota(value);
-                        // Changed from "parsedValue > 0" to ">= 0" to include 0.0 scores
                         if (!isNaN(parsedValue) && parsedValue >= 0 && String(value).trim().match(/^[\d,.]+$/)) {
                             numericalScores.push({ label: cleanKey.replace(/:/g, ''), value: parsedValue });
                         } else if (String(value).trim() !== '' && String(value).trim() !== '0') {
@@ -3758,160 +3785,162 @@ function renderTabEscala(escalas) {
                 });
                 numericalScores.sort((a, b) => b.value - a.value);
                 
-                // Info de validação (se disponível)
-                let validationInfo = '';
-                if (n._uniqueId) {
-                    validationInfo = `
-                        <div class="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                            <div class="flex items-start gap-2">
-                                <svg class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-2.25-3l3.75 3.75m0 0l-3.75 3.75m3.75-3.75H3" />
-                                </svg>
-                                <div class="flex-1">
-                                    <p class="text-xs font-semibold text-green-900">Sistema de Validação Ativo</p>
-                                    <p class="text-xs text-green-700 mt-1">
-                                        ID Único: <code class="bg-white px-1.5 py-0.5 rounded">${n._uniqueId}</code>
-                                        ${n._validatedAt ? `<br>Validado em: ${new Date(n._validatedAt).toLocaleString('pt-BR')}` : ''}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }
-
+                // === CARD DE AVALIAÇÃO === //
                 contentHtml += `
                     <div id="${tabId}" class="sub-tab-content ${isActive ? 'active' : ''}">
-                        <div class="content-card p-6 lg:p-8" style="border-top: 4px solid ${gradeColor};">
+                        <div class="np-eval-card" style="--np-eval-color: ${gradeColor};">
                             
-                            <div class="evaluation-header" style="display: grid; grid-template-columns: 1fr auto; gap: 2rem; align-items: start;">
-                                <div class="evaluation-details">
-                                    <div class="flex items-start justify-between mb-4">
-                                        <div class="flex-1">
-                                            <h3 class="font-display text-2xl font-bold text-slate-900 mb-2">${nomePratica}</h3>
-                                            <div class="flex items-center gap-2 flex-wrap">
-                                                <span class="px-3 py-1 rounded-full text-xs font-semibold" style="background-color: ${gradeColor}20; color: ${gradeColor};">
-                                                    ${gradeStatus}
-                                                </span>
-                                                ${n._uniqueId ? '<span class="px-3 py-1 bg-green-50 text-green-700 rounded-full text-xs font-semibold inline-flex items-center gap-1"><svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>Validado</span>' : ''}
-                                            </div>
-                                        </div>
+                            <div class="np-eval-header">
+                                <div>
+                                    <div class="np-eval-title-badge">
+                                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="width: 1rem; height: 1rem;">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
+                                        </svg>
+                                        ${gradeStatus}
                                     </div>
-                                    <dl class="grid grid-cols-2 gap-4">
-                                        <div class="flex flex-col">
-                                            <dt class="text-xs font-medium text-slate-500 uppercase tracking-wide">Supervisor</dt>
-                                            <dd class="text-sm font-semibold text-slate-900 mt-1">${n.Supervisor || 'N/A'}</dd>
+                                    <h3 class="np-eval-name">${nomePratica}</h3>
+                                    <dl class="np-eval-metadata">
+                                        <div class="np-meta-item">
+                                            <dt>Supervisor</dt>
+                                            <dd>${n.Supervisor || 'N/A'}</dd>
                                         </div>
-                                        <div class="flex flex-col">
-                                            <dt class="text-xs font-medium text-slate-500 uppercase tracking-wide">Data da Avaliação</dt>
-                                            <dd class="text-sm font-semibold text-slate-900 mt-1">${dataFormatada}</dd>
+                                        <div class="np-meta-item">
+                                            <dt>Data da Avaliação</dt>
+                                            <dd>${dataFormatada}</dd>
                                         </div>
-                                        <div class="flex flex-col">
-                                            <dt class="text-xs font-medium text-slate-500 uppercase tracking-wide">Unidade</dt>
-                                            <dd class="text-sm font-semibold text-slate-900 mt-1">${n.Unidade || 'N/A'}</dd>
+                                        <div class="np-meta-item">
+                                            <dt>Unidade</dt>
+                                            <dd>${n.Unidade || 'N/A'}</dd>
                                         </div>
-                                        <div class="flex flex-col">
-                                            <dt class="text-xs font-medium text-slate-500 uppercase tracking-wide">Período</dt>
-                                            <dd class="text-sm font-semibold text-slate-900 mt-1">${n.Periodo || 'N/A'}</dd>
+                                        <div class="np-meta-item">
+                                            <dt>Período</dt>
+                                            <dd>${n.Periodo || 'N/A'}</dd>
                                         </div>
                                     </dl>
-                                    ${validationInfo}
+                                    ${n._uniqueId ? `
+                                        <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(16, 185, 129, 0.08); border: 2px solid rgba(16, 185, 129, 0.2); border-radius: 12px;">
+                                            <div style="display: flex; align-items: start; gap: 0.75rem;">
+                                                <svg style="width: 1.25rem; height: 1.25rem; color: #059669; flex-shrink: 0; margin-top: 0.125rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                <div style="flex: 1;">
+                                                    <p style="font-size: 0.75rem; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 0.05em;">Sistema de Validação Ativo</p>
+                                                    <p style="font-size: 0.75rem; color: #047857; margin-top: 0.375rem;">
+                                                        ID Único: <code style="background: white; padding: 0.125rem 0.5rem; border-radius: 4px; font-weight: 600;">${n._uniqueId}</code>
+                                                        ${n._validatedAt ? `<br><span style="opacity: 0.8;">Validado em: ${new Date(n._validatedAt).toLocaleString('pt-BR')}</span>` : ''}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ` : ''}
                                 </div>
-                                <div class="text-center flex-shrink-0" style="min-width: 140px;">
-                                    <div style="background: linear-gradient(135deg, ${gradeColor} 0%, ${gradeColor}dd 100%); color: white; border-radius: 16px; padding: 1.5rem;">
-                                        <p class="text-sm font-medium opacity-90 mb-2">Nota Final</p>
-                                        <p class="text-5xl font-bold">${mediaFinal.toFixed(1)}</p>
-                                        <p class="text-sm opacity-90 mt-1">de 10.0</p>
+                                
+                                <div class="np-grade-showcase">
+                                    <div class="np-grade-circle">
+                                        <div>
+                                            <div class="np-grade-number">${mediaFinal.toFixed(1)}</div>
+                                            <div class="np-grade-denominator">de 10.0</div>
+                                        </div>
                                     </div>
+                                    <div class="np-grade-label">Nota Final</div>
                                 </div>
                             </div>
                             
-                            <div class="evaluation-layout mt-8" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
-                                <div class="skills-barchart-container" style="grid-column: 1 / -1;">
-                                    <h4 class="evaluation-section-title flex items-center gap-2 mb-4">
-                                        <svg class="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                                        </svg>
-                                        Desempenho por Competência
-                                    </h4>
-                                    ${numericalScores.length > 0 ? `
-                                        <div style="display: grid; gap: 1rem;">
-                                            ${numericalScores.map(score => {
-                                                const percentage = (score.value / 10) * 100;
-                                                let barColor = '#3b82f6';
-                                                if (score.value >= 9) barColor = '#10b981';
-                                                else if (score.value >= 7) barColor = '#6366f1';
-                                                else if (score.value < 6) barColor = '#ef4444';
-                                                
-                                                const displayLabel = splitConcatenatedFieldName(score.label);
-                                                return `
-                                                    <div class="bar-chart-item">
-                                                        <div class="flex justify-between items-center mb-2">
-                                                            <span class="bar-label font-medium text-sm text-slate-700" title="${score.label}">${displayLabel}</span>
-                                                            <span class="bar-value font-bold text-lg" style="color: ${barColor};">${score.value.toFixed(1)}</span>
-                                                        </div>
-                                                        <div class="bar-bg relative" style="height: 10px; background: #e2e8f0; border-radius: 5px; overflow: hidden;">
-                                                            <div class="bar-fill" style="width: ${percentage}%; background: linear-gradient(90deg, ${barColor} 0%, ${barColor}cc 100%); height: 100%; border-radius: 5px; transition: width 0.6s ease;"></div>
-                                                        </div>
-                                                    </div>
-                                                `;
-                                            }).join('')}
+                            <!-- Seção de Habilidades com Barras -->
+                            ${numericalScores.length > 0 ? `
+                                <div class="np-skills-section">
+                                    <div class="np-section-header">
+                                        <div class="np-section-icon">
+                                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                            </svg>
                                         </div>
-                                    ` : '<p class="text-sm text-slate-500 italic py-4">Nenhuma nota numérica registrada.</p>'}
+                                        <h4 class="np-section-title">Desempenho por Competência</h4>
+                                    </div>
+                                    ${numericalScores.map(score => {
+                                        const percentage = (score.value / 10) * 100;
+                                        let barColor = '#3b82f6';
+                                        if (score.value >= 9) barColor = '#10b981';
+                                        else if (score.value >= 7) barColor = '#6366f1';
+                                        else if (score.value < 6) barColor = '#ef4444';
+                                        
+                                        const displayLabel = splitConcatenatedFieldName(score.label);
+                                        return `
+                                            <div class="np-skill-bar-item" style="--np-skill-color: ${barColor};">
+                                                <div class="np-skill-header">
+                                                    <span class="np-skill-name" title="${score.label}">${displayLabel}</span>
+                                                    <span class="np-skill-value">${score.value.toFixed(1)}</span>
+                                                </div>
+                                                <div class="np-skill-progress">
+                                                    <div class="np-skill-fill" style="width: ${percentage}%;"></div>
+                                                </div>
+                                            </div>
+                                        `;
+                                    }).join('')}
                                 </div>
-                                
-                                ${checklistScores.length > 0 ? `
-                                    <div class="skills-checklist-container" style="grid-column: 1 / -1;">
-                                        <h4 class="evaluation-section-title flex items-center gap-2 mb-4">
-                                            <svg class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            ` : ''}
+                            
+                            <!-- Checklist de Habilidades -->
+                            ${checklistScores.length > 0 ? `
+                                <div class="np-checklist-section">
+                                    <div class="np-section-header">
+                                        <div class="np-section-icon">
+                                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                                             </svg>
-                                            Checklist de Habilidades
-                                        </h4>
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                            ${checklistScores.map(skill => {
-                                                const displayLabel = splitConcatenatedFieldName(skill.label);
-                                                return `
-                                                <div class="skill-checklist-item p-3 bg-slate-50 rounded-lg border border-slate-200">
-                                                    <p class="skill-question text-sm font-medium text-slate-700 mb-1" title="${skill.label}">${displayLabel}</p>
-                                                    <p class="skill-answer text-sm text-slate-600" title="${skill.value}">${skill.value}</p>
-                                                </div>
-                                            `;}).join('')}
                                         </div>
+                                        <h4 class="np-section-title">Checklist de Habilidades</h4>
                                     </div>
-                                ` : ''}
-                                
-                                <div class="evaluation-comments" style="grid-column: 1 / -1;">
-                                    <div class="flex justify-between items-center mb-4">
-                                        <h4 class="evaluation-section-title flex items-center gap-2 m-0">
-                                            <svg class="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-                                            </svg>
-                                            Feedback do Supervisor
-                                        </h4>
-                                        <button class="gemini-analysis-button" data-loading="false" data-comment="${comentarioEscapado}">
-                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                                            </svg>
-                                            Analisar com IA
-                                        </button>
-                                    </div>
-                                    <div class="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                                        <p class="text-sm text-slate-700 leading-relaxed">${comentario}</p>
+                                    <div class="np-checklist-grid">
+                                        ${checklistScores.map(skill => {
+                                            const displayLabel = splitConcatenatedFieldName(skill.label);
+                                            return `
+                                            <div class="np-checklist-item">
+                                                <div class="np-checklist-question" title="${skill.label}">${displayLabel}</div>
+                                                <div class="np-checklist-answer" title="${skill.value}">${skill.value}</div>
+                                            </div>
+                                        `;}).join('')}
                                     </div>
                                 </div>
+                            ` : ''}
+                            
+                            <!-- Feedback do Supervisor -->
+                            <div class="np-feedback-card">
+                                <div class="np-feedback-header">
+                                    <div class="np-feedback-title-group">
+                                        <div class="np-feedback-icon">
+                                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                                            </svg>
+                                        </div>
+                                        <h4 class="np-feedback-label">Feedback do Supervisor</h4>
+                                    </div>
+                                    <button class="gemini-analysis-button" data-loading="false" data-comment="${comentarioEscapado}">
+                                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                        </svg>
+                                        Analisar com IA
+                                    </button>
+                                </div>
+                                <div class="np-feedback-text">${comentario}</div>
                             </div>
                         </div>
                     </div>
                 `;
             });
 
+            // === MONTAGEM FINAL DO HTML === //
             tabContainer.innerHTML = `
-                ${summaryHtml}
-                <div class="mt-10 mb-6">
-                    <h3 class="text-xl font-bold text-slate-800 mb-2">Avaliações Detalhadas</h3>
-                    <p class="text-sm text-slate-600">Histórico completo de avaliações práticas com análise detalhada de competências</p>
+                ${heroHtml}
+                ${dashboardHtml}
+                ${competencyHtml}
+                ${evolutionHtml}
+                ${dividerHtml}
+                <div style="margin: 2.5rem 0 1.5rem;">
+                    <h3 style="font-family: var(--font-display); font-size: 1.75rem; font-weight: 800; color: var(--content-text-primary); margin-bottom: 0.75rem;">Avaliações Detalhadas</h3>
+                    <p style="font-size: 1rem; color: var(--content-text-secondary);">Histórico completo com análise profunda de cada competência avaliada</p>
                 </div>
-                <div id="student-detail-subnav-container" class="subnav-container">
+                <div class="np-tab-nav">
                     ${navHtml}
                 </div>
                 <div id="student-detail-subnav-content">
@@ -3923,6 +3952,7 @@ function renderTabEscala(escalas) {
                 switchStudentSubTab('subtab-np-0');
             }
         }
+
         
         // --- [ORION] Funções da API Gemini (Versão LOCAL INSEGURA) ---
         
