@@ -1381,10 +1381,30 @@ const pontoState = {
             );
 
             // Notas Teóricas
+            console.log('[findDataByStudent] Buscando Notas Teóricas para:', { emailNormalizado, alunoNomeNormalizado });
+            console.log('[findDataByStudent] Total de registros em notasTeoricas:', appState.notasTeoricas.registros?.length || 0);
+            
+            // Log first 3 records to see structure
+            if (appState.notasTeoricas.registros && appState.notasTeoricas.registros.length > 0) {
+                console.log('[findDataByStudent] Primeiros 3 registros de notasTeoricas:', 
+                    appState.notasTeoricas.registros.slice(0, 3).map(r => ({
+                        EmailHC: r?.EmailHC,
+                        NomeCompleto: r?.NomeCompleto,
+                        EmailHC_normalized: r?.EmailHC ? normalizeString(r.EmailHC) : null,
+                        NomeCompleto_normalized: r?.NomeCompleto ? normalizeString(r.NomeCompleto) : null
+                    }))
+                );
+            }
+            
             const notasT = (appState.notasTeoricas.registros || []).find(n => n && 
                 ((n.EmailHC && normalizeString(n.EmailHC) === emailNormalizado) || 
                  (n.NomeCompleto && normalizeString(n.NomeCompleto) === alunoNomeNormalizado))
             );
+            
+            console.log('[findDataByStudent] Notas Teóricas encontradas:', notasT ? 'SIM' : 'NÃO');
+            if (notasT) {
+                console.log('[findDataByStudent] Campos da nota teórica:', Object.keys(notasT));
+            }
 
             // Notas Práticas - with deduplication
             const notasPRaw = Object.values(appState.notasPraticas).flatMap(p =>
@@ -3384,10 +3404,22 @@ function renderTabEscala(escalas) {
          */
         function renderTabNotasTeoricas(notas) {
             console.log('[renderTabNotasTeoricas v35 - Theoretical Excellence] Dados recebidos:', notas);
+            console.log('[renderTabNotasTeoricas] Tipo:', typeof notas);
+            console.log('[renderTabNotasTeoricas] É null?', notas === null);
+            console.log('[renderTabNotasTeoricas] É undefined?', notas === undefined);
+            console.log('[renderTabNotasTeoricas] Número de chaves:', notas ? Object.keys(notas).length : 0);
+            if (notas) {
+                console.log('[renderTabNotasTeoricas] Chaves disponíveis:', Object.keys(notas).slice(0, 10));
+            }
+            
             const tabContainer = document.getElementById('notas-t-content-wrapper');
 
             // === EMPTY STATE ARTÍSTICO === //
             if (!notas || typeof notas !== 'object' || Object.keys(notas).length === 0) {
+                console.log('[renderTabNotasTeoricas] EMPTY STATE - Motivo:', 
+                    !notas ? 'notas é falsy' : 
+                    typeof notas !== 'object' ? 'notas não é objeto' : 
+                    'notas não tem chaves');
                 tabContainer.innerHTML = `
                     <div class="nt-empty-state">
                         <svg class="nt-empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
