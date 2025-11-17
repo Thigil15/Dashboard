@@ -3377,83 +3377,326 @@ function renderTabEscala(escalas) {
              const c=document.getElementById('faltas-content'); if(!faltas||faltas.length===0){c.innerHTML='<p class="text-slate-500 p-6 text-sm italic">Nenhum registro de falta.</p>'; return;} const h=`<table class="min-w-full"><thead><tr><th class="text-left">Status</th><th class="text-left">Ausência</th><th class="text-left">Reposição</th><th class="text-left">Local</th><th class="text-left">Motivo</th></tr></thead><tbody class="bg-white">${faltas.map(f=>{const iP=!f.DataReposicaoISO; const sB=iP?'<span class="badge badge-yellow">Pendente</span>':'<span class="badge badge-green">Completa</span>'; const dA=f.DataAusenciaISO?new Date(f.DataAusenciaISO+'T00:00:00').toLocaleDateString('pt-BR', {timeZone: 'UTC'}):'-'; const dR=f.DataReposicaoISO?new Date(f.DataReposicaoISO+'T00:00:00').toLocaleDateString('pt-BR', {timeZone: 'UTC'}):'-'; const mS=f.Motivo?(f.Motivo.length>40?f.Motivo.substring(0,40)+'...':f.Motivo):'-'; return `<tr><td>${sB}</td><td>${dA}</td><td>${dR}</td><td>${f.Local||'-'}</td><td title="${f.Motivo||''}">${mS}</td></tr>`;}).join('')}</tbody></table>`; c.innerHTML = h;
         }
 
+        /**
+         * [MASTERPIECE] Renderiza a aba de Notas Teóricas com design revolucionário e artístico
+         * Versão v35 - Theoretical Excellence Edition
+         * Design glorioso digno do Portal de Ensino da USP
+         */
         function renderTabNotasTeoricas(notas) {
-            console.log('[renderTabNotasTeoricas] Dados recebidos:', notas);
-            const p = document.getElementById('notas-t-content-wrapper');
+            console.log('[renderTabNotasTeoricas v35 - Theoretical Excellence] Dados recebidos:', notas);
+            const tabContainer = document.getElementById('notas-t-content-wrapper');
 
+            // === EMPTY STATE ARTÍSTICO === //
             if (!notas || typeof notas !== 'object' || Object.keys(notas).length === 0) {
-                p.innerHTML = '<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhum registro de notas teóricas encontrado.</p></div>';
+                tabContainer.innerHTML = `
+                    <div class="nt-empty-state">
+                        <svg class="nt-empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                        </svg>
+                        <div>
+                            <h3 class="nt-empty-title">Nenhuma Avaliação Teórica Registrada</h3>
+                            <p class="nt-empty-description">
+                                As notas teóricas aparecem aqui quando as avaliações dos módulos são concluídas e processadas.
+                            </p>
+                            <div class="nt-empty-badge">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                </svg>
+                                Sistema Acadêmico Integrado
+                            </div>
+                        </div>
+                    </div>
+                `;
                 return;
             }
 
+            // === DEFINIÇÃO DOS GRUPOS DE MÓDULOS === //
             const mediaGroups = {
-                'Média - Fisio1': ['Anatomopatologia', 'Sub/Anatomopatologia', 'Bases', 'Sub/Bases', 'Doenças Pulmonares', 'Doenças Cardíacas', 'Proc. Cirurgico', 'Avaliação', 'Sub/Avaliacao', 'VM', 'Sub/VM'],
-                'Média - Fisio2': ['Técnicas e Recursos', 'Diag. Imagem'],
-                'Média - Fisio3': ['Fisio aplicada', 'UTI'],
-                'Média - Fisio4': ['Pediatria', 'Mobilização', 'Reab. Pulmonar'],
-                'Outras': ['M. Cientifica', 'Saúde e politicas', 'Farmacoterapia', 'Bioética']
+                'Fisioterapia I': {
+                    materias: ['Anatomopatologia', 'Sub/Anatomopatologia', 'Bases', 'Sub/Bases', 'Doenças Pulmonares', 'Doenças Cardíacas', 'Proc. Cirurgico', 'Avaliação', 'Sub/Avaliacao', 'VM', 'Sub/VM'],
+                    icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253',
+                    gradient: 'from-purple-500 to-indigo-600',
+                    color: '#8b5cf6'
+                },
+                'Fisioterapia II': {
+                    materias: ['Técnicas e Recursos', 'Diag. Imagem'],
+                    icon: 'M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
+                    gradient: 'from-blue-500 to-cyan-600',
+                    color: '#3b82f6'
+                },
+                'Fisioterapia III': {
+                    materias: ['Fisio aplicada', 'UTI'],
+                    icon: 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z',
+                    gradient: 'from-rose-500 to-pink-600',
+                    color: '#f43f5e'
+                },
+                'Fisioterapia IV': {
+                    materias: ['Pediatria', 'Mobilização', 'Reab. Pulmonar'],
+                    icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
+                    gradient: 'from-green-500 to-emerald-600',
+                    color: '#10b981'
+                },
+                'Disciplinas Complementares': {
+                    materias: ['M. Cientifica', 'Saúde e politicas', 'Farmacoterapia', 'Bioética'],
+                    icon: 'M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z',
+                    gradient: 'from-amber-500 to-orange-600',
+                    color: '#f59e0b'
+                }
             };
 
-            let html = '';
+            // === CALCULAR MÉTRICAS GLOBAIS === //
+            let totalSum = 0;
+            let totalCount = 0;
+            let highestGrade = 0;
+            let lowestGrade = 10;
+            const moduleGrades = [];
+
+            // Processa todas as médias (chaves que contêm "MÉDIA")
             const mediaKeys = Object.keys(notas).filter(k => k.toUpperCase().includes('MÉDIA'));
             
-            if (mediaGroups.Outras.some(m => notas[m] && parseNota(notas[m]) > 0)) {
-                 mediaKeys.push('Outras');
+            // Adiciona "Outras" se houver disciplinas complementares
+            if (mediaGroups['Disciplinas Complementares'].materias.some(m => notas[m] && parseNota(notas[m]) > 0)) {
+                // Verifica se não existe uma chave de média para disciplinas complementares
+                if (!mediaKeys.some(k => k.toUpperCase().includes('OUTRAS') || k.toUpperCase().includes('COMPLEMENTARES'))) {
+                    mediaKeys.push('Outras');
+                }
             }
 
-            if (mediaKeys.length === 0 && !mediaGroups.Outras.some(m => notas[m] && parseNota(notas[m]) > 0)) {
-                 p.innerHTML = '<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhuma nota ou média encontrada neste registro.</p></div>';
-                 return;
+            // Se não há médias, mostra mensagem
+            if (mediaKeys.length === 0 && !mediaGroups['Disciplinas Complementares'].materias.some(m => notas[m] && parseNota(notas[m]) > 0)) {
+                tabContainer.innerHTML = '<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhuma nota ou média encontrada neste registro.</p></div>';
+                return;
             }
 
+            // Processa cada grupo de módulo
             mediaKeys.forEach(key => {
                 const mediaValue = parseNota(notas[key]);
-                const materias = (mediaGroups[key] || []);
+                if (mediaValue > 0) {
+                    totalSum += mediaValue;
+                    totalCount++;
+                    highestGrade = Math.max(highestGrade, mediaValue);
+                    lowestGrade = Math.min(lowestGrade, mediaValue);
+                    moduleGrades.push({ name: key, value: mediaValue });
+                }
+            });
+
+            const overallAvg = totalCount > 0 ? totalSum / totalCount : 0;
+            const progressPercent = overallAvg * 10;
+
+            // Determina a mensagem de performance
+            let performanceMessage = '⚠ Precisa de atenção';
+            let performanceColor = '#f59e0b';
+            if (overallAvg >= 9.0) {
+                performanceMessage = '🌟 Excelência Acadêmica';
+                performanceColor = '#10b981';
+            } else if (overallAvg >= 8.5) {
+                performanceMessage = '⭐ Desempenho Excepcional';
+                performanceColor = '#10b981';
+            } else if (overallAvg >= 8.0) {
+                performanceMessage = '✓ Muito Bom';
+                performanceColor = '#3b82f6';
+            } else if (overallAvg >= 7.0) {
+                performanceMessage = '✓ Bom Desempenho';
+                performanceColor = '#3b82f6';
+            }
+
+            // === HERO SECTION === //
+            let heroHtml = `
+                <div class="nt-hero-section">
+                    <div class="nt-hero-content">
+                        <h1 class="nt-hero-title">Avaliações Teóricas</h1>
+                        <p class="nt-hero-subtitle">
+                            Análise completa do desempenho nos módulos teóricos do programa de Fisioterapia
+                        </p>
+                        <div class="nt-validation-badge">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                            </svg>
+                            ${totalCount} Módulo${totalCount > 1 ? 's' : ''} Avaliado${totalCount > 1 ? 's' : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // === DASHBOARD PRINCIPAL === //
+            let dashboardHtml = `
+                <div class="nt-dashboard-grid">
+                    <!-- Anel de Progresso Masterpiece -->
+                    <div class="nt-progress-masterpiece">
+                        <div class="nt-progress-content">
+                            <div class="nt-ring-container">
+                                <div class="nt-progress-ring" style="--nt-progress-percent: ${progressPercent}%;">
+                                    <div class="nt-ring-value">${formatarNota(overallAvg)}</div>
+                                    <div class="nt-ring-subtitle">de 10,0</div>
+                                </div>
+                            </div>
+                            <div class="nt-progress-text">
+                                <h2 class="nt-progress-title">Média Geral Teórica</h2>
+                                <p class="nt-progress-description" style="color: ${performanceColor};">
+                                    ${performanceMessage}
+                                </p>
+                                <div class="nt-progress-meta">
+                                    <svg class="nt-progress-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                    </svg>
+                                    <span class="nt-progress-stats">
+                                        Baseado em <strong>${totalCount}</strong> módulo${totalCount > 1 ? 's' : ''}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stats Cards -->
+                    <div class="nt-stats-grid">
+                        <div class="nt-stat-card">
+                            <div class="nt-stat-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="nt-stat-value">${formatarNota(highestGrade)}</div>
+                                <div class="nt-stat-label">Maior Nota</div>
+                            </div>
+                        </div>
+                        <div class="nt-stat-card">
+                            <div class="nt-stat-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="nt-stat-value">${lowestGrade < 10 ? formatarNota(lowestGrade) : '-'}</div>
+                                <div class="nt-stat-label">Menor Nota</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // === DIVIDER === //
+            let dividerHtml = '<div class="nt-section-divider"></div>';
+
+            // === MÓDULOS TEÓRICOS DETALHADOS === //
+            let modulesHtml = `
+                <div style="margin: 2.5rem 0 1.5rem;">
+                    <h3 style="font-family: var(--font-display); font-size: 1.75rem; font-weight: 800; color: var(--content-text-primary); margin-bottom: 0.75rem;">Módulos Teóricos Detalhados</h3>
+                    <p style="font-size: 1rem; color: var(--content-text-secondary);">Desempenho completo por módulo e disciplina</p>
+                </div>
+                <div class="nt-modules-grid">
+            `;
+
+            // Para cada grupo de módulo, cria um card
+            Object.entries(mediaGroups).forEach(([groupName, groupData]) => {
+                const { materias, icon, gradient, color } = groupData;
                 
-                let detailsHtml = '';
+                // Encontra a média do grupo (procura pela chave que corresponde)
+                let mediaKey = null;
+                let mediaValue = 0;
+                
+                // Tenta encontrar a média correspondente
+                if (groupName === 'Disciplinas Complementares') {
+                    // Para disciplinas complementares, calcula a média das matérias
+                    let sum = 0;
+                    let count = 0;
+                    materias.forEach(materia => {
+                        const nota = parseNota(notas[materia]);
+                        if (nota > 0) {
+                            sum += nota;
+                            count++;
+                        }
+                    });
+                    mediaValue = count > 0 ? sum / count : 0;
+                } else {
+                    // Para os outros módulos, procura pela chave de média
+                    const fisioNumber = groupName.match(/I{1,4}$/)?.[0];
+                    if (fisioNumber) {
+                        mediaKey = Object.keys(notas).find(k => 
+                            k.toUpperCase().includes('MÉDIA') && 
+                            k.toUpperCase().includes(`FISIO${fisioNumber.length}`)
+                        );
+                        if (mediaKey) {
+                            mediaValue = parseNota(notas[mediaKey]);
+                        }
+                    }
+                }
+
+                // Processa as disciplinas do módulo
+                let disciplinasHtml = '';
                 let hasDetails = false;
                 
                 materias.forEach(materia => {
                     if (notas[materia] !== null && notas[materia] !== undefined && String(notas[materia]).trim() !== '') {
                         const notaMateria = parseNota(notas[materia]);
-                        if (notaMateria > 0 || String(notas[materia]).trim() !== '') { 
-                            detailsHtml += `<li><span class="score-label">${materia}</span><span class="score-value">${notaMateria.toFixed(1)}</span></li>`;
+                        if (notaMateria > 0) {
+                            const percentage = (notaMateria / 10) * 100;
+                            let barColor = color;
+                            
+                            disciplinasHtml += `
+                                <div class="nt-discipline-item" style="--nt-discipline-color: ${barColor};">
+                                    <div class="nt-discipline-header">
+                                        <span class="nt-discipline-name">${materia}</span>
+                                        <span class="nt-discipline-value">${formatarNota(notaMateria)}</span>
+                                    </div>
+                                    <div class="nt-discipline-progress">
+                                        <div class="nt-discipline-fill" style="width: ${percentage}%;"></div>
+                                    </div>
+                                </div>
+                            `;
                             hasDetails = true;
                         }
                     }
                 });
-                
+
+                // Se tem média ou disciplinas, mostra o card
                 if (mediaValue > 0 || hasDetails) {
-                     html += `
-                        <div class="content-card p-5 radial-card">
-                            <div class="flex-shrink-0">
-                                <div class="radial-progress" style="--value:${mediaValue * 10};">
-                                    <span class="radial-progress-value">${mediaValue > 0 ? mediaValue.toFixed(1) : 'N/A'}</span>
+                    const percentage = (mediaValue / 10) * 100;
+                    
+                    modulesHtml += `
+                        <div class="nt-module-card" style="--nt-module-color: ${color};">
+                            <div class="nt-module-header">
+                                <div class="nt-module-icon bg-gradient-to-br ${gradient}">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="${icon}" />
+                                    </svg>
+                                </div>
+                                <div class="nt-module-title-group">
+                                    <h4 class="nt-module-title">${groupName}</h4>
+                                    <p class="nt-module-subtitle">${materias.length} disciplina${materias.length > 1 ? 's' : ''}</p>
+                                </div>
+                                <div class="nt-module-grade">
+                                    <div class="nt-grade-value">${formatarNota(mediaValue)}</div>
+                                    <div class="nt-grade-label">Média</div>
                                 </div>
                             </div>
-                            <div class="flex-grow">
-                                <h4 class="text-base font-bold text-slate-800">${key}</h4>
-                                <p class="text-sm text-slate-500 mt-1">Notas do módulo teórico</p>
-                                ${hasDetails ? `
-                                <details class="mt-3 group">
-                                    <summary class="details-toggle list-none">
-                                        <span>Ver detalhes</span>
-                                        <svg class="transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                            
+                            ${hasDetails ? `
+                                <div class="nt-module-progress-bar">
+                                    <div class="nt-module-progress-fill" style="width: ${percentage}%;"></div>
+                                </div>
+                                
+                                <details class="nt-module-details">
+                                    <summary class="nt-details-toggle">
+                                        <span>Ver disciplinas do módulo</span>
+                                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                                        </svg>
                                     </summary>
-                                    <div class="details-content">
-                                        <ul class="details-scores-list">
-                                            ${detailsHtml}
-                                        </ul>
+                                    <div class="nt-details-content">
+                                        ${disciplinasHtml}
                                     </div>
                                 </details>
-                                ` : ''}
-                            </div>
+                            ` : ''}
                         </div>
                     `;
                 }
             });
 
-            p.innerHTML = html || '<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhuma nota válida encontrada para exibir.</p></div>';
+            modulesHtml += '</div>';
+
+            // === MONTAGEM FINAL === //
+            tabContainer.innerHTML = heroHtml + dashboardHtml + dividerHtml + modulesHtml;
         }
 
         function calculatePracticeSummary(notasP) {
