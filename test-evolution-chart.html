@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Evolution Chart - Before vs After</title>
+    <style>
+        /* Import the updated CSS */
+        :root {
+            --font-main: 'Inter', sans-serif;
+            --font-display: 'Poppins', sans-serif;
+            --accent-blue: #0033A0;
+            --accent-blue-secondary: #0054B4;
+            --card-border: #E5E9EF;
+            --content-text-secondary: #475569;
+        }
+        
+        body {
+            font-family: var(--font-main);
+            background: #F7F9FB;
+            padding: 40px;
+        }
+        
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .section {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 51, 160, 0.05);
+        }
+        
+        h2 {
+            font-family: var(--font-display);
+            color: #334155;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        
+        .badge.before {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        
+        .badge.after {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+        
+        /* OLD STYLES (Before) */
+        .evolution-chart-container-old {
+            display: flex;
+            gap: 1rem;
+            justify-content: space-around;
+            align-items: flex-end;
+            height: 120px;
+            padding: 1rem 0.5rem 0 0.5rem;
+            border-top: 1px solid var(--card-border);
+            margin-top: 1rem;
+            position: relative;
+        }
+        
+        .evolution-bar-old {
+            flex: 1;
+            background-image: linear-gradient(180deg, var(--accent-blue-secondary), var(--accent-blue));
+            border-radius: 6px 6px 0 0;
+            text-align: center;
+            position: relative;
+            min-height: 30px;
+        }
+        
+        .evolution-bar-old .bar-value {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0; /* PROBLEM: Hidden by default */
+            transition: opacity 0.3s ease 0.3s;
+        }
+        
+        .evolution-bar-old:hover .bar-value {
+            opacity: 1;
+        }
+        
+        .evolution-bar-old .bar-label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--content-text-secondary);
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+        }
+        
+        /* NEW STYLES (After) */
+        .evolution-chart-container {
+            display: flex;
+            gap: 1rem;
+            justify-content: space-around;
+            align-items: flex-end;
+            min-height: 200px;
+            height: 250px;
+            padding: 2rem 0.5rem 0 0.5rem;
+            border-top: 1px solid var(--card-border);
+            margin-top: 1rem;
+            position: relative;
+        }
+        
+        .evolution-bar {
+            flex: 1;
+            max-width: 80px;
+            background-image: linear-gradient(180deg, var(--accent-blue-secondary), var(--accent-blue));
+            border-radius: 8px 8px 0 0;
+            text-align: center;
+            position: relative;
+            transition: all 0.3s ease-out;
+            box-shadow: 0 2px 8px rgba(0, 51, 160, 0.15);
+            min-height: 30px;
+        }
+        
+        .evolution-bar:hover {
+            background-image: linear-gradient(180deg, #0066CC, var(--accent-blue-secondary));
+            box-shadow: 0 4px 12px rgba(0, 51, 160, 0.25);
+            transform: scaleY(1.05);
+        }
+        
+        .evolution-bar .bar-value {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: white;
+            position: absolute;
+            top: -28px;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 1; /* FIXED: Always visible */
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 4px 10px;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+        
+        .evolution-bar:hover .bar-value {
+            top: -32px;
+            font-size: 1rem;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .evolution-bar .bar-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--content-text-secondary);
+            position: absolute;
+            bottom: -32px;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            max-width: 100px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .note {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-top: 20px;
+            border-left: 4px solid #f59e0b;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center; font-size: 32px; margin-bottom: 40px; background: linear-gradient(135deg, #0033A0, #0054B4); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+        Gráfico de Evolução: Antes vs Depois
+    </h1>
+    
+    <div class="comparison">
+        <div class="section">
+            <span class="badge before">❌ ANTES - Problema</span>
+            <h2>Gráfico Antigo</h2>
+            <p style="color: #64748b; font-size: 14px; margin-bottom: 20px; text-align: center;">
+                Notas quase invisíveis (apenas visíveis ao passar o mouse)
+            </p>
+            <div class="evolution-chart-container-old">
+                <div class="evolution-bar-old" style="height: 85%;">
+                    <span class="bar-value">8.5</span>
+                    <span class="bar-label">Módulo 1</span>
+                </div>
+                <div class="evolution-bar-old" style="height: 78%;">
+                    <span class="bar-value">7.8</span>
+                    <span class="bar-label">Módulo 2</span>
+                </div>
+                <div class="evolution-bar-old" style="height: 92%;">
+                    <span class="bar-value">9.2</span>
+                    <span class="bar-label">Módulo 3</span>
+                </div>
+                <div class="evolution-bar-old" style="height: 88%;">
+                    <span class="bar-value">8.8</span>
+                    <span class="bar-label">Módulo 4</span>
+                </div>
+                <div class="evolution-bar-old" style="height: 90%;">
+                    <span class="bar-value">9.0</span>
+                    <span class="bar-label">Módulo 5</span>
+                </div>
+            </div>
+            <div class="note">
+                <strong>Problemas:</strong><br>
+                • Valores com opacity: 0 (invisíveis)<br>
+                • Altura do container muito pequena (120px)<br>
+                • Notas só aparecem ao passar o mouse<br>
+                • Difícil visualizar o desempenho
+            </div>
+        </div>
+        
+        <div class="section">
+            <span class="badge after">✅ DEPOIS - Corrigido</span>
+            <h2>Gráfico Melhorado</h2>
+            <p style="color: #64748b; font-size: 14px; margin-bottom: 20px; text-align: center;">
+                Notas sempre visíveis com destaque visual
+            </p>
+            <div class="evolution-chart-container">
+                <div class="evolution-bar" style="height: 85%;">
+                    <span class="bar-value">8.5</span>
+                    <span class="bar-label">Módulo 1</span>
+                </div>
+                <div class="evolution-bar" style="height: 78%;">
+                    <span class="bar-value">7.8</span>
+                    <span class="bar-label">Módulo 2</span>
+                </div>
+                <div class="evolution-bar" style="height: 92%;">
+                    <span class="bar-value">9.2</span>
+                    <span class="bar-label">Módulo 3</span>
+                </div>
+                <div class="evolution-bar" style="height: 88%;">
+                    <span class="bar-value">8.8</span>
+                    <span class="bar-label">Módulo 4</span>
+                </div>
+                <div class="evolution-bar" style="height: 90%;">
+                    <span class="bar-value">9.0</span>
+                    <span class="bar-label">Módulo 5</span>
+                </div>
+            </div>
+            <div class="note" style="background: #dcfce7; color: #14532d; border-left-color: #16a34a;">
+                <strong>Melhorias:</strong><br>
+                • Valores sempre visíveis (opacity: 1)<br>
+                • Altura aumentada para 250px<br>
+                • Badges com gradiente roxo<br>
+                • Sombras e hover melhorados<br>
+                • Muito mais fácil de visualizar!
+            </div>
+        </div>
+    </div>
+    
+    <div style="max-width: 1400px; margin: 40px auto; padding: 30px; background: white; border-radius: 16px; box-shadow: 0 8px 32px rgba(0, 51, 160, 0.05);">
+        <h2 style="text-align: center; margin-bottom: 20px;">Outras Correções Implementadas</h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div style="padding: 20px; background: #f0f9ff; border-radius: 8px; border-left: 4px solid #0ea5e9;">
+                <h3 style="color: #0c4a6e; margin-bottom: 10px; font-size: 16px;">✅ Raciocínio Clínico</h3>
+                <p style="font-size: 14px; color: #334155; margin: 0;">
+                    Campos como "0.0 Raciocínio Clínico Avaliação, planejamento e associação" agora são processados corretamente, extraindo a nota do prefixo do nome do campo.
+                </p>
+            </div>
+            <div style="padding: 20px; background: #f0fdf4; border-radius: 8px; border-left: 4px solid #16a34a;">
+                <h3 style="color: #14532d; margin-bottom: 10px; font-size: 16px;">✅ MediaNotaFinal Removido</h3>
+                <p style="font-size: 14px; color: #334155; margin: 0;">
+                    "MediaNotaFinal 8.0" não aparece mais na lista de competências, pois já está exibido no começo como nota final.
+                </p>
+            </div>
+            <div style="padding: 20px; background: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b;">
+                <h3 style="color: #78350f; margin-bottom: 10px; font-size: 16px;">✅ Leitura de Dados</h3>
+                <p style="font-size: 14px; color: #334155; margin: 0;">
+                    Sistema agora identifica e processa corretamente campos com formatos variados, incluindo prefixos numéricos.
+                </p>
+            </div>
+            <div style="padding: 20px; background: #fae8ff; border-radius: 8px; border-left: 4px solid #a855f7;">
+                <h3 style="color: #581c87; margin-bottom: 10px; font-size: 16px;">✅ Evolução de Desempenho</h3>
+                <p style="font-size: 14px; color: #334155; margin: 0;">
+                    Gráfico agora mostra dados corretamente com extração melhorada de notas finais e visualização aprimorada.
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
