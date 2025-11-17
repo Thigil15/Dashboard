@@ -412,18 +412,37 @@
                                 
                                 // Só adiciona se tiver registros válidos
                                 if (validatedRegistros.length > 0) {
-                                    notasPraticas[nome] = {
-                                        nomePratica: nome,
-                                        registros: validatedRegistros,
-                                        _metadata: {
-                                            totalRegistros: sheetData.dados.length,
-                                            registrosValidos: validatedRegistros.length,
-                                            registrosInvalidos: sheetErrors.length,
-                                            ultimaValidacao: new Date().toISOString(),
-                                            erros: sheetErrors
-                                        }
-                                    };
-                                    console.log(`[setupNotasPraticasListeners] ✅ Notas práticas "${nome}" validadas: ${validatedRegistros.length}/${sheetData.dados.length} registros válidos`);
+                                    // Check if this nome already exists (duplicate sheet name)
+                                    if (notasPraticas[nome]) {
+                                        console.warn(`[setupNotasPraticasListeners] ⚠️ Duplicate sheet name detected: "${nome}"`);
+                                        console.warn(`[setupNotasPraticasListeners] Original sheet: "${sheetName}" vs existing sheet`);
+                                        console.warn(`[setupNotasPraticasListeners] Merging ${validatedRegistros.length} records into existing ${notasPraticas[nome].registros.length} records`);
+                                        
+                                        // Merge and deduplicate based on _uniqueId
+                                        const existingIds = new Set(notasPraticas[nome].registros.map(r => r._uniqueId));
+                                        const newUniqueRecords = validatedRegistros.filter(r => !existingIds.has(r._uniqueId));
+                                        
+                                        notasPraticas[nome].registros.push(...newUniqueRecords);
+                                        notasPraticas[nome]._metadata.totalRegistros += sheetData.dados.length;
+                                        notasPraticas[nome]._metadata.registrosValidos += newUniqueRecords.length;
+                                        notasPraticas[nome]._metadata.duplicatasRemovidas = (notasPraticas[nome]._metadata.duplicatasRemovidas || 0) + (validatedRegistros.length - newUniqueRecords.length);
+                                        
+                                        console.log(`[setupNotasPraticasListeners] ✅ Merged into "${nome}": Added ${newUniqueRecords.length} unique, skipped ${validatedRegistros.length - newUniqueRecords.length} duplicates`);
+                                    } else {
+                                        notasPraticas[nome] = {
+                                            nomePratica: nome,
+                                            registros: validatedRegistros,
+                                            _metadata: {
+                                                totalRegistros: sheetData.dados.length,
+                                                registrosValidos: validatedRegistros.length,
+                                                registrosInvalidos: sheetErrors.length,
+                                                duplicatasRemovidas: 0,
+                                                ultimaValidacao: new Date().toISOString(),
+                                                erros: sheetErrors
+                                            }
+                                        };
+                                        console.log(`[setupNotasPraticasListeners] ✅ Notas práticas "${nome}" validadas: ${validatedRegistros.length}/${sheetData.dados.length} registros válidos`);
+                                    }
                                 } else if (sheetData.dados.length > 0) {
                                     console.error(`[setupNotasPraticasListeners] ❌ Todos os registros em "${nome}" são inválidos!`);
                                 }
@@ -1317,13 +1336,33 @@ const pontoState = {
                  (n.NomeCompleto && normalizeString(n.NomeCompleto) === alunoNomeNormalizado))
             );
 
-            // Notas Práticas
-            const notasP = Object.values(appState.notasPraticas).flatMap(p =>
+            // Notas Práticas - with deduplication
+            const notasPRaw = Object.values(appState.notasPraticas).flatMap(p =>
                 (p.registros || []).filter(x => x && 
                     ((x.EmailHC && normalizeString(x.EmailHC) === emailNormalizado) || 
                      (x.NomeCompleto && normalizeString(x.NomeCompleto) === alunoNomeNormalizado))
                 ).map(i => ({ nomePratica: p.nomePratica, ...i }))
             );
+            
+            // Remove duplicates based on _uniqueId (same evaluation appearing in multiple sheets)
+            const seenIds = new Set();
+            const notasP = notasPRaw.filter(nota => {
+                if (nota._uniqueId) {
+                    if (seenIds.has(nota._uniqueId)) {
+                        console.log(`[findDataByStudent] Removed duplicate NotasPraticas: ${nota.nomePratica} (ID: ${nota._uniqueId})`);
+                        return false; // Skip duplicate
+                    }
+                    seenIds.add(nota._uniqueId);
+                    return true;
+                }
+                // If no _uniqueId, keep it (shouldn't happen with validation system, but be safe)
+                console.warn(`[findDataByStudent] NotasPraticas record without _uniqueId found: ${nota.nomePratica}`);
+                return true;
+            });
+            
+            if (notasPRaw.length > notasP.length) {
+                console.log(`[findDataByStudent] ✅ Deduplicated NotasPraticas: ${notasPRaw.length} → ${notasP.length} (removed ${notasPRaw.length - notasP.length} duplicates)`);
+            }
 
             return { escalas, faltas, notasT, notasP };
         }
