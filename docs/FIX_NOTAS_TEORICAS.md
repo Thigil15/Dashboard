@@ -1,222 +1,125 @@
-# Fix: Notas Teoricas Display Issue - Summary
+# Fix para NotasTeoricas - Resumo da Solução
 
-## Problem
-**As Notas Teoricas ainda não aparecem no site**
+## 🎯 Problema
+As "Notas Teóricas" não estavam sendo exibidas para os alunos, mostrando sempre a mensagem:
+> "Nenhuma nota ou média encontrada neste registro."
 
-Theoretical grades (Notas Teoricas) were not displaying on student detail pages even though the data exists in Firebase at:
-`https://dashboardalunos-default-rtdb.firebaseio.com//exportAll/NotasTeoricas`
+## 🔍 Causa Raiz
 
-## Root Cause Analysis
+### O que estava acontecendo:
+1. **Normalização de Dados**: A função `deepNormalizeObject()` remove acentos de todos os campos
+   - "MÉDIA FISIO1" → "MediaFisio1" 
+   - "Avaliação" → "Avaliacao"
+   - "Bioética" → "Bioetica"
 
-### 1. Incorrect Firebase Path
-- **Expected path in code**: `exportAll/NotasTeoricas/dados`
-- **Actual path in Firebase**: `exportAll/NotasTeoricas`
-- The code was looking for a nested `/dados` property that doesn't exist
+2. **Busca com Acento**: O código estava procurando por campos COM acento
+   - Procurava por `'MÉDIA'` mas os dados tinham `'MEDIA'`
+   - Procurava por `'Avaliação'` mas os dados tinham `'Avaliacao'`
 
-### 2. Inflexible Data Structure Handling
-The original processor only expected one data format:
+3. **Resultado**: As notas existiam mas não eram encontradas! ❌
+
+## ✅ Solução Implementada
+
+### 1. Busca Inteligente de Chaves MÉDIA
+**Antes:**
 ```javascript
-{ 
-  registros: (data || []).map(row => deepNormalizeObject(row))
-}
+const mediaKeys = Object.keys(notas).filter(k => k.toUpperCase().includes('MÉDIA'));
 ```
 
-This failed when Firebase returned data in different formats (direct array, numbered object, etc.)
-
-## Solution Implemented
-
-### 1. Updated Firebase Path
-Changed the listener configuration to use the correct path:
-
-**Before:**
+**Depois:**
 ```javascript
-{ path: 'exportAll/NotasTeoricas/dados', stateKey: 'notasTeoricas', ... }
+const mediaKeys = Object.keys(notas).filter(k => {
+    const keyUpper = k.toUpperCase();
+    const keyNormalized = k.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+    return keyUpper.includes('MÉDIA') || keyNormalized.includes('MEDIA');
+});
 ```
 
-**After:**
+### 2. Função Helper para Acessar Campos
+**Criamos `getNotaValue()`:**
 ```javascript
-{ path: 'exportAll/NotasTeoricas', stateKey: 'notasTeoricas', ... }
-```
-
-### 2. Robust Data Structure Handling
-Implemented intelligent detection and conversion for multiple data formats:
-
-```javascript
-function processNotasTeoricasData(data) {
-  let registros = [];
-  
-  if (!data) {
-    // Handle null/undefined
-    registros = [];
-  } else if (Array.isArray(data)) {
-    // Handle direct array: [{...}, {...}]
-    registros = data;
-  } else if (data.dados && Array.isArray(data.dados)) {
-    // Handle object with 'dados': { dados: [{...}, {...}] }
-    registros = data.dados;
-  } else if (typeof data === 'object') {
-    // Handle Firebase numbered object: { "0": {...}, "1": {...} }
-    const values = Object.values(data);
-    if (values.every(v => v && typeof v === 'object')) {
-      registros = values;
+const getNotaValue = (materia) => {
+    // Tenta match exato primeiro
+    if (notas[materia] !== undefined && notas[materia] !== null) {
+        return notas[materia];
     }
-  }
-  
-  // Normalize all records for consistent field access
-  return { 
-    registros: registros.map(row => deepNormalizeObject(row)) 
-  };
-}
+    
+    // Tenta match normalizado (sem acento)
+    const materiaNormalized = materia.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const matchingKey = Object.keys(notas).find(k => {
+        const kNormalized = k.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        return kNormalized.toUpperCase() === materiaNormalized.toUpperCase();
+    });
+    
+    return matchingKey ? notas[matchingKey] : undefined;
+};
 ```
 
-### 3. Enhanced Logging
-Added comprehensive console logging for debugging:
-- Structure type detection
-- Record count
-- Sample data preview
-- Error messages for unrecognized structures
-
-### 4. Created Test Suite
-Created `test-notas-teoricas-fix.html` to verify:
-- ✅ All 4 data structure formats are handled correctly
-- ✅ Empty/null data is handled gracefully
-- ✅ Firebase connection and real data loading
-- ✅ Data normalization works properly
-
-## Files Modified
-
-1. **script.js** (lines 48-91)
-   - Updated Firebase path
-   - Rewrote data processor for NotasTeoricas
-   - Added comprehensive logging
-
-2. **test-notas-teoricas-fix.html** (new file)
-   - Test suite for data structure handling
-   - Firebase connection test
-   - Visual debugging interface
-
-## Testing Verification
-
-### Unit Tests (test-notas-teoricas-fix.html)
-1. ✅ Structure 1: Object with 'dados' property
-2. ✅ Structure 2: Direct array
-3. ✅ Structure 3: Firebase numbered object
-4. ✅ Structure 4: Null/undefined/empty data
-5. ✅ Firebase connection test (real data)
-
-### Integration Test
-1. Open `index.html` in browser
-2. Login with Firebase credentials
-3. Navigate to any student's detail page
-4. Click on "Notas Teóricas" tab
-5. **Expected result**: Theoretical grades display correctly with:
-   - Student's theoretical module grades
-   - Overall average
-   - Breakdown by Fisioterapia modules
-   - Graphical representation
-
-## Data Flow
-
-```
-Firebase Realtime Database
-  └── /exportAll/NotasTeoricas (data structure varies)
-      │
-      ├── Listener detects data change
-      │
-      ├── Processor handles structure (4 formats supported)
-      │
-      ├── Normalizes all records with deepNormalizeObject()
-      │
-      ├── Stores in appState.notasTeoricas.registros
-      │
-      ├── findDataByStudent() matches by email/name
-      │
-      └── renderTabNotasTeoricas() displays in UI
-```
-
-## Expected Outcomes
-
-### Before Fix
-- ❌ Notas Teoricas tab shows "Nenhuma Avaliação Teórica Registrada"
-- ❌ Console shows: "Nenhum dado em exportAll/NotasTeoricas/dados"
-- ❌ Student theoretical grades not found
-
-### After Fix
-- ✅ Notas Teoricas tab displays student's theoretical grades
-- ✅ Console shows: "NotasTeoricas: X registros processados e normalizados"
-- ✅ Student data matched by email/name across all field variations
-- ✅ Proper handling of all Firebase data structures
-
-## Backward Compatibility
-
-✅ The fix maintains full backward compatibility:
-- Still handles `/dados` property if it exists
-- Supports both old and new data structures
-- No breaking changes to existing functionality
-- All field name variations still work (EmailHC, emailHC, emailhc, etc.)
-
-## Security Analysis
-
-✅ **CodeQL Analysis: No vulnerabilities found**
-- No SQL injection risks
-- No XSS vulnerabilities
-- No credential exposure
-- Proper data sanitization with deepNormalizeObject()
-
-## Performance Impact
-
-✅ **Minimal performance impact**:
-- Structure detection adds ~1-2ms per data load
-- Normalizing 100 records: ~5-10ms
-- Total overhead: Negligible (<0.1% of page load time)
-
-## Monitoring and Debugging
-
-### Console Logs to Monitor
+### 3. Atualização de Todos os Acessos
+**Antes:**
 ```javascript
-// Successful load:
-"[setupDatabaseListeners] NotasTeoricas: Estrutura de array direto detectada"
-"[setupDatabaseListeners] NotasTeoricas: 45 registros processados e normalizados"
-
-// Data matching:
-"[findDataByStudent] Notas Teóricas encontradas: SIM"
-"[findDataByStudent] Campos da nota teórica: EmailHC, NomeCompleto, MÉDIA FISIO1, ..."
-
-// Rendering:
-"[renderTabNotasTeoricas v35] Dados recebidos: {...}"
+const nota = parseNota(notas[materia]);
 ```
 
-### Common Issues and Solutions
+**Depois:**
+```javascript
+const val = getNotaValue(materia);
+const nota = parseNota(val);
+```
 
-#### Issue 1: Still showing empty state
-**Solution**: Check Firebase console - data might not be at `/exportAll/NotasTeoricas`
+## 🧪 Testes Realizados
 
-#### Issue 2: Data loads but student not found
-**Solution**: Check email/name matching - verify field names in Firebase match student records
+Criamos um arquivo de teste que verifica:
+- ✅ Normalização de chaves funciona corretamente
+- ✅ Busca de chaves MÉDIA encontra as variantes
+- ✅ Campo "Avaliação" (com acento) é encontrado
+- ✅ Campo "Bioética" (com acento) é encontrado
 
-#### Issue 3: Some grades missing
-**Solution**: Check field normalization - grades might have different field name casing
+**Resultado: 4/4 testes passaram! ✅**
 
-## Future Improvements (Optional)
+## 📁 Arquivos Modificados
 
-1. **Cache mechanism**: Cache processed data to reduce re-processing
-2. **Lazy loading**: Load NotasTeoricas only when tab is clicked
-3. **Real-time updates**: Update UI when Firebase data changes
-4. **Error recovery**: Retry mechanism for failed data loads
+1. **script.js**
+   - Linha ~3563: Busca de chaves MÉDIA com acento e sem acento
+   - Linha ~3492: Função helper `getNotaValue()`
+   - Linha ~3601: Uso de `getNotaValue()` para disciplinas complementares
+   - Linha ~3756: Uso de `getNotaValue()` para busca de médias
+   - Linha ~3785: Uso de `getNotaValue()` para processar disciplinas
 
-## Conclusion
+2. **test-notas-teoricas-fix-verification.html** (NOVO)
+   - Testes automatizados para verificar a correção
 
-This fix resolves the issue of Notas Teoricas not appearing by:
-1. ✅ Correcting the Firebase path
-2. ✅ Handling multiple data structure formats
-3. ✅ Maintaining backward compatibility
-4. ✅ Adding comprehensive logging for debugging
-5. ✅ Including test suite for verification
+## 🎬 Como Testar
 
-The implementation is robust, performant, secure, and ready for production use.
+### Opção 1: Teste Automatizado
+1. Abra: `test-notas-teoricas-fix-verification.html` no navegador
+2. Clique em "Executar Testes"
+3. Veja que todos os 4 testes passam ✅
 
----
+### Opção 2: Teste no Sistema Real
+1. Faça login no sistema
+2. Vá para a aba "Alunos"
+3. Clique em um aluno que tenha notas teóricas
+4. Clique na aba "Notas Teóricas"
+5. **Resultado Esperado**: As notas devem aparecer corretamente! 🎉
 
-**Date**: 2025-11-17
-**Version**: v32.8
-**Status**: ✅ Completed and Tested
+## 🔒 Segurança
+
+✅ **CodeQL Analysis**: Nenhuma vulnerabilidade encontrada
+✅ **Sem mudanças em CSS/HTML**: Apenas lógica JavaScript
+✅ **Backward Compatible**: Funciona com dados antigos e novos
+
+## 📊 Impacto
+
+- **Positivo**: Alunos podem ver suas notas teóricas novamente
+- **Risco**: Baixo - mudança cirúrgica e bem testada
+- **Performance**: Sem impacto - apenas melhora a busca
+
+## 🎯 Conclusão
+
+A correção foi implementada com sucesso! O problema de acentuação que impedia a exibição das notas teóricas foi resolvido através de:
+1. Busca insensível a acentos para chaves de médias
+2. Função helper para acesso flexível aos campos
+3. Testes automatizados para garantir funcionamento
+
+**Status: ✅ PRONTO PARA PRODUÇÃO**
