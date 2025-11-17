@@ -1313,6 +1313,17 @@ const pontoState = {
             return isNaN(n) ? 0 : n;
         }
 
+        /**
+         * Formata um número no padrão brasileiro (vírgula como separador decimal)
+         * @param {number} value - O valor numérico a ser formatado
+         * @param {number} decimals - Número de casas decimais (padrão: 1)
+         * @returns {string} Número formatado no padrão pt-BR
+         */
+        function formatarNota(value, decimals = 1) {
+            if (value === null || value === undefined || isNaN(value)) return 'N/A';
+            return value.toFixed(decimals).replace('.', ',');
+        }
+
         // [ORION] Helper para centralizar a busca de dados do aluno
         function findDataByStudent(emailNormalizado, alunoNomeNormalizado) {
             // Escalas
@@ -3539,8 +3550,8 @@ function renderTabEscala(escalas) {
                         <div class="np-progress-content">
                             <div class="np-ring-container">
                                 <div class="np-progress-ring" style="--np-progress-percent: ${progressPercent}%;">
-                                    <div class="np-ring-value">${summary.overallAvg.toFixed(1)}</div>
-                                    <div class="np-ring-subtitle">de 10.0</div>
+                                    <div class="np-ring-value">${formatarNota(summary.overallAvg)}</div>
+                                    <div class="np-ring-subtitle">de 10,0</div>
                                 </div>
                             </div>
                             <div class="np-progress-text">
@@ -3588,7 +3599,7 @@ function renderTabEscala(escalas) {
                         ${summary.last5Notes.length > 0 ? summary.last5Notes.map((note, i) => `
                             <div class="np-chart-bar">
                                 <div class="np-bar-fill" style="height: ${Math.max(note.value * 25, 40)}px;">
-                                    <div class="np-bar-value">${note.value.toFixed(1)}</div>
+                                    <div class="np-bar-value">${formatarNota(note.value)}</div>
                                 </div>
                                 <div class="np-bar-label">${note.label && note.label.length > 18 ? note.label.substring(0, 18) + '...' : (note.label || `Avaliação ${i+1}`)}</div>
                             </div>
@@ -3764,8 +3775,8 @@ function renderTabEscala(escalas) {
                                 <div class="np-grade-showcase">
                                     <div class="np-grade-circle">
                                         <div>
-                                            <div class="np-grade-number">${mediaFinal.toFixed(1)}</div>
-                                            <div class="np-grade-denominator">de 10.0</div>
+                                            <div class="np-grade-number">${formatarNota(mediaFinal)}</div>
+                                            <div class="np-grade-denominator">de 10,0</div>
                                         </div>
                                     </div>
                                     <div class="np-grade-label">Nota Final</div>
@@ -3795,7 +3806,7 @@ function renderTabEscala(escalas) {
                                             <div class="np-skill-bar-item" style="--np-skill-color: ${barColor};">
                                                 <div class="np-skill-header">
                                                     <span class="np-skill-name" title="${score.label}">${displayLabel}</span>
-                                                    <span class="np-skill-value">${score.value.toFixed(1)}</span>
+                                                    <span class="np-skill-value">${formatarNota(score.value)}</span>
                                                 </div>
                                                 <div class="np-skill-progress">
                                                     <div class="np-skill-fill" style="width: ${percentage}%;"></div>
