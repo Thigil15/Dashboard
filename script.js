@@ -1172,8 +1172,6 @@ const pontoState = {
             console.log('[setupEventHandlers] Listeners configurados.');
         }
 
-        document.getElementById("login-form").addEventListener("submit", handleLogin);
-
         async function handleLogin(event) {
             event.preventDefault();
             console.log("[handleLogin] Tentativa de login com Firebase Authentication...");
