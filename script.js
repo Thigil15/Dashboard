@@ -1047,8 +1047,9 @@ const pontoState = {
             });
 
             // Event listener para as sub-abas (delegado ao #tab-notas-p)
+            // Suporta tanto .subnav-button (antigo) quanto .np-tab-button (novo design)
             document.getElementById('tab-notas-p').addEventListener('click', (e) => {
-                const button = e.target.closest('.subnav-button');
+                const button = e.target.closest('.subnav-button, .np-tab-button');
                 if (button && !button.classList.contains('active')) {
                     const tabId = button.getAttribute('data-subtab-id');
                     switchStudentSubTab(tabId);
@@ -2771,11 +2772,12 @@ const pontoState = {
 
         function switchStudentSubTab(subTabId) {
             console.log(`[switchStudentSubTab] Trocando para sub-aba: ${subTabId}`);
-            const subNavContainer = document.getElementById('student-detail-subnav-container');
+            const subNavContainer = document.getElementById('student-detail-subnav-container') || document.querySelector('.np-tab-nav');
             const subContentContainer = document.getElementById('student-detail-subnav-content');
             
             if (subNavContainer) {
-                subNavContainer.querySelectorAll('.subnav-button').forEach(btn => {
+                // Suporta tanto .subnav-button (antigo) quanto .np-tab-button (novo)
+                subNavContainer.querySelectorAll('.subnav-button, .np-tab-button').forEach(btn => {
                     btn.classList.toggle('active', btn.getAttribute('data-subtab-id') === subTabId);
                 });
             }
