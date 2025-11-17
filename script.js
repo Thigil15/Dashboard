@@ -2979,9 +2979,21 @@ const pontoState = {
         function showStudentDetail(email) {
             console.log(`[showStudentDetail] Exibindo detalhes para: ${email}`);
              try {
+                // CRITICAL FIX: Verify that student data has been loaded from Firebase
+                // This prevents the app from getting stuck on a non-existent student page
+                if (!appState.alunos || appState.alunos.length === 0) {
+                    console.error('[showStudentDetail] Dados de alunos ainda não carregados. Aguarde...');
+                    showError('Os dados ainda estão sendo carregados. Por favor, aguarde um momento e tente novamente.');
+                    return;
+                }
+                
                 const info = appState.alunosMap.get(email);
                 if (!info) {
-                    showError(`Aluno ${email} não encontrado no mapeamento.`);
+                    console.error(`[showStudentDetail] Aluno ${email} não encontrado no mapeamento.`);
+                    showError(`Aluno ${email} não encontrado.`);
+                    // Return to student list instead of staying on broken page
+                    showView('dashboard-view');
+                    switchMainTab('alunos');
                     return;
                 }
                 const emailNormalizado = normalizeString(email);
@@ -4507,6 +4519,9 @@ function renderTabEscala(escalas) {
                     if (user) {
                         // User is signed in
                         console.log('[onAuthStateChanged] Usuário autenticado:', user.email);
+                        
+                        // CRITICAL FIX: Always show dashboard-view (never student-detail-view)
+                        // This ensures that after login, the user always lands on the dashboard
                         showView('dashboard-view');
                         initDashboard();
                     } else {
@@ -4525,7 +4540,9 @@ function renderTabEscala(escalas) {
                         appState.notasPraticas = {};
                         appState.pontoStaticRows = [];
                         
-                        // Show login view
+                        // CRITICAL FIX: Always show login view when not authenticated
+                        // This ensures the app never gets stuck on a student detail page when logged out
+                        showLoading(false); // Ensure loading overlay is hidden
                         showView('login-view');
                     }
                 });
