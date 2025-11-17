@@ -3429,7 +3429,8 @@ function renderTabEscala(escalas) {
                 
                 const media = parseNota(n[kM]);
                 
-                if (media > 0) {
+                // Changed from "media > 0" to "media >= 0" to include 0.0 scores in evolution
+                if (media >= 0 && !isNaN(media)) {
                     overallSum += media;
                     overallCount++;
                     last5Notes.push({ label: n.nomePratica, value: media });
@@ -3453,7 +3454,8 @@ function renderTabEscala(escalas) {
                         cleanKey = numericPrefixMatch[2];
                     }
                     
-                    if (val > 0) {
+                    // Changed from "val > 0" to "val >= 0" to include 0.0 scores
+                    if (val >= 0 && !isNaN(val)) {
                         if (map.raciocinio.some(regex => regex.test(cleanKey))) {
                             competency.raciocinio.sum += val;
                             competency.raciocinio.count++;
@@ -3549,11 +3551,11 @@ function renderTabEscala(escalas) {
                 </div>
                 
                 <div id="practice-summary-dashboard">
-                    <!-- Card Média Geral Aprimorado -->
-                    <div class="content-card summary-progress-card animated-card delay-100" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-                        <div class="summary-progress-ring" style="--value:${summary.overallAvg * 10}; --ring-color: rgba(255,255,255,0.3); --fill-color: white;">
-                            <div class="value" style="color: white; font-size: 2.5rem; font-weight: 700;">${summary.overallAvg.toFixed(1)}</div>
-                            <div style="color: rgba(255,255,255,0.9); font-size: 0.75rem; margin-top: -8px;">de 10.0</div>
+                    <!-- Card Média Geral Aprimorado com Melhor Visibilidade -->
+                    <div class="content-card summary-progress-card animated-card delay-100" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);">
+                        <div class="summary-progress-ring" style="--value:${summary.overallAvg * 10}; --ring-color: rgba(255,255,255,0.25); --fill-color: white; background: conic-gradient(white calc(var(--value) * 1%), rgba(255,255,255,0.25) calc(var(--value) * 1%) 100%); box-shadow: 0 0 0 4px rgba(255,255,255,0.2);">
+                            <div class="value" style="color: #667eea; font-size: 2.5rem; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">${summary.overallAvg.toFixed(1)}</div>
+                            <div style="color: #667eea; font-size: 0.75rem; margin-top: -8px; font-weight: 600;">de 10.0</div>
                         </div>
                         <div class="summary-text">
                             <h3 style="color: white; font-size: 1.25rem; font-weight: 600;">Média Geral Prática</h3>
@@ -3725,8 +3727,9 @@ function renderTabEscala(escalas) {
                 let checklistScores = [];
                 
                 Object.entries(n).forEach(([key, value]) => {
-                    // Enhanced ignore pattern to exclude MediaNotaFinal and variations
-                    const isIgnored = /DATA\/HORA|EMAILHC|NOMECOMPLETO|CURSO|SUPERVISOR|UNIDADE|PERIODO|TURNO|MÉDIA\s*\(NOTA FINAL\)|MÉDIA.*NOTA.*FINAL|MEDIA.*NOTA.*FINAL|MÉDIA.*FINAL|MEDIA.*FINAL|NOTA.*FINAL|COMENTÁRIOS\s*DO\(A\)\s*SUPERVISOR\(A\)|O SUPERVISOR ESTÁ CIENTE|NOMEPRATICA|_uniqueId|_sheetName|_validatedAt/i.test(key.toUpperCase().trim());
+                    // Enhanced ignore pattern to exclude MediaNotaFinal and ALL variations
+                    // This prevents the final grade from appearing in the competencies section
+                    const isIgnored = /DATA\/HORA|EMAILHC|NOMECOMPLETO|CURSO|SUPERVISOR|UNIDADE|PERIODO|TURNO|MÉDIA\s*\(NOTA FINAL\)|MÉDIA.*NOTA.*FINAL|MEDIA.*NOTA.*FINAL|MÉDIA.*FINAL|MEDIA.*FINAL|NOTA.*FINAL|MEDIANOTAFINAL|MediaNotaFinal|medianotafinal|COMENTÁRIOS\s*DO\(A\)\s*SUPERVISOR\(A\)|O SUPERVISOR ESTÁ CIENTE|NOMEPRATICA|_uniqueId|_sheetName|_validatedAt/i.test(key.toUpperCase().trim());
                     if (!isIgnored && value) {
                         // Extract the actual field name if it starts with a number (score)
                         // Example: "0.0 Raciocínio Clínico Avaliação, planejamento e associação"
@@ -3736,7 +3739,8 @@ function renderTabEscala(escalas) {
                             // Key has a numeric prefix - use the score from prefix and text from suffix
                             const scoreFromPrefix = parseNota(numericPrefixMatch[1]);
                             const fieldNameFromSuffix = numericPrefixMatch[2];
-                            if (scoreFromPrefix > 0) {
+                            // Changed from "scoreFromPrefix > 0" to ">= 0" to include 0.0 scores
+                            if (scoreFromPrefix >= 0 && !isNaN(scoreFromPrefix)) {
                                 numericalScores.push({ label: fieldNameFromSuffix.replace(/:/g, ''), value: scoreFromPrefix });
                                 return; // Skip further processing for this field
                             }
@@ -3744,7 +3748,8 @@ function renderTabEscala(escalas) {
                         }
                         
                         const parsedValue = parseNota(value);
-                        if (!isNaN(parsedValue) && parsedValue > 0 && String(value).trim().match(/^[\d,.]+$/)) {
+                        // Changed from "parsedValue > 0" to ">= 0" to include 0.0 scores
+                        if (!isNaN(parsedValue) && parsedValue >= 0 && String(value).trim().match(/^[\d,.]+$/)) {
                             numericalScores.push({ label: cleanKey.replace(/:/g, ''), value: parsedValue });
                         } else if (String(value).trim() !== '' && String(value).trim() !== '0') {
                             checklistScores.push({ label: cleanKey.replace(/:/g, ''), value: value });
