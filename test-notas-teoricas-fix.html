@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste: Fix de Notas Teóricas</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .test-result {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+            border-left: 4px solid #ddd;
+        }
+        .test-result.pass {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        .test-result.fail {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        .test-result.info {
+            background: #d1ecf1;
+            border-color: #17a2b8;
+            color: #0c5460;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Teste: Fix de Notas Teóricas</h1>
+        <p>Este teste simula o processamento de dados do Firebase para verificar se o fix funciona corretamente.</p>
+        
+        <div class="section">
+            <h2>Teste 1: Estrutura com propriedade "dados"</h2>
+            <button onclick="testStructure1()">Executar Teste 1</button>
+            <div id="result1"></div>
+        </div>
+        
+        <div class="section">
+            <h2>Teste 2: Estrutura de array direto</h2>
+            <button onclick="testStructure2()">Executar Teste 2</button>
+            <div id="result2"></div>
+        </div>
+        
+        <div class="section">
+            <h2>Teste 3: Estrutura de objeto Firebase</h2>
+            <button onclick="testStructure3()">Executar Teste 3</button>
+            <div id="result3"></div>
+        </div>
+        
+        <div class="section">
+            <h2>Teste 4: Dados vazios/null</h2>
+            <button onclick="testStructure4()">Executar Teste 4</button>
+            <div id="result4"></div>
+        </div>
+        
+        <div class="section">
+            <h2>Teste Completo: Conexão com Firebase</h2>
+            <p>Este teste tenta conectar ao Firebase real e buscar os dados de NotasTeoricas.</p>
+            <button onclick="testFirebaseConnection()">Executar Teste Firebase</button>
+            <div id="resultFirebase"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Simular funções do script.js
+        function deepNormalizeObject(obj) {
+            const normalized = {};
+            Object.entries(obj || {}).forEach(([key, val]) => {
+                // Adicionar variantes de campo
+                normalized[key] = val;
+                
+                // PascalCase
+                const pascal = key.charAt(0).toUpperCase() + key.slice(1);
+                if (pascal !== key) normalized[pascal] = val;
+                
+                // camelCase
+                const camel = key.charAt(0).toLowerCase() + key.slice(1);
+                if (camel !== key) normalized[camel] = val;
+                
+                // lowercase
+                const lower = key.toLowerCase();
+                if (lower !== key) normalized[lower] = val;
+            });
+            return normalized;
+        }
+
+        // Processador de NotasTeoricas (copiado do fix)
+        function processNotasTeoricasData(data) {
+            console.log('🧪 [processNotasTeoricasData] Input:', data);
+            
+            let registros = [];
+            if (!data) {
+                console.log('[processNotasTeoricasData] NotasTeoricas: Nenhum dado encontrado');
+                registros = [];
+            } else if (Array.isArray(data)) {
+                console.log('[processNotasTeoricasData] NotasTeoricas: Estrutura de array direto detectada');
+                registros = data;
+            } else if (data.dados && Array.isArray(data.dados)) {
+                console.log('[processNotasTeoricasData] NotasTeoricas: Estrutura com propriedade "dados" detectada');
+                registros = data.dados;
+            } else if (typeof data === 'object') {
+                console.warn('[processNotasTeoricasData] NotasTeoricas: Estrutura inesperada, tentando converter objeto em array');
+                const values = Object.values(data);
+                if (values.length > 0 && values.every(v => v && typeof v === 'object')) {
+                    registros = values;
+                } else {
+                    console.error('[processNotasTeoricasData] NotasTeoricas: Estrutura não reconhecida:', Object.keys(data));
+                    registros = [];
+                }
+            }
+            
+            const normalized = registros.map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
+            console.log(`[processNotasTeoricasData] NotasTeoricas: ${normalized.length} registros processados e normalizados`);
+            
+            if (normalized.length > 0) {
+                console.log('[processNotasTeoricasData] NotasTeoricas: Amostra do primeiro registro:', {
+                    EmailHC: normalized[0].EmailHC || normalized[0].emailHC || normalized[0].emailhc,
+                    NomeCompleto: normalized[0].NomeCompleto || normalized[0].nomeCompleto || normalized[0].nomecompleto,
+                    campos: Object.keys(normalized[0]).slice(0, 10).join(', ')
+                });
+            }
+            
+            return { registros: normalized };
+        }
+
+        // Testes
+        window.testStructure1 = function() {
+            const mockData = {
+                dados: [
+                    {
+                        EmailHC: "joao.silva@hc.fm.usp.br",
+                        NomeCompleto: "João da Silva",
+                        "MÉDIA FISIO1": 8.5,
+                        "MÉDIA FISIO2": 9.0
+                    },
+                    {
+                        EmailHC: "maria.santos@hc.fm.usp.br",
+                        NomeCompleto: "Maria dos Santos",
+                        "MÉDIA FISIO1": 7.5,
+                        "MÉDIA FISIO2": 8.0
+                    }
+                ]
+            };
+            
+            const result = processNotasTeoricasData(mockData);
+            const resultDiv = document.getElementById('result1');
+            
+            if (result.registros && result.registros.length === 2) {
+                resultDiv.innerHTML = `
+                    <div class="test-result pass">
+                        <strong>✅ PASSOU</strong><br>
+                        Estrutura processada corretamente!<br>
+                        Registros encontrados: ${result.registros.length}
+                        <pre>${JSON.stringify(result, null, 2)}</pre>
+                    </div>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="test-result fail">
+                        <strong>❌ FALHOU</strong><br>
+                        Esperado: 2 registros<br>
+                        Obtido: ${result.registros?.length || 0} registros
+                        <pre>${JSON.stringify(result, null, 2)}</pre>
+                    </div>
+                `;
+            }
+        };
+
+        window.testStructure2 = function() {
+            const mockData = [
+                {
+                    EmailHC: "joao.silva@hc.fm.usp.br",
+                    NomeCompleto: "João da Silva",
+                    "MÉDIA FISIO1": 8.5
+                },
+                {
+                    EmailHC: "maria.santos@hc.fm.usp.br",
+                    NomeCompleto: "Maria dos Santos",
+                    "MÉDIA FISIO1": 7.5
+                }
+            ];
+            
+            const result = processNotasTeoricasData(mockData);
+            const resultDiv = document.getElementById('result2');
+            
+            if (result.registros && result.registros.length === 2) {
+                resultDiv.innerHTML = `
+                    <div class="test-result pass">
+                        <strong>✅ PASSOU</strong><br>
+                        Array direto processado corretamente!<br>
+                        Registros encontrados: ${result.registros.length}
+                        <pre>${JSON.stringify(result, null, 2)}</pre>
+                    </div>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="test-result fail">
+                        <strong>❌ FALHOU</strong><br>
+                        Esperado: 2 registros<br>
+                        Obtido: ${result.registros?.length || 0} registros
+                        <pre>${JSON.stringify(result, null, 2)}</pre>
+                    </div>
+                `;
+            }
+        };
+
+        window.testStructure3 = function() {
+            const mockData = {
+                "0": {
+                    EmailHC: "joao.silva@hc.fm.usp.br",
+                    NomeCompleto: "João da Silva",
+                    "MÉDIA FISIO1": 8.5
+                },
+                "1": {
+                    EmailHC: "maria.santos@hc.fm.usp.br",
+                    NomeCompleto: "Maria dos Santos",
+                    "MÉDIA FISIO1": 7.5
+                }
+            };
+            
+            const result = processNotasTeoricasData(mockData);
+            const resultDiv = document.getElementById('result3');
+            
+            if (result.registros && result.registros.length === 2) {
+                resultDiv.innerHTML = `
+                    <div class="test-result pass">
+                        <strong>✅ PASSOU</strong><br>
+                        Objeto Firebase processado corretamente!<br>
+                        Registros encontrados: ${result.registros.length}
+                        <pre>${JSON.stringify(result, null, 2)}</pre>
+                    </div>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="test-result fail">
+                        <strong>❌ FALHOU</strong><br>
+                        Esperado: 2 registros<br>
+                        Obtido: ${result.registros?.length || 0} registros
+                        <pre>${JSON.stringify(result, null, 2)}</pre>
+                    </div>
+                `;
+            }
+        };
+
+        window.testStructure4 = function() {
+            const testCases = [null, undefined, {}, []];
+            const resultDiv = document.getElementById('result4');
+            let allPassed = true;
+            let output = '';
+            
+            testCases.forEach((testData, index) => {
+                const result = processNotasTeoricasData(testData);
+                const passed = result.registros && result.registros.length === 0;
+                
+                if (!passed) allPassed = false;
+                
+                output += `
+                    <div class="test-result ${passed ? 'pass' : 'fail'}">
+                        <strong>${passed ? '✅' : '❌'} Teste ${index + 1}</strong><br>
+                        Input: ${JSON.stringify(testData)}<br>
+                        Registros: ${result.registros?.length || 0}
+                    </div>
+                `;
+            });
+            
+            resultDiv.innerHTML = `
+                <div class="test-result ${allPassed ? 'pass' : 'fail'}">
+                    <strong>${allPassed ? '✅ TODOS PASSARAM' : '❌ ALGUNS FALHARAM'}</strong>
+                </div>
+                ${output}
+            `;
+        };
+
+        window.testFirebaseConnection = async function() {
+            const resultDiv = document.getElementById('resultFirebase');
+            resultDiv.innerHTML = '<div class="test-result info">⏳ Conectando ao Firebase...</div>';
+            
+            try {
+                // Import Firebase
+                const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
+                const { getDatabase, ref, get } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js');
+                
+                // Import config
+                const firebaseConfigModule = await import('./firebase-config.js');
+                const firebaseConfig = firebaseConfigModule.firebaseConfig || firebaseConfigModule.default;
+                
+                // Initialize
+                const app = initializeApp(firebaseConfig);
+                const db = getDatabase(app);
+                
+                // Try to read NotasTeoricas
+                const notasTeoricasRef = ref(db, 'exportAll/NotasTeoricas');
+                const snapshot = await get(notasTeoricasRef);
+                
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    const processed = processNotasTeoricasData(data);
+                    
+                    resultDiv.innerHTML = `
+                        <div class="test-result pass">
+                            <strong>✅ CONEXÃO ESTABELECIDA!</strong><br>
+                            Dados encontrados no Firebase!<br>
+                            <br>
+                            <strong>Estrutura recebida:</strong><br>
+                            Tipo: ${Array.isArray(data) ? 'Array' : 'Object'}<br>
+                            ${Array.isArray(data) ? `Itens: ${data.length}` : `Chaves: ${Object.keys(data).join(', ')}`}<br>
+                            <br>
+                            <strong>Após processamento:</strong><br>
+                            Registros: ${processed.registros.length}<br>
+                            <br>
+                            <strong>Amostra dos dados (primeiros 3 registros):</strong>
+                            <pre>${JSON.stringify(processed.registros.slice(0, 3), null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="test-result fail">
+                            <strong>⚠️ NENHUM DADO ENCONTRADO</strong><br>
+                            O caminho /exportAll/NotasTeoricas existe no Firebase, mas não contém dados.<br>
+                            <br>
+                            Verifique:<br>
+                            1. Se o Google Apps Script foi executado<br>
+                            2. Se os dados foram enviados corretamente<br>
+                            3. O Firebase Console: <a href="https://console.firebase.google.com/project/dashboardalunos/database/dashboardalunos-default-rtdb/data" target="_blank">Abrir Console</a>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="test-result fail">
+                        <strong>❌ ERRO NA CONEXÃO</strong><br>
+                        ${error.message}<br>
+                        <pre>${error.stack}</pre>
+                    </div>
+                `;
+            }
+        };
+    </script>
+</body>
+</html>
