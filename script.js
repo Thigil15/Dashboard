@@ -85,7 +85,7 @@
                     }
                     
                     return { registros: normalized };
-                }) },
+                }},
                 { path: 'exportAll/Ponto/dados', stateKey: 'pontoStaticRows', processor: (data) => {
                     const processed = (data || []).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
                     
