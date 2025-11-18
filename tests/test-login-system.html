@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste do Sistema de Login</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+        .test-section h2 {
+            margin-top: 0;
+            color: #495057;
+            font-size: 18px;
+        }
+        .test-item {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 4px solid #ddd;
+        }
+        .test-item.pending {
+            background: #fff3cd;
+            border-color: #ffc107;
+        }
+        .test-item.success {
+            background: #d4edda;
+            border-color: #28a745;
+        }
+        .test-item.error {
+            background: #f8d7da;
+            border-color: #dc3545;
+        }
+        .test-item.info {
+            background: #d1ecf1;
+            border-color: #17a2b8;
+        }
+        .test-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        .test-detail {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 13px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        .warning strong {
+            display: block;
+            margin-bottom: 8px;
+            color: #856404;
+        }
+        iframe {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-top: 15px;
+        }
+        .controls {
+            margin: 20px 0;
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔐 Teste do Sistema de Login</h1>
+        <p class="subtitle">Validação da correção da race condition na inicialização do Firebase</p>
+        
+        <div class="warning">
+            <strong>⚠️ Atenção</strong>
+            Este teste valida as correções implementadas para resolver o problema de login.
+            A correção implementa 3 camadas de proteção contra race conditions.
+        </p>
+
+        <div class="test-section">
+            <h2>📋 Checklist de Correções</h2>
+            <div id="checklist">
+                <div class="test-item info">
+                    <div class="test-title">✅ Correção 1: Botão de Login Desabilitado Inicialmente</div>
+                    <div class="test-detail">
+                        O botão de login começa desabilitado com texto "Aguarde..." e é habilitado 
+                        automaticamente quando o Firebase está pronto.
+                    </div>
+                </div>
+                <div class="test-item info">
+                    <div class="test-title">✅ Correção 2: Espera Inteligente em handleLogin()</div>
+                    <div class="test-detail">
+                        Se o usuário conseguir clicar antes do Firebase estar pronto, o sistema aguarda 
+                        até 5 segundos para o Firebase inicializar antes de processar o login.
+                    </div>
+                </div>
+                <div class="test-item info">
+                    <div class="test-title">✅ Correção 3: Feedback Visual Durante Inicialização</div>
+                    <div class="test-detail">
+                        Mensagens claras no console e na UI informam o usuário sobre o estado do sistema.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🧪 Testes Manuais</h2>
+            
+            <div id="test-results">
+                <div class="test-item pending">
+                    <div class="test-title">Teste 1: Carregamento Normal</div>
+                    <div class="test-detail">
+                        <strong>Passos:</strong>
+                        <ol>
+                            <li>Abra <code>index.html</code> em uma aba normal</li>
+                            <li>Observe que o botão "Entrar" está desabilitado com texto "Aguarde..."</li>
+                            <li>Aguarde a página carregar completamente</li>
+                            <li>Verifique que o botão fica habilitado com texto "Entrar"</li>
+                            <li>Digite um email e senha válidos</li>
+                            <li>Clique em "Entrar"</li>
+                        </ol>
+                        <strong>Resultado Esperado:</strong> Login funciona normalmente.
+                    </div>
+                </div>
+
+                <div class="test-item pending">
+                    <div class="test-title">Teste 2: Carregamento Rápido (Possível Race Condition)</div>
+                    <div class="test-detail">
+                        <strong>Passos:</strong>
+                        <ol>
+                            <li>Abra <code>index.html</code></li>
+                            <li>IMEDIATAMENTE tente clicar no botão "Entrar" (antes dele ser habilitado)</li>
+                            <li>Observe que o botão está desabilitado e não responde ao clique</li>
+                            <li>Aguarde o botão ser habilitado</li>
+                            <li>Tente fazer login normalmente</li>
+                        </ol>
+                        <strong>Resultado Esperado:</strong> Botão desabilitado previne cliques prematuros.
+                    </div>
+                </div>
+
+                <div class="test-item pending">
+                    <div class="test-title">Teste 3: Conexão Lenta (Simular)</div>
+                    <div class="test-detail">
+                        <strong>Passos:</strong>
+                        <ol>
+                            <li>Abra DevTools (F12)</li>
+                            <li>Vá em Network tab</li>
+                            <li>Selecione "Slow 3G" no throttling</li>
+                            <li>Recarregue <code>index.html</code></li>
+                            <li>Observe o comportamento do botão de login</li>
+                            <li>Verifique logs no console</li>
+                        </ol>
+                        <strong>Resultado Esperado:</strong> Botão permanece desabilitado até Firebase carregar.
+                    </div>
+                </div>
+
+                <div class="test-item pending">
+                    <div class="test-title">Teste 4: Verificar Logs do Console</div>
+                    <div class="test-detail">
+                        <strong>Passos:</strong>
+                        <ol>
+                            <li>Abra <code>index.html</code> com DevTools aberto (F12)</li>
+                            <li>Verifique os logs no Console</li>
+                            <li>Procure por:
+                                <ul>
+                                    <li><code>[Firebase] Login button disabled - waiting for Firebase SDK</code></li>
+                                    <li><code>[Firebase] Initialized successfully</code></li>
+                                    <li><code>[Firebase] Login button enabled - Firebase is ready</code></li>
+                                </ul>
+                            </li>
+                        </ol>
+                        <strong>Resultado Esperado:</strong> Todos os logs aparecem na ordem correta.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 Verificação de Código</h2>
+            <div class="test-item info">
+                <div class="test-title">Arquivos Modificados</div>
+                <div class="test-detail">
+                    <strong>index.html:</strong>
+                    <ul>
+                        <li>Adicionado <code>id="login-button"</code> ao botão de submit</li>
+                    </ul>
+                    <strong>script.js:</strong>
+                    <ul>
+                        <li>DOMContentLoaded: Desabilita botão e define texto "Aguarde..."</li>
+                        <li>initializeApp(): Habilita botão quando Firebase inicializa</li>
+                        <li>handleLogin(): Aguarda Firebase se não estiver pronto (max 5s)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <h3>🔗 Links Rápidos</h3>
+            <button onclick="window.open('../index.html', '_blank')">
+                Abrir index.html em Nova Aba
+            </button>
+            <button onclick="window.open('test-firebase-connection.html', '_blank')">
+                Teste de Conexão Firebase
+            </button>
+        </div>
+
+        <div class="test-section">
+            <h2>🎯 Conclusão</h2>
+            <div class="test-item info">
+                <div class="test-title">Como Marcar os Testes como Concluídos</div>
+                <div class="test-detail">
+                    <ol>
+                        <li>Execute cada teste manual listado acima</li>
+                        <li>Verifique que os resultados correspondem aos esperados</li>
+                        <li>Se algum teste falhar, reporte o problema</li>
+                        <li>Se todos passarem, o sistema de login está funcionando corretamente!</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -82,33 +82,31 @@ O site está **completamente configurado** para ler dados do Firebase Realtime D
 
 ```
 Dashboard/
-├── index.html                     # Página principal
-├── script.js                      # Lógica da aplicação
-├── style.css                      # Estilos customizados
-├── firebase-config.js             # Configuração Firebase
-│
-├── tests/                         # Arquivos de teste
-│   ├── test-firebase-connection.html
-│   ├── test-data-fields.html
-│   ├── test-field-formatting.html
-│   └── test-notaspraticas-visual.html
-│
-├── scripts/                       # Google Apps Scripts
+├── 📁 .github/                    # Configurações e workflows do GitHub
+├── 📁 docs/                       # Documentação completa (40 arquivos)
+│   ├── LOGIN_FORENSIC_ANALYSIS.md # Análise do fix do login
+│   ├── LOGIN_FIX_DOCUMENTATION.md # Documentação técnica do login
+│   ├── VERIFICACAO_RAPIDA.md      # Checklist rápido
+│   ├── COMO_FUNCIONA_FIREBASE.md  # Guia Firebase
+│   └── ... (outros 36 documentos)
+├── 📁 scripts/                    # Google Apps Scripts (3 arquivos)
 │   ├── CodeFirebase.gs            # Script de exportação
 │   ├── Ponto.gs                   # Script de ponto
-│   └── PontoEscala                # Gerenciamento de escalas
+│   └── PontoEscala/               # Gerenciamento de escalas
+├── 📁 tests/                      # Testes e validações (9 arquivos)
+│   ├── test-firebase-connection.html
+│   ├── test-login-system.html
+│   ├── test-data-fields.html
+│   └── ... (outros 6 testes)
 │
-├── docs/                          # Documentação
-│   ├── VERIFICACAO_RAPIDA.md      # Checklist rápido
-│   ├── COMO_FUNCIONA_FIREBASE.md  # Documentação completa
-│   ├── QUICK_START.md             # Início rápido
-│   ├── FIREBASE_SETUP.md          # Setup detalhado
-│   ├── MIGRATION_SUMMARY.md       # Detalhes técnicos
-│   └── ... (outras documentações)
-│
-├── README.md                      # Este arquivo
-├── package.json                   # Dependências
-└── users.json                     # [LEGADO] Não usado mais
+├── 🏠 index.html                  # Página principal do dashboard
+├── ⚙️ script.js                   # Lógica da aplicação (235KB)
+├── 🎨 style.css                   # Estilos customizados (130KB)
+├── 🔥 firebase-config.js          # Configuração do Firebase
+├── 📦 package.json                # Dependências do projeto
+├── 📦 package-lock.json           # Lock file das dependências
+├── 📖 README.md                   # Este arquivo
+└── 🚫 .gitignore                  # Arquivos ignorados pelo Git
 ```
 
 ---
