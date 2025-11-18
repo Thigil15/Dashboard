@@ -1181,10 +1181,28 @@ const pontoState = {
             const password = document.getElementById("login-password").value.trim();
             const errorBox = document.getElementById("login-error");
 
+            // CRITICAL FIX: Wait for Firebase to initialize if not ready yet
             if (!fbAuth) {
-                console.error("[handleLogin] Firebase Auth não está disponível. window.firebase:", window.firebase, "fbAuth:", fbAuth);
-                showError("Firebase não inicializado. Por favor, verifique sua conexão com a internet e recarregue a página. Se o problema persistir, abra o Console do navegador (F12) para mais detalhes.", true);
-                return;
+                console.warn("[handleLogin] Firebase Auth ainda não está disponível. Aguardando inicialização...");
+                errorBox.textContent = "Inicializando sistema de autenticação...";
+                errorBox.style.display = "block";
+                
+                // Wait for Firebase to be ready (max 5 seconds)
+                const maxWaitTime = 5000;
+                const startTime = Date.now();
+                
+                while (!fbAuth && (Date.now() - startTime) < maxWaitTime) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+                
+                if (!fbAuth) {
+                    console.error("[handleLogin] Firebase Auth não está disponível após espera. window.firebase:", window.firebase, "fbAuth:", fbAuth);
+                    showError("Firebase não inicializado. Por favor, verifique sua conexão com a internet e recarregue a página. Se o problema persistir, abra o Console do navegador (F12) para mais detalhes.", true);
+                    return;
+                }
+                
+                console.log("[handleLogin] Firebase Auth agora está disponível. Prosseguindo com login...");
+                errorBox.style.display = "none";
             }
 
             try {
@@ -4492,6 +4510,14 @@ function renderTabEscala(escalas) {
         document.addEventListener('DOMContentLoaded', () => {
             console.log("DOM Carregado. Aguardando Firebase SDK...");
             
+            // CRITICAL FIX: Disable login button until Firebase is ready
+            const loginButton = document.getElementById('login-button');
+            if (loginButton) {
+                loginButton.disabled = true;
+                loginButton.textContent = 'Aguarde...';
+                console.log('[Firebase] Login button disabled - waiting for Firebase SDK');
+            }
+            
             // Setup event handlers first
             setupEventHandlers();
             
@@ -4510,6 +4536,14 @@ function renderTabEscala(escalas) {
                     showView('login-view');
                     showError('Firebase falhou ao inicializar. Verifique o console (F12) para mais detalhes e recarregue a página.', false);
                     return;
+                }
+                
+                // CRITICAL FIX: Enable login button now that Firebase is ready
+                const loginButton = document.getElementById('login-button');
+                if (loginButton) {
+                    loginButton.disabled = false;
+                    loginButton.textContent = 'Entrar';
+                    console.log('[Firebase] Login button enabled - Firebase is ready');
                 }
                 
                 // Setup Firebase Authentication State Observer
