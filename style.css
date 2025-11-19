@@ -4606,3 +4606,461 @@
         border-top: 2px solid rgba(0, 0, 0, 0.05);
     }
 }
+
+/* ========================================
+   DASHBOARD GERAL - VIBRANT LAYOUT
+   Similar to NotasTeoricas & NotasPraticas
+   ======================================== */
+
+/* === Hero Section === */
+.db-hero-section {
+    position: relative;
+    padding: 3rem 0;
+    margin-bottom: 3rem;
+    background: linear-gradient(135deg, 
+        rgba(0, 51, 160, 0.08) 0%, 
+        rgba(0, 84, 180, 0.08) 50%,
+        rgba(102, 126, 234, 0.08) 100%);
+    border-radius: 24px;
+    overflow: hidden;
+}
+
+.db-hero-section::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(0, 51, 160, 0.1) 0%, transparent 70%);
+    animation: db-hero-pulse 15s ease-in-out infinite;
+}
+
+@keyframes db-hero-pulse {
+    0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.5; }
+    50% { transform: translate(10%, 10%) scale(1.1); opacity: 0.8; }
+}
+
+.db-hero-content {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+.db-hero-title {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    color: #0033A0; /* Fallback color */
+    margin-bottom: 1rem;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+}
+
+/* Apply gradient text effect only in supporting browsers */
+@supports (background-clip: text) or (-webkit-background-clip: text) {
+    .db-hero-title {
+        background: linear-gradient(135deg, #0033A0 0%, #0054B4 50%, #667eea 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+}
+
+.db-hero-subtitle {
+    font-size: 1.125rem;
+    color: var(--content-text-secondary);
+    max-width: 600px;
+    margin: 0 auto 2rem;
+    line-height: 1.6;
+}
+
+.db-validation-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: rgba(0, 51, 160, 0.1);
+    border: 2px solid rgba(0, 51, 160, 0.3);
+    border-radius: 999px;
+    color: #0033A0;
+    font-weight: 600;
+    font-size: 0.875rem;
+    box-shadow: 0 4px 12px rgba(0, 51, 160, 0.2);
+    animation: db-badge-float 3s ease-in-out infinite;
+}
+
+@keyframes db-badge-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+.db-validation-badge svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    animation: db-check-bounce 2s ease-in-out infinite;
+}
+
+@keyframes db-check-bounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+/* === Dashboard Grid === */
+.db-dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 350px), 1fr));
+    gap: 2rem;
+    margin-bottom: 3rem;
+}
+
+/* === Progress Masterpiece === */
+.db-progress-masterpiece {
+    border-radius: 24px;
+    padding: 2.5rem;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 0 40px rgba(0, 51, 160, 0.1);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.db-gradient-blue {
+    background: linear-gradient(135deg, #0033A0 0%, #0054B4 100%);
+}
+
+@media (min-width: 769px) {
+    .db-progress-masterpiece {
+        grid-column: span 1;
+    }
+}
+
+.db-progress-masterpiece::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    animation: db-progress-shimmer 8s linear infinite;
+}
+
+@keyframes db-progress-shimmer {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.db-progress-masterpiece:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.2), 0 0 60px rgba(0, 51, 160, 0.15);
+}
+
+.db-progress-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    color: white;
+}
+
+.db-ring-container {
+    flex-shrink: 0;
+}
+
+.db-progress-ring {
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: conic-gradient(
+        rgba(255, 255, 255, 0.3) 0%,
+        rgba(255, 255, 255, 0.3) 100%
+    );
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2), inset 0 0 20px rgba(255, 255, 255, 0.1);
+}
+
+.db-progress-ring::before {
+    content: '';
+    position: absolute;
+    inset: 10px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(0, 51, 160, 0.9) 0%, rgba(0, 84, 180, 0.9) 100%);
+    box-shadow: inset 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.db-ring-value {
+    font-family: var(--font-display);
+    font-size: 3rem;
+    font-weight: 800;
+    color: white;
+    position: relative;
+    z-index: 1;
+    line-height: 1;
+}
+
+.db-ring-subtitle {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.9);
+    position: relative;
+    z-index: 1;
+    margin-top: 0.25rem;
+    font-weight: 500;
+}
+
+.db-progress-text {
+    flex: 1;
+}
+
+.db-progress-title {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 0.5rem;
+}
+
+.db-progress-description {
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+.db-progress-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.db-progress-icon {
+    width: 1.125rem;
+    height: 1.125rem;
+}
+
+.db-progress-stats {
+    font-weight: 500;
+}
+
+/* === Stats Grid === */
+.db-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.db-stat-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.db-stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+.db-stat-icon {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.db-stat-icon svg {
+    width: 1.5rem;
+    height: 1.5rem;
+    color: white;
+}
+
+.db-stat-value {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--content-text-primary);
+    line-height: 1;
+}
+
+.db-stat-label {
+    font-size: 0.875rem;
+    color: var(--content-text-secondary);
+    margin-top: 0.25rem;
+    font-weight: 500;
+}
+
+/* === Section Divider === */
+.db-section-divider {
+    height: 2px;
+    background: linear-gradient(90deg, transparent 0%, rgba(0, 51, 160, 0.3) 50%, transparent 100%);
+    margin: 3rem 0;
+    position: relative;
+}
+
+.db-section-divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 12px;
+    height: 12px;
+    background: var(--accent-blue);
+    border-radius: 50%;
+    box-shadow: 0 0 0 4px rgba(0, 51, 160, 0.1);
+}
+
+/* === Modules Grid === */
+.db-modules-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 450px), 1fr));
+    gap: 2rem;
+    margin-bottom: 3rem;
+}
+
+.db-module-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.db-module-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+}
+
+.db-module-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.db-module-icon {
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.db-module-icon svg {
+    width: 1.75rem;
+    height: 1.75rem;
+    color: white;
+}
+
+.db-module-title-group {
+    flex: 1;
+}
+
+.db-module-title {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--content-text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.db-module-subtitle {
+    font-size: 0.875rem;
+    color: var(--content-text-secondary);
+}
+
+.db-module-content {
+    padding-top: 1rem;
+    border-top: 2px solid rgba(0, 0, 0, 0.05);
+}
+
+/* === Recent Activities Card === */
+.db-recent-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.db-recent-content {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.db-recent-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.db-recent-list li {
+    padding: 1rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    transition: background-color 0.2s ease;
+}
+
+.db-recent-list li:last-child {
+    border-bottom: none;
+}
+
+.db-recent-list li:hover {
+    background-color: rgba(0, 51, 160, 0.02);
+}
+
+/* === Responsive Refinements === */
+@media (max-width: 768px) {
+    .db-hero-section {
+        padding: 2rem 0;
+    }
+    
+    .db-hero-title {
+        font-size: 2rem;
+    }
+    
+    .db-progress-content {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .db-progress-ring {
+        width: 160px;
+        height: 160px;
+    }
+    
+    .db-ring-value {
+        font-size: 2.5rem;
+    }
+    
+    .db-dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .db-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .db-module-header {
+        flex-wrap: wrap;
+    }
+}

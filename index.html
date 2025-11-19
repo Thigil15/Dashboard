@@ -108,81 +108,161 @@
 
                 <!-- View Principal: Dashboard (Layout Reorganizado) -->
                 <div id="content-dashboard" class="view-container">
-                    <h1>Dashboard Geral</h1>
+                    <!-- Hero Section -->
+                    <div class="db-hero-section">
+                        <div class="db-hero-content">
+                            <h1 class="db-hero-title">Dashboard Geral</h1>
+                            <p class="db-hero-subtitle">
+                                Visão completa e em tempo real do desempenho acadêmico e gestão do programa
+                            </p>
+                            <div class="db-validation-badge">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                </svg>
+                                Sistema Integrado Ativo
+                            </div>
+                        </div>
+                    </div>
                     
-                    <!-- KPIs Principais -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                        <div class="kpi-base-card kpi-hero-card animated-card delay-100">
-                            <div class="icon-bg kpi-icon-blue">
-                                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M17 20h5v-2a3 3 0 00-5.356-2.121M17 20v-2m0 2H5a2 2 0 01-2-2v-5a2 2 0 012-2h14a2 2 0 012 2v5a2 2 0 01-2 2h-5m-4-8a3 3 0 100-6 3 3 0 000 6z" /></svg>
-                            </div>
-                            <div>
-                                <p class="kpi-label">Total de Inscritos</p>
-                                <p id="kpi-total-students" class="kpi-value">-</p>
-                            </div>
-                        </div>
-                        <div class="kpi-base-card kpi-hero-card animated-card delay-200">
-                            <div class="icon-bg kpi-icon-green">
-                                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                            </div>
-                            <div>
-                                <p class="kpi-label">Alunos Ativos</p>
-                                <p id="kpi-active-students" class="kpi-value">-</p>
-                            </div>
-                        </div>
-                        <div class="kpi-base-card kpi-hero-card animated-card delay-300">
-                            <div class="icon-bg kpi-icon-orange">
-                                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                            </div>
-                            <div>
-                                <p class="kpi-label">Média Teórica (Geral)</p>
-                                <p id="kpi-avg-theoretical" class="kpi-value">-</p>
+                    <!-- Dashboard Grid -->
+                    <div class="db-dashboard-grid">
+                        <!-- Progress Masterpiece for Total Students -->
+                        <div class="db-progress-masterpiece db-gradient-blue">
+                            <div class="db-progress-content">
+                                <div class="db-ring-container">
+                                    <div class="db-progress-ring" id="db-ring-students">
+                                        <div class="db-ring-value" id="kpi-total-students">-</div>
+                                        <div class="db-ring-subtitle">Inscritos</div>
+                                    </div>
+                                </div>
+                                <div class="db-progress-text">
+                                    <h2 class="db-progress-title">Total de Estudantes</h2>
+                                    <p class="db-progress-description">
+                                        Todos os alunos matriculados no programa
+                                    </p>
+                                    <div class="db-progress-meta">
+                                        <svg class="db-progress-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-2.121M17 20v-2m0 2H5a2 2 0 01-2-2v-5a2 2 0 012-2h14a2 2 0 012 2v5a2 2 0 01-2 2h-5m-4-8a3 3 0 100-6 3 3 0 000 6z" />
+                                        </svg>
+                                        <span class="db-progress-stats">
+                                            Gestão Acadêmica
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="kpi-base-card kpi-hero-card animated-card delay-400">
-                            <div class="icon-bg kpi-icon-blue">
-                                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                            </div>
-                            <div>
-                                <p class="kpi-label">Média Prática (Geral)</p>
-                                <p id="kpi-avg-practical" class="kpi-value">-</p>
-                            </div>
-                        </div>
-                    </div>
 
-                    <!-- Gráficos e Resumos -->
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                        <div class="content-card p-6 animated-card delay-500 lg:col-span-2">
-                            <h2 class="content-card-header">Médias Gerais dos Módulos (Ativos)</h2>
-                            <div id="module-averages-chart" class="min-h-[160px]">
-                                <!-- Gráficos radiais pequenos serão renderizados aqui -->
+                        <!-- Stats Cards Grid -->
+                        <div class="db-stats-grid">
+                            <div class="db-stat-card">
+                                <div class="db-stat-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div class="db-stat-value" id="kpi-active-students">-</div>
+                                    <div class="db-stat-label">Alunos Ativos</div>
+                                </div>
+                            </div>
+                            <div class="db-stat-card">
+                                <div class="db-stat-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div class="db-stat-value" id="kpi-avg-theoretical">-</div>
+                                    <div class="db-stat-label">Média Teórica</div>
+                                </div>
+                            </div>
+                            <div class="db-stat-card">
+                                <div class="db-stat-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div class="db-stat-value" id="kpi-avg-practical">-</div>
+                                    <div class="db-stat-label">Média Prática</div>
+                                </div>
+                            </div>
+                            <div class="db-stat-card">
+                                <div class="db-stat-icon" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div class="db-stat-value" id="kpi-pending-replacements">-</div>
+                                    <div class="db-stat-label">Reposições Pendentes</div>
+                                </div>
                             </div>
                         </div>
-                        <div class="content-card p-6 animated-card delay-600 lg:col-span-1">
-                            <h2 class="content-card-header">Distribuição por Curso (Ativos)</h2>
-                            <div id="course-distribution-chart" class="donut-chart-container min-h-[160px]"></div>
+                    </div>
+                    
+                    <!-- Section Divider -->
+                    <div class="db-section-divider"></div>
+
+                    <!-- Módulos e Análises -->
+                    <div style="margin: 2.5rem 0 1.5rem;">
+                        <h3 style="font-family: var(--font-display); font-size: 1.75rem; font-weight: 800; color: var(--content-text-primary); margin-bottom: 0.75rem;">Análise por Módulos</h3>
+                        <p style="font-size: 1rem; color: var(--content-text-secondary);">Desempenho acadêmico completo e distribuição por curso</p>
+                    </div>
+                    
+                    <div class="db-modules-grid">
+                        <!-- Médias dos Módulos Card -->
+                        <div class="db-module-card">
+                            <div class="db-module-header">
+                                <div class="db-module-icon bg-gradient-to-br from-purple-500 to-indigo-600">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                    </svg>
+                                </div>
+                                <div class="db-module-title-group">
+                                    <h4 class="db-module-title">Médias Gerais dos Módulos</h4>
+                                    <p class="db-module-subtitle">Desempenho de alunos ativos</p>
+                                </div>
+                            </div>
+                            <div class="db-module-content">
+                                <div id="module-averages-chart" class="min-h-[160px]">
+                                    <!-- Gráficos radiais pequenos serão renderizados aqui -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Distribuição por Curso Card -->
+                        <div class="db-module-card">
+                            <div class="db-module-header">
+                                <div class="db-module-icon bg-gradient-to-br from-blue-500 to-cyan-600">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                    </svg>
+                                </div>
+                                <div class="db-module-title-group">
+                                    <h4 class="db-module-title">Distribuição por Curso</h4>
+                                    <p class="db-module-subtitle">Alunos ativos por programa</p>
+                                </div>
+                            </div>
+                            <div class="db-module-content">
+                                <div id="course-distribution-chart" class="donut-chart-container min-h-[160px]"></div>
+                            </div>
                         </div>
                     </div>
+                    
+                    <!-- Section Divider -->
+                    <div class="db-section-divider"></div>
                     
                     <!-- Registros Recentes -->
-                    <div class="grid grid-cols-1 gap-6">
-                         <div class="content-card p-6 animated-card delay-600">
-                             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                 <div class="kpi-base-card kpi-hero-card">
-                                     <div class="icon-bg kpi-icon-red">
-                                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                                     </div>
-                                     <div>
-                                         <p class="kpi-label">Reposições Pendentes</p>
-                                         <p id="kpi-pending-replacements" class="kpi-value">-</p>
-                                     </div>
-                                 </div>
-                                 <div class="md:col-span-2">
-                                     <h2 class="content-card-header mb-2 pb-2">Registros Recentes</h2>
-                                     <ul id="recent-absences-list" class="space-y-2 text-sm max-h-[200px] overflow-y-auto"></ul>
-                                 </div>
-                               </div>
-                         </div>
+                    <div style="margin: 2.5rem 0 1.5rem;">
+                        <h3 style="font-family: var(--font-display); font-size: 1.75rem; font-weight: 800; color: var(--content-text-primary); margin-bottom: 0.75rem;">Atividades Recentes</h3>
+                        <p style="font-size: 1rem; color: var(--content-text-secondary);">Últimos registros de ausências e reposições</p>
+                    </div>
+                    
+                    <div class="db-recent-card">
+                        <div class="db-recent-content">
+                            <ul id="recent-absences-list" class="db-recent-list"></ul>
+                        </div>
                     </div>
                 </div>
 
