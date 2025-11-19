@@ -1652,6 +1652,16 @@ const pontoState = {
                 document.getElementById('kpi-avg-theoretical').textContent = oTAvg > 0 ? oTAvg.toFixed(1) : 'N/A';
                 document.getElementById('kpi-avg-practical').textContent = oPAvg > 0 ? oPAvg.toFixed(1) : 'N/A';
                 
+                // Update progress bars
+                const theoreticalBar = document.getElementById('db-theoretical-bar');
+                const practicalBar = document.getElementById('db-practical-bar');
+                if (theoreticalBar && oTAvg > 0) {
+                    theoreticalBar.style.width = `${(oTAvg / 10) * 100}%`;
+                }
+                if (practicalBar && oPAvg > 0) {
+                    practicalBar.style.width = `${(oPAvg / 10) * 100}%`;
+                }
+                
                 renderCourseDistributionChart(cDist);
                 renderModuleAverages(tAvgs, pAvgs);
             } catch (e) { console.error("[renderAtAGlance] Erro:", e); showError("Erro ao renderizar visão geral."); }
