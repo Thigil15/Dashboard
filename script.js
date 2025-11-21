@@ -1340,6 +1340,49 @@ const pontoState = {
         // Data is loaded via setupDatabaseListeners() which sets up real-time listeners
 
         /**
+         * Helper function to check if a schedule value indicates a rest day
+         */
+        function isRestDayValue(dateValue) {
+            if (!dateValue || typeof dateValue !== 'string') return false;
+            const normalized = normalizeString(dateValue);
+            return normalized.includes('folga') || 
+                   normalized.includes('descanso') || 
+                   normalized.includes('semana de descanso');
+        }
+
+        /**
+         * Helper function to convert DD/MM date string to ISO format (YYYY-MM-DD)
+         * Uses current year for year inference
+         */
+        function convertDDMMToISO(dateStr) {
+            if (!dateStr || typeof dateStr !== 'string') return '';
+            const [day, month] = dateStr.split('/');
+            if (!day || !month) return '';
+            const year = new Date().getFullYear();
+            return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        }
+
+        /**
+         * Helper function to parse time information from schedule value
+         * Matches formats like: "7h às 12h", "08h as 13h", "8h a 14h - Escala 1"
+         * Format: {hours}h [às|as|a] {hours}h [optional text]
+         * Returns: { horaEntrada: "08:00", horaSaida: "13:00" } or null
+         */
+        function parseTimeFromScheduleValue(dateValue) {
+            if (!dateValue || typeof dateValue !== 'string') return null;
+            // Pattern: captures hour digits before and after separator (às/as/a)
+            // Examples: "7h às 12h", "08h as 13h", "8h a 14h - Escala 1"
+            const timeMatch = dateValue.match(/(\d{1,2})h\s*(?:às|as|a)?\s*(\d{1,2})h/i);
+            if (timeMatch) {
+                return {
+                    horaEntrada: `${timeMatch[1].padStart(2, '0')}:00`,
+                    horaSaida: `${timeMatch[2].padStart(2, '0')}:00`
+                };
+            }
+            return null;
+        }
+
+        /**
          * Extract ponto (time tracking) data from Escalas
          * This function parses time information from the date columns in Escalas
          * Format example: "08h às 13h - Escala 1" or just "08h às 13h"
@@ -1372,19 +1415,36 @@ const pontoState = {
                         const dateValue = aluno[dateStr];
                         if (!dateValue || typeof dateValue !== 'string') return;
                         
-                        // Parse time information from the value
-                        // Format: "08h às 13h - Escala 1" or "08h às 13h" or just times
-                        const timeMatch = dateValue.match(/(\d{1,2})h\s*(?:às|as|a)?\s*(\d{1,2})h/i);
+                        // Check for rest day markers first
+                        if (isRestDayValue(dateValue)) {
+                            // Create a ponto record for rest day (no times, just marker)
+                            const isoDate = convertDDMMToISO(dateStr);
+                            if (!isoDate) return;
+                            
+                            const pontoRecord = {
+                                NomeCompleto: aluno.NomeCompleto || aluno.Nome || '',
+                                EmailHC: aluno.EmailHC || aluno.Email || '',
+                                SerialNumber: aluno.SerialNumber || aluno.Serial || aluno.ID || '',
+                                DataISO: isoDate,
+                                Escala: scalaName,
+                                'Pratica/Teorica': 'Prática',
+                                _source: 'escala',
+                                _isRestDay: true // Mark as rest day
+                            };
+                            
+                            pontoRecords.push(pontoRecord);
+                            return;
+                        }
                         
-                        if (timeMatch) {
-                            const horaEntrada = `${timeMatch[1].padStart(2, '0')}:00`;
-                            const horaSaida = `${timeMatch[2].padStart(2, '0')}:00`;
+                        // Parse time information from the value
+                        const timeInfo = parseTimeFromScheduleValue(dateValue);
+                        
+                        if (timeInfo) {
+                            const { horaEntrada, horaSaida } = timeInfo;
                             
                             // Convert DD/MM to ISO date (current year)
-                            const [day, month] = dateStr.split('/');
-                            const year = new Date().getFullYear();
-                            const isoDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-                            
+                            const isoDate = convertDDMMToISO(dateStr);
+                            if (!isoDate) return;
                             // Create a ponto record
                             const pontoRecord = {
                                 NomeCompleto: aluno.NomeCompleto || aluno.Nome || '',
@@ -1395,7 +1455,9 @@ const pontoState = {
                                 HoraSaida: horaSaida,
                                 Escala: scalaName,
                                 'Pratica/Teorica': 'Prática', // Default, as escalas are typically for practical work
-                                _source: 'escala' // Mark the source as escala
+                                _source: 'escala', // Mark the source as escala
+                                _scheduledEntrada: horaEntrada, // Store as scheduled time
+                                _scheduledSaida: horaSaida
                             };
                             
                             pontoRecords.push(pontoRecord);
@@ -2051,10 +2113,16 @@ const pontoState = {
                     const serialNorm = normalizeString(serialRaw ? String(serialRaw) : '');
                     const key = nomeNorm || emailNorm || serialNorm;
                     if (!key || rosterMap.has(key)) return;
+                    
+                    // Extract the value for this specific date from the aluno's escala
+                    // The date column (e.g., "15/11") contains the schedule info like "08h às 13h" or "Folga"
+                    const dateValue = aluno[target] || '';
+                    
                     rosterMap.set(key, {
                         ...aluno,
                         __escalaNome: escala.nomeEscala || escala.nome || '',
-                        __headers: headers
+                        __headers: headers,
+                        __dateValue: dateValue // Store the schedule value for this date
                     });
                 });
             });
@@ -2090,6 +2158,21 @@ const pontoState = {
                 const escalaKey = normalizeScaleKey(escalaNome);
                 if (scaleKey !== 'all' && escalaKey !== scaleKey) return;
 
+                // Parse scheduled time from the date value in escala
+                const dateValue = entry.__dateValue || '';
+                let scheduledEntrada = null;
+                let scheduledSaida = null;
+                const isRestDay = isRestDayValue(dateValue);
+                
+                if (!isRestDay) {
+                    // Try to extract scheduled time (e.g., "08h às 13h")
+                    const timeInfo = parseTimeFromScheduleValue(dateValue);
+                    if (timeInfo) {
+                        scheduledEntrada = timeInfo.horaEntrada;
+                        scheduledSaida = timeInfo.horaSaida;
+                    }
+                }
+
                 const record = normalizePontoRecord({
                     NomeCompleto: entry.NomeCompleto || entry.nomeCompleto || entry.Nome || entry.nome || '',
                     EmailHC: entry.EmailHC || entry.Email || entry.email || '',
@@ -2103,6 +2186,19 @@ const pontoState = {
                     if (!record.escala && escalaNome) {
                         record.escala = escalaNome;
                     }
+                    
+                    // Add scheduled time and rest day info to the record
+                    if (isRestDay) {
+                        record.isRestDay = true;
+                    }
+                    if (scheduledEntrada) {
+                        record.scheduledEntrada = scheduledEntrada;
+                        record.scheduledEntradaMinutes = toMinutes(scheduledEntrada);
+                    }
+                    if (scheduledSaida) {
+                        record.scheduledSaida = scheduledSaida;
+                    }
+                    
                     rosterEntries.push({
                         ...entry,
                         __escalaNome: escalaNome,
@@ -2126,7 +2222,49 @@ const pontoState = {
 
             const baseRecords = getPontoRecords(iso, scale) || [];
             const { normalizedRecords, rosterEntries } = buildRosterNormalizedRecords(iso, scale);
-            const combined = normalizedRecords.length ? mergeRecordLists(normalizedRecords, baseRecords) : baseRecords.slice();
+            
+            // Merge roster and actual ponto records, preserving scheduled times from roster
+            let combined;
+            if (normalizedRecords.length) {
+                // Create a map of roster records to get scheduled times
+                const rosterMap = new Map();
+                normalizedRecords.forEach(record => {
+                    const key = getPontoRecordKey(record);
+                    rosterMap.set(key, record);
+                });
+                
+                // Merge with base records, adding scheduled time info
+                const mergedMap = new Map();
+                
+                // First add all roster records
+                normalizedRecords.forEach(record => {
+                    mergedMap.set(getPontoRecordKey(record), record);
+                });
+                
+                // Then overlay actual ponto records, but preserve scheduled times
+                baseRecords.forEach(record => {
+                    const key = getPontoRecordKey(record);
+                    const rosterRecord = rosterMap.get(key);
+                    
+                    // If we have a roster record with scheduled times, merge them
+                    if (rosterRecord) {
+                        mergedMap.set(key, {
+                            ...record,
+                            scheduledEntrada: rosterRecord.scheduledEntrada || record.scheduledEntrada,
+                            scheduledEntradaMinutes: rosterRecord.scheduledEntradaMinutes || record.scheduledEntradaMinutes,
+                            scheduledSaida: rosterRecord.scheduledSaida || record.scheduledSaida,
+                            isRestDay: rosterRecord.isRestDay || record.isRestDay
+                        });
+                    } else {
+                        mergedMap.set(key, record);
+                    }
+                });
+                
+                combined = Array.from(mergedMap.values());
+            } else {
+                combined = baseRecords.slice();
+            }
+            
             const enrichedRows = enrichPontoRows(combined);
 
             return { rows: enrichedRows, baseRecords, rosterEntries, rosterSize: rosterEntries.length };
@@ -2299,8 +2437,13 @@ const pontoState = {
             const emailNormalized = email ? normalizeString(email) : '';
             const nomeId = normalizeString(nome);
             const primaryId = nomeId || serialNormalized || emailNormalized || '';
+            
+            // Preserve scheduled time information if present
+            const scheduledEntrada = row._scheduledEntrada || null;
+            const scheduledSaida = row._scheduledSaida || null;
+            const isRestDay = row._isRestDay || false;
 
-            return {
+            const normalized = {
                 id: primaryId,
                 nomeId,
                 rawSerial,
@@ -2317,6 +2460,20 @@ const pontoState = {
                 email,
                 emailNormalized
             };
+            
+            // Add scheduled time fields if available
+            if (scheduledEntrada) {
+                normalized.scheduledEntrada = scheduledEntrada;
+                normalized.scheduledEntradaMinutes = toMinutes(scheduledEntrada);
+            }
+            if (scheduledSaida) {
+                normalized.scheduledSaida = scheduledSaida;
+            }
+            if (isRestDay) {
+                normalized.isRestDay = true;
+            }
+            
+            return normalized;
         }
 
         // Legacy applyPontoData() removed - data organization now handled by Firebase listeners
@@ -2541,28 +2698,67 @@ const pontoState = {
         }
 
         function enrichPontoRows(rows = []) {
-            const baselineByScale = new Map();
+            // Build a map of scheduled times per student (from roster/escala data)
+            // These are the expected times based on their schedule
+            const scheduledTimesMap = new Map();
             rows.forEach((row) => {
-                if (Number.isFinite(row.horaEntradaMinutes)) {
-                    const current = baselineByScale.get(row.escalaKey);
-                    baselineByScale.set(row.escalaKey, current === undefined ? row.horaEntradaMinutes : Math.min(current, row.horaEntradaMinutes));
+                if (row.scheduledEntradaMinutes !== undefined && row.scheduledEntradaMinutes !== null) {
+                    const key = row.id || row.nomeId;
+                    if (key) {
+                        scheduledTimesMap.set(key, row.scheduledEntradaMinutes);
+                    }
                 }
             });
 
             return rows.map((row) => {
-                const baseline = baselineByScale.get(row.escalaKey);
                 let status = 'absent';
                 let statusLabel = 'Falta';
                 let badgeClass = 'badge badge-red';
                 let delayMinutes = null;
 
+                // Check if this is a scheduled rest day
+                if (row.isRestDay) {
+                    status = 'off';
+                    statusLabel = 'Folga';
+                    badgeClass = 'badge badge-gray';
+                    
+                    const searchKey = normalizeString([
+                        row.nome,
+                        row.escala,
+                        row.modalidade,
+                        row.horaEntrada,
+                        row.horaSaida,
+                        row.email,
+                        row.rawSerial,
+                        statusLabel
+                    ].filter(Boolean).join(' '));
+
+                    return {
+                        ...row,
+                        status,
+                        statusLabel,
+                        badgeClass,
+                        delayMinutes,
+                        searchKey,
+                        dataBR: formatDateBR(row.isoDate)
+                    };
+                }
+
+                // If student has actual arrival time
                 if (Number.isFinite(row.horaEntradaMinutes)) {
-                    if (baseline !== undefined && baseline !== null) {
-                        const diff = Math.max(0, row.horaEntradaMinutes - baseline);
+                    // Get the scheduled time for this student
+                    const key = row.id || row.nomeId;
+                    const scheduledTime = key ? scheduledTimesMap.get(key) : null;
+                    
+                    // If we have a scheduled time, compare against it
+                    // Otherwise, student is present (no delay calculation possible)
+                    if (scheduledTime != null && Number.isFinite(scheduledTime)) {
+                        const diff = Math.max(0, row.horaEntradaMinutes - scheduledTime);
                         delayMinutes = diff;
+                        
                         if (diff > ATRASO_THRESHOLD_MINUTES) {
                             status = 'late';
-                            statusLabel = diff ? `Atraso (+${diff} min)` : 'Atraso';
+                            statusLabel = `Atraso (+${diff} min)`;
                             badgeClass = 'badge badge-yellow';
                         } else {
                             status = 'present';
@@ -2570,6 +2766,9 @@ const pontoState = {
                             badgeClass = 'badge badge-green';
                         }
                     } else {
+                        // No scheduled time available - mark as present without delay calculation
+                        // This happens when: 1) Student not in roster for this date, or 
+                        // 2) Escala data doesn't have time info, or 3) Legacy ponto data
                         status = 'present';
                         statusLabel = 'Presente';
                         badgeClass = 'badge badge-green';
@@ -2606,7 +2805,13 @@ const pontoState = {
                 const presentCount = enriched.filter((row) => row.status === 'present' || row.status === 'late').length;
                 const lateCount = enriched.filter((row) => row.status === 'late').length;
                 const absentCount = enriched.filter((row) => row.status === 'absent').length;
-                const totalEscalados = Math.max(dataset.rosterSize || 0, enriched.length || 0, TOTAL_ESCALADOS);
+                const offCount = enriched.filter((row) => row.status === 'off').length;
+                // Total escalados should not include people on rest days
+                const totalEscalados = Math.max(
+                    Math.max(0, (dataset.rosterSize || 0) - offCount), 
+                    Math.max(0, (enriched.length - offCount) || 0), 
+                    Math.max(0, TOTAL_ESCALADOS - offCount)
+                );
 
                 updatePontoSummary({
                     total: totalEscalados,

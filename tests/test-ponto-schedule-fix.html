@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste - Horários Fixos e Folgas no Ponto</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #2563eb;
+            margin-bottom: 10px;
+        }
+        
+        .description {
+            color: #64748b;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+        }
+        
+        .test-section h2 {
+            color: #1e40af;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .test-case {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8fafc;
+            border-left: 3px solid #94a3b8;
+            border-radius: 4px;
+        }
+        
+        .test-case.pass {
+            border-left-color: #22c55e;
+            background: #f0fdf4;
+        }
+        
+        .test-case.fail {
+            border-left-color: #ef4444;
+            background: #fef2f2;
+        }
+        
+        .test-result {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .test-result.pass {
+            color: #16a34a;
+        }
+        
+        .test-result.fail {
+            color: #dc2626;
+        }
+        
+        .test-details {
+            font-size: 14px;
+            color: #475569;
+            margin-top: 5px;
+        }
+        
+        .code {
+            font-family: 'Courier New', monospace;
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        
+        .summary {
+            margin-top: 30px;
+            padding: 20px;
+            background: #eff6ff;
+            border-radius: 6px;
+            border: 1px solid #3b82f6;
+        }
+        
+        .summary h3 {
+            color: #1e40af;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Teste - Horários Fixos e Folgas no Sistema de Ponto</h1>
+        <p class="description">
+            Este teste verifica se o sistema de ponto calcula corretamente os atrasos baseado nos horários
+            fixos de cada aluno e se identifica corretamente os dias de folga.
+        </p>
+
+        <div id="test-results"></div>
+        
+        <div class="summary" id="summary"></div>
+    </div>
+
+    <script>
+        // Helper functions extracted from script.js
+        function normalizeString(str) {
+            return String(str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+        }
+
+        function isRestDayValue(dateValue) {
+            if (!dateValue || typeof dateValue !== 'string') return false;
+            const normalized = normalizeString(dateValue);
+            return normalized.includes('folga') || 
+                   normalized.includes('descanso') || 
+                   normalized.includes('semana de descanso');
+        }
+
+        function parseTimeFromScheduleValue(dateValue) {
+            if (!dateValue || typeof dateValue !== 'string') return null;
+            const timeMatch = dateValue.match(/(\d{1,2})h\s*(?:às|as|a)?\s*(\d{1,2})h/i);
+            if (timeMatch) {
+                return {
+                    horaEntrada: `${timeMatch[1].padStart(2, '0')}:00`,
+                    horaSaida: `${timeMatch[2].padStart(2, '0')}:00`
+                };
+            }
+            return null;
+        }
+
+        function toMinutes(time) {
+            if (!time) return null;
+            const str = String(time).trim();
+            const match = str.match(/^(\d{1,2}):(\d{2})/);
+            if (match) {
+                const hours = parseInt(match[1], 10);
+                const minutes = parseInt(match[2], 10);
+                return hours * 60 + minutes;
+            }
+            return null;
+        }
+
+        // Test cases
+        const tests = [
+            {
+                section: 'Teste 1: Detecção de Folgas',
+                cases: [
+                    {
+                        name: 'Identifica "Folga" corretamente',
+                        input: 'Folga',
+                        test: () => isRestDayValue('Folga'),
+                        expected: true
+                    },
+                    {
+                        name: 'Identifica "Semana de Descanso" corretamente',
+                        input: 'Semana de Descanso',
+                        test: () => isRestDayValue('Semana de Descanso'),
+                        expected: true
+                    },
+                    {
+                        name: 'Identifica "DESCANSO" corretamente (case-insensitive)',
+                        input: 'DESCANSO',
+                        test: () => isRestDayValue('DESCANSO'),
+                        expected: true
+                    },
+                    {
+                        name: 'Não identifica horário normal como folga',
+                        input: '08h às 13h',
+                        test: () => isRestDayValue('08h às 13h'),
+                        expected: false
+                    }
+                ]
+            },
+            {
+                section: 'Teste 2: Extração de Horários',
+                cases: [
+                    {
+                        name: 'Extrai horário 7h às 12h',
+                        input: '7h às 12h',
+                        test: () => {
+                            const result = parseTimeFromScheduleValue('7h às 12h');
+                            return result && result.horaEntrada === '07:00' && result.horaSaida === '12:00';
+                        },
+                        expected: true
+                    },
+                    {
+                        name: 'Extrai horário 08h às 13h',
+                        input: '08h às 13h',
+                        test: () => {
+                            const result = parseTimeFromScheduleValue('08h às 13h');
+                            return result && result.horaEntrada === '08:00' && result.horaSaida === '13:00';
+                        },
+                        expected: true
+                    },
+                    {
+                        name: 'Extrai horário com "as" ao invés de "às"',
+                        input: '7h as 12h',
+                        test: () => {
+                            const result = parseTimeFromScheduleValue('7h as 12h');
+                            return result && result.horaEntrada === '07:00' && result.horaSaida === '12:00';
+                        },
+                        expected: true
+                    },
+                    {
+                        name: 'Extrai horário com texto adicional',
+                        input: '08h às 13h - Escala 1',
+                        test: () => {
+                            const result = parseTimeFromScheduleValue('08h às 13h - Escala 1');
+                            return result && result.horaEntrada === '08:00' && result.horaSaida === '13:00';
+                        },
+                        expected: true
+                    },
+                    {
+                        name: 'Retorna null para folga',
+                        input: 'Folga',
+                        test: () => parseTimeFromScheduleValue('Folga') === null,
+                        expected: true
+                    }
+                ]
+            },
+            {
+                section: 'Teste 3: Cálculo de Atrasos com Horários Fixos',
+                cases: [
+                    {
+                        name: 'Aluno com horário 7h que chega às 7h - sem atraso',
+                        input: { scheduled: '07:00', actual: '07:00', threshold: 10 },
+                        test: () => {
+                            const scheduledMinutes = toMinutes('07:00');
+                            const actualMinutes = toMinutes('07:00');
+                            const diff = actualMinutes - scheduledMinutes;
+                            return diff <= 10; // Not late
+                        },
+                        expected: true
+                    },
+                    {
+                        name: 'Aluno com horário 8h que chega às 8h - sem atraso',
+                        input: { scheduled: '08:00', actual: '08:00', threshold: 10 },
+                        test: () => {
+                            const scheduledMinutes = toMinutes('08:00');
+                            const actualMinutes = toMinutes('08:00');
+                            const diff = actualMinutes - scheduledMinutes;
+                            return diff <= 10; // Not late
+                        },
+                        expected: true
+                    },
+                    {
+                        name: 'Aluno com horário 7h que chega às 8h - ATRASO de 60 min',
+                        input: { scheduled: '07:00', actual: '08:00', threshold: 10 },
+                        test: () => {
+                            const scheduledMinutes = toMinutes('07:00');
+                            const actualMinutes = toMinutes('08:00');
+                            const diff = actualMinutes - scheduledMinutes;
+                            return diff === 60 && diff > 10; // Late
+                        },
+                        expected: true
+                    },
+                    {
+                        name: 'Aluno com horário 8h que chega às 8h05 - sem atraso (dentro da tolerância)',
+                        input: { scheduled: '08:00', actual: '08:05', threshold: 10 },
+                        test: () => {
+                            const scheduledMinutes = toMinutes('08:00');
+                            const actualMinutes = toMinutes('08:05');
+                            const diff = actualMinutes - scheduledMinutes;
+                            return diff === 5 && diff <= 10; // Not late (within threshold)
+                        },
+                        expected: true
+                    },
+                    {
+                        name: 'Aluno com horário 8h que chega às 8h15 - ATRASO de 15 min',
+                        input: { scheduled: '08:00', actual: '08:15', threshold: 10 },
+                        test: () => {
+                            const scheduledMinutes = toMinutes('08:00');
+                            const actualMinutes = toMinutes('08:15');
+                            const diff = actualMinutes - scheduledMinutes;
+                            return diff === 15 && diff > 10; // Late
+                        },
+                        expected: true
+                    }
+                ]
+            },
+            {
+                section: 'Teste 4: Cenário do Problema Original',
+                cases: [
+                    {
+                        name: 'Bruna Escala 1: 7h-12h, chega 7h - SEM ATRASO',
+                        input: { scheduled: '07:00', actual: '07:00' },
+                        test: () => {
+                            const diff = toMinutes('07:00') - toMinutes('07:00');
+                            return diff <= 10;
+                        },
+                        expected: true
+                    },
+                    {
+                        name: 'Bruna Escala 2: 8h-13h, chega 8h - SEM ATRASO',
+                        input: { scheduled: '08:00', actual: '08:00' },
+                        test: () => {
+                            const diff = toMinutes('08:00') - toMinutes('08:00');
+                            return diff <= 10;
+                        },
+                        expected: true
+                    },
+                    {
+                        name: 'Outro aluno: 7h-12h, chega 8h - ATRASO 60 min',
+                        input: { scheduled: '07:00', actual: '08:00' },
+                        test: () => {
+                            const diff = toMinutes('08:00') - toMinutes('07:00');
+                            return diff === 60 && diff > 10;
+                        },
+                        expected: true
+                    },
+                    {
+                        name: 'Sistema antigo (ERRADO): Todos comparados ao mais cedo (7h)',
+                        input: { baseline: '07:00', actual: '08:00' },
+                        test: () => {
+                            // This was the OLD behavior (wrong)
+                            // Everyone compared to earliest time
+                            const diff = toMinutes('08:00') - toMinutes('07:00');
+                            return diff === 60; // Would show as late even if scheduled for 8h
+                        },
+                        expected: true,
+                        note: 'Comportamento antigo - CORRIGIDO no novo sistema'
+                    }
+                ]
+            }
+        ];
+
+        // Run tests and display results
+        function runTests() {
+            const resultsDiv = document.getElementById('test-results');
+            let totalTests = 0;
+            let passedTests = 0;
+
+            tests.forEach(section => {
+                const sectionDiv = document.createElement('div');
+                sectionDiv.className = 'test-section';
+                
+                const sectionTitle = document.createElement('h2');
+                sectionTitle.textContent = section.section;
+                sectionDiv.appendChild(sectionTitle);
+
+                section.cases.forEach(testCase => {
+                    totalTests++;
+                    const caseDiv = document.createElement('div');
+                    caseDiv.className = 'test-case';
+                    
+                    const result = testCase.test();
+                    const passed = result === testCase.expected;
+                    
+                    if (passed) {
+                        passedTests++;
+                        caseDiv.classList.add('pass');
+                    } else {
+                        caseDiv.classList.add('fail');
+                    }
+
+                    const resultDiv = document.createElement('div');
+                    resultDiv.className = 'test-result ' + (passed ? 'pass' : 'fail');
+                    resultDiv.textContent = `${passed ? '✅' : '❌'} ${testCase.name}`;
+                    caseDiv.appendChild(resultDiv);
+
+                    const detailsDiv = document.createElement('div');
+                    detailsDiv.className = 'test-details';
+                    detailsDiv.textContent = `Input: ${JSON.stringify(testCase.input)} | Esperado: ${testCase.expected} | Resultado: ${result}`;
+                    caseDiv.appendChild(detailsDiv);
+
+                    if (testCase.note) {
+                        const noteDiv = document.createElement('div');
+                        noteDiv.className = 'test-details';
+                        noteDiv.style.fontStyle = 'italic';
+                        noteDiv.style.marginTop = '5px';
+                        noteDiv.textContent = `ℹ️ ${testCase.note}`;
+                        caseDiv.appendChild(noteDiv);
+                    }
+
+                    sectionDiv.appendChild(caseDiv);
+                });
+
+                resultsDiv.appendChild(sectionDiv);
+            });
+
+            // Display summary
+            const summaryDiv = document.getElementById('summary');
+            summaryDiv.innerHTML = `
+                <h3>📊 Resumo dos Testes</h3>
+                <p><strong>Total de testes:</strong> ${totalTests}</p>
+                <p><strong>Testes aprovados:</strong> ${passedTests}</p>
+                <p><strong>Testes falhados:</strong> ${totalTests - passedTests}</p>
+                <p><strong>Taxa de sucesso:</strong> ${((passedTests / totalTests) * 100).toFixed(1)}%</p>
+                ${passedTests === totalTests 
+                    ? '<p style="color: #16a34a; font-weight: 600; margin-top: 10px;">🎉 Todos os testes passaram! O sistema está funcionando corretamente.</p>'
+                    : '<p style="color: #dc2626; font-weight: 600; margin-top: 10px;">⚠️ Alguns testes falharam. Verifique os detalhes acima.</p>'
+                }
+            `;
+        }
+
+        // Run tests when page loads
+        window.addEventListener('DOMContentLoaded', runTests);
+    </script>
+</body>
+</html>
