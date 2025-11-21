@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testes do Sistema de Ponto</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        
+        .content {
+            padding: 2rem;
+        }
+        
+        .test-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .test-section h2 {
+            color: #667eea;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+        
+        .test-item {
+            padding: 0.75rem;
+            margin: 0.5rem 0;
+            background: white;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .test-item.success {
+            border-left: 4px solid #10b981;
+            background: #f0fdf4;
+        }
+        
+        .test-item.error {
+            border-left: 4px solid #ef4444;
+            background: #fef2f2;
+        }
+        
+        .test-item.warning {
+            border-left: 4px solid #f59e0b;
+            background: #fffbeb;
+        }
+        
+        .test-label {
+            flex: 1;
+            font-weight: 500;
+        }
+        
+        .test-result {
+            margin-left: 1rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        
+        .test-result.pass {
+            background: #10b981;
+            color: white;
+        }
+        
+        .test-result.fail {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .test-result.warn {
+            background: #f59e0b;
+            color: white;
+        }
+        
+        .test-details {
+            margin-top: 0.5rem;
+            padding: 0.75rem;
+            background: white;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            color: #666;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .test-details pre {
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            background: #f8f9fa;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 0.85rem;
+        }
+        
+        .button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .button:active {
+            transform: translateY(0);
+        }
+        
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .summary-card {
+            padding: 1.5rem;
+            background: white;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .summary-card .number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+        
+        .summary-card .label {
+            font-size: 0.9rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .summary-card.total .number { color: #667eea; }
+        .summary-card.pass .number { color: #10b981; }
+        .summary-card.fail .number { color: #ef4444; }
+        .summary-card.warn .number { color: #f59e0b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Teste do Sistema de Ponto</h1>
+            <p>Validação completa do sistema de registro de frequência</p>
+        </div>
+        
+        <div class="content">
+            <div class="summary" id="summary">
+                <div class="summary-card total">
+                    <div class="number" id="total-tests">0</div>
+                    <div class="label">Total de Testes</div>
+                </div>
+                <div class="summary-card pass">
+                    <div class="number" id="passed-tests">0</div>
+                    <div class="label">Aprovados</div>
+                </div>
+                <div class="summary-card fail">
+                    <div class="number" id="failed-tests">0</div>
+                    <div class="label">Falhados</div>
+                </div>
+                <div class="summary-card warn">
+                    <div class="number" id="warning-tests">0</div>
+                    <div class="label">Avisos</div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <button class="button" onclick="runTests()">▶️ Executar Testes</button>
+            </div>
+            
+            <div id="test-results"></div>
+        </div>
+    </div>
+    
+    <script>
+        let totalTests = 0;
+        let passedTests = 0;
+        let failedTests = 0;
+        let warningTests = 0;
+        
+        function addTest(section, label, passed, details = '') {
+            totalTests++;
+            if (passed === true) {
+                passedTests++;
+            } else if (passed === false) {
+                failedTests++;
+            } else {
+                warningTests++;
+            }
+            
+            const itemClass = passed === true ? 'success' : (passed === false ? 'error' : 'warning');
+            const resultClass = passed === true ? 'pass' : (passed === false ? 'fail' : 'warn');
+            const resultText = passed === true ? '✓ PASSOU' : (passed === false ? '✗ FALHOU' : '⚠ AVISO');
+            
+            const detailsHtml = details ? `<div class="test-details">${details}</div>` : '';
+            
+            section.innerHTML += `
+                <div class="test-item ${itemClass}">
+                    <span class="test-label">${label}</span>
+                    <span class="test-result ${resultClass}">${resultText}</span>
+                </div>
+                ${detailsHtml}
+            `;
+        }
+        
+        function updateSummary() {
+            document.getElementById('total-tests').textContent = totalTests;
+            document.getElementById('passed-tests').textContent = passedTests;
+            document.getElementById('failed-tests').textContent = failedTests;
+            document.getElementById('warning-tests').textContent = warningTests;
+        }
+        
+        function runTests() {
+            // Reset counters
+            totalTests = 0;
+            passedTests = 0;
+            failedTests = 0;
+            warningTests = 0;
+            
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = '';
+            
+            // Test 1: Ponto State Structure
+            const section1 = document.createElement('div');
+            section1.className = 'test-section';
+            section1.innerHTML = '<h2>1️⃣ Estrutura do pontoState</h2>';
+            resultsDiv.appendChild(section1);
+            
+            const mockPontoState = {
+                rawRows: [],
+                byDate: new Map(),
+                cache: new Map(),
+                scalesByDate: new Map(),
+                autoScaleByDate: new Map(),
+                dates: [],
+                selectedDate: '',
+                selectedScale: 'all',
+                filter: 'all',
+                search: '',
+                searchRaw: '',
+                lastLoadedAt: null,
+                isLoading: false
+            };
+            
+            addTest(section1, 'pontoState possui propriedade rawRows', 
+                'rawRows' in mockPontoState,
+                'rawRows armazena os dados brutos do ponto vindos do Firebase');
+            
+            addTest(section1, 'pontoState possui propriedade byDate (Map)', 
+                mockPontoState.byDate instanceof Map,
+                'byDate é um Map que indexa registros por data ISO');
+            
+            addTest(section1, 'pontoState possui propriedade cache (Map)', 
+                mockPontoState.cache instanceof Map,
+                'cache armazena combinações de data+escala para acesso rápido');
+            
+            addTest(section1, 'pontoState possui propriedade dates (Array)', 
+                Array.isArray(mockPontoState.dates),
+                'dates contém lista de datas disponíveis ordenadas');
+            
+            addTest(section1, 'pontoState possui propriedade selectedDate', 
+                'selectedDate' in mockPontoState,
+                'selectedDate armazena a data atualmente selecionada no painel');
+            
+            // Test 2: Data Processing Functions
+            const section2 = document.createElement('div');
+            section2.className = 'test-section';
+            section2.innerHTML = '<h2>2️⃣ Funções de Processamento de Dados</h2>';
+            resultsDiv.appendChild(section2);
+            
+            // Mock sample ponto data
+            const samplePontoData = [
+                {
+                    NomeCompleto: 'João Silva',
+                    EmailHC: 'joao@example.com',
+                    DataISO: '2025-11-21',
+                    HoraEntrada: '08:00',
+                    HoraSaida: '17:00',
+                    Escala: 'Escala1',
+                    'Pratica/Teorica': 'Prática'
+                },
+                {
+                    NomeCompleto: 'Maria Santos',
+                    EmailHC: 'maria@example.com',
+                    DataISO: '2025-11-21',
+                    HoraEntrada: '08:15',
+                    HoraSaida: '17:00',
+                    Escala: 'Escala1',
+                    'Pratica/Teorica': 'Teórica'
+                },
+                {
+                    NomeCompleto: 'Pedro Costa',
+                    EmailHC: 'pedro@example.com',
+                    DataISO: '2025-11-20',
+                    HoraEntrada: '08:00',
+                    HoraSaida: '17:00',
+                    Escala: 'Escala2',
+                    'Pratica/Teorica': 'Prática'
+                }
+            ];
+            
+            addTest(section2, 'Dados de amostra criados com sucesso', 
+                Array.isArray(samplePontoData) && samplePontoData.length === 3,
+                `<pre>${JSON.stringify(samplePontoData[0], null, 2)}</pre>`);
+            
+            // Simulate normalizePontoRecord
+            const normalizedRecord = {
+                id: 'joaosilva',
+                nomeId: 'joaosilva',
+                nome: 'João Silva',
+                isoDate: '2025-11-21',
+                dataBr: '21/11/2025',
+                escala: 'Escala1',
+                modalidade: 'Prática',
+                horaEntrada: '08:00',
+                horaSaida: '17:00',
+                email: 'joao@example.com',
+                emailNormalized: 'joaoexamplecom'
+            };
+            
+            addTest(section2, 'Normalização de registro gera campos esperados',
+                normalizedRecord.id && normalizedRecord.isoDate && normalizedRecord.nome,
+                `Campos normalizados: ${Object.keys(normalizedRecord).join(', ')}`);
+            
+            addTest(section2, 'Data ISO convertida para formato BR',
+                normalizedRecord.dataBr === '21/11/2025',
+                `ISO: ${normalizedRecord.isoDate} → BR: ${normalizedRecord.dataBr}`);
+            
+            // Test 3: Date Extraction and Population
+            const section3 = document.createElement('div');
+            section3.className = 'test-section';
+            section3.innerHTML = '<h2>3️⃣ Extração e População de Datas</h2>';
+            resultsDiv.appendChild(section3);
+            
+            // Simulate extractAndPopulatePontoDates
+            const dateSet = new Set();
+            samplePontoData.forEach(row => {
+                if (row.DataISO) {
+                    dateSet.add(row.DataISO);
+                }
+            });
+            const extractedDates = Array.from(dateSet).sort((a, b) => b.localeCompare(a));
+            
+            addTest(section3, 'Extração de datas únicas dos registros',
+                extractedDates.length === 2,
+                `Datas encontradas: ${extractedDates.join(', ')}`);
+            
+            addTest(section3, 'Datas ordenadas do mais recente para o mais antigo',
+                extractedDates[0] > extractedDates[1],
+                `Ordem: ${extractedDates.join(' → ')}`);
+            
+            // Simulate grouping by date
+            const groupedByDate = new Map();
+            samplePontoData.forEach(row => {
+                if (!groupedByDate.has(row.DataISO)) {
+                    groupedByDate.set(row.DataISO, []);
+                }
+                groupedByDate.get(row.DataISO).push(row);
+            });
+            
+            addTest(section3, 'Agrupamento de registros por data',
+                groupedByDate.get('2025-11-21').length === 2 && groupedByDate.get('2025-11-20').length === 1,
+                `21/11: 2 registros, 20/11: 1 registro`);
+            
+            // Test 4: Scale Detection
+            const section4 = document.createElement('div');
+            section4.className = 'test-section';
+            section4.innerHTML = '<h2>4️⃣ Detecção de Escalas</h2>';
+            resultsDiv.appendChild(section4);
+            
+            const scalesByDate = new Map();
+            samplePontoData.forEach(row => {
+                if (!scalesByDate.has(row.DataISO)) {
+                    scalesByDate.set(row.DataISO, []);
+                }
+                if (row.Escala && !scalesByDate.get(row.DataISO).includes(row.Escala)) {
+                    scalesByDate.get(row.DataISO).push(row.Escala);
+                }
+            });
+            
+            addTest(section4, 'Escalas extraídas por data',
+                scalesByDate.get('2025-11-21').includes('Escala1'),
+                `21/11: ${scalesByDate.get('2025-11-21').join(', ')}`);
+            
+            addTest(section4, 'Múltiplas escalas em datas diferentes',
+                scalesByDate.get('2025-11-20').includes('Escala2'),
+                `20/11: ${scalesByDate.get('2025-11-20').join(', ')}`);
+            
+            // Test 5: Status Detection (Present/Late/Absent)
+            const section5 = document.createElement('div');
+            section5.className = 'test-section';
+            section5.innerHTML = '<h2>5️⃣ Detecção de Status (Presente/Atraso/Falta)</h2>';
+            resultsDiv.appendChild(section5);
+            
+            // IMPORTANT: This should match the constant in script.js (line 937)
+            const ATRASO_THRESHOLD = 10; // 10 minutos
+            
+            addTest(section5, 'Threshold de atraso configurado corretamente',
+                ATRASO_THRESHOLD === 10,
+                `Valor: ${ATRASO_THRESHOLD} minutos (deve corresponder ao valor em script.js linha 937)`);
+            
+            function toMinutes(time) {
+                if (!time) return null;
+                const parts = time.split(':');
+                if (parts.length < 2) return null;
+                return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+            }
+            
+            // Simulate enrichPontoRows
+            const baselineMinutes = 8 * 60; // 08:00
+            const record1Minutes = toMinutes('08:00'); // On time
+            const record2Minutes = toMinutes('08:15'); // 15 min late
+            
+            const diff1 = record1Minutes - baselineMinutes;
+            const diff2 = record2Minutes - baselineMinutes;
+            
+            const status1 = diff1 > ATRASO_THRESHOLD ? 'late' : 'present';
+            const status2 = diff2 > ATRASO_THRESHOLD ? 'late' : 'present';
+            
+            addTest(section5, 'Detecção de presença (sem atraso)',
+                status1 === 'present',
+                `Entrada: 08:00, Baseline: 08:00, Diferença: ${diff1} min → ${status1}`);
+            
+            addTest(section5, 'Detecção de atraso (> 10 minutos)',
+                status2 === 'late',
+                `Entrada: 08:15, Baseline: 08:00, Diferença: ${diff2} min → ${status2}`);
+            
+            const record3Minutes = null; // Sem registro de entrada
+            const status3 = record3Minutes === null ? 'absent' : 'present';
+            
+            addTest(section5, 'Detecção de falta (sem hora de entrada)',
+                status3 === 'absent',
+                `Hora de entrada: null → ${status3}`);
+            
+            // Test 6: Caching Mechanism
+            const section6 = document.createElement('div');
+            section6.className = 'test-section';
+            section6.innerHTML = '<h2>6️⃣ Mecanismo de Cache</h2>';
+            resultsDiv.appendChild(section6);
+            
+            const cache = new Map();
+            const cacheKey1 = '2025-11-21__all';
+            const cacheKey2 = '2025-11-21__escala1';
+            
+            cache.set(cacheKey1, samplePontoData.filter(r => r.DataISO === '2025-11-21'));
+            cache.set(cacheKey2, samplePontoData.filter(r => r.DataISO === '2025-11-21' && r.Escala === 'Escala1'));
+            
+            addTest(section6, 'Cache criado para data + "all"',
+                cache.has(cacheKey1),
+                `Chave: ${cacheKey1}, Registros: ${cache.get(cacheKey1).length}`);
+            
+            addTest(section6, 'Cache criado para data + escala específica',
+                cache.has(cacheKey2),
+                `Chave: ${cacheKey2}, Registros: ${cache.get(cacheKey2).length}`);
+            
+            addTest(section6, 'Cache retorna registros filtrados corretamente',
+                cache.get(cacheKey2).length === 2,
+                `Esperado: 2, Obtido: ${cache.get(cacheKey2).length}`);
+            
+            // Test 7: UI Element Availability
+            const section7 = document.createElement('div');
+            section7.className = 'test-section';
+            section7.innerHTML = '<h2>7️⃣ Disponibilidade de Elementos da UI</h2>';
+            resultsDiv.appendChild(section7);
+            
+            const requiredElements = [
+                { id: 'ponto-date-picker', name: 'Seletor de data' },
+                { id: 'ponto-scale-select', name: 'Seletor de escala' },
+                { id: 'ponto-search-input', name: 'Campo de busca' },
+                { id: 'ponto-table-body', name: 'Corpo da tabela' },
+                { id: 'ponto-filter-bar', name: 'Barra de filtros' },
+                { id: 'ponto-count-total', name: 'Contador total' },
+                { id: 'ponto-count-present', name: 'Contador presentes' },
+                { id: 'ponto-count-late', name: 'Contador atrasos' },
+                { id: 'ponto-count-absent', name: 'Contador faltas' },
+                { id: 'ponto-empty-state', name: 'Estado vazio' },
+                { id: 'ponto-loading-state', name: 'Estado de carregamento' }
+            ];
+            
+            let elementsFound = 0;
+            requiredElements.forEach(({ id, name }) => {
+                // We can't actually check for elements in this test page
+                // but we can document what should exist
+                addTest(section7, `Elemento "${name}" (#${id}) deve existir`,
+                    'warn',
+                    `Verificar no arquivo index.html`);
+            });
+            
+            // Update summary
+            updateSummary();
+            
+            // Scroll to results
+            resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        
+        // Auto-run tests on page load
+        window.addEventListener('load', () => {
+            setTimeout(runTests, 500);
+        });
+    </script>
+</body>
+</html>

@@ -95,6 +95,24 @@
                         console.log(`[setupDatabaseListeners] ✅ Ponto carregado com ${processed.length} registros`);
                         console.log('[setupDatabaseListeners] Campos disponíveis no Ponto:', sampleFields.slice(0, 15).join(', '));
                         
+                        // IMPORTANT: Process ponto data immediately after loading
+                        // This populates pontoState with dates and records
+                        try {
+                            extractAndPopulatePontoDates(processed);
+                            updatePontoHojeMap();
+                            console.log('[setupDatabaseListeners] ✅ Ponto data processado:', {
+                                datas: pontoState.dates.length,
+                                registros: pontoState.byDate.size
+                            });
+                        } catch (error) {
+                            console.error('[setupDatabaseListeners] ❌ Erro ao processar dados do ponto:', error);
+                            console.error('[setupDatabaseListeners] Stack trace:', error.stack);
+                            console.error('[setupDatabaseListeners] Dados recebidos:', {
+                                totalRegistros: processed.length,
+                                primeiroRegistro: processed[0] ? Object.keys(processed[0]) : 'nenhum'
+                            });
+                        }
+                        
                         // Check for Prática/Teórica field variations
                         const praticaTeoricaField = sampleFields.find(f => 
                             f.toLowerCase().includes('pratica') || 
@@ -112,10 +130,35 @@
                     extractAndPopulatePontoDates(processed);
                     return processed;
                 }},
+                // NEW: PontoPratica - Current scale ponto data
+                { path: 'exportAll/PontoPratica/dados', stateKey: 'pontoPraticaRows', processor: (data) => {
+                    const processed = (data || []).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
+                    
+                    if (processed.length > 0 && processed[0]) {
+                        const sampleFields = Object.keys(processed[0]);
+                        console.log(`[setupDatabaseListeners] ✅ PontoPratica carregado com ${processed.length} registros`);
+                        console.log('[setupDatabaseListeners] Campos disponíveis no PontoPratica:', sampleFields.slice(0, 15).join(', '));
+                        
+                        // Process PontoPratica data
+                        try {
+                            // PontoPratica data will be merged with Escalas data in extractAndPopulatePontoDates
+                            extractAndPopulatePontoDates(processed, true); // true = from PontoPratica
+                            updatePontoHojeMap();
+                            console.log('[setupDatabaseListeners] ✅ PontoPratica data processado');
+                        } catch (error) {
+                            console.error('[setupDatabaseListeners] ❌ Erro ao processar PontoPratica:', error);
+                            console.error('[setupDatabaseListeners] Stack trace:', error.stack);
+                        }
+                    }
+                    
+                    return processed;
+                }},
                 // Escalas - may need special handling
                 { path: 'exportAll', stateKey: 'escalas', processor: (data) => {
                     // Extract escala sheets (Escala1, Escala2, etc.)
                     const escalasData = {};
+                    let maxScaleNumber = 0;
+                    
                     if (data && typeof data === 'object') {
                         const allKeys = Object.keys(data);
                         const escalaKeys = allKeys.filter(key => key.match(/^Escala\d+$/i));
@@ -128,6 +171,16 @@
                         
                         escalaKeys.forEach(key => {
                             const escalaData = data[key];
+                            
+                            // Extract scale number and track the highest one (current scale)
+                            const scaleMatch = key.match(/^Escala(\d+)$/i);
+                            if (scaleMatch) {
+                                const scaleNumber = parseInt(scaleMatch[1], 10);
+                                if (scaleNumber > maxScaleNumber) {
+                                    maxScaleNumber = scaleNumber;
+                                }
+                            }
+                            
                             if (escalaData && escalaData.dados) {
                                 const alunos = escalaData.dados || [];
                                 
@@ -188,8 +241,23 @@
                         });
                     }
                     
+                    // Store the current scale number
+                    if (maxScaleNumber > 0) {
+                        appState.currentScaleNumber = maxScaleNumber;
+                        console.log(`[setupDatabaseListeners] ✅ Escala atual detectada: Escala${maxScaleNumber}`);
+                    }
+                    
                     if (Object.keys(escalasData).length === 0) {
                         console.warn('[setupDatabaseListeners] ⚠️ Nenhuma escala válida foi processada');
+                    }
+                    
+                    // After loading escalas, try to extract ponto data from them
+                    if (Object.keys(escalasData).length > 0) {
+                        try {
+                            extractPontoFromEscalas(escalasData);
+                        } catch (error) {
+                            console.error('[setupDatabaseListeners] Erro ao extrair ponto das escalas:', error);
+                        }
                     }
                     
                     return Object.keys(escalasData).length > 0 ? escalasData : appState.escalas;
@@ -593,7 +661,23 @@
                     break;
                     
                 case 'pontoStaticRows':
-                    // Ponto data updated - may need to refresh ponto view
+                case 'pontoPraticaRows':
+                case 'escalas':
+                    // Ponto data updated - refresh ponto view if on ponto tab
+                    console.log(`[triggerUIUpdates] Dados de ${stateKey} atualizados, atualizando painel`);
+                    
+                    // Update ponto selectors and view if we're on the ponto tab
+                    const pontoContent = document.getElementById('content-ponto');
+                    if (pontoContent && !pontoContent.classList.contains('hidden')) {
+                        console.log('[triggerUIUpdates] Atualizando painel de ponto (tab ativa)');
+                        hydratePontoSelectors();
+                        refreshPontoView();
+                    }
+                    
+                    // Also update dashboard if visible
+                    if (typeof renderAtAGlance === 'function') {
+                        renderAtAGlance();
+                    }
                     break;
                     
                 default:
@@ -915,7 +999,9 @@ const appState = {
     ausenciasReposicoes: [],
     notasTeoricas: {},
     notasPraticas: {},
-    pontoStaticRows: [], // Added: Missing property for ponto data
+    pontoStaticRows: [], // OLD: Legacy ponto data from exportAll/Ponto/dados
+    pontoPraticaRows: [], // NEW: Current scale ponto data from PontoPratica
+    currentScaleNumber: null, // Detected current scale number (e.g., 9 for Escala9)
     todayBR: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
     todayFullBR: new Date().toLocaleDateString('pt-BR'),
     isSidebarCollapsed: false,
@@ -930,6 +1016,7 @@ const appState = {
         notasTeoricas: false,
         notasPraticas: false,
         pontoStaticRows: false,
+        pontoPraticaRows: false,
         escalas: false
     }
 };
@@ -1252,14 +1339,99 @@ const pontoState = {
         // Legacy fetchAllData() function removed - all data now comes from Firebase Realtime Database
         // Data is loaded via setupDatabaseListeners() which sets up real-time listeners
 
-        function extractAndPopulatePontoDates(pontoRows) {
+        /**
+         * Extract ponto (time tracking) data from Escalas
+         * This function parses time information from the date columns in Escalas
+         * Format example: "08h às 13h - Escala 1" or just "08h às 13h"
+         */
+        function extractPontoFromEscalas(escalasData) {
+            console.log('[extractPontoFromEscalas] Extraindo dados de ponto das escalas...');
+            
+            if (!escalasData || typeof escalasData !== 'object') {
+                console.warn('[extractPontoFromEscalas] Nenhum dado de escala fornecido');
+                return [];
+            }
+            
+            const pontoRecords = [];
+            
+            Object.keys(escalasData).forEach(escalaKey => {
+                const escala = escalasData[escalaKey];
+                const scalaName = escala.nomeEscala || escalaKey;
+                const alunos = escala.alunos || [];
+                const headersDay = escala.headersDay || [];
+                
+                // For each date in the scale
+                headersDay.forEach(dateStr => {
+                    // dateStr is in format "DD/MM"
+                    // We need to find the corresponding field in aluno records
+                    
+                    alunos.forEach(aluno => {
+                        if (!aluno) return;
+                        
+                        // Get the value for this date
+                        const dateValue = aluno[dateStr];
+                        if (!dateValue || typeof dateValue !== 'string') return;
+                        
+                        // Parse time information from the value
+                        // Format: "08h às 13h - Escala 1" or "08h às 13h" or just times
+                        const timeMatch = dateValue.match(/(\d{1,2})h\s*(?:às|as|a)?\s*(\d{1,2})h/i);
+                        
+                        if (timeMatch) {
+                            const horaEntrada = `${timeMatch[1].padStart(2, '0')}:00`;
+                            const horaSaida = `${timeMatch[2].padStart(2, '0')}:00`;
+                            
+                            // Convert DD/MM to ISO date (current year)
+                            const [day, month] = dateStr.split('/');
+                            const year = new Date().getFullYear();
+                            const isoDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                            
+                            // Create a ponto record
+                            const pontoRecord = {
+                                NomeCompleto: aluno.NomeCompleto || aluno.Nome || '',
+                                EmailHC: aluno.EmailHC || aluno.Email || '',
+                                SerialNumber: aluno.SerialNumber || aluno.Serial || aluno.ID || '',
+                                DataISO: isoDate,
+                                HoraEntrada: horaEntrada,
+                                HoraSaida: horaSaida,
+                                Escala: scalaName,
+                                'Pratica/Teorica': 'Prática', // Default, as escalas are typically for practical work
+                                _source: 'escala' // Mark the source as escala
+                            };
+                            
+                            pontoRecords.push(pontoRecord);
+                        }
+                    });
+                });
+            });
+            
+            console.log(`[extractPontoFromEscalas] ${pontoRecords.length} registros de ponto extraídos das escalas`);
+            
+            // Process these records into pontoState
+            if (pontoRecords.length > 0) {
+                extractAndPopulatePontoDates(pontoRecords, false, true); // fromPontoPratica=false, fromEscala=true
+            }
+            
+            return pontoRecords;
+        }
+
+        function extractAndPopulatePontoDates(pontoRows, fromPontoPratica = false, fromEscala = false) {
             if (!Array.isArray(pontoRows) || pontoRows.length === 0) {
                 console.log("[extractAndPopulatePontoDates] Nenhum registro de ponto para processar.");
                 return;
             }
 
-            const dateSet = new Set();
+            const source = fromPontoPratica ? 'PontoPratica' : (fromEscala ? 'Escala' : 'Ponto');
+            console.log(`[extractAndPopulatePontoDates] Processando ${pontoRows.length} registros de ${source}`);
+
+            const dateSet = new Set(pontoState.dates); // Start with existing dates
             const groupedByDate = new Map();
+            
+            // First, copy existing data if we're merging
+            if (fromPontoPratica || fromEscala) {
+                pontoState.byDate.forEach((records, date) => {
+                    groupedByDate.set(date, [...records]);
+                });
+            }
             
             pontoRows.forEach(row => {
                 if (!row || typeof row !== 'object') return;
@@ -1290,11 +1462,53 @@ const pontoState = {
                 if (isoDate) {
                     dateSet.add(isoDate);
                     
+                    // Normalize the record first
+                    const normalizedRow = normalizePontoRecord(row, isoDate);
+                    if (!normalizedRow) return;
+                    
+                    // Mark the source
+                    normalizedRow._source = source;
+                    
                     // Group records by date for initial cache population
                     if (!groupedByDate.has(isoDate)) {
                         groupedByDate.set(isoDate, []);
                     }
-                    groupedByDate.get(isoDate).push(row);
+                    
+                    const existingRecords = groupedByDate.get(isoDate);
+                    
+                    // If this is from PontoPratica, it should replace any existing record for the same person
+                    if (fromPontoPratica) {
+                        // Find and replace existing record for the same person
+                        const existingIndex = existingRecords.findIndex(r => 
+                            r.id === normalizedRow.id || 
+                            r.nomeId === normalizedRow.nomeId ||
+                            (r.emailNormalized && r.emailNormalized === normalizedRow.emailNormalized)
+                        );
+                        
+                        if (existingIndex >= 0) {
+                            // Replace existing record (PontoPratica takes precedence)
+                            existingRecords[existingIndex] = normalizedRow;
+                        } else {
+                            // Add new record
+                            existingRecords.push(normalizedRow);
+                        }
+                    } else if (fromEscala) {
+                        // Only add from Escala if no record exists for this person from PontoPratica
+                        const hasPontoPraticaRecord = existingRecords.some(r => 
+                            r._source === 'PontoPratica' && (
+                                r.id === normalizedRow.id || 
+                                r.nomeId === normalizedRow.nomeId ||
+                                (r.emailNormalized && r.emailNormalized === normalizedRow.emailNormalized)
+                            )
+                        );
+                        
+                        if (!hasPontoPraticaRecord) {
+                            existingRecords.push(normalizedRow);
+                        }
+                    } else {
+                        // Legacy Ponto data - just add it
+                        existingRecords.push(normalizedRow);
+                    }
                     
                     // Also track scales per date
                     const escala = row.Escala || row.escala || '';
@@ -1310,11 +1524,10 @@ const pontoState = {
             // Populate pontoState with all dates
             pontoState.dates = Array.from(dateSet).filter(Boolean).sort((a, b) => b.localeCompare(a));
             
-            // Pre-populate byDate map with raw data
+            // Update byDate map and cache
             groupedByDate.forEach((rows, iso) => {
-                const normalized = rows.map(row => normalizePontoRecord(row, iso)).filter(Boolean);
-                pontoState.byDate.set(iso, normalized);
-                pontoState.cache.set(makePontoCacheKey(iso, 'all'), normalized);
+                pontoState.byDate.set(iso, rows);
+                pontoState.cache.set(makePontoCacheKey(iso, 'all'), rows);
             });
 
             console.log(`[extractAndPopulatePontoDates] ${pontoState.dates.length} datas encontradas:`, pontoState.dates.slice(0, 5));
@@ -1354,6 +1567,48 @@ const pontoState = {
                     view.style.animation = null; 
                 }
             });
+            
+            // Initialize ponto panel when switching to ponto tab
+            if (tabName === 'ponto') {
+                console.log('[switchMainTab] Inicializando painel de ponto...');
+                // Check if ponto data is already loaded (from any source)
+                const hasPontoData = (appState.pontoStaticRows && appState.pontoStaticRows.length > 0) ||
+                                     (appState.pontoPraticaRows && appState.pontoPraticaRows.length > 0) ||
+                                     (pontoState.dates.length > 0);
+                
+                if (hasPontoData) {
+                    console.log('[switchMainTab] Dados de ponto já carregados, inicializando painel');
+                    // Ensure ponto state is populated
+                    if (pontoState.dates.length === 0) {
+                        console.log('[switchMainTab] Processando dados de ponto pela primeira vez');
+                        // Process all available data sources
+                        if (appState.pontoStaticRows && appState.pontoStaticRows.length > 0) {
+                            extractAndPopulatePontoDates(appState.pontoStaticRows);
+                        }
+                        if (appState.pontoPraticaRows && appState.pontoPraticaRows.length > 0) {
+                            extractAndPopulatePontoDates(appState.pontoPraticaRows, true); // fromPontoPratica = true
+                        }
+                        if (appState.escalas && Object.keys(appState.escalas).length > 0) {
+                            extractPontoFromEscalas(appState.escalas);
+                        }
+                        updatePontoHojeMap();
+                    }
+                    // Initialize or refresh the panel
+                    initializePontoPanel();
+                } else {
+                    console.log('[switchMainTab] Aguardando dados de ponto do Firebase...');
+                    // Show loading state in ponto panel
+                    const loadingState = document.getElementById('ponto-loading-state');
+                    const emptyState = document.getElementById('ponto-empty-state');
+                    if (loadingState) {
+                        loadingState.hidden = false;
+                        loadingState.textContent = 'Carregando dados do ponto do Firebase...';
+                    }
+                    if (emptyState) {
+                        emptyState.hidden = true;
+                    }
+                }
+            }
             
             window.scrollTo(0, 0);
         }
@@ -2193,6 +2448,11 @@ const pontoState = {
                     const sortedDates = [...pontoState.dates].sort((a, b) => a.localeCompare(b));
                     dateInput.min = sortedDates[0];
                     dateInput.max = sortedDates[sortedDates.length - 1];
+                    dateInput.disabled = false;
+                } else {
+                    // No dates available - disable the input
+                    dateInput.disabled = true;
+                    console.log('[hydratePontoSelectors] Nenhuma data disponível no ponto');
                 }
                 if (pontoState.selectedDate) {
                     dateInput.value = pontoState.selectedDate;
@@ -2200,11 +2460,15 @@ const pontoState = {
             }
 
             if (datalist) {
-                datalist.innerHTML = pontoState.dates
-                    .slice()
-                    .sort((a, b) => b.localeCompare(a))
-                    .map((date) => `<option value="${date}">${formatDateBR(date)}</option>`)
-                    .join('');
+                if (pontoState.dates.length > 0) {
+                    datalist.innerHTML = pontoState.dates
+                        .slice()
+                        .sort((a, b) => b.localeCompare(a))
+                        .map((date) => `<option value="${date}">${formatDateBR(date)}</option>`)
+                        .join('');
+                } else {
+                    datalist.innerHTML = '';
+                }
             }
 
             document.querySelectorAll('#ponto-filter-bar .escala-pill').forEach((pill) => {
@@ -2222,10 +2486,18 @@ const pontoState = {
 
             const availableScales = pontoState.scalesByDate.get(pontoState.selectedDate) || [];
             let options = '<option value="all">Todas as escalas</option>';
-            availableScales.forEach((scaleName) => {
-                const safe = escapeHtml(scaleName);
-                options += `<option value="${safe}">${safe}</option>`;
-            });
+            
+            if (availableScales.length > 0) {
+                availableScales.forEach((scaleName) => {
+                    const safe = escapeHtml(scaleName);
+                    options += `<option value="${safe}">${safe}</option>`;
+                });
+                select.disabled = false;
+            } else {
+                // No scales available for selected date
+                select.disabled = false; // Keep enabled but show "all" only
+                console.log('[updatePontoScaleOptions] Nenhuma escala específica para a data:', pontoState.selectedDate);
+            }
 
             select.innerHTML = options;
             if (pontoState.selectedScale !== 'all') {
@@ -2242,9 +2514,24 @@ const pontoState = {
             const prevButton = document.getElementById('ponto-prev-date');
             const nextButton = document.getElementById('ponto-next-date');
             
-            if (!prevButton || !nextButton || !pontoState.dates || pontoState.dates.length === 0) return;
+            if (!prevButton || !nextButton) return;
+            
+            if (!pontoState.dates || pontoState.dates.length === 0) {
+                // No dates available - disable both buttons
+                prevButton.disabled = true;
+                nextButton.disabled = true;
+                return;
+            }
             
             const currentIndex = pontoState.dates.indexOf(pontoState.selectedDate);
+            
+            if (currentIndex === -1) {
+                // Selected date not in list - disable both buttons
+                prevButton.disabled = true;
+                nextButton.disabled = true;
+                console.log('[updateDateNavigationButtons] Data selecionada não encontrada na lista:', pontoState.selectedDate);
+                return;
+            }
             
             // Prev button should be disabled if we're at the last date (oldest)
             prevButton.disabled = currentIndex >= pontoState.dates.length - 1;
@@ -2602,13 +2889,35 @@ const pontoState = {
                 const message = emptyState.querySelector('p');
                 if (message) {
                     if (totalBase === 0) {
-                        message.textContent = pontoState.selectedDate
-                            ? `Nenhum registro encontrado para ${formatDateBR(pontoState.selectedDate)}.`
-                            : 'Nenhum registro disponível.';
+                        if (pontoState.selectedDate) {
+                            message.innerHTML = `
+                                <strong>Nenhum registro encontrado para ${formatDateBR(pontoState.selectedDate)}.</strong><br>
+                                <span style="font-size: 0.9em; color: var(--text-secondary);">
+                                    Dica: Use os botões de navegação ou selecione outra data.
+                                </span>
+                            `;
+                        } else {
+                            message.innerHTML = `
+                                <strong>Nenhum registro de ponto disponível.</strong><br>
+                                <span style="font-size: 0.9em; color: var(--text-secondary);">
+                                    Execute o Google Apps Script para enviar dados para o Firebase.
+                                </span>
+                            `;
+                        }
                     } else if (enrichedCount === 0) {
-                        message.textContent = 'Nenhum registro disponível para a escala selecionada.';
+                        message.innerHTML = `
+                            <strong>Nenhum registro disponível para a escala selecionada.</strong><br>
+                            <span style="font-size: 0.9em; color: var(--text-secondary);">
+                                Tente selecionar "Todas as escalas" no filtro acima.
+                            </span>
+                        `;
                     } else {
-                        message.textContent = 'Nenhum registro encontrado para os filtros selecionados.';
+                        message.innerHTML = `
+                            <strong>Nenhum registro encontrado para os filtros selecionados.</strong><br>
+                            <span style="font-size: 0.9em; color: var(--text-secondary);">
+                                Limpe os filtros ou tente outra busca.
+                            </span>
+                        `;
                     }
                 }
                 return;
@@ -2820,8 +3129,23 @@ const pontoState = {
         }
 
         async function initializePontoPanel() {
+            console.log('[initializePontoPanel] Inicializando painel de ponto...');
+            
+            const loadingState = document.getElementById('ponto-loading-state');
+            const emptyState = document.getElementById('ponto-empty-state');
+            
+            // Show loading initially
+            if (loadingState) {
+                loadingState.hidden = false;
+                loadingState.textContent = 'Carregando registros do ponto...';
+            }
+            if (emptyState) {
+                emptyState.hidden = true;
+            }
+            
             const todayISO = new Date().toISOString().slice(0, 10);
             const result = await ensurePontoData(todayISO, 'all', { useTodayEndpoint: true, adoptSelection: true });
+            
             if (result && result.selectedDate) {
                 pontoState.selectedDate = result.selectedDate;
             } else if (!pontoState.selectedDate) {
@@ -2836,8 +3160,24 @@ const pontoState = {
                 pontoState.dates.push(pontoState.selectedDate);
                 pontoState.dates.sort((a, b) => b.localeCompare(a));
             }
+            
+            // Update last loaded time
+            pontoState.lastLoadedAt = new Date();
+            
+            // Hide loading state
+            if (loadingState) {
+                loadingState.hidden = true;
+            }
+            
             hydratePontoSelectors();
             refreshPontoView();
+            
+            console.log('[initializePontoPanel] Painel inicializado:', {
+                selectedDate: pontoState.selectedDate,
+                selectedScale: pontoState.selectedScale,
+                totalDates: pontoState.dates.length,
+                totalRecords: pontoState.byDate.size
+            });
         }
 
         function renderStudentList(students) {
