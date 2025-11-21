@@ -2249,6 +2249,11 @@ const pontoState = {
                     const sortedDates = [...pontoState.dates].sort((a, b) => a.localeCompare(b));
                     dateInput.min = sortedDates[0];
                     dateInput.max = sortedDates[sortedDates.length - 1];
+                    dateInput.disabled = false;
+                } else {
+                    // No dates available - disable the input
+                    dateInput.disabled = true;
+                    console.log('[hydratePontoSelectors] Nenhuma data disponível no ponto');
                 }
                 if (pontoState.selectedDate) {
                     dateInput.value = pontoState.selectedDate;
@@ -2256,11 +2261,15 @@ const pontoState = {
             }
 
             if (datalist) {
-                datalist.innerHTML = pontoState.dates
-                    .slice()
-                    .sort((a, b) => b.localeCompare(a))
-                    .map((date) => `<option value="${date}">${formatDateBR(date)}</option>`)
-                    .join('');
+                if (pontoState.dates.length > 0) {
+                    datalist.innerHTML = pontoState.dates
+                        .slice()
+                        .sort((a, b) => b.localeCompare(a))
+                        .map((date) => `<option value="${date}">${formatDateBR(date)}</option>`)
+                        .join('');
+                } else {
+                    datalist.innerHTML = '';
+                }
             }
 
             document.querySelectorAll('#ponto-filter-bar .escala-pill').forEach((pill) => {
@@ -2278,10 +2287,18 @@ const pontoState = {
 
             const availableScales = pontoState.scalesByDate.get(pontoState.selectedDate) || [];
             let options = '<option value="all">Todas as escalas</option>';
-            availableScales.forEach((scaleName) => {
-                const safe = escapeHtml(scaleName);
-                options += `<option value="${safe}">${safe}</option>`;
-            });
+            
+            if (availableScales.length > 0) {
+                availableScales.forEach((scaleName) => {
+                    const safe = escapeHtml(scaleName);
+                    options += `<option value="${safe}">${safe}</option>`;
+                });
+                select.disabled = false;
+            } else {
+                // No scales available for selected date
+                select.disabled = false; // Keep enabled but show "all" only
+                console.log('[updatePontoScaleOptions] Nenhuma escala específica para a data:', pontoState.selectedDate);
+            }
 
             select.innerHTML = options;
             if (pontoState.selectedScale !== 'all') {
@@ -2298,9 +2315,24 @@ const pontoState = {
             const prevButton = document.getElementById('ponto-prev-date');
             const nextButton = document.getElementById('ponto-next-date');
             
-            if (!prevButton || !nextButton || !pontoState.dates || pontoState.dates.length === 0) return;
+            if (!prevButton || !nextButton) return;
+            
+            if (!pontoState.dates || pontoState.dates.length === 0) {
+                // No dates available - disable both buttons
+                prevButton.disabled = true;
+                nextButton.disabled = true;
+                return;
+            }
             
             const currentIndex = pontoState.dates.indexOf(pontoState.selectedDate);
+            
+            if (currentIndex === -1) {
+                // Selected date not in list - disable both buttons
+                prevButton.disabled = true;
+                nextButton.disabled = true;
+                console.log('[updateDateNavigationButtons] Data selecionada não encontrada na lista:', pontoState.selectedDate);
+                return;
+            }
             
             // Prev button should be disabled if we're at the last date (oldest)
             prevButton.disabled = currentIndex >= pontoState.dates.length - 1;
@@ -2658,13 +2690,35 @@ const pontoState = {
                 const message = emptyState.querySelector('p');
                 if (message) {
                     if (totalBase === 0) {
-                        message.textContent = pontoState.selectedDate
-                            ? `Nenhum registro encontrado para ${formatDateBR(pontoState.selectedDate)}.`
-                            : 'Nenhum registro disponível.';
+                        if (pontoState.selectedDate) {
+                            message.innerHTML = `
+                                <strong>Nenhum registro encontrado para ${formatDateBR(pontoState.selectedDate)}.</strong><br>
+                                <span style="font-size: 0.9em; color: var(--text-secondary);">
+                                    Dica: Use os botões de navegação ou selecione outra data.
+                                </span>
+                            `;
+                        } else {
+                            message.innerHTML = `
+                                <strong>Nenhum registro de ponto disponível.</strong><br>
+                                <span style="font-size: 0.9em; color: var(--text-secondary);">
+                                    Execute o Google Apps Script para enviar dados para o Firebase.
+                                </span>
+                            `;
+                        }
                     } else if (enrichedCount === 0) {
-                        message.textContent = 'Nenhum registro disponível para a escala selecionada.';
+                        message.innerHTML = `
+                            <strong>Nenhum registro disponível para a escala selecionada.</strong><br>
+                            <span style="font-size: 0.9em; color: var(--text-secondary);">
+                                Tente selecionar "Todas as escalas" no filtro acima.
+                            </span>
+                        `;
                     } else {
-                        message.textContent = 'Nenhum registro encontrado para os filtros selecionados.';
+                        message.innerHTML = `
+                            <strong>Nenhum registro encontrado para os filtros selecionados.</strong><br>
+                            <span style="font-size: 0.9em; color: var(--text-secondary);">
+                                Limpe os filtros ou tente outra busca.
+                            </span>
+                        `;
                     }
                 }
                 return;
