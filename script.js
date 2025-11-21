@@ -2051,10 +2051,16 @@ const pontoState = {
                     const serialNorm = normalizeString(serialRaw ? String(serialRaw) : '');
                     const key = nomeNorm || emailNorm || serialNorm;
                     if (!key || rosterMap.has(key)) return;
+                    
+                    // Extract the value for this specific date from the aluno's escala
+                    // The date column (e.g., "15/11") contains the schedule info like "08h às 13h" or "Folga"
+                    const dateValue = aluno[target] || '';
+                    
                     rosterMap.set(key, {
                         ...aluno,
                         __escalaNome: escala.nomeEscala || escala.nome || '',
-                        __headers: headers
+                        __headers: headers,
+                        __dateValue: dateValue // Store the schedule value for this date
                     });
                 });
             });
@@ -2090,6 +2096,30 @@ const pontoState = {
                 const escalaKey = normalizeScaleKey(escalaNome);
                 if (scaleKey !== 'all' && escalaKey !== scaleKey) return;
 
+                // Parse scheduled time from the date value in escala
+                const dateValue = entry.__dateValue || '';
+                let scheduledEntrada = null;
+                let scheduledSaida = null;
+                let isRestDay = false;
+                
+                if (dateValue && typeof dateValue === 'string') {
+                    const normalizedValue = normalizeString(dateValue);
+                    
+                    // Check for rest day markers
+                    if (normalizedValue.includes('folga') || 
+                        normalizedValue.includes('descanso') || 
+                        normalizedValue.includes('semana de descanso')) {
+                        isRestDay = true;
+                    } else {
+                        // Try to extract scheduled time (e.g., "08h às 13h")
+                        const timeMatch = dateValue.match(/(\d{1,2})h\s*(?:às|as|a)?\s*(\d{1,2})h/i);
+                        if (timeMatch) {
+                            scheduledEntrada = `${timeMatch[1].padStart(2, '0')}:00`;
+                            scheduledSaida = `${timeMatch[2].padStart(2, '0')}:00`;
+                        }
+                    }
+                }
+
                 const record = normalizePontoRecord({
                     NomeCompleto: entry.NomeCompleto || entry.nomeCompleto || entry.Nome || entry.nome || '',
                     EmailHC: entry.EmailHC || entry.Email || entry.email || '',
@@ -2103,6 +2133,19 @@ const pontoState = {
                     if (!record.escala && escalaNome) {
                         record.escala = escalaNome;
                     }
+                    
+                    // Add scheduled time and rest day info to the record
+                    if (isRestDay) {
+                        record.isRestDay = true;
+                    }
+                    if (scheduledEntrada) {
+                        record.scheduledEntrada = scheduledEntrada;
+                        record.scheduledEntradaMinutes = toMinutes(scheduledEntrada);
+                    }
+                    if (scheduledSaida) {
+                        record.scheduledSaida = scheduledSaida;
+                    }
+                    
                     rosterEntries.push({
                         ...entry,
                         __escalaNome: escalaNome,
@@ -2541,28 +2584,67 @@ const pontoState = {
         }
 
         function enrichPontoRows(rows = []) {
-            const baselineByScale = new Map();
+            // Build a map of scheduled times per student (from roster/escala data)
+            // These are the expected times based on their schedule
+            const scheduledTimesMap = new Map();
             rows.forEach((row) => {
-                if (Number.isFinite(row.horaEntradaMinutes)) {
-                    const current = baselineByScale.get(row.escalaKey);
-                    baselineByScale.set(row.escalaKey, current === undefined ? row.horaEntradaMinutes : Math.min(current, row.horaEntradaMinutes));
+                if (row.scheduledEntradaMinutes !== undefined && row.scheduledEntradaMinutes !== null) {
+                    const key = row.id || row.nomeId;
+                    if (key) {
+                        scheduledTimesMap.set(key, row.scheduledEntradaMinutes);
+                    }
                 }
             });
 
             return rows.map((row) => {
-                const baseline = baselineByScale.get(row.escalaKey);
                 let status = 'absent';
                 let statusLabel = 'Falta';
                 let badgeClass = 'badge badge-red';
                 let delayMinutes = null;
 
+                // Check if this is a scheduled rest day
+                if (row.isRestDay) {
+                    status = 'off';
+                    statusLabel = 'Folga';
+                    badgeClass = 'badge badge-gray';
+                    
+                    const searchKey = normalizeString([
+                        row.nome,
+                        row.escala,
+                        row.modalidade,
+                        row.horaEntrada,
+                        row.horaSaida,
+                        row.email,
+                        row.rawSerial,
+                        statusLabel
+                    ].filter(Boolean).join(' '));
+
+                    return {
+                        ...row,
+                        status,
+                        statusLabel,
+                        badgeClass,
+                        delayMinutes,
+                        searchKey,
+                        dataBR: formatDateBR(row.isoDate)
+                    };
+                }
+
+                // If student has actual arrival time
                 if (Number.isFinite(row.horaEntradaMinutes)) {
-                    if (baseline !== undefined && baseline !== null) {
-                        const diff = Math.max(0, row.horaEntradaMinutes - baseline);
+                    // Get the scheduled time for this student
+                    const key = row.id || row.nomeId;
+                    const scheduledTime = key ? scheduledTimesMap.get(key) : null;
+                    
+                    // If we have a scheduled time, compare against it
+                    // Otherwise, student is present (no delay calculation)
+                    if (scheduledTime !== undefined && scheduledTime !== null && Number.isFinite(scheduledTime)) {
+                        const diff = Math.max(0, row.horaEntradaMinutes - scheduledTime);
                         delayMinutes = diff;
+                        
                         if (diff > ATRASO_THRESHOLD_MINUTES) {
                             status = 'late';
-                            statusLabel = diff ? `Atraso (+${diff} min)` : 'Atraso';
+                            statusLabel = `Atraso (+${diff} min)`;
                             badgeClass = 'badge badge-yellow';
                         } else {
                             status = 'present';
@@ -2570,6 +2652,7 @@ const pontoState = {
                             badgeClass = 'badge badge-green';
                         }
                     } else {
+                        // No scheduled time available, just mark as present
                         status = 'present';
                         statusLabel = 'Presente';
                         badgeClass = 'badge badge-green';
@@ -2606,7 +2689,9 @@ const pontoState = {
                 const presentCount = enriched.filter((row) => row.status === 'present' || row.status === 'late').length;
                 const lateCount = enriched.filter((row) => row.status === 'late').length;
                 const absentCount = enriched.filter((row) => row.status === 'absent').length;
-                const totalEscalados = Math.max(dataset.rosterSize || 0, enriched.length || 0, TOTAL_ESCALADOS);
+                const offCount = enriched.filter((row) => row.status === 'off').length;
+                // Total escalados should not include people on rest days
+                const totalEscalados = Math.max((dataset.rosterSize || 0) - offCount, enriched.length - offCount || 0, TOTAL_ESCALADOS - offCount);
 
                 updatePontoSummary({
                     total: totalEscalados,
