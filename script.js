@@ -95,6 +95,19 @@
                         console.log(`[setupDatabaseListeners] ✅ Ponto carregado com ${processed.length} registros`);
                         console.log('[setupDatabaseListeners] Campos disponíveis no Ponto:', sampleFields.slice(0, 15).join(', '));
                         
+                        // IMPORTANT: Process ponto data immediately after loading
+                        // This populates pontoState with dates and records
+                        try {
+                            extractAndPopulatePontoDates(processed);
+                            updatePontoHojeMap();
+                            console.log('[setupDatabaseListeners] ✅ Ponto data processado:', {
+                                datas: pontoState.dates.length,
+                                registros: pontoState.byDate.size
+                            });
+                        } catch (error) {
+                            console.error('[setupDatabaseListeners] Erro ao processar dados do ponto:', error);
+                        }
+                        
                         // Check for Prática/Teórica field variations
                         const praticaTeoricaField = sampleFields.find(f => 
                             f.toLowerCase().includes('pratica') || 
@@ -593,7 +606,21 @@
                     break;
                     
                 case 'pontoStaticRows':
-                    // Ponto data updated - may need to refresh ponto view
+                    // Ponto data updated - refresh ponto view if on ponto tab
+                    console.log('[triggerUIUpdates] Dados de ponto atualizados, atualizando painel');
+                    
+                    // Update ponto selectors and view if we're on the ponto tab
+                    const pontoContent = document.getElementById('content-ponto');
+                    if (pontoContent && !pontoContent.classList.contains('hidden')) {
+                        console.log('[triggerUIUpdates] Atualizando painel de ponto (tab ativa)');
+                        hydratePontoSelectors();
+                        refreshPontoView();
+                    }
+                    
+                    // Also update dashboard if visible
+                    if (typeof renderAtAGlance === 'function') {
+                        renderAtAGlance();
+                    }
                     break;
                     
                 default:
@@ -1354,6 +1381,35 @@ const pontoState = {
                     view.style.animation = null; 
                 }
             });
+            
+            // Initialize ponto panel when switching to ponto tab
+            if (tabName === 'ponto') {
+                console.log('[switchMainTab] Inicializando painel de ponto...');
+                // Check if ponto data is already loaded
+                if (appState.pontoStaticRows && appState.pontoStaticRows.length > 0) {
+                    console.log('[switchMainTab] Dados de ponto já carregados, inicializando painel');
+                    // Ensure ponto state is populated
+                    if (pontoState.dates.length === 0) {
+                        console.log('[switchMainTab] Processando dados de ponto pela primeira vez');
+                        extractAndPopulatePontoDates(appState.pontoStaticRows);
+                        updatePontoHojeMap();
+                    }
+                    // Initialize or refresh the panel
+                    initializePontoPanel();
+                } else {
+                    console.log('[switchMainTab] Aguardando dados de ponto do Firebase...');
+                    // Show loading state in ponto panel
+                    const loadingState = document.getElementById('ponto-loading-state');
+                    const emptyState = document.getElementById('ponto-empty-state');
+                    if (loadingState) {
+                        loadingState.hidden = false;
+                        loadingState.textContent = 'Carregando dados do ponto do Firebase...';
+                    }
+                    if (emptyState) {
+                        emptyState.hidden = true;
+                    }
+                }
+            }
             
             window.scrollTo(0, 0);
         }
@@ -2820,8 +2876,23 @@ const pontoState = {
         }
 
         async function initializePontoPanel() {
+            console.log('[initializePontoPanel] Inicializando painel de ponto...');
+            
+            const loadingState = document.getElementById('ponto-loading-state');
+            const emptyState = document.getElementById('ponto-empty-state');
+            
+            // Show loading initially
+            if (loadingState) {
+                loadingState.hidden = false;
+                loadingState.textContent = 'Carregando registros do ponto...';
+            }
+            if (emptyState) {
+                emptyState.hidden = true;
+            }
+            
             const todayISO = new Date().toISOString().slice(0, 10);
             const result = await ensurePontoData(todayISO, 'all', { useTodayEndpoint: true, adoptSelection: true });
+            
             if (result && result.selectedDate) {
                 pontoState.selectedDate = result.selectedDate;
             } else if (!pontoState.selectedDate) {
@@ -2836,8 +2907,24 @@ const pontoState = {
                 pontoState.dates.push(pontoState.selectedDate);
                 pontoState.dates.sort((a, b) => b.localeCompare(a));
             }
+            
+            // Update last loaded time
+            pontoState.lastLoadedAt = new Date();
+            
+            // Hide loading state
+            if (loadingState) {
+                loadingState.hidden = true;
+            }
+            
             hydratePontoSelectors();
             refreshPontoView();
+            
+            console.log('[initializePontoPanel] Painel inicializado:', {
+                selectedDate: pontoState.selectedDate,
+                selectedScale: pontoState.selectedScale,
+                totalDates: pontoState.dates.length,
+                totalRecords: pontoState.byDate.size
+            });
         }
 
         function renderStudentList(students) {
