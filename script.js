@@ -1372,6 +1372,33 @@ const pontoState = {
                         const dateValue = aluno[dateStr];
                         if (!dateValue || typeof dateValue !== 'string') return;
                         
+                        // Check for rest day markers first
+                        const normalizedValue = normalizeString(dateValue);
+                        const isRestDay = normalizedValue.includes('folga') || 
+                                         normalizedValue.includes('descanso') || 
+                                         normalizedValue.includes('semana de descanso');
+                        
+                        if (isRestDay) {
+                            // Create a ponto record for rest day (no times, just marker)
+                            const [day, month] = dateStr.split('/');
+                            const year = new Date().getFullYear();
+                            const isoDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                            
+                            const pontoRecord = {
+                                NomeCompleto: aluno.NomeCompleto || aluno.Nome || '',
+                                EmailHC: aluno.EmailHC || aluno.Email || '',
+                                SerialNumber: aluno.SerialNumber || aluno.Serial || aluno.ID || '',
+                                DataISO: isoDate,
+                                Escala: scalaName,
+                                'Pratica/Teorica': 'Prática',
+                                _source: 'escala',
+                                _isRestDay: true // Mark as rest day
+                            };
+                            
+                            pontoRecords.push(pontoRecord);
+                            return;
+                        }
+                        
                         // Parse time information from the value
                         // Format: "08h às 13h - Escala 1" or "08h às 13h" or just times
                         const timeMatch = dateValue.match(/(\d{1,2})h\s*(?:às|as|a)?\s*(\d{1,2})h/i);
@@ -1395,7 +1422,9 @@ const pontoState = {
                                 HoraSaida: horaSaida,
                                 Escala: scalaName,
                                 'Pratica/Teorica': 'Prática', // Default, as escalas are typically for practical work
-                                _source: 'escala' // Mark the source as escala
+                                _source: 'escala', // Mark the source as escala
+                                _scheduledEntrada: horaEntrada, // Store as scheduled time
+                                _scheduledSaida: horaSaida
                             };
                             
                             pontoRecords.push(pontoRecord);
@@ -2169,7 +2198,49 @@ const pontoState = {
 
             const baseRecords = getPontoRecords(iso, scale) || [];
             const { normalizedRecords, rosterEntries } = buildRosterNormalizedRecords(iso, scale);
-            const combined = normalizedRecords.length ? mergeRecordLists(normalizedRecords, baseRecords) : baseRecords.slice();
+            
+            // Merge roster and actual ponto records, preserving scheduled times from roster
+            let combined;
+            if (normalizedRecords.length) {
+                // Create a map of roster records to get scheduled times
+                const rosterMap = new Map();
+                normalizedRecords.forEach(record => {
+                    const key = getPontoRecordKey(record);
+                    rosterMap.set(key, record);
+                });
+                
+                // Merge with base records, adding scheduled time info
+                const mergedMap = new Map();
+                
+                // First add all roster records
+                normalizedRecords.forEach(record => {
+                    mergedMap.set(getPontoRecordKey(record), record);
+                });
+                
+                // Then overlay actual ponto records, but preserve scheduled times
+                baseRecords.forEach(record => {
+                    const key = getPontoRecordKey(record);
+                    const rosterRecord = rosterMap.get(key);
+                    
+                    // If we have a roster record with scheduled times, merge them
+                    if (rosterRecord) {
+                        mergedMap.set(key, {
+                            ...record,
+                            scheduledEntrada: rosterRecord.scheduledEntrada || record.scheduledEntrada,
+                            scheduledEntradaMinutes: rosterRecord.scheduledEntradaMinutes || record.scheduledEntradaMinutes,
+                            scheduledSaida: rosterRecord.scheduledSaida || record.scheduledSaida,
+                            isRestDay: rosterRecord.isRestDay || record.isRestDay
+                        });
+                    } else {
+                        mergedMap.set(key, record);
+                    }
+                });
+                
+                combined = Array.from(mergedMap.values());
+            } else {
+                combined = baseRecords.slice();
+            }
+            
             const enrichedRows = enrichPontoRows(combined);
 
             return { rows: enrichedRows, baseRecords, rosterEntries, rosterSize: rosterEntries.length };
@@ -2342,8 +2413,13 @@ const pontoState = {
             const emailNormalized = email ? normalizeString(email) : '';
             const nomeId = normalizeString(nome);
             const primaryId = nomeId || serialNormalized || emailNormalized || '';
+            
+            // Preserve scheduled time information if present
+            const scheduledEntrada = row._scheduledEntrada || null;
+            const scheduledSaida = row._scheduledSaida || null;
+            const isRestDay = row._isRestDay || false;
 
-            return {
+            const normalized = {
                 id: primaryId,
                 nomeId,
                 rawSerial,
@@ -2360,6 +2436,20 @@ const pontoState = {
                 email,
                 emailNormalized
             };
+            
+            // Add scheduled time fields if available
+            if (scheduledEntrada) {
+                normalized.scheduledEntrada = scheduledEntrada;
+                normalized.scheduledEntradaMinutes = toMinutes(scheduledEntrada);
+            }
+            if (scheduledSaida) {
+                normalized.scheduledSaida = scheduledSaida;
+            }
+            if (isRestDay) {
+                normalized.isRestDay = true;
+            }
+            
+            return normalized;
         }
 
         // Legacy applyPontoData() removed - data organization now handled by Firebase listeners
