@@ -1351,12 +1351,27 @@ const pontoState = {
         }
 
         /**
+         * Helper function to convert DD/MM date string to ISO format (YYYY-MM-DD)
+         * Uses current year for year inference
+         */
+        function convertDDMMToISO(dateStr) {
+            if (!dateStr || typeof dateStr !== 'string') return '';
+            const [day, month] = dateStr.split('/');
+            if (!day || !month) return '';
+            const year = new Date().getFullYear();
+            return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        }
+
+        /**
          * Helper function to parse time information from schedule value
-         * Format example: "08h às 13h" or "08h às 13h - Escala 1"
+         * Matches formats like: "7h às 12h", "08h as 13h", "8h a 14h - Escala 1"
+         * Format: {hours}h [às|as|a] {hours}h [optional text]
          * Returns: { horaEntrada: "08:00", horaSaida: "13:00" } or null
          */
         function parseTimeFromScheduleValue(dateValue) {
             if (!dateValue || typeof dateValue !== 'string') return null;
+            // Pattern: captures hour digits before and after separator (às/as/a)
+            // Examples: "7h às 12h", "08h as 13h", "8h a 14h - Escala 1"
             const timeMatch = dateValue.match(/(\d{1,2})h\s*(?:às|as|a)?\s*(\d{1,2})h/i);
             if (timeMatch) {
                 return {
@@ -1403,9 +1418,8 @@ const pontoState = {
                         // Check for rest day markers first
                         if (isRestDayValue(dateValue)) {
                             // Create a ponto record for rest day (no times, just marker)
-                            const [day, month] = dateStr.split('/');
-                            const year = new Date().getFullYear();
-                            const isoDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                            const isoDate = convertDDMMToISO(dateStr);
+                            if (!isoDate) return;
                             
                             const pontoRecord = {
                                 NomeCompleto: aluno.NomeCompleto || aluno.Nome || '',
@@ -1429,10 +1443,8 @@ const pontoState = {
                             const { horaEntrada, horaSaida } = timeInfo;
                             
                             // Convert DD/MM to ISO date (current year)
-                            const [day, month] = dateStr.split('/');
-                            const year = new Date().getFullYear();
-                            const isoDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-                            
+                            const isoDate = convertDDMMToISO(dateStr);
+                            if (!isoDate) return;
                             // Create a ponto record
                             const pontoRecord = {
                                 NomeCompleto: aluno.NomeCompleto || aluno.Nome || '',
@@ -2739,7 +2751,7 @@ const pontoState = {
                     const scheduledTime = key ? scheduledTimesMap.get(key) : null;
                     
                     // If we have a scheduled time, compare against it
-                    // Otherwise, student is present (no delay calculation)
+                    // Otherwise, student is present (no delay calculation possible)
                     if (scheduledTime != null && Number.isFinite(scheduledTime)) {
                         const diff = Math.max(0, row.horaEntradaMinutes - scheduledTime);
                         delayMinutes = diff;
@@ -2754,7 +2766,9 @@ const pontoState = {
                             badgeClass = 'badge badge-green';
                         }
                     } else {
-                        // No scheduled time available, just mark as present
+                        // No scheduled time available - mark as present without delay calculation
+                        // This happens when: 1) Student not in roster for this date, or 
+                        // 2) Escala data doesn't have time info, or 3) Legacy ponto data
                         status = 'present';
                         statusLabel = 'Presente';
                         badgeClass = 'badge badge-green';
@@ -2793,7 +2807,11 @@ const pontoState = {
                 const absentCount = enriched.filter((row) => row.status === 'absent').length;
                 const offCount = enriched.filter((row) => row.status === 'off').length;
                 // Total escalados should not include people on rest days
-                const totalEscalados = Math.max((dataset.rosterSize || 0) - offCount, (enriched.length - offCount) || 0, TOTAL_ESCALADOS - offCount);
+                const totalEscalados = Math.max(
+                    Math.max(0, (dataset.rosterSize || 0) - offCount), 
+                    Math.max(0, (enriched.length - offCount) || 0), 
+                    Math.max(0, TOTAL_ESCALADOS - offCount)
+                );
 
                 updatePontoSummary({
                     total: totalEscalados,
