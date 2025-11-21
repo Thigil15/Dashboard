@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teste do Sistema de Ponto</title>
+    <title>Testes do Sistema de Ponto</title>
     <style>
         * {
             margin: 0;
@@ -445,7 +445,12 @@
             section5.innerHTML = '<h2>5️⃣ Detecção de Status (Presente/Atraso/Falta)</h2>';
             resultsDiv.appendChild(section5);
             
+            // IMPORTANT: This should match the constant in script.js (line 937)
             const ATRASO_THRESHOLD = 10; // 10 minutos
+            
+            addTest(section5, 'Threshold de atraso configurado corretamente',
+                ATRASO_THRESHOLD === 10,
+                `Valor: ${ATRASO_THRESHOLD} minutos (deve corresponder ao valor em script.js linha 937)`);
             
             function toMinutes(time) {
                 if (!time) return null;

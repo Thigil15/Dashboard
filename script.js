@@ -105,7 +105,12 @@
                                 registros: pontoState.byDate.size
                             });
                         } catch (error) {
-                            console.error('[setupDatabaseListeners] Erro ao processar dados do ponto:', error);
+                            console.error('[setupDatabaseListeners] ❌ Erro ao processar dados do ponto:', error);
+                            console.error('[setupDatabaseListeners] Stack trace:', error.stack);
+                            console.error('[setupDatabaseListeners] Dados recebidos:', {
+                                totalRegistros: processed.length,
+                                primeiroRegistro: processed[0] ? Object.keys(processed[0]) : 'nenhum'
+                            });
                         }
                         
                         // Check for Prática/Teórica field variations
