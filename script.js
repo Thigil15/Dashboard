@@ -1340,6 +1340,34 @@ const pontoState = {
         // Data is loaded via setupDatabaseListeners() which sets up real-time listeners
 
         /**
+         * Helper function to check if a schedule value indicates a rest day
+         */
+        function isRestDayValue(dateValue) {
+            if (!dateValue || typeof dateValue !== 'string') return false;
+            const normalized = normalizeString(dateValue);
+            return normalized.includes('folga') || 
+                   normalized.includes('descanso') || 
+                   normalized.includes('semana de descanso');
+        }
+
+        /**
+         * Helper function to parse time information from schedule value
+         * Format example: "08h às 13h" or "08h às 13h - Escala 1"
+         * Returns: { horaEntrada: "08:00", horaSaida: "13:00" } or null
+         */
+        function parseTimeFromScheduleValue(dateValue) {
+            if (!dateValue || typeof dateValue !== 'string') return null;
+            const timeMatch = dateValue.match(/(\d{1,2})h\s*(?:às|as|a)?\s*(\d{1,2})h/i);
+            if (timeMatch) {
+                return {
+                    horaEntrada: `${timeMatch[1].padStart(2, '0')}:00`,
+                    horaSaida: `${timeMatch[2].padStart(2, '0')}:00`
+                };
+            }
+            return null;
+        }
+
+        /**
          * Extract ponto (time tracking) data from Escalas
          * This function parses time information from the date columns in Escalas
          * Format example: "08h às 13h - Escala 1" or just "08h às 13h"
@@ -1373,12 +1401,7 @@ const pontoState = {
                         if (!dateValue || typeof dateValue !== 'string') return;
                         
                         // Check for rest day markers first
-                        const normalizedValue = normalizeString(dateValue);
-                        const isRestDay = normalizedValue.includes('folga') || 
-                                         normalizedValue.includes('descanso') || 
-                                         normalizedValue.includes('semana de descanso');
-                        
-                        if (isRestDay) {
+                        if (isRestDayValue(dateValue)) {
                             // Create a ponto record for rest day (no times, just marker)
                             const [day, month] = dateStr.split('/');
                             const year = new Date().getFullYear();
@@ -1400,12 +1423,10 @@ const pontoState = {
                         }
                         
                         // Parse time information from the value
-                        // Format: "08h às 13h - Escala 1" or "08h às 13h" or just times
-                        const timeMatch = dateValue.match(/(\d{1,2})h\s*(?:às|as|a)?\s*(\d{1,2})h/i);
+                        const timeInfo = parseTimeFromScheduleValue(dateValue);
                         
-                        if (timeMatch) {
-                            const horaEntrada = `${timeMatch[1].padStart(2, '0')}:00`;
-                            const horaSaida = `${timeMatch[2].padStart(2, '0')}:00`;
+                        if (timeInfo) {
+                            const { horaEntrada, horaSaida } = timeInfo;
                             
                             // Convert DD/MM to ISO date (current year)
                             const [day, month] = dateStr.split('/');
@@ -2129,23 +2150,14 @@ const pontoState = {
                 const dateValue = entry.__dateValue || '';
                 let scheduledEntrada = null;
                 let scheduledSaida = null;
-                let isRestDay = false;
+                const isRestDay = isRestDayValue(dateValue);
                 
-                if (dateValue && typeof dateValue === 'string') {
-                    const normalizedValue = normalizeString(dateValue);
-                    
-                    // Check for rest day markers
-                    if (normalizedValue.includes('folga') || 
-                        normalizedValue.includes('descanso') || 
-                        normalizedValue.includes('semana de descanso')) {
-                        isRestDay = true;
-                    } else {
-                        // Try to extract scheduled time (e.g., "08h às 13h")
-                        const timeMatch = dateValue.match(/(\d{1,2})h\s*(?:às|as|a)?\s*(\d{1,2})h/i);
-                        if (timeMatch) {
-                            scheduledEntrada = `${timeMatch[1].padStart(2, '0')}:00`;
-                            scheduledSaida = `${timeMatch[2].padStart(2, '0')}:00`;
-                        }
+                if (!isRestDay) {
+                    // Try to extract scheduled time (e.g., "08h às 13h")
+                    const timeInfo = parseTimeFromScheduleValue(dateValue);
+                    if (timeInfo) {
+                        scheduledEntrada = timeInfo.horaEntrada;
+                        scheduledSaida = timeInfo.horaSaida;
                     }
                 }
 
@@ -2728,7 +2740,7 @@ const pontoState = {
                     
                     // If we have a scheduled time, compare against it
                     // Otherwise, student is present (no delay calculation)
-                    if (scheduledTime !== undefined && scheduledTime !== null && Number.isFinite(scheduledTime)) {
+                    if (scheduledTime != null && Number.isFinite(scheduledTime)) {
                         const diff = Math.max(0, row.horaEntradaMinutes - scheduledTime);
                         delayMinutes = diff;
                         
@@ -2781,7 +2793,7 @@ const pontoState = {
                 const absentCount = enriched.filter((row) => row.status === 'absent').length;
                 const offCount = enriched.filter((row) => row.status === 'off').length;
                 // Total escalados should not include people on rest days
-                const totalEscalados = Math.max((dataset.rosterSize || 0) - offCount, enriched.length - offCount || 0, TOTAL_ESCALADOS - offCount);
+                const totalEscalados = Math.max((dataset.rosterSize || 0) - offCount, (enriched.length - offCount) || 0, TOTAL_ESCALADOS - offCount);
 
                 updatePontoSummary({
                     total: totalEscalados,
