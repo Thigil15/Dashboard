@@ -6,6 +6,9 @@ function doPost(e) {
     var email = data.EmailHC || "";
     var escala = data.Escala || "";
     var simularTerca = data.SimularTerça || false;
+    // Novo: flag enviado pelo SistemaPonto.py indicando se é dia de teoria
+    // (terça, quinta ou dia especial configurado)
+    var isDiaTeoria = data.IsDiaTeoria || false;
 
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var abaPratica = ss.getSheetByName("PontoPratica");
@@ -18,6 +21,11 @@ function doPost(e) {
     var horaStr = Utilities.formatDate(agora, "America/Sao_Paulo", "HH:mm:ss");
     var diaSemana = agora.getDay();
     if (simularTerca) diaSemana = 2; // simulação para testes
+
+    // Determina se é dia de teoria:
+    // 1. Se o Python enviou IsDiaTeoria=true (inclui dias especiais)
+    // 2. OU se é terça (2) ou quinta (4) pelo dia da semana
+    var ehDiaTeoria = isDiaTeoria || diaSemana === 2 || diaSemana === 4;
 
     // === 1. Verifica se há linha aberta na TEORIA ===
     var dadosTeoria = abaTeoria.getDataRange().getValues();
@@ -65,7 +73,7 @@ function doPost(e) {
     }
 
     // Se já existe prática completa e não é dia de teoria → ignora
-    if (linhaPraticaCompleta && diaSemana !== 2 && diaSemana !== 4) {
+    if (linhaPraticaCompleta && !ehDiaTeoria) {
       return resposta("Sem ação: aluno já completou a prática hoje.");
     }
 
@@ -79,8 +87,9 @@ function doPost(e) {
     if (linhaPraticaAberta) {
       abaPratica.getRange(linhaPraticaAberta, 6).setValue(horaStr);
 
-      // Se for terça (2) ou quinta (4), cria entrada teórica automaticamente
-      if (diaSemana === 2 || diaSemana === 4) {
+      // Se é dia de teoria (terça, quinta ou dia especial), cria entrada teórica automaticamente
+      // Nota: A teoria só é registrada após o aluno ter entrada E saída na prática
+      if (ehDiaTeoria) {
         // Verifica se já há teoria hoje
         var existeTeoriaHoje = dadosTeoria.some(function (r) {
           return r[0] == id && formatarData(r[3]) == dataStr;
