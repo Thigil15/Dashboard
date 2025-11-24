@@ -87,6 +87,9 @@ function doPost(e) {
         });
         if (!existeTeoriaHoje) {
           abaTeoria.appendRow([id, email, nome, dataStr, horaStr, "", escala, "Teoria"]);
+          // Sincroniza automaticamente para FrequenciaTeorica
+          var novaLinha = abaTeoria.getLastRow();
+          syncToFrequenciaTeoricaFromPonto_(ss, abaTeoria, novaLinha, escala);
           return resposta("Saída prática e entrada teórica registradas: " + horaStr);
         }
       }
@@ -112,4 +115,99 @@ function formatarData(valor) {
 
 function resposta(msg) {
   return ContentService.createTextOutput(msg).setMimeType(ContentService.MimeType.TEXT);
+}
+
+/**
+ * Sincroniza uma linha da aba PontoTeoria para a aba FrequenciaTeorica correspondente.
+ * Chamada automaticamente quando uma nova entrada teórica é criada via doPost.
+ * @param {Spreadsheet} spreadsheet - A planilha ativa
+ * @param {Sheet} pontoTeoriaSheet - A aba PontoTeoria
+ * @param {number} rowNumber - O número da linha a ser copiada
+ * @param {string} escalaNumber - O número da escala (1-12)
+ */
+function syncToFrequenciaTeoricaFromPonto_(spreadsheet, pontoTeoriaSheet, rowNumber, escalaNumber) {
+  // Valida se o número da escala está no intervalo 1-12
+  var escalaNum = parseInt(escalaNumber, 10);
+  if (isNaN(escalaNum) || escalaNum < 1 || escalaNum > 12) {
+    console.warn('Número de escala inválido para FrequenciaTeorica: ' + escalaNumber);
+    return;
+  }
+
+  var freqSheetName = 'FrequenciaTeorica' + escalaNum;
+  var freqSheet = spreadsheet.getSheetByName(freqSheetName);
+  if (!freqSheet) {
+    console.warn('Aba ' + freqSheetName + ' não encontrada.');
+    return;
+  }
+
+  // Obtém os dados da linha inteira de PontoTeoria
+  var lastCol = pontoTeoriaSheet.getLastColumn();
+  var rowData = pontoTeoriaSheet.getRange(rowNumber, 1, 1, lastCol).getValues()[0];
+
+  // Obtém os cabeçalhos de PontoTeoria e FrequenciaTeorica
+  var headersOrigem = pontoTeoriaSheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  var headersDestino = freqSheet.getRange(1, 1, 1, freqSheet.getLastColumn()).getValues()[0];
+
+  // Usa EmailHC + Data como identificador único para evitar duplicatas
+  var emailColOrigem = headersOrigem.indexOf('EmailHC');
+  var dataColOrigem = headersOrigem.indexOf('Data');
+
+  if (emailColOrigem < 0 || dataColOrigem < 0) {
+    console.warn('Colunas EmailHC ou Data não encontradas em PontoTeoria');
+    return;
+  }
+
+  var emailValue = rowData[emailColOrigem];
+  var dataValue = rowData[dataColOrigem];
+
+  if (!emailValue) {
+    console.warn('Email vazio na linha ' + rowNumber);
+    return;
+  }
+
+  // Procura colunas correspondentes em FrequenciaTeorica
+  var emailColDestino = headersDestino.indexOf('EmailHC');
+  var dataColDestino = headersDestino.indexOf('Data');
+
+  if (emailColDestino < 0) {
+    for (var i = 0; i < headersDestino.length; i++) {
+      var h = String(headersDestino[i] || '').toLowerCase();
+      if (h.indexOf('email') !== -1) { emailColDestino = i; break; }
+    }
+  }
+
+  // Verifica se já existe a mesma linha em FrequenciaTeorica (evita duplicatas)
+  var lastRowFreq = freqSheet.getLastRow();
+  if (lastRowFreq >= 2 && emailColDestino >= 0 && dataColDestino >= 0) {
+    var existingData = freqSheet.getRange(2, 1, lastRowFreq - 1, freqSheet.getLastColumn()).getValues();
+    var dataFormatada = formatarDataParaComparacao_(dataValue);
+
+    for (var i = 0; i < existingData.length; i++) {
+      var existingEmail = String(existingData[i][emailColDestino] || '').trim().toLowerCase();
+      var existingDataRow = formatarDataParaComparacao_(existingData[i][dataColDestino]);
+
+      if (existingEmail === String(emailValue).trim().toLowerCase() &&
+          existingDataRow === dataFormatada) {
+        console.log('Linha já existe em ' + freqSheetName + '. Ignorando duplicata.');
+        return;
+      }
+    }
+  }
+
+  // Adiciona a linha inteira na aba FrequenciaTeorica
+  freqSheet.appendRow(rowData);
+  console.log('Linha sincronizada automaticamente para ' + freqSheetName + ': ' + emailValue);
+}
+
+/**
+ * Formata uma data para comparação (dd/MM/yyyy)
+ * @param {Date|string} value - O valor da data
+ * @returns {string} A data formatada como string
+ */
+function formatarDataParaComparacao_(value) {
+  if (!value) return '';
+  if (value instanceof Date) {
+    return Utilities.formatDate(value, "America/Sao_Paulo", "dd/MM/yyyy");
+  }
+  return String(value).trim();
 }
