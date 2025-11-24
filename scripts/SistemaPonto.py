@@ -37,7 +37,7 @@ except ImportError:
     sys.exit(1)
 
 # ========== CONFIG ==========
-ENDPOINT = "https://script.google.com/macros/s/AKfycbz0ggDxcDPXe0h_GJeQ-NT_-INHMKkQ08PAGLp5QN2m7HKHfMlTqg6gsATMzrtRF48n/exec"
+ENDPOINT = "https://script.google.com/macros/s/AKfycbwNNwndI5_oh7klQI9zgeW5eiKhdkhHPlVbOeOuxFPF6XrEsFDtQrwqqD0J2q1CdLXy/exec"
 DEBOUNCE_SECONDS = 1.2
 CONFIG_FILE = "config_ponto.json"
 
