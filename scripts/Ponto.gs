@@ -87,6 +87,9 @@ function doPost(e) {
         });
         if (!existeTeoriaHoje) {
           abaTeoria.appendRow([id, email, nome, dataStr, horaStr, "", escala, "Teoria"]);
+          // Sincroniza automaticamente para FrequenciaTeorica
+          var novaLinha = abaTeoria.getLastRow();
+          syncToFrequenciaTeoricaFromPonto_(ss, abaTeoria, novaLinha, escala);
           return resposta("Saída prática e entrada teórica registradas: " + horaStr);
         }
       }
@@ -112,4 +115,123 @@ function formatarData(valor) {
 
 function resposta(msg) {
   return ContentService.createTextOutput(msg).setMimeType(ContentService.MimeType.TEXT);
+}
+
+/**
+ * Sincroniza uma linha da aba PontoTeoria para a aba FrequenciaTeorica correspondente.
+ * Chamada automaticamente quando uma nova entrada teórica é criada via doPost.
+ * @param {Spreadsheet} spreadsheet - A planilha ativa
+ * @param {Sheet} pontoTeoriaSheet - A aba PontoTeoria
+ * @param {number} rowNumber - O número da linha a ser copiada
+ * @param {string} escalaNumber - O número da escala (1-12)
+ */
+function syncToFrequenciaTeoricaFromPonto_(spreadsheet, pontoTeoriaSheet, rowNumber, escalaNumber) {
+  // Valida se o número da escala está no intervalo 1-12
+  var escalaNum = parseInt(escalaNumber, 10);
+  if (isNaN(escalaNum) || escalaNum < 1 || escalaNum > 12) {
+    console.warn('Número de escala inválido para FrequenciaTeorica: ' + escalaNumber);
+    return;
+  }
+
+  var freqSheetName = 'FrequenciaTeorica' + escalaNum;
+  var freqSheet = spreadsheet.getSheetByName(freqSheetName);
+  if (!freqSheet) {
+    console.warn('Aba ' + freqSheetName + ' não encontrada.');
+    return;
+  }
+
+  // Obtém os dados da linha inteira de PontoTeoria
+  var lastCol = pontoTeoriaSheet.getLastColumn();
+  var rowData = pontoTeoriaSheet.getRange(rowNumber, 1, 1, lastCol).getValues()[0];
+
+  // Obtém os cabeçalhos de PontoTeoria e FrequenciaTeorica
+  var headersOrigem = pontoTeoriaSheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  var headersDestino = freqSheet.getRange(1, 1, 1, freqSheet.getLastColumn()).getValues()[0];
+
+  // Usa SerialNumber + Data + HoraEntrada + HoraSaida como identificador único para evitar duplicatas
+  var serialColOrigem = headersOrigem.indexOf('SerialNumber');
+  var dataColOrigem = headersOrigem.indexOf('Data');
+  var horaEntColOrigem = headersOrigem.indexOf('HoraEntrada');
+  var horaSaiColOrigem = headersOrigem.indexOf('HoraSaida');
+
+  // Se não encontrar SerialNumber, usa a primeira coluna (índice 0)
+  if (serialColOrigem < 0) serialColOrigem = 0;
+
+  if (dataColOrigem < 0 || horaEntColOrigem < 0 || horaSaiColOrigem < 0) {
+    console.warn('Colunas Data, HoraEntrada ou HoraSaida não encontradas em PontoTeoria');
+    return;
+  }
+
+  var serialValue = rowData[serialColOrigem];
+  var dataValue = rowData[dataColOrigem];
+  var horaEntValue = rowData[horaEntColOrigem];
+  var horaSaiValue = rowData[horaSaiColOrigem];
+
+  if (!serialValue) {
+    console.warn('SerialNumber vazio na linha ' + rowNumber);
+    return;
+  }
+
+  // Procura colunas correspondentes em FrequenciaTeorica
+  var serialColDestino = headersDestino.indexOf('SerialNumber');
+  var dataColDestino = headersDestino.indexOf('Data');
+  var horaEntColDestino = headersDestino.indexOf('HoraEntrada');
+  var horaSaiColDestino = headersDestino.indexOf('HoraSaida');
+
+  // Se não encontrar SerialNumber, usa a primeira coluna
+  if (serialColDestino < 0) serialColDestino = 0;
+
+  // Verifica se já existe a mesma linha em FrequenciaTeorica (evita duplicatas)
+  var lastRowFreq = freqSheet.getLastRow();
+  if (lastRowFreq >= 2 && dataColDestino >= 0 && horaEntColDestino >= 0 && horaSaiColDestino >= 0) {
+    var existingData = freqSheet.getRange(2, 1, lastRowFreq - 1, freqSheet.getLastColumn()).getValues();
+    var dataFormatada = formatarDataParaComparacao_(dataValue);
+    var horaEntFormatada = formatarHoraParaComparacao_(horaEntValue);
+    var horaSaiFormatada = formatarHoraParaComparacao_(horaSaiValue);
+
+    for (var i = 0; i < existingData.length; i++) {
+      var existingSerial = String(existingData[i][serialColDestino] || '').trim();
+      var existingDataRow = formatarDataParaComparacao_(existingData[i][dataColDestino]);
+      var existingHoraEnt = formatarHoraParaComparacao_(existingData[i][horaEntColDestino]);
+      var existingHoraSai = formatarHoraParaComparacao_(existingData[i][horaSaiColDestino]);
+
+      if (existingSerial === String(serialValue).trim() &&
+          existingDataRow === dataFormatada &&
+          existingHoraEnt === horaEntFormatada &&
+          existingHoraSai === horaSaiFormatada) {
+        console.log('Linha já existe em ' + freqSheetName + '. Ignorando duplicata.');
+        return;
+      }
+    }
+  }
+
+  // Adiciona a linha inteira na aba FrequenciaTeorica
+  freqSheet.appendRow(rowData);
+  console.log('Linha sincronizada automaticamente para ' + freqSheetName + ': SerialNumber ' + serialValue);
+}
+
+/**
+ * Formata uma data para comparação (dd/MM/yyyy)
+ * @param {Date|string} value - O valor da data
+ * @returns {string} A data formatada como string
+ */
+function formatarDataParaComparacao_(value) {
+  if (!value) return '';
+  if (value instanceof Date) {
+    return Utilities.formatDate(value, "America/Sao_Paulo", "dd/MM/yyyy");
+  }
+  return String(value).trim();
+}
+
+/**
+ * Formata uma hora para comparação (HH:mm:ss)
+ * @param {Date|string} value - O valor da hora
+ * @returns {string} A hora formatada como string
+ */
+function formatarHoraParaComparacao_(value) {
+  if (!value) return '';
+  if (value instanceof Date) {
+    return Utilities.formatDate(value, "America/Sao_Paulo", "HH:mm:ss");
+  }
+  return String(value).trim();
 }

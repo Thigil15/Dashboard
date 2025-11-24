@@ -49,6 +49,10 @@ function handlePontoChange(e){
 
     try {
       syncOnePontoRow_(e.source, escalaNumber, email, dataRaw, horaEnt, horaSai);
+      // Sincroniza também para FrequenciaTeorica se for aba PontoTeoria
+      if (sheetName === 'PontoTeoria') {
+        syncToFrequenciaTeorica_(e.source, sheet, r, escalaNumber);
+      }
     } catch(err) {
       console.error('Erro sincronizando linha ' + r + ':', err);
     }
@@ -141,6 +145,126 @@ function syncOnePontoRow_(spreadsheet, escalaNumber, email, dataRaw, horaEnt, ho
   cell.setValue(finalValue);
 }
 
+/**
+ * Sincroniza uma linha da aba PontoTeoria para a aba FrequenciaTeorica correspondente.
+ * O número da escala (1-12) determina qual aba FrequenciaTeorica receberá a linha.
+ * @param {Spreadsheet} spreadsheet - A planilha ativa
+ * @param {Sheet} pontoTeoriaSheet - A aba PontoTeoria
+ * @param {number} rowNumber - O número da linha a ser copiada
+ * @param {string} escalaNumber - O número da escala (1-12)
+ */
+function syncToFrequenciaTeorica_(spreadsheet, pontoTeoriaSheet, rowNumber, escalaNumber) {
+  // Valida se o número da escala está no intervalo 1-12
+  var escalaNum = parseInt(escalaNumber, 10);
+  if (isNaN(escalaNum) || escalaNum < 1 || escalaNum > 12) {
+    console.warn('Número de escala inválido para FrequenciaTeorica: ' + escalaNumber);
+    return;
+  }
+
+  var freqSheetName = 'FrequenciaTeorica' + escalaNum;
+  var freqSheet = spreadsheet.getSheetByName(freqSheetName);
+  if (!freqSheet) {
+    console.warn('Aba ' + freqSheetName + ' não encontrada.');
+    return;
+  }
+
+  // Obtém os dados da linha inteira de PontoTeoria
+  var lastCol = pontoTeoriaSheet.getLastColumn();
+  var rowData = pontoTeoriaSheet.getRange(rowNumber, 1, 1, lastCol).getValues()[0];
+
+  // Obtém os cabeçalhos de PontoTeoria e FrequenciaTeorica
+  var headersOrigem = pontoTeoriaSheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  var headersDestino = freqSheet.getRange(1, 1, 1, freqSheet.getLastColumn()).getValues()[0];
+
+  // Verifica se já existe uma linha com os mesmos dados para evitar duplicatas
+  // Usa SerialNumber + Data + HoraEntrada + HoraSaida como identificador único
+  var serialColOrigem = headersOrigem.indexOf('SerialNumber');
+  var dataColOrigem = headersOrigem.indexOf('Data');
+  var horaEntColOrigem = headersOrigem.indexOf('HoraEntrada');
+  var horaSaiColOrigem = headersOrigem.indexOf('HoraSaida');
+
+  // Se não encontrar SerialNumber, usa a primeira coluna (índice 0)
+  if (serialColOrigem < 0) serialColOrigem = 0;
+
+  if (dataColOrigem < 0 || horaEntColOrigem < 0 || horaSaiColOrigem < 0) {
+    console.warn('Colunas Data, HoraEntrada ou HoraSaida não encontradas em PontoTeoria');
+    return;
+  }
+
+  var serialValue = rowData[serialColOrigem];
+  var dataValue = rowData[dataColOrigem];
+  var horaEntValue = rowData[horaEntColOrigem];
+  var horaSaiValue = rowData[horaSaiColOrigem];
+
+  if (!serialValue) {
+    console.warn('SerialNumber vazio na linha ' + rowNumber);
+    return;
+  }
+
+  // Procura colunas correspondentes em FrequenciaTeorica
+  var serialColDestino = headersDestino.indexOf('SerialNumber');
+  var dataColDestino = headersDestino.indexOf('Data');
+  var horaEntColDestino = headersDestino.indexOf('HoraEntrada');
+  var horaSaiColDestino = headersDestino.indexOf('HoraSaida');
+
+  // Se não encontrar SerialNumber, usa a primeira coluna
+  if (serialColDestino < 0) serialColDestino = 0;
+
+  // Verifica se já existe a mesma linha em FrequenciaTeorica (evita duplicatas)
+  var lastRowFreq = freqSheet.getLastRow();
+  if (lastRowFreq >= 2 && dataColDestino >= 0 && horaEntColDestino >= 0 && horaSaiColDestino >= 0) {
+    var existingData = freqSheet.getRange(2, 1, lastRowFreq - 1, freqSheet.getLastColumn()).getValues();
+    var dataFormatada = formatDateForComparison_(dataValue);
+    var horaEntFormatada = formatTimeForComparison_(horaEntValue);
+    var horaSaiFormatada = formatTimeForComparison_(horaSaiValue);
+
+    for (var i = 0; i < existingData.length; i++) {
+      var existingSerial = String(existingData[i][serialColDestino] || '').trim();
+      var existingDataRow = formatDateForComparison_(existingData[i][dataColDestino]);
+      var existingHoraEnt = formatTimeForComparison_(existingData[i][horaEntColDestino]);
+      var existingHoraSai = formatTimeForComparison_(existingData[i][horaSaiColDestino]);
+
+      if (existingSerial === String(serialValue).trim() &&
+          existingDataRow === dataFormatada &&
+          existingHoraEnt === horaEntFormatada &&
+          existingHoraSai === horaSaiFormatada) {
+        console.log('Linha já existe em ' + freqSheetName + '. Ignorando duplicata.');
+        return;
+      }
+    }
+  }
+
+  // Adiciona a linha inteira na aba FrequenciaTeorica
+  freqSheet.appendRow(rowData);
+  console.log('Linha sincronizada para ' + freqSheetName + ': SerialNumber ' + serialValue);
+}
+
+/**
+ * Formata uma data para comparação (dd/MM/yyyy)
+ * @param {Date|string} value - O valor da data
+ * @returns {string} A data formatada como string
+ */
+function formatDateForComparison_(value) {
+  if (!value) return '';
+  if (Object.prototype.toString.call(value) === '[object Date]' && !isNaN(value)) {
+    return two(value.getDate()) + '/' + two(value.getMonth() + 1) + '/' + value.getFullYear();
+  }
+  return String(value).trim();
+}
+
+/**
+ * Formata uma hora para comparação (HH:MM:SS)
+ * @param {Date|string} value - O valor da hora
+ * @returns {string} A hora formatada como string
+ */
+function formatTimeForComparison_(value) {
+  if (!value) return '';
+  if (Object.prototype.toString.call(value) === '[object Date]' && !isNaN(value)) {
+    return two(value.getHours()) + ':' + two(value.getMinutes()) + ':' + two(value.getSeconds());
+  }
+  return String(value).trim();
+}
+
 /** helper: pad 2 */
 function two(n){ return ('0' + n).slice(-2); }
 
@@ -225,6 +349,10 @@ function syncAllPontos(){
       var horaSai = (horaSaiCol>0) ? r[horaSaiCol-1] : '';
       var escalaNumber = (escalaCol>0 && r[escalaCol-1]) ? String(r[escalaCol-1]) : '9';
       syncOnePontoRow_(ss, escalaNumber, email, dataRaw, horaEnt, horaSai);
+      // Sincroniza também para FrequenciaTeorica se for aba PontoTeoria
+      if (name === 'PontoTeoria') {
+        syncToFrequenciaTeorica_(ss, sheet, i + 2, escalaNumber);
+      }
     }
   });
 }
