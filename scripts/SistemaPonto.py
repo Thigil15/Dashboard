@@ -54,6 +54,18 @@ DIAS_TEORIA_PADRAO = [1, 3]  # Terça e Quinta
 
 _last_time = 0.0
 
+# Configuração padrão - usada em load_config() e save_default_config()
+def get_default_config():
+    """Retorna a configuração padrão."""
+    return {
+        "endpoint": ENDPOINT,
+        "debounce_seconds": DEBOUNCE_SECONDS,
+        "nomes": NOMES.copy(),
+        "dias_teoria": DIAS_TEORIA_PADRAO.copy(),
+        "dias_especiais_teoria": [],
+        "log_file": None
+    }
+
 # Configurar logging
 def setup_logging(log_file=None):
     """Configura o sistema de logging."""
@@ -74,14 +86,7 @@ def setup_logging(log_file=None):
 
 def load_config():
     """Carrega a configuração do arquivo JSON."""
-    config = {
-        "endpoint": ENDPOINT,
-        "debounce_seconds": DEBOUNCE_SECONDS,
-        "nomes": NOMES,
-        "dias_teoria": DIAS_TEORIA_PADRAO,
-        "dias_especiais_teoria": [],  # Lista de datas específicas no formato "dd/mm/yyyy"
-        "log_file": None
-    }
+    config = get_default_config()
     
     # Procura o arquivo de configuração no diretório atual ou no diretório do script
     config_paths = [
@@ -98,8 +103,10 @@ def load_config():
                     config.update(user_config)
                     logging.info(f"Configuração carregada de: {config_path}")
                     break
-            except (json.JSONDecodeError, IOError) as e:
-                logging.warning(f"Erro ao carregar configuração de {config_path}: {e}")
+            except json.JSONDecodeError as e:
+                logging.warning(f"Erro de sintaxe JSON em {config_path}: {e}")
+            except IOError as e:
+                logging.warning(f"Erro ao ler arquivo {config_path}: {e}")
     
     return config
 
@@ -108,14 +115,8 @@ def save_default_config(path=None):
     if path is None:
         path = Path(CONFIG_FILE)
     
-    config = {
-        "endpoint": ENDPOINT,
-        "debounce_seconds": DEBOUNCE_SECONDS,
-        "nomes": NOMES,
-        "dias_teoria": DIAS_TEORIA_PADRAO,
-        "dias_especiais_teoria": [],
-        "log_file": "logs/sistema_ponto.log"
-    }
+    config = get_default_config()
+    config["log_file"] = "logs/sistema_ponto.log"  # Define log file apenas no arquivo salvo
     
     try:
         with open(path, 'w', encoding='utf-8') as f:
@@ -201,8 +202,11 @@ def add_dia_especial(data_str, config_path=None):
         try:
             with open(config_path, 'r', encoding='utf-8') as f:
                 config = json.load(f)
-        except (json.JSONDecodeError, IOError):
-            pass
+        except json.JSONDecodeError as e:
+            print(f"Aviso: Erro de sintaxe no arquivo de configuração: {e}")
+            print("Criando nova configuração...")
+        except IOError as e:
+            print(f"Aviso: Erro ao ler arquivo de configuração: {e}")
     
     # Adiciona o dia especial
     if "dias_especiais_teoria" not in config:
@@ -395,6 +399,9 @@ def main(config):
     else:
         logging.info("Hoje NÃO é dia de teoria (apenas prática)")
     
+    # Controle de data para recarregar config apenas uma vez por dia
+    last_config_date = date.today()
+    
     try:
         while True:
             # lê linha (o leitor HID "digita" o UID e envia Enter)
@@ -421,9 +428,14 @@ def main(config):
             hora = datetime.now().strftime("%H:%M:%S")
             data = datetime.now().strftime("%d/%m/%Y")
             
-            # Recarrega configuração para verificar dias especiais atualizados
-            config = load_config()
-            is_teoria = is_dia_teoria(config)
+            # Recarrega configuração apenas se mudou o dia
+            # (para verificar novos dias especiais adicionados)
+            current_date = date.today()
+            if current_date != last_config_date:
+                config = load_config()
+                is_teoria = is_dia_teoria(config)
+                last_config_date = current_date
+                logging.info(f"Novo dia detectado. Dia de teoria: {is_teoria}")
             
             logging.info(f"Lido: {serial} ({nome}) - {data} {hora}")
             logging.info(f"Enviando para endpoint... (Dia Teoria: {is_teoria})")

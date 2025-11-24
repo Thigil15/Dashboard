@@ -19,8 +19,16 @@ if errorlevel 1 (
 REM Verifica se requests está instalado
 python -c "import requests" >nul 2>&1
 if errorlevel 1 (
-    echo Instalando dependência 'requests'...
-    pip install requests
+    echo A dependencia 'requests' nao esta instalada.
+    set /p INSTALL_CONFIRM="Deseja instalar agora? (S/N): "
+    if /i "%INSTALL_CONFIRM%"=="S" (
+        echo Instalando dependencia 'requests'...
+        pip install requests
+    ) else (
+        echo Instalacao cancelada. O programa precisa do 'requests' para funcionar.
+        pause
+        exit /b 1
+    )
 )
 
 REM Inicia o programa minimizado
