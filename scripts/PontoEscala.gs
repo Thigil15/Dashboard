@@ -230,7 +230,7 @@ function syncToFrequenciaTeorica_(spreadsheet, pontoTeoriaSheet, rowNumber, esca
 }
 
 /**
- * Formata uma data para comparação (dd/mm/yyyy)
+ * Formata uma data para comparação (dd/MM/yyyy)
  * @param {Date|string} value - O valor da data
  * @returns {string} A data formatada como string
  */
