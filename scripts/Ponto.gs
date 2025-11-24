@@ -148,46 +148,57 @@ function syncToFrequenciaTeoricaFromPonto_(spreadsheet, pontoTeoriaSheet, rowNum
   var headersOrigem = pontoTeoriaSheet.getRange(1, 1, 1, lastCol).getValues()[0];
   var headersDestino = freqSheet.getRange(1, 1, 1, freqSheet.getLastColumn()).getValues()[0];
 
-  // Usa EmailHC + Data como identificador único para evitar duplicatas
-  var emailColOrigem = headersOrigem.indexOf('EmailHC');
+  // Usa SerialNumber + Data + HoraEntrada + HoraSaida como identificador único para evitar duplicatas
+  var serialColOrigem = headersOrigem.indexOf('SerialNumber');
   var dataColOrigem = headersOrigem.indexOf('Data');
+  var horaEntColOrigem = headersOrigem.indexOf('HoraEntrada');
+  var horaSaiColOrigem = headersOrigem.indexOf('HoraSaida');
 
-  if (emailColOrigem < 0 || dataColOrigem < 0) {
-    console.warn('Colunas EmailHC ou Data não encontradas em PontoTeoria');
+  // Se não encontrar SerialNumber, usa a primeira coluna (índice 0)
+  if (serialColOrigem < 0) serialColOrigem = 0;
+
+  if (dataColOrigem < 0 || horaEntColOrigem < 0 || horaSaiColOrigem < 0) {
+    console.warn('Colunas Data, HoraEntrada ou HoraSaida não encontradas em PontoTeoria');
     return;
   }
 
-  var emailValue = rowData[emailColOrigem];
+  var serialValue = rowData[serialColOrigem];
   var dataValue = rowData[dataColOrigem];
+  var horaEntValue = rowData[horaEntColOrigem];
+  var horaSaiValue = rowData[horaSaiColOrigem];
 
-  if (!emailValue) {
-    console.warn('Email vazio na linha ' + rowNumber);
+  if (!serialValue) {
+    console.warn('SerialNumber vazio na linha ' + rowNumber);
     return;
   }
 
   // Procura colunas correspondentes em FrequenciaTeorica
-  var emailColDestino = headersDestino.indexOf('EmailHC');
+  var serialColDestino = headersDestino.indexOf('SerialNumber');
   var dataColDestino = headersDestino.indexOf('Data');
+  var horaEntColDestino = headersDestino.indexOf('HoraEntrada');
+  var horaSaiColDestino = headersDestino.indexOf('HoraSaida');
 
-  if (emailColDestino < 0) {
-    for (var i = 0; i < headersDestino.length; i++) {
-      var h = String(headersDestino[i] || '').toLowerCase();
-      if (h.indexOf('email') !== -1) { emailColDestino = i; break; }
-    }
-  }
+  // Se não encontrar SerialNumber, usa a primeira coluna
+  if (serialColDestino < 0) serialColDestino = 0;
 
   // Verifica se já existe a mesma linha em FrequenciaTeorica (evita duplicatas)
   var lastRowFreq = freqSheet.getLastRow();
-  if (lastRowFreq >= 2 && emailColDestino >= 0 && dataColDestino >= 0) {
+  if (lastRowFreq >= 2 && dataColDestino >= 0 && horaEntColDestino >= 0 && horaSaiColDestino >= 0) {
     var existingData = freqSheet.getRange(2, 1, lastRowFreq - 1, freqSheet.getLastColumn()).getValues();
     var dataFormatada = formatarDataParaComparacao_(dataValue);
+    var horaEntFormatada = formatarHoraParaComparacao_(horaEntValue);
+    var horaSaiFormatada = formatarHoraParaComparacao_(horaSaiValue);
 
     for (var i = 0; i < existingData.length; i++) {
-      var existingEmail = String(existingData[i][emailColDestino] || '').trim().toLowerCase();
+      var existingSerial = String(existingData[i][serialColDestino] || '').trim();
       var existingDataRow = formatarDataParaComparacao_(existingData[i][dataColDestino]);
+      var existingHoraEnt = formatarHoraParaComparacao_(existingData[i][horaEntColDestino]);
+      var existingHoraSai = formatarHoraParaComparacao_(existingData[i][horaSaiColDestino]);
 
-      if (existingEmail === String(emailValue).trim().toLowerCase() &&
-          existingDataRow === dataFormatada) {
+      if (existingSerial === String(serialValue).trim() &&
+          existingDataRow === dataFormatada &&
+          existingHoraEnt === horaEntFormatada &&
+          existingHoraSai === horaSaiFormatada) {
         console.log('Linha já existe em ' + freqSheetName + '. Ignorando duplicata.');
         return;
       }
@@ -196,7 +207,7 @@ function syncToFrequenciaTeoricaFromPonto_(spreadsheet, pontoTeoriaSheet, rowNum
 
   // Adiciona a linha inteira na aba FrequenciaTeorica
   freqSheet.appendRow(rowData);
-  console.log('Linha sincronizada automaticamente para ' + freqSheetName + ': ' + emailValue);
+  console.log('Linha sincronizada automaticamente para ' + freqSheetName + ': SerialNumber ' + serialValue);
 }
 
 /**
@@ -208,6 +219,19 @@ function formatarDataParaComparacao_(value) {
   if (!value) return '';
   if (value instanceof Date) {
     return Utilities.formatDate(value, "America/Sao_Paulo", "dd/MM/yyyy");
+  }
+  return String(value).trim();
+}
+
+/**
+ * Formata uma hora para comparação (HH:mm:ss)
+ * @param {Date|string} value - O valor da hora
+ * @returns {string} A hora formatada como string
+ */
+function formatarHoraParaComparacao_(value) {
+  if (!value) return '';
+  if (value instanceof Date) {
+    return Utilities.formatDate(value, "America/Sao_Paulo", "HH:mm:ss");
   }
   return String(value).trim();
 }
