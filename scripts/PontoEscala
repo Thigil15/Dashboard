@@ -194,7 +194,7 @@ function entradaSaidaToString_(ent, sai){
   }
   var e = norm(ent);
   var s = norm(sai);
-  if (e && s) return e + ' - ' + s;
+  if (e && s) return e + ' às ' + s;
   return e || s || '';
 }
 
