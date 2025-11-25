@@ -108,24 +108,12 @@ function syncOnePontoRow_(spreadsheet, escalaNumber, email, dataRaw, horaEnt, ho
   var ddmm = two(parsed.getDate()) + '/' + two(parsed.getMonth()+1);
   var ddmm_underscore = two(parsed.getDate()) + '_' + two(parsed.getMonth()+1);
 
-  // localizar coluna de data na escala (procura por "dd/mm" ou "dd_mm" dentro do cabeçalho)
+  // localizar coluna de data na escala usando a função helper
   var dateColIndex = -1;
   for (var j=0;j<headersEsc.length;j++){
-    var h = headersEsc[j];
-    if (!h) continue;
-    var hs = String(h);
-    // Verifica formato com barra (dd/mm) ou com underscore (dd_mm)
-    if (hs.indexOf(ddmm) !== -1 || hs.trim() === ddmm || 
-        hs.indexOf(ddmm_underscore) !== -1 || hs.trim() === ddmm_underscore ||
-        hs.indexOf(ddmm + '/' + parsed.getFullYear()) !== -1 ||
-        hs.indexOf(ddmm_underscore + '_' + parsed.getFullYear()) !== -1) {
+    if (isDateHeaderMatch_(headersEsc[j], parsed)) {
       dateColIndex = j+1;
       break;
-    }
-    if (Object.prototype.toString.call(h) === '[object Date]' && !isNaN(h)) {
-      if (h.getDate() === parsed.getDate() && h.getMonth() === parsed.getMonth()) {
-        dateColIndex = j+1; break;
-      }
     }
   }
   if (dateColIndex === -1){
@@ -292,6 +280,37 @@ function parseDateFlexible_(v){
   var dt = new Date(s);
   if (!isNaN(dt)) return dt;
   return null;
+}
+
+/**
+ * Verifica se um cabeçalho de coluna corresponde a uma data.
+ * Suporta formatos: dd/mm, dd_mm, dd/mm/yyyy, dd_mm_yyyy, ou objetos Date.
+ * @param {*} header - O valor do cabeçalho (string ou Date)
+ * @param {Date} parsedDate - A data parseada para comparar
+ * @returns {boolean} true se o cabeçalho corresponde à data
+ */
+function isDateHeaderMatch_(header, parsedDate) {
+  if (!header || !parsedDate) return false;
+  
+  // Se o cabeçalho é um objeto Date
+  if (Object.prototype.toString.call(header) === '[object Date]' && !isNaN(header)) {
+    return header.getDate() === parsedDate.getDate() && 
+           header.getMonth() === parsedDate.getMonth();
+  }
+  
+  // Converte para string e verifica os formatos
+  var hs = String(header).trim();
+  var ddmm_slash = two(parsedDate.getDate()) + '/' + two(parsedDate.getMonth() + 1);
+  var ddmm_underscore = two(parsedDate.getDate()) + '_' + two(parsedDate.getMonth() + 1);
+  var year = parsedDate.getFullYear();
+  
+  // Verifica formato com barra (dd/mm) ou com underscore (dd_mm)
+  return hs.indexOf(ddmm_slash) !== -1 || 
+         hs === ddmm_slash || 
+         hs.indexOf(ddmm_underscore) !== -1 || 
+         hs === ddmm_underscore ||
+         hs.indexOf(ddmm_slash + '/' + year) !== -1 ||
+         hs.indexOf(ddmm_underscore + '_' + year) !== -1;
 }
 
 /** normaliza entrada/saida para formato HH:MM:SS - HH:MM:SS
