@@ -1034,6 +1034,8 @@ const appState = {
 
 const ATRASO_THRESHOLD_MINUTES = 10;
 const TOTAL_ESCALADOS = 25;
+const MAX_RECENT_ACTIVITIES = 10;
+const MAX_PENDING_STUDENTS = 8;
 const pontoState = {
     rawRows: [],
     byDate: new Map(),
@@ -2132,11 +2134,10 @@ const pontoState = {
             }
             
             // Store student data for click handling
-            const MAX_VISIBLE_STUDENTS = 8;
-            window._pendingStudentsData = studentsArray.slice(0, MAX_VISIBLE_STUDENTS);
+            window._pendingStudentsData = studentsArray.slice(0, MAX_PENDING_STUDENTS);
             
             let html = '';
-            studentsArray.slice(0, MAX_VISIBLE_STUDENTS).forEach((student, index) => {
+            studentsArray.slice(0, MAX_PENDING_STUDENTS).forEach((student, index) => {
                 const displayName = student.nome;
                 const escapedDisplayName = displayName.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
                 const escapedFullName = student.nome.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -2149,8 +2150,8 @@ const pontoState = {
                 `;
             });
             
-            if (studentsArray.length > MAX_VISIBLE_STUDENTS) {
-                html += `<div class="pro-pending-empty">+ ${studentsArray.length - MAX_VISIBLE_STUDENTS} mais...</div>`;
+            if (studentsArray.length > MAX_PENDING_STUDENTS) {
+                html += `<div class="pro-pending-empty">+ ${studentsArray.length - MAX_PENDING_STUDENTS} mais...</div>`;
             }
             
             container.innerHTML = html;
@@ -2287,7 +2288,7 @@ const pontoState = {
                          return new Date(dB+'T00:00:00')-new Date(dA+'T00:00:00');
                      }); 
                 
-                 l.innerHTML=sorted.slice(0,10).map(i=>{
+                 l.innerHTML=sorted.slice(0, MAX_RECENT_ACTIVITIES).map(i=>{
                      const al = appState.alunos.find(a => 
                          (i.EmailHC && normalizeString(a.EmailHC) === normalizeString(i.EmailHC)) ||
                          (i.NomeCompleto && normalizeString(a.NomeCompleto) === normalizeString(i.NomeCompleto))
