@@ -1,7 +1,7 @@
 @echo off
 REM =========================================
 REM  Script para iniciar o Sistema de Ponto
-REM  Executa em segundo plano no Windows
+REM  Executa no CMD com saida visivel
 REM =========================================
 
 REM Muda para o diretório do script
@@ -31,19 +31,17 @@ if errorlevel 1 (
     )
 )
 
-REM Inicia o programa minimizado
-echo Iniciando Sistema de Ponto em segundo plano...
-start /min pythonw SistemaPonto.py --background
-
-echo Sistema de Ponto iniciado com sucesso!
-echo O programa está rodando em segundo plano.
+REM Inicia o programa em uma nova janela (visivel para acompanhar)
+echo Iniciando Sistema de Ponto...
 echo.
 echo Para gerenciar dias especiais de teoria:
 echo   python SistemaPonto.py --add-dia DD/MM/YYYY
 echo   python SistemaPonto.py --remove-dia DD/MM/YYYY
 echo   python SistemaPonto.py --list-dias
 echo.
-echo Para instalar na inicialização do Windows:
+echo Para instalar na inicializacao do Windows:
 echo   python SistemaPonto.py --install-startup
 echo.
-timeout /t 5
+echo Iniciando o sistema...
+echo.
+python SistemaPonto.py
