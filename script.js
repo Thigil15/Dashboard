@@ -3585,7 +3585,7 @@ const pontoState = {
                          const imgSrc = s.FotoID ? `https://lh3.googleusercontent.com/d/${s.FotoID}=s96-c` : placeholderImg;
                          cardHTML += `<img src="${imgSrc}" alt="Foto" loading="lazy" onerror="this.src='${placeholderImg}'">`;
                          cardHTML += `<p class="student-name">${s.NomeCompleto}</p>`;
-                         cardHTML += `<p class="student-course mt-0.5">${s.Curso || ''}</p>`;
+                         cardHTML += `<p class="student-course mt-0.5">${s.Curso || 'Sem Curso'}</p>`;
                          
                          card.innerHTML = cardHTML;
                          grid.appendChild(card);
