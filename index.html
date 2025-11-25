@@ -31,45 +31,45 @@
     <!-- Tela de Login -->
     <div id="login-view" class="view-container" style="display: flex;">
         <div id="login-card">
-            <div class="flex flex-col items-center mb-8">
+            <div class="login-card-header">
                 <!-- Logo InCor Ensino -->
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-700 to-blue-600 flex items-center justify-center shadow-lg">
-                        <svg class="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <div class="login-logo-container">
+                    <div class="login-logo-icon">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                         </svg>
                     </div>
                 </div>
-                <h1 class="text-2xl font-bold text-center">Portal de Ensino</h1>
-                <div class="flex items-center gap-2 mt-2">
-                    <span class="text-sm font-semibold text-blue-700">INCOR</span>
-                    <span class="w-1 h-1 rounded-full bg-red-500"></span>
-                    <span class="text-sm text-slate-500">HC FMUSP</span>
+                <h1 class="login-title">Portal de Ensino</h1>
+                <div class="login-subtitle">
+                    <span class="login-incor">INCOR</span>
+                    <span class="login-dot"></span>
+                    <span class="login-hc">HC FMUSP</span>
                 </div>
-                <p class="text-sm text-slate-500 mt-3">Fisioterapia Cardiovascular e Respiratória</p>
+                <p class="login-description">Fisioterapia Cardiovascular e Respiratória</p>
             </div>
             <form id="login-form">
-                <div class="space-y-5">
-                    <div>
-                        <label for="email" class="block text-sm font-medium mb-2">Email Institucional</label>
-                        <input type="email" id="login-email" placeholder="seu.email@hc.fm.usp.br" class="mt-1 block w-full px-4 py-3.5 border rounded-xl shadow-sm placeholder-slate-400 focus:outline-none text-sm" required>
+                <div class="login-form-fields">
+                    <div class="login-field">
+                        <label for="email" class="login-label">Email Institucional</label>
+                        <input type="email" id="login-email" placeholder="seu.email@hc.fm.usp.br" class="login-input" required>
                     </div>
-                    <div>
-                        <label for="password" class="block text-sm font-medium mb-2">Senha</label>
-                        <input type="password" id="login-password" placeholder="••••••••" class="mt-1 block w-full px-4 py-3.5 border rounded-xl shadow-sm placeholder-slate-400 focus:outline-none text-sm" required>
+                    <div class="login-field">
+                        <label for="password" class="login-label">Senha</label>
+                        <input type="password" id="login-password" placeholder="••••••••" class="login-input" required>
                     </div>
-                    <button type="submit" id="login-button" class="w-full flex justify-center items-center gap-2 py-3.5 px-4 border border-transparent rounded-xl shadow-sm text-base font-semibold text-white focus:outline-none transition duration-200">
+                    <button type="submit" id="login-button" class="login-submit-btn">
                         <span>Acessar Sistema</span>
-                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                         </svg>
                     </button>
                 </div>
-                <div id="login-error" class="text-center"></div>
+                <div id="login-error"></div>
             </form>
-            <div class="mt-6 pt-6 border-t border-slate-100 text-center">
-                <p class="text-xs text-slate-400">Instituto do Coração • Hospital das Clínicas</p>
-                <p class="text-xs text-slate-400 mt-1">Faculdade de Medicina da Universidade de São Paulo</p>
+            <div class="login-footer">
+                <p>Instituto do Coração • Hospital das Clínicas</p>
+                <p>Faculdade de Medicina da Universidade de São Paulo</p>
             </div>
         </div>
     </div>
@@ -77,66 +77,66 @@
 
     <!-- View do Dashboard Principal (Começa escondida) -->
     <!-- CRITICAL FIX: Start hidden (display:none) to prevent flash of content before auth check -->
-    <div id="dashboard-view" class="view-container flex min-h-screen opacity-0 transition-opacity duration-500" style="display: none;">
+    <div id="dashboard-view" class="view-container dashboard-layout" style="display: none;">
         
         <!-- Sidebar Institucional -->
         <aside id="app-sidebar">
             <!-- Header com Branding InCor -->
-            <div class="sidebar-header px-5 py-5 border-b border-gray-100 flex-shrink-0">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-3 overflow-hidden">
+            <div class="sidebar-header">
+                <div class="sidebar-header-content">
+                    <div class="sidebar-brand">
                         <!-- Logo Icon -->
-                        <div class="sidebar-logo-icon w-10 h-10 rounded-xl bg-gradient-to-br from-blue-700 to-blue-600 flex items-center justify-center shadow-md flex-shrink-0">
-                            <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <div class="sidebar-logo-icon">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                             </svg>
                         </div>
-                        <div class="sidebar-logo-content overflow-hidden">
-                            <h1 class="text-lg font-bold sidebar-logo-text whitespace-nowrap">Portal Ensino</h1>
-                            <p class="text-xs text-slate-400 whitespace-nowrap">InCor • HC FMUSP</p>
+                        <div class="sidebar-logo-content">
+                            <h1 class="sidebar-logo-text">Portal Ensino</h1>
+                            <p class="sidebar-logo-subtitle">InCor • HC FMUSP</p>
                         </div>
                     </div>
-                    <button id="sidebar-toggle" title="Recolher menu" class="p-2 rounded-lg focus:outline-none hover:bg-blue-50 transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <button id="sidebar-toggle" title="Recolher menu" class="sidebar-toggle-btn">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
                         </svg>
                     </button>
                 </div>
             </div>
             
-            <nav class="flex-grow overflow-y-auto py-4 px-2">
+            <nav class="sidebar-nav">
                 <a href="#dashboard" data-tab="dashboard" class="sidebar-link active">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17.5a.5.5 0 00.5.5h11a.5.5 0 00.5-.5V10.414l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg>
-                    <span class="sidebar-link-text whitespace-nowrap">Dashboard</span>
+                    <svg class="sidebar-link-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17.5a.5.5 0 00.5.5h11a.5.5 0 00.5-.5V10.414l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg>
+                    <span class="sidebar-link-text">Dashboard</span>
                 </a>
                 <a href="#alunos" data-tab="alunos" class="sidebar-link">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-4" viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" /></svg>
-                    <span class="sidebar-link-text whitespace-nowrap">Alunos</span>
+                    <svg class="sidebar-link-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" /></svg>
+                    <span class="sidebar-link-text">Residentes</span>
                 </a>
                 <a href="#ponto" data-tab="ponto" class="sidebar-link">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z" clip-rule="evenodd" /></svg>
-                    <span class="sidebar-link-text whitespace-nowrap">Ponto</span>
+                    <svg class="sidebar-link-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z" clip-rule="evenodd" /></svg>
+                    <span class="sidebar-link-text">Frequência</span>
                 </a>
                 <a href="#escala" data-tab="escala" class="sidebar-link">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-4" viewBox="0 0 20 20" fill="currentColor"><path d="M5 3a2 2 0 00-2 2v1.268a2 2 0 00.553 1.382l2.724 3.022a2 2 0 010 2.656L3.553 16.35A2 2 0 003 17.732V19a1 1 0 001 1h12a1 1 0 001-1v-1.268a2 2 0 00-.553-1.382l-2.724-3.022a2 2 0 010-2.656l2.724-3.022A2 2 0 0017 6.268V5a2 2 0 00-2-2H5z" /></svg>
-                    <span class="sidebar-link-text whitespace-nowrap">Escala</span>
+                    <svg class="sidebar-link-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M5 3a2 2 0 00-2 2v1.268a2 2 0 00.553 1.382l2.724 3.022a2 2 0 010 2.656L3.553 16.35A2 2 0 003 17.732V19a1 1 0 001 1h12a1 1 0 001-1v-1.268a2 2 0 00-.553-1.382l-2.724-3.022a2 2 0 010-2.656l2.724-3.022A2 2 0 0017 6.268V5a2 2 0 00-2-2H5z" /></svg>
+                    <span class="sidebar-link-text">Escala</span>
                 </a>
             </nav>
             
             <!-- Logout button at bottom of sidebar -->
-            <div class="sidebar-footer px-3 py-4 border-t border-gray-100">
-                <button id="logout-button" class="sidebar-link w-full text-left logout-btn" style="text-decoration: none;">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <div class="sidebar-footer">
+                <button id="logout-button" class="sidebar-link logout-btn">
+                    <svg class="sidebar-link-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
-                    <span class="sidebar-link-text whitespace-nowrap">Sair do Sistema</span>
+                    <span class="sidebar-link-text">Sair do Sistema</span>
                 </button>
             </div>
         </aside>
 
         <!-- Conteúdo Principal -->
-        <div class="flex-1 flex flex-col overflow-hidden">
-            <main class="flex-1 overflow-x-hidden overflow-y-auto p-6 lg:p-8">
+        <div class="dashboard-main">
+            <main class="dashboard-content">
 
                 <!-- View Principal: Dashboard (Layout Reorganizado) -->
                 <div id="content-dashboard" class="view-container db-fullscreen">
