@@ -1232,6 +1232,26 @@ const pontoState = {
             if (logoutButton) {
                 logoutButton.addEventListener('click', handleLogout);
             }
+            
+            // Topbar logout button (Google-style user menu)
+            const topbarLogoutButton = document.getElementById('topbar-logout-button');
+            if (topbarLogoutButton) {
+                topbarLogoutButton.addEventListener('click', handleLogout);
+            }
+            
+            // User menu toggle
+            const userMenuTrigger = document.getElementById('user-menu-trigger');
+            if (userMenuTrigger) {
+                userMenuTrigger.addEventListener('click', toggleUserMenu);
+            }
+            
+            // Close user menu when clicking outside
+            document.addEventListener('click', (e) => {
+                const userMenu = document.getElementById('user-menu');
+                if (userMenu && !userMenu.contains(e.target)) {
+                    userMenu.classList.remove('open');
+                }
+            });
 
             const pontoFilterBar = document.getElementById('ponto-filter-bar');
             if (pontoFilterBar) {
@@ -1337,6 +1357,12 @@ const pontoState = {
                 return;
             }
             
+            // Close user menu before logout
+            const userMenu = document.getElementById('user-menu');
+            if (userMenu) {
+                userMenu.classList.remove('open');
+            }
+            
             window.firebase.signOut(fbAuth).then(() => {
                 console.log("[handleLogout] Logout bem-sucedido.");
                 // onAuthStateChanged will handle cleanup and redirect to login
@@ -1344,6 +1370,42 @@ const pontoState = {
                 console.error("[handleLogout] Erro ao fazer logout:", error);
                 showError("Erro ao fazer logout.");
             });
+        }
+        
+        // Toggle user menu (Google-style dropdown)
+        function toggleUserMenu(event) {
+            event.stopPropagation();
+            const userMenu = document.getElementById('user-menu');
+            if (userMenu) {
+                userMenu.classList.toggle('open');
+            }
+        }
+        
+        // Update user menu with logged-in user info
+        function updateUserMenuInfo(user) {
+            if (!user) return;
+            
+            const userName = user.displayName || user.email.split('@')[0];
+            const userEmail = user.email;
+            
+            // Update topbar user info
+            const userNameEl = document.getElementById('user-name');
+            if (userNameEl) {
+                userNameEl.textContent = userName;
+            }
+            
+            // Update dropdown user info
+            const userMenuNameEl = document.getElementById('user-menu-name');
+            if (userMenuNameEl) {
+                userMenuNameEl.textContent = userName;
+            }
+            
+            const userMenuEmailEl = document.getElementById('user-menu-email');
+            if (userMenuEmailEl) {
+                userMenuEmailEl.textContent = userEmail;
+            }
+            
+            console.log('[updateUserMenuInfo] User menu atualizado para:', userName);
         }
 
 
@@ -2065,7 +2127,8 @@ const pontoState = {
             
             let html = '';
             studentsArray.slice(0, MAX_VISIBLE_STUDENTS).forEach((student, index) => {
-                const displayName = student.nome.split(' ').slice(0, 2).join(' ');
+                // Show full name - user requested no truncation
+                const displayName = student.nome;
                 // Escape HTML entities to prevent XSS
                 const escapedDisplayName = displayName.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
                 const escapedFullName = student.nome.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -2135,7 +2198,7 @@ const pontoState = {
                 return;
             }
             
-            const COURSE_NAME_MAX_LENGTH = 12;
+            // Show full course names - user specifically requested no truncation
             const colors = [
                 'db-dist-bar-1', 'db-dist-bar-2', 'db-dist-bar-3', 
                 'db-dist-bar-4', 'db-dist-bar-5', 'db-dist-bar-6'
@@ -2146,9 +2209,8 @@ const pontoState = {
             distribution.forEach((item, i) => {
                 const barWidth = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
                 const colorClass = colors[i % colors.length];
-                const courseName = item.course.length > COURSE_NAME_MAX_LENGTH 
-                    ? item.course.substring(0, COURSE_NAME_MAX_LENGTH) + '...' 
-                    : item.course;
+                // Show full course name - no truncation as per user request
+                const courseName = item.course;
                 
                 html += `
                     <div class="db-dist-bar-item">
@@ -2216,7 +2278,7 @@ const pontoState = {
              try {
                  const l=document.getElementById('recent-absences-list');
                  if(!appState.ausenciasReposicoes||appState.ausenciasReposicoes.length===0){
-                     l.innerHTML='<li class="text-slate-500 italic p-2">Nenhum registro.</li>';
+                     l.innerHTML='<li class="text-slate-500 italic p-2">Nenhum registro de ausências ou reposições.</li>';
                      return;
                  } 
                  const sorted=[...appState.ausenciasReposicoes]
@@ -2228,7 +2290,8 @@ const pontoState = {
                          return new Date(dB+'T00:00:00')-new Date(dA+'T00:00:00');
                      }); 
                 
-                 l.innerHTML=sorted.slice(0,5).map(i=>{
+                 // Show more items since we have more space now
+                 l.innerHTML=sorted.slice(0,8).map(i=>{
                      const al = appState.alunos.find(a => 
                          (i.EmailHC && normalizeString(a.EmailHC) === normalizeString(i.EmailHC)) ||
                          (i.NomeCompleto && normalizeString(a.NomeCompleto) === normalizeString(i.NomeCompleto))
@@ -5424,6 +5487,9 @@ function renderTabEscala(escalas) {
                     if (user) {
                         // User is signed in
                         console.log('[onAuthStateChanged] Usuário autenticado:', user.email);
+                        
+                        // Update user menu with logged-in user info
+                        updateUserMenuInfo(user);
                         
                         // CRITICAL FIX: Always show dashboard-view (never student-detail-view)
                         // This ensures that after login, the user always lands on the dashboard
