@@ -73,6 +73,7 @@ def get_default_config():
         "alunos": {},  # Novo campo para cadastro de alunos
         "dias_teoria": DIAS_TEORIA_PADRAO.copy(),
         "dias_especiais_teoria": [],
+        "escala_atual": "9",  # Escala atual para registro de ponto (1-12)
         "log_file": None
     }
 
@@ -181,12 +182,13 @@ def beep(kind="short"):
     except Exception:
         pass
 
-def send_to_endpoint(serial, nome, endpoint, is_teoria_day=False):
+def send_to_endpoint(serial, nome, endpoint, is_teoria_day=False, escala=""):
     """Envia POST JSON para o Apps Script."""
     payload = {
         "SerialNumber": serial,
         "NomeCompleto": nome,
-        "IsDiaTeoria": is_teoria_day
+        "IsDiaTeoria": is_teoria_day,
+        "Escala": escala
     }
     try:
         r = requests.post(endpoint, json=payload, timeout=10)
@@ -307,6 +309,48 @@ def list_dias_especiais(config_path=None):
         print("  (nenhum dia especial configurado)")
     
     print("")
+
+def set_escala_atual(escala_str, config_path=None):
+    """Define a escala atual para registro de ponto."""
+    if config_path is None:
+        config_path = Path(CONFIG_FILE)
+    
+    # Valida o número da escala (deve ser entre 1 e 12)
+    try:
+        escala_num = int(escala_str)
+        if escala_num < 1 or escala_num > 12:
+            print(f"Erro: Escala inválida '{escala_str}'. Deve ser um número entre 1 e 12.")
+            return False
+    except ValueError:
+        print(f"Erro: Escala inválida '{escala_str}'. Deve ser um número entre 1 e 12.")
+        return False
+    
+    # Carrega a configuração existente ou cria uma nova
+    config = {}
+    if config_path.exists():
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+        except json.JSONDecodeError as e:
+            print(f"Aviso: Erro de sintaxe no arquivo de configuração: {e}")
+            print("Criando nova configuração...")
+        except IOError as e:
+            print(f"Aviso: Erro ao ler arquivo de configuração: {e}")
+    
+    # Define a nova escala
+    config["escala_atual"] = str(escala_num)
+    
+    try:
+        with open(config_path, 'w', encoding='utf-8') as f:
+            json.dump(config, f, indent=2, ensure_ascii=False)
+        print(f"\n=== Escala Atualizada ===")
+        print(f"\n  Escala atual definida: {escala_num}")
+        print(f"\n  Esta escala será usada para todos os próximos registros de ponto.")
+        print("")
+        return True
+    except IOError as e:
+        print(f"Erro ao salvar configuração: {e}")
+        return False
 
 def install_windows_startup():
     """Instala o script para iniciar com o Windows."""
@@ -538,6 +582,7 @@ def main_interativo(config):
     
     endpoint = config.get("endpoint", ENDPOINT)
     debounce = config.get("debounce_seconds", DEBOUNCE_SECONDS)
+    escala_atual = config.get("escala_atual", "9")
     
     # Verifica se hoje é dia de teoria
     is_teoria = is_dia_teoria(config)
@@ -547,6 +592,9 @@ def main_interativo(config):
         print("   ✅ Hoje é dia de TEORIA (aulas teóricas permitidas)")
     else:
         print("   📚 Hoje NÃO é dia de teoria (apenas prática)")
+    
+    # Mostra a escala atual
+    print(f"\n   📊 Escala Atual: {escala_atual}")
     
     # Mostra alunos cadastrados
     alunos = listar_alunos_cadastrados(config)
@@ -612,11 +660,12 @@ def main_interativo(config):
                 print(f"   📅 Data: {data}")
                 print(f"   ⏰ Hora: {hora}")
                 print(f"   📚 Tipo: {'Teoria' if is_teoria else 'Prática'}")
+                print(f"   📊 Escala: {escala_atual}")
                 print("   " + "─" * 50)
                 
                 print("   📤 Enviando para o servidor...")
                 
-                code, text = send_to_endpoint(serial, nome, endpoint, is_teoria)
+                code, text = send_to_endpoint(serial, nome, endpoint, is_teoria, escala_atual)
                 
                 if code is None:
                     print(f"   ❌ ERRO DE ENVIO: {text}")
@@ -639,7 +688,7 @@ def main_interativo(config):
                     # Aluno foi cadastrado, registrar ponto
                     print(f"\n   📤 Registrando ponto para {nome}...")
                     
-                    code, text = send_to_endpoint(serial, nome, endpoint, is_teoria)
+                    code, text = send_to_endpoint(serial, nome, endpoint, is_teoria, escala_atual)
                     
                     if code is None:
                         print(f"   ❌ ERRO DE ENVIO: {text}")
@@ -655,7 +704,7 @@ def main_interativo(config):
                     # Usuário pulou o cadastro, registrar como desconhecido
                     print(f"\n   📤 Registrando ponto como 'Desconhecido'...")
                     
-                    code, text = send_to_endpoint(serial, "Desconhecido", endpoint, is_teoria)
+                    code, text = send_to_endpoint(serial, "Desconhecido", endpoint, is_teoria, escala_atual)
                     
                     if code is None:
                         print(f"   ❌ ERRO DE ENVIO: {text}")
@@ -681,8 +730,10 @@ def main(config):
     endpoint = config.get("endpoint", ENDPOINT)
     debounce = config.get("debounce_seconds", DEBOUNCE_SECONDS)
     nomes = config.get("nomes", NOMES)
+    escala_atual = config.get("escala_atual", "9")
     
     logging.info("=== Sistema de Ponto NFC ===")
+    logging.info(f"Escala Atual: {escala_atual}")
     logging.info("Aguardando leitura de crachás... (Ctrl+C para sair)")
     
     # Verifica se hoje é dia de teoria
@@ -727,13 +778,14 @@ def main(config):
             if current_date != last_config_date:
                 config = load_config()
                 is_teoria = is_dia_teoria(config)
+                escala_atual = config.get("escala_atual", "9")
                 last_config_date = current_date
                 logging.info(f"Novo dia detectado. Dia de teoria: {is_teoria}")
             
             logging.info(f"Lido: {serial} ({nome}) - {data} {hora}")
-            logging.info(f"Enviando para endpoint... (Dia Teoria: {is_teoria})")
+            logging.info(f"Enviando para endpoint... (Dia Teoria: {is_teoria}, Escala: {escala_atual})")
 
-            code, text = send_to_endpoint(serial, nome, endpoint, is_teoria)
+            code, text = send_to_endpoint(serial, nome, endpoint, is_teoria, escala_atual)
             if code is None:
                 logging.error(f"Erro de envio: {text}")
                 beep("long")
@@ -761,6 +813,8 @@ Exemplos de uso:
   python SistemaPonto.py --remove-dia 25/12/2024  # Remover dia especial
   python SistemaPonto.py --list-dias              # Listar dias configurados
   python SistemaPonto.py --list-alunos            # Listar alunos cadastrados
+  python SistemaPonto.py --set-escala 9           # Definir escala atual como 9
+  python SistemaPonto.py --show-escala            # Mostrar escala atual
   python SistemaPonto.py --install-startup        # Instalar para iniciar com Windows
   python SistemaPonto.py --create-config          # Criar arquivo de configuração padrão
 
@@ -783,6 +837,10 @@ Funcionamento:
                         help="Listar dias de teoria configurados")
     parser.add_argument("--list-alunos", action="store_true",
                         help="Listar alunos cadastrados")
+    parser.add_argument("--set-escala", metavar="N",
+                        help="Definir a escala atual (1-12)")
+    parser.add_argument("--show-escala", action="store_true",
+                        help="Mostrar a escala atual configurada")
     parser.add_argument("--install-startup", action="store_true",
                         help="Instalar para iniciar com o Windows")
     parser.add_argument("--uninstall-startup", action="store_true",
@@ -819,6 +877,18 @@ Funcionamento:
                 email = dados.get("email", "") or "(sem email)"
                 print(f"  {uid}: {nome} - {email}")
         print("")
+        sys.exit(0)
+    
+    if args.show_escala:
+        config = load_config()
+        escala = config.get("escala_atual", "9")
+        print(f"\n=== Escala Atual ===\n")
+        print(f"  Escala configurada: {escala}")
+        print("")
+        sys.exit(0)
+    
+    if args.set_escala:
+        set_escala_atual(args.set_escala)
         sys.exit(0)
     
     if args.install_startup:
