@@ -5,6 +5,72 @@ const FIREBASE_URL = "https://dashboardalunos-default-rtdb.firebaseio.com/"; // 
 const FIREBASE_SECRET = PropertiesService.getScriptProperties().getProperty("FIREBASE_SECRET");
 
 /**********************************************
+ * 🔨 FUNÇÕES AUXILIARES (HELPERS)
+ **********************************************/
+
+/**
+ * Gera hash MD5 dos dados para detectar alterações.
+ * @param {Array} dados - Array de linhas de dados
+ * @returns {string} Hash MD5 em hexadecimal
+ */
+function gerarHashDados(dados) {
+  let conteudoConcatenado = "";
+  for (let i = 0; i < dados.length; i++) {
+    conteudoConcatenado += JSON.stringify(dados[i]);
+  }
+  return gerarHash(conteudoConcatenado);
+}
+
+/**
+ * Cria array de registros (objetos) a partir dos dados e cabeçalhos.
+ * @param {Array} dados - Array de linhas de dados (sem cabeçalhos)
+ * @param {Array} cabecalhos - Array de nomes de colunas sanitizados
+ * @returns {Array} Array de objetos com os dados
+ */
+function criarRegistrosDeAba(dados, cabecalhos) {
+  const registros = [];
+  for (let i = 0; i < dados.length; i++) {
+    const linha = dados[i];
+    const obj = {};
+    for (let j = 0; j < cabecalhos.length; j++) {
+      obj[cabecalhos[j]] = linha[j];
+    }
+    registros.push(obj);
+  }
+  return registros;
+}
+
+/**
+ * Envia registros para o Firebase.
+ * @param {string} nomeAba - Nome da aba sanitizado
+ * @param {Array} registros - Array de objetos com os dados
+ * @param {string} nomeAbaOriginal - Nome original da aba (para referência)
+ * @returns {boolean} true se enviou com sucesso, false caso contrário
+ */
+function enviarParaFirebase(nomeAba, registros, nomeAbaOriginal) {
+  const url = FIREBASE_URL + "exportAll/" + nomeAba + ".json?auth=" + FIREBASE_SECRET;
+  const payload = {
+    dados: registros,
+    nomeAbaOriginal: nomeAbaOriginal,
+    ultimaAtualizacao: new Date().toISOString()
+  };
+  const opcoes = {
+    method: "put",
+    contentType: "application/json",
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  };
+
+  try {
+    const resposta = UrlFetchApp.fetch(url, opcoes);
+    return resposta.getResponseCode() === 200;
+  } catch (erro) {
+    Logger.log("❌ Erro na requisição Firebase: " + erro);
+    return false;
+  }
+}
+
+/**********************************************
  * 📤 FUNÇÃO PRINCIPAL — Envia todas as abas alteradas
  **********************************************/
 function enviarTodasAsAbasParaFirebase() {
@@ -25,15 +91,8 @@ function enviarTodasAsAbasParaFirebase() {
     if (dados.length < 2) continue; // ignora abas vazias
 
     const cabecalhos = dados.shift().map(h => sanitizeKey(h));
-    const registros = [];
 
-    // Gera string para calcular hash
-    let conteudoConcatenado = "";
-    for (let i = 0; i < dados.length; i++) {
-      conteudoConcatenado += JSON.stringify(dados[i]);
-    }
-
-    const hashAtual = gerarHash(conteudoConcatenado);
+    const hashAtual = gerarHashDados(dados);
     const hashAnterior = getHashAnterior(nomeAba);
 
     if (hashAtual === hashAnterior) {
@@ -42,42 +101,15 @@ function enviarTodasAsAbasParaFirebase() {
       continue;
     }
 
-    // Monta objetos
-    for (let i = 0; i < dados.length; i++) {
-      const linha = dados[i];
-      const obj = {};
-      for (let j = 0; j < cabecalhos.length; j++) {
-        obj[cabecalhos[j]] = linha[j];
-      }
-      registros.push(obj);
-    }
+    const registros = criarRegistrosDeAba(dados, cabecalhos);
+    const sucesso = enviarParaFirebase(nomeAba, registros, aba.getName());
 
-    // Send data to /exportAll/NomeAba/dados structure
-    const url = FIREBASE_URL + "exportAll/" + nomeAba + ".json?auth=" + FIREBASE_SECRET;
-    const payload = {
-      dados: registros,
-      nomeAbaOriginal: aba.getName(),
-      ultimaAtualizacao: new Date().toISOString()
-    };
-    const opcoes = {
-      method: "put",
-      contentType: "application/json",
-      payload: JSON.stringify(payload),
-      muteHttpExceptions: true
-    };
-
-    try {
-      const resposta = UrlFetchApp.fetch(url, opcoes);
-      const status = resposta.getResponseCode();
-      if (status === 200) {
-        salvarHash(nomeAba, hashAtual);
-        Logger.log("✅ Enviado com sucesso: " + nomeAba);
-        totalEnviadas++;
-      } else {
-        Logger.log("⚠️ Falha ao enviar " + nomeAba + ": " + status);
-      }
-    } catch (erro) {
-      Logger.log("❌ Erro ao enviar " + nomeAba + ": " + erro);
+    if (sucesso) {
+      salvarHash(nomeAba, hashAtual);
+      Logger.log("✅ Enviado com sucesso: " + nomeAba);
+      totalEnviadas++;
+    } else {
+      Logger.log("⚠️ Falha ao enviar " + nomeAba);
     }
   }
 
@@ -223,15 +255,8 @@ function enviarAbaParaFirebase(aba) {
   }
   
   const cabecalhos = dados.shift().map(h => sanitizeKey(h));
-  const registros = [];
   
-  // Gera string para calcular hash
-  let conteudoConcatenado = "";
-  for (let i = 0; i < dados.length; i++) {
-    conteudoConcatenado += JSON.stringify(dados[i]);
-  }
-  
-  const hashAtual = gerarHash(conteudoConcatenado);
+  const hashAtual = gerarHashDados(dados);
   const hashAnterior = getHashAnterior(nomeAba);
   
   if (hashAtual === hashAnterior) {
@@ -239,46 +264,19 @@ function enviarAbaParaFirebase(aba) {
     return;
   }
   
-  // Monta objetos
-  for (let i = 0; i < dados.length; i++) {
-    const linha = dados[i];
-    const obj = {};
-    for (let j = 0; j < cabecalhos.length; j++) {
-      obj[cabecalhos[j]] = linha[j];
-    }
-    registros.push(obj);
-  }
+  const registros = criarRegistrosDeAba(dados, cabecalhos);
+  const sucesso = enviarParaFirebase(nomeAba, registros, aba.getName());
   
-  // Envia para o Firebase
-  const url = FIREBASE_URL + "exportAll/" + nomeAba + ".json?auth=" + FIREBASE_SECRET;
-  const payload = {
-    dados: registros,
-    nomeAbaOriginal: aba.getName(),
-    ultimaAtualizacao: new Date().toISOString()
-  };
-  const opcoes = {
-    method: "put",
-    contentType: "application/json",
-    payload: JSON.stringify(payload),
-    muteHttpExceptions: true
-  };
-  
-  try {
-    const resposta = UrlFetchApp.fetch(url, opcoes);
-    const status = resposta.getResponseCode();
-    if (status === 200) {
-      salvarHash(nomeAba, hashAtual);
-      Logger.log("✅ Sincronizado automaticamente: " + nomeAba);
-      SpreadsheetApp.getActiveSpreadsheet().toast(
-        "Aba '" + aba.getName() + "' sincronizada com Firebase! ✅", 
-        "Auto Sync", 
-        3
-      );
-    } else {
-      Logger.log("⚠️ Falha ao sincronizar " + nomeAba + ": " + status);
-    }
-  } catch (erro) {
-    Logger.log("❌ Erro ao sincronizar " + nomeAba + ": " + erro);
+  if (sucesso) {
+    salvarHash(nomeAba, hashAtual);
+    Logger.log("✅ Sincronizado automaticamente: " + nomeAba);
+    SpreadsheetApp.getActiveSpreadsheet().toast(
+      "Aba '" + aba.getName() + "' sincronizada com Firebase! ✅", 
+      "Auto Sync", 
+      3
+    );
+  } else {
+    Logger.log("⚠️ Falha ao sincronizar " + nomeAba);
   }
 }
 
