@@ -214,63 +214,96 @@
 
                 <!-- View Principal: Dashboard (Layout Reorganizado) -->
                 <div id="content-dashboard" class="view-container db-fullscreen">
-                    <!-- Hero Section com Branding InCor -->
+                    <!-- Compact Hero Header with InCor Branding -->
                     <div class="db-hero-section">
                         <div class="db-hero-content">
-                            <div class="db-hero-badge">
-                                <span class="db-hero-badge-icon">
-                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <div class="db-hero-left">
+                                <div class="db-hero-icon">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                                     </svg>
-                                </span>
-                                <span>Fisioterapia Cardiovascular e Respiratória</span>
+                                </div>
+                                <div class="db-hero-text">
+                                    <h1>Painel de Gestão Acadêmica</h1>
+                                    <p>Fisioterapia Cardiovascular e Respiratória • InCor HC FMUSP</p>
+                                </div>
                             </div>
-                            <h1 class="db-hero-title">Painel de Gestão Acadêmica</h1>
-                            <p class="db-hero-subtitle">
-                                Acompanhamento completo do desempenho, frequência e evolução dos residentes
-                            </p>
                             <div class="db-validation-badge">
                                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                                 </svg>
-                                Dados Sincronizados em Tempo Real
+                                Sincronizado
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Main Dashboard Grid - 3 Columns -->
+                    <!-- Main Dashboard Grid - Compact 4-Column Layout -->
                     <div class="db-main-grid">
-                        <!-- Left Column: KPI Cards -->
-                        <div class="db-kpi-column">
-                            <div class="db-kpi-large db-gradient-blue">
-                                <div class="db-kpi-icon-large">
-                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-2.121M17 20v-2m0 2H5a2 2 0 01-2-2v-5a2 2 0 012-2h14a2 2 0 012 2v5a2 2 0 01-2 2h-5m-4-8a3 3 0 100-6 3 3 0 000 6z" />
-                                    </svg>
-                                </div>
+                        <!-- KPI Card: Total Residentes -->
+                        <div class="db-kpi-large db-gradient-blue">
+                            <div class="db-kpi-icon-large">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-2.121M17 20v-2m0 2H5a2 2 0 01-2-2v-5a2 2 0 012-2h14a2 2 0 012 2v5a2 2 0 01-2 2h-5m-4-8a3 3 0 100-6 3 3 0 000 6z" />
+                                </svg>
+                            </div>
+                            <div class="db-kpi-info">
                                 <div class="db-kpi-large-value" id="kpi-total-students">-</div>
                                 <div class="db-kpi-large-label">Total de Residentes</div>
-                                <div class="db-kpi-large-desc">Matriculados no programa</div>
-                            </div>
-                            
-                            <div class="db-kpi-large db-gradient-green">
-                                <div class="db-kpi-icon-large">
-                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                </div>
-                                <div class="db-kpi-large-value" id="kpi-active-students">-</div>
-                                <div class="db-kpi-large-label">Alunos Ativos</div>
-                                <div class="db-kpi-large-desc">Estudantes em atividade</div>
                             </div>
                         </div>
                         
-                        <!-- Center Column: Performance Metrics -->
+                        <!-- KPI Card: Alunos Ativos -->
+                        <div class="db-kpi-large db-gradient-green">
+                            <div class="db-kpi-icon-large">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <div class="db-kpi-info">
+                                <div class="db-kpi-large-value" id="kpi-active-students">-</div>
+                                <div class="db-kpi-large-label">Alunos Ativos</div>
+                            </div>
+                        </div>
+                        
+                        <!-- KPI Card: Média Teórica -->
+                        <div class="db-kpi-large db-gradient-orange">
+                            <div class="db-kpi-icon-large">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                            </div>
+                            <div class="db-kpi-info">
+                                <div class="db-kpi-large-value" id="kpi-avg-theoretical">-</div>
+                                <div class="db-kpi-large-label">Média Teórica</div>
+                            </div>
+                        </div>
+                        
+                        <!-- KPI Card: Média Prática -->
+                        <div class="db-kpi-large db-gradient-blue">
+                            <div class="db-kpi-icon-large">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                </svg>
+                            </div>
+                            <div class="db-kpi-info">
+                                <div class="db-kpi-large-value" id="kpi-avg-practical">-</div>
+                                <div class="db-kpi-large-label">Média Prática</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Performance Section -->
                         <div class="db-performance-column">
                             <div class="db-performance-card">
                                 <div class="db-perf-header">
-                                    <h3 class="db-perf-title">Desempenho Geral do Curso</h3>
-                                    <p class="db-perf-subtitle">Médias consolidadas de todos os alunos ativos</p>
+                                    <div class="db-perf-header-icon">
+                                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="db-perf-title">Desempenho Geral do Curso</h3>
+                                        <p class="db-perf-subtitle">Médias consolidadas de todos os alunos ativos</p>
+                                    </div>
                                 </div>
                                 
                                 <div class="db-perf-grid">
@@ -280,7 +313,7 @@
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                             </svg>
                                         </div>
-                                        <div class="db-perf-value" id="kpi-avg-theoretical">-</div>
+                                        <div class="db-perf-value" id="kpi-theoretical-display">-</div>
                                         <div class="db-perf-label">Média Teórica Geral</div>
                                         <div class="db-perf-bar">
                                             <div class="db-perf-fill db-theoretical-fill" id="db-theoretical-bar"></div>
@@ -293,7 +326,7 @@
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                                             </svg>
                                         </div>
-                                        <div class="db-perf-value" id="kpi-avg-practical">-</div>
+                                        <div class="db-perf-value" id="kpi-practical-display">-</div>
                                         <div class="db-perf-label">Média Prática Geral</div>
                                         <div class="db-perf-bar">
                                             <div class="db-perf-fill db-practical-fill" id="db-practical-bar"></div>
@@ -318,22 +351,18 @@
                             </div>
                         </div>
                         
-                        <!-- Right Column: Activities & Modules -->
+                        <!-- Activities Section -->
                         <div class="db-activities-column">
                             <div class="db-activities-card">
-                                <div class="db-act-header">
-                                    <div class="db-module-icon" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
-                                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <h4 class="db-act-title">Reposições</h4>
-                                        <p class="db-act-subtitle">Situação atual</p>
-                                    </div>
+                                <div class="db-act-icon">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
                                 </div>
-                                <div class="db-act-value" id="kpi-pending-replacements">-</div>
-                                <div class="db-act-label">Reposições Pendentes</div>
+                                <div class="db-act-info">
+                                    <div class="db-act-value" id="kpi-pending-replacements">-</div>
+                                    <div class="db-act-label">Reposições Pendentes</div>
+                                </div>
                             </div>
                             
                             <div class="db-recent-card-compact">
@@ -350,11 +379,6 @@
                     
                     <!-- Bottom Section: Module Analysis -->
                     <div class="db-bottom-section">
-                        <div class="db-bottom-header">
-                            <h3 class="db-bottom-title">Análise Detalhada por Módulos</h3>
-                            <p class="db-bottom-subtitle">Desempenho acadêmico completo de todos os alunos ativos do curso</p>
-                        </div>
-                        
                         <div class="db-modules-fullwidth">
                             <div class="db-module-card-full">
                                 <div class="db-module-header">
