@@ -1248,8 +1248,13 @@ const pontoState = {
             // Close user menu when clicking outside
             document.addEventListener('click', (e) => {
                 const userMenu = document.getElementById('user-menu');
+                const trigger = document.getElementById('user-menu-trigger');
                 if (userMenu && !userMenu.contains(e.target)) {
                     userMenu.classList.remove('open');
+                    // Update aria-expanded for accessibility
+                    if (trigger) {
+                        trigger.setAttribute('aria-expanded', 'false');
+                    }
                 }
             });
 
@@ -1376,8 +1381,13 @@ const pontoState = {
         function toggleUserMenu(event) {
             event.stopPropagation();
             const userMenu = document.getElementById('user-menu');
+            const trigger = document.getElementById('user-menu-trigger');
             if (userMenu) {
-                userMenu.classList.toggle('open');
+                const isOpen = userMenu.classList.toggle('open');
+                // Update aria-expanded for accessibility
+                if (trigger) {
+                    trigger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                }
             }
         }
         
