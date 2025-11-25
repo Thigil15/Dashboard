@@ -255,186 +255,91 @@
             
             <main class="dashboard-content">
 
-                <!-- View Principal: Dashboard (Layout Reorganizado) -->
-                <div id="content-dashboard" class="view-container db-fullscreen">
-                    <!-- Compact Hero Header with InCor Branding -->
-                    <div class="db-hero-section">
-                        <div class="db-hero-content">
-                            <div class="db-hero-left">
-                                <div class="db-hero-icon">
-                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                                    </svg>
-                                </div>
-                                <div class="db-hero-text">
-                                    <h1>Painel de Gestão Acadêmica</h1>
-                                    <p>Fisioterapia Cardiovascular e Respiratória • InCor HC FMUSP</p>
-                                </div>
-                            </div>
-                            <div class="db-validation-badge">
-                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                                </svg>
-                                Sincronizado
-                            </div>
-                        </div>
-                    </div>
+                <!-- View Principal: Dashboard Minimalista Profissional -->
+                <div id="content-dashboard" class="view-container pro-dashboard">
                     
-                    <!-- Main Dashboard Grid - Compact 4-Column Layout -->
-                    <div class="db-main-grid">
-                        <!-- KPI Card: Total de Alunos -->
-                        <div class="db-kpi-large db-gradient-blue">
-                            <div class="db-kpi-icon-large">
-                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-2.121M17 20v-2m0 2H5a2 2 0 01-2-2v-5a2 2 0 012-2h14a2 2 0 012 2v5a2 2 0 01-2 2h-5m-4-8a3 3 0 100-6 3 3 0 000 6z" />
-                                </svg>
-                            </div>
-                            <div class="db-kpi-info">
-                                <div class="db-kpi-large-value" id="kpi-total-students">-</div>
-                                <div class="db-kpi-large-label">Total de Alunos</div>
-                            </div>
+                    <!-- Seção Superior: Métricas Principais -->
+                    <section class="pro-metrics-row">
+                        <div class="pro-metric-card pro-metric-primary">
+                            <span class="pro-metric-value" id="kpi-total-students">-</span>
+                            <span class="pro-metric-label">Alunos Matriculados</span>
                         </div>
+                        <div class="pro-metric-card pro-metric-success">
+                            <span class="pro-metric-value" id="kpi-active-students">-</span>
+                            <span class="pro-metric-label">Ativos no Programa</span>
+                        </div>
+                        <div class="pro-metric-card pro-metric-warning">
+                            <span class="pro-metric-value" id="kpi-pending-replacements">-</span>
+                            <span class="pro-metric-label">Reposições Pendentes</span>
+                        </div>
+                        <div class="pro-metric-card pro-metric-info">
+                            <span class="pro-metric-value" id="kpi-avg-theoretical">-</span>
+                            <span class="pro-metric-label">Média Teórica</span>
+                        </div>
+                        <div class="pro-metric-card pro-metric-accent">
+                            <span class="pro-metric-value" id="kpi-avg-practical">-</span>
+                            <span class="pro-metric-label">Média Prática</span>
+                        </div>
+                    </section>
+
+                    <!-- Área Principal: Grade de Conteúdo -->
+                    <section class="pro-content-grid">
                         
-                        <!-- KPI Card: Alunos Ativos -->
-                        <div class="db-kpi-large db-gradient-green">
-                            <div class="db-kpi-icon-large">
-                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-                            <div class="db-kpi-info">
-                                <div class="db-kpi-large-value" id="kpi-active-students">-</div>
-                                <div class="db-kpi-large-label">Alunos Ativos</div>
-                            </div>
-                        </div>
-                        
-                        <!-- KPI Card: Reposições Pendentes -->
-                        <div class="db-kpi-large db-gradient-red">
-                            <div class="db-kpi-icon-large">
-                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                            </div>
-                            <div class="db-kpi-info">
-                                <div class="db-kpi-large-value" id="kpi-pending-replacements">-</div>
-                                <div class="db-kpi-large-label">Reposições Pendentes</div>
-                            </div>
-                        </div>
-                        
-                        <!-- KPI Card: Alunos com Reposições - Lista Clicável -->
-                        <div class="db-kpi-large db-kpi-clickable db-gradient-orange">
-                            <div class="db-kpi-icon-large">
-                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-                            <div class="db-kpi-info">
-                                <div class="db-kpi-large-label">Alunos com Reposições</div>
-                                <div id="students-with-replacements-list" class="db-students-list">
-                                    <!-- Lista de alunos será preenchida via JavaScript -->
+                        <!-- Coluna Esquerda: Desempenho Acadêmico -->
+                        <div class="pro-panel pro-panel-performance">
+                            <header class="pro-panel-header">
+                                <h2 class="pro-panel-title">Desempenho Acadêmico</h2>
+                            </header>
+                            <div class="pro-panel-body">
+                                <div id="module-averages-chart" class="pro-modules-grid">
+                                    <!-- Módulos serão renderizados via JavaScript -->
                                 </div>
                             </div>
                         </div>
-                        
-                        <!-- Performance Section -->
-                        <div class="db-performance-column">
-                            <div class="db-performance-card">
-                                <div class="db-perf-header">
-                                    <div class="db-perf-header-icon">
-                                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <h3 class="db-perf-title">Desempenho Geral do Curso</h3>
-                                        <p class="db-perf-subtitle">Médias consolidadas de todos os alunos ativos</p>
-                                    </div>
-                                </div>
-                                
-                                <div class="db-perf-grid">
-                                    <div class="db-perf-item db-perf-theoretical">
-                                        <div class="db-perf-icon-bg">
-                                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                            </svg>
-                                        </div>
-                                        <div class="db-perf-value" id="kpi-avg-theoretical">-</div>
-                                        <div class="db-perf-label">Média Teórica Geral</div>
-                                        <div class="db-perf-bar">
-                                            <div class="db-perf-fill db-theoretical-fill" id="db-theoretical-bar"></div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="db-perf-item db-perf-practical">
-                                        <div class="db-perf-icon-bg">
-                                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                            </svg>
-                                        </div>
-                                        <div class="db-perf-value" id="kpi-avg-practical">-</div>
-                                        <div class="db-perf-label">Média Prática Geral</div>
-                                        <div class="db-perf-bar">
-                                            <div class="db-perf-fill db-practical-fill" id="db-practical-bar"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="db-distribution-card">
-                                <div class="db-dist-header">
-                                    <div class="db-module-icon" style="background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);">
-                                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <h4 class="db-dist-title">Distribuição por Curso</h4>
-                                        <p class="db-dist-subtitle">Alunos ativos por programa</p>
-                                    </div>
-                                </div>
-                                <div id="course-distribution-chart" class="db-dist-bars">
-                                    <!-- Barras de progresso por curso serão preenchidas via JavaScript -->
+
+                        <!-- Coluna Central: Distribuição e Pendências -->
+                        <div class="pro-panel pro-panel-distribution">
+                            <header class="pro-panel-header">
+                                <h2 class="pro-panel-title">Distribuição por Curso</h2>
+                            </header>
+                            <div class="pro-panel-body">
+                                <div id="course-distribution-chart" class="pro-distribution-list">
+                                    <!-- Distribuição será renderizada via JavaScript -->
                                 </div>
                             </div>
                         </div>
-                        
-                        <!-- Activities Section -->
-                        <div class="db-activities-column">
-                            <div class="db-recent-card-compact">
-                                <div class="db-recent-header">
-                                    <h4 class="db-recent-title">Atividades Recentes</h4>
-                                    <p class="db-recent-subtitle">Últimos registros de ausências e reposições</p>
-                                </div>
-                                <div class="db-recent-content-compact">
-                                    <ul id="recent-absences-list" class="db-recent-list"></ul>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Bottom Section: Module Analysis -->
-                    <div class="db-bottom-section">
-                        <div class="db-modules-fullwidth">
-                            <div class="db-module-card-full">
-                                <div class="db-module-header">
-                                    <div class="db-module-icon" style="background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);">
-                                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                                        </svg>
-                                    </div>
-                                    <div class="db-module-title-group">
-                                        <h4 class="db-module-title">Médias Gerais dos Módulos</h4>
-                                        <p class="db-module-subtitle">Desempenho consolidado por módulo de todos os alunos ativos</p>
-                                    </div>
-                                </div>
-                                <div class="db-module-content-full">
-                                    <div id="module-averages-chart" class="db-chart-area">
-                                        <!-- Gráficos radiais pequenos serão renderizados aqui -->
-                                    </div>
+
+                        <!-- Coluna Direita: Atividades e Pendências -->
+                        <div class="pro-panel pro-panel-activities">
+                            <header class="pro-panel-header">
+                                <h2 class="pro-panel-title">Alunos com Reposições</h2>
+                            </header>
+                            <div class="pro-panel-body">
+                                <div id="students-with-replacements-list" class="pro-pending-list">
+                                    <!-- Lista será preenchida via JavaScript -->
                                 </div>
                             </div>
                         </div>
-                    </div>
+
+                    </section>
+
+                    <!-- Seção Inferior: Atividades Recentes -->
+                    <section class="pro-footer-section">
+                        <div class="pro-panel pro-panel-recent">
+                            <header class="pro-panel-header">
+                                <h2 class="pro-panel-title">Registros Recentes</h2>
+                            </header>
+                            <div class="pro-panel-body">
+                                <ul id="recent-absences-list" class="pro-recent-list">
+                                    <!-- Lista será preenchida via JavaScript -->
+                                </ul>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Elementos hidden para compatibilidade com JS existente -->
+                    <div hidden id="db-theoretical-bar"></div>
+                    <div hidden id="db-practical-bar"></div>
                 </div>
 
                 <!-- View: Lista de Alunos -->

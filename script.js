@@ -2127,41 +2127,36 @@ const pontoState = {
             const studentsArray = Object.values(pendingByStudent).sort((a, b) => b.count - a.count);
             
             if (studentsArray.length === 0) {
-                container.innerHTML = '<div class="db-students-empty">Nenhuma reposição pendente</div>';
+                container.innerHTML = '<div class="pro-pending-empty">Nenhuma reposição pendente</div>';
                 return;
             }
             
-            // Store student data for click handling (avoids XSS from inline onclick)
-            const MAX_VISIBLE_STUDENTS = 6;
+            // Store student data for click handling
+            const MAX_VISIBLE_STUDENTS = 8;
             window._pendingStudentsData = studentsArray.slice(0, MAX_VISIBLE_STUDENTS);
             
             let html = '';
             studentsArray.slice(0, MAX_VISIBLE_STUDENTS).forEach((student, index) => {
-                // Show full name - user requested no truncation
                 const displayName = student.nome;
-                // Escape HTML entities to prevent XSS
                 const escapedDisplayName = displayName.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
                 const escapedFullName = student.nome.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
                 
                 html += `
-                    <div class="db-student-link" data-student-index="${index}">
-                        <span class="db-student-link-name" title="${escapedFullName}">${escapedDisplayName}</span>
-                        <span class="db-student-link-count">${student.count}</span>
-                        <svg class="db-student-link-arrow" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                        </svg>
+                    <div class="pro-pending-item" data-student-index="${index}">
+                        <span class="pro-pending-name" title="${escapedFullName}">${escapedDisplayName}</span>
+                        <span class="pro-pending-count">${student.count}</span>
                     </div>
                 `;
             });
             
             if (studentsArray.length > MAX_VISIBLE_STUDENTS) {
-                html += `<div class="db-students-empty">+ ${studentsArray.length - MAX_VISIBLE_STUDENTS} mais...</div>`;
+                html += `<div class="pro-pending-empty">+ ${studentsArray.length - MAX_VISIBLE_STUDENTS} mais...</div>`;
             }
             
             container.innerHTML = html;
             
-            // Add click event listeners (safer than inline onclick)
-            container.querySelectorAll('.db-student-link[data-student-index]').forEach(link => {
+            // Add click event listeners
+            container.querySelectorAll('.pro-pending-item[data-student-index]').forEach(link => {
                 link.addEventListener('click', function() {
                     const index = parseInt(this.getAttribute('data-student-index'), 10);
                     const student = window._pendingStudentsData[index];
@@ -2204,14 +2199,13 @@ const pontoState = {
             if (!c) return;
             
             if (!distribution || distribution.length === 0) {
-                c.innerHTML = '<p class="db-students-empty">Sem dados de distribuição por curso.</p>';
+                c.innerHTML = '<p class="pro-pending-empty">Sem dados de distribuição por curso.</p>';
                 return;
             }
             
-            // Show full course names - user specifically requested no truncation
             const colors = [
-                'db-dist-bar-1', 'db-dist-bar-2', 'db-dist-bar-3', 
-                'db-dist-bar-4', 'db-dist-bar-5', 'db-dist-bar-6'
+                'pro-dist-bar-1', 'pro-dist-bar-2', 'pro-dist-bar-3', 
+                'pro-dist-bar-4', 'pro-dist-bar-5', 'pro-dist-bar-6'
             ];
             const maxCount = Math.max(...distribution.map(d => d.count));
             
@@ -2219,18 +2213,15 @@ const pontoState = {
             distribution.forEach((item, i) => {
                 const barWidth = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
                 const colorClass = colors[i % colors.length];
-                // Show full course name - no truncation as per user request
                 const courseName = item.course;
                 
                 html += `
-                    <div class="db-dist-bar-item">
-                        <span class="db-dist-bar-label" title="${item.course}">${courseName}</span>
-                        <div class="db-dist-bar-track">
-                            <div class="db-dist-bar-fill ${colorClass}" style="width: ${barWidth}%;">
-                                <span>${item.percentage.toFixed(0)}%</span>
-                            </div>
+                    <div class="pro-dist-item">
+                        <span class="pro-dist-label" title="${item.course}">${courseName}</span>
+                        <div class="pro-dist-bar-container">
+                            <div class="pro-dist-bar ${colorClass}" style="width: ${barWidth}%;"></div>
                         </div>
-                        <span class="db-dist-bar-count">${item.count}</span>
+                        <span class="pro-dist-count">${item.count}</span>
                     </div>
                 `;
             });
@@ -2242,43 +2233,39 @@ const pontoState = {
             const container = document.getElementById('module-averages-chart');
             if (!container) return;
             let html = '';
+            
+            // Render theoretical averages
             Object.entries(tAvgs)
                 .filter(([key]) => key.toUpperCase().includes('MÉDIA'))
                 .sort(([keyA], [keyB]) => keyA.localeCompare(keyB)) 
                 .forEach(([key, value]) => {
                     if (value > 0) {
+                        const moduleName = key.replace(/MÉDIA\s*/i, '').replace(/\s*FISIO/i, ' Fisio').trim();
                         html += `
-                        <div class="radial-card-small">
-                            <div class="radial-progress-small" style="--value:${value * 10}; --progress-color: var(--accent-orange);">
-                                <span class="radial-progress-small-value" style="color: var(--accent-orange);">${value.toFixed(1)}</span>
-                            </div>
-                            <div>
-                                <span class="radial-label">${key}</span>
-                                <span class="block text-xs text-slate-500">Média Teórica</span>
-                            </div>
+                        <div class="pro-module-item">
+                            <div class="pro-module-value">${value.toFixed(1)}</div>
+                            <div class="pro-module-name">${moduleName || 'Teórica'}</div>
                         </div>
                         `;
                     }
                 });
+            
+            // Render practical averages
             Object.entries(pAvgs)
                 .sort(([keyA], [keyB]) => keyA.localeCompare(keyB)) 
                 .forEach(([key, value]) => {
                     if (value > 0) {
                         html += `
-                        <div class="radial-card-small">
-                            <div class="radial-progress-small" style="--value:${value * 10}; --progress-color: var(--accent-blue);">
-                                <span class="radial-progress-small-value" style="color: var(--accent-blue);">${value.toFixed(1)}</span>
-                            </div>
-                            <div>
-                                <span class="radial-label">${key}</span>
-                                <span class="block text-xs text-slate-500">Média Prática</span>
-                            </div>
+                        <div class="pro-module-item">
+                            <div class="pro-module-value" style="color: #2563eb;">${value.toFixed(1)}</div>
+                            <div class="pro-module-name">${key}</div>
                         </div>
                         `;
                     }
                 });
+            
             if (html === '') {
-                container.innerHTML = '<p class="text-slate-500 text-sm italic col-span-full">Nenhuma média de módulo calculada para alunos ativos.</p>';
+                container.innerHTML = '<p class="pro-pending-empty">Nenhuma média de módulo calculada.</p>';
                 return;
             }
             container.innerHTML = html;
@@ -2288,7 +2275,7 @@ const pontoState = {
              try {
                  const l=document.getElementById('recent-absences-list');
                  if(!appState.ausenciasReposicoes||appState.ausenciasReposicoes.length===0){
-                     l.innerHTML='<li class="text-slate-500 italic p-2">Nenhum registro de ausências ou reposições.</li>';
+                     l.innerHTML='<li class="pro-pending-empty">Nenhum registro de ausências ou reposições.</li>';
                      return;
                  } 
                  const sorted=[...appState.ausenciasReposicoes]
@@ -2300,18 +2287,28 @@ const pontoState = {
                          return new Date(dB+'T00:00:00')-new Date(dA+'T00:00:00');
                      }); 
                 
-                 // Show more items since we have more space now
-                 l.innerHTML=sorted.slice(0,8).map(i=>{
+                 l.innerHTML=sorted.slice(0,10).map(i=>{
                      const al = appState.alunos.find(a => 
                          (i.EmailHC && normalizeString(a.EmailHC) === normalizeString(i.EmailHC)) ||
                          (i.NomeCompleto && normalizeString(a.NomeCompleto) === normalizeString(i.NomeCompleto))
                      );
                      const n = al ? al.NomeCompleto : (i.NomeCompleto || i.EmailHC); 
-                     const iP=!i.DataReposicaoISO; 
-                     const sB=iP?'<span class="badge badge-yellow ml-2">Pendente</span>':'<span class="badge badge-green ml-2">Reposto</span>'; 
+                     const isPending=!i.DataReposicaoISO; 
                      const dT=i.DataReposicaoISO||i.DataAusenciaISO; 
-                     const fD=dT?new Date(dT+'T00:00:00').toLocaleDateString('pt-BR'):'Data Indef.'; 
-                     return `<li class="text-xs"><div class="flex justify-between items-center mb-0.5"><span class="font-semibold text-slate-700 truncate pr-2" title="${n}">${n}</span><span class="text-slate-500 text-[11px] flex-shrink-0">${fD}</span></div><div class="flex justify-between items-center"><span class="text-slate-500 truncate pr-2" title="${i.Motivo||''}">${iP?'Ausência':'Reposição'} (${i.Local||'N/A'})</span>${sB}</div></li>`;
+                     const fD=dT?new Date(dT+'T00:00:00').toLocaleDateString('pt-BR'):'--/--'; 
+                     const iconClass = isPending ? 'absent' : 'makeup';
+                     const iconSvg = isPending 
+                         ? '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>'
+                         : '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>';
+                     
+                     return `<li class="pro-recent-item">
+                         <div class="pro-recent-icon ${iconClass}">${iconSvg}</div>
+                         <div class="pro-recent-info">
+                             <span class="pro-recent-name" title="${n}">${n}</span>
+                             <span class="pro-recent-detail">${isPending ? 'Ausência' : 'Reposição'} • ${i.Local||'N/A'}</span>
+                         </div>
+                         <span class="pro-recent-date">${fD}</span>
+                     </li>`;
                  }).join('');
              } catch(e) { console.error("[renderRecentAbsences] Erro:", e); showError("Erro ao renderizar registros recentes."); }
         }
