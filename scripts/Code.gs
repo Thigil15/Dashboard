@@ -173,38 +173,31 @@ function criarGatilhoDiario() {
  * ⚡ SINCRONIZAÇÃO AUTOMÁTICA — Detecta alterações
  **********************************************/
 
-// Tempo mínimo entre sincronizações (em milissegundos) - 30 segundos
-const DEBOUNCE_INTERVAL = 30000;
-
 /**
  * Função chamada automaticamente quando há alteração na planilha.
- * Usa debounce para evitar múltiplas chamadas em edições rápidas.
+ * Sincroniza imediatamente com o Firebase sem debounce.
  * NOTA: Esta função precisa ser configurada como gatilho instalável
- * para funcionar com UrlFetchApp (veja criarGatilhoOnEdit).
+ * para funcionar com UrlFetchApp (veja criarGatilhosAutomaticos).
+ * Gatilhos instaláveis funcionam mesmo com a planilha fechada.
  * @param {Object} e - Objeto evento do Google Apps Script
  */
 function onEditFirebase(e) {
   try {
-    // Verifica se passou tempo suficiente desde última sync
-    const agora = new Date().getTime();
-    const ultimaSync = getUltimaSync();
+    let sucesso = false;
     
-    if (agora - ultimaSync < DEBOUNCE_INTERVAL) {
-      Logger.log("⏳ Debounce ativo. Próxima sync permitida em " + 
-        Math.ceil((DEBOUNCE_INTERVAL - (agora - ultimaSync)) / 1000) + " segundos.");
-      return;
-    }
-    
-    // Registra timestamp da sync atual
-    salvarUltimaSync(agora);
-    
-    // Sincroniza a aba que foi editada
+    // Sincroniza a aba que foi editada imediatamente
     if (e && e.source && e.range) {
       const abaEditada = e.range.getSheet();
-      enviarAbaParaFirebase(abaEditada);
+      sucesso = enviarAbaParaFirebaseComRetorno(abaEditada);
     } else {
       // Se não tiver informação da aba, sincroniza tudo
-      enviarTodasAsAbasParaFirebase();
+      sucesso = enviarTodasAsAbasParaFirebaseComRetorno();
+    }
+    
+    // Registra timestamp apenas se a sync foi bem-sucedida
+    if (sucesso) {
+      const agora = new Date().getTime();
+      salvarUltimaSync(agora);
     }
   } catch (erro) {
     Logger.log("❌ Erro no onEditFirebase: " + erro);
@@ -214,25 +207,107 @@ function onEditFirebase(e) {
 /**
  * Função chamada quando há alterações estruturais na planilha
  * (adicionar/remover abas, linhas, colunas, etc.)
+ * Sincroniza imediatamente com o Firebase.
+ * Gatilhos instaláveis funcionam mesmo com a planilha fechada.
  * @param {Object} e - Objeto evento do Google Apps Script
  */
 function onChangeFirebase(e) {
   try {
-    // onChange pode ser chamado para vários tipos de alterações
-    // Sincroniza tudo para garantir consistência
-    const agora = new Date().getTime();
-    const ultimaSync = getUltimaSync();
+    const sucesso = enviarTodasAsAbasParaFirebaseComRetorno();
     
-    if (agora - ultimaSync < DEBOUNCE_INTERVAL) {
-      Logger.log("⏳ Debounce ativo no onChange.");
-      return;
+    // Registra timestamp apenas se a sync foi bem-sucedida
+    if (sucesso) {
+      const agora = new Date().getTime();
+      salvarUltimaSync(agora);
     }
-    
-    salvarUltimaSync(agora);
-    enviarTodasAsAbasParaFirebase();
   } catch (erro) {
     Logger.log("❌ Erro no onChangeFirebase: " + erro);
   }
+}
+
+/**
+ * Envia uma aba para o Firebase e retorna true se bem-sucedido.
+ * @param {Sheet} aba - A aba a ser enviada
+ * @returns {boolean} true se enviou com sucesso
+ */
+function enviarAbaParaFirebaseComRetorno(aba) {
+  if (!FIREBASE_SECRET) {
+    Logger.log("❌ ERRO: chave do Firebase não configurada.");
+    return false;
+  }
+  
+  const nomeAba = sanitizeKey(aba.getName());
+  const dados = aba.getDataRange().getValues();
+  
+  if (dados.length < 2) {
+    Logger.log("⏭️ Aba vazia ignorada: " + nomeAba);
+    return true; // Considera sucesso pois não havia nada para enviar
+  }
+  
+  const cabecalhos = dados.shift().map(h => sanitizeKey(h));
+  
+  const hashAtual = gerarHashDados(dados);
+  const hashAnterior = getHashAnterior(nomeAba);
+  
+  if (hashAtual === hashAnterior) {
+    Logger.log("⏭️ Nenhuma alteração real em: " + nomeAba);
+    return true; // Considera sucesso pois não havia alteração
+  }
+  
+  const registros = criarRegistrosDeAba(dados, cabecalhos);
+  const sucesso = enviarParaFirebase(nomeAba, registros, aba.getName());
+  
+  if (sucesso) {
+    salvarHash(nomeAba, hashAtual);
+    Logger.log("✅ Sincronizado automaticamente: " + nomeAba);
+  } else {
+    Logger.log("⚠️ Falha ao sincronizar " + nomeAba);
+  }
+  
+  return sucesso;
+}
+
+/**
+ * Envia todas as abas para o Firebase e retorna true se todas foram bem-sucedidas.
+ * @returns {boolean} true se todas as abas foram enviadas com sucesso
+ */
+function enviarTodasAsAbasParaFirebaseComRetorno() {
+  if (!FIREBASE_SECRET) {
+    Logger.log("❌ ERRO: chave do Firebase não configurada.");
+    return false;
+  }
+
+  const planilha = SpreadsheetApp.getActiveSpreadsheet();
+  const abas = planilha.getSheets();
+  let todasSucesso = true;
+
+  for (let aba of abas) {
+    const nomeAba = sanitizeKey(aba.getName());
+    const dados = aba.getDataRange().getValues();
+    if (dados.length < 2) continue;
+
+    const cabecalhos = dados.shift().map(h => sanitizeKey(h));
+
+    const hashAtual = gerarHashDados(dados);
+    const hashAnterior = getHashAnterior(nomeAba);
+
+    if (hashAtual === hashAnterior) {
+      continue;
+    }
+
+    const registros = criarRegistrosDeAba(dados, cabecalhos);
+    const sucesso = enviarParaFirebase(nomeAba, registros, aba.getName());
+
+    if (sucesso) {
+      salvarHash(nomeAba, hashAtual);
+      Logger.log("✅ Enviado com sucesso: " + nomeAba);
+    } else {
+      Logger.log("⚠️ Falha ao enviar " + nomeAba);
+      todasSucesso = false;
+    }
+  }
+
+  return todasSucesso;
 }
 
 /**
@@ -385,10 +460,22 @@ function verificarStatusGatilhos() {
   Logger.log("  • Diário (21h): " + (diarioAtivo ? "✅ ATIVO" : "❌ INATIVO"));
   
   const ultimaSync = getUltimaSync();
+  let ultimaSyncStr = "Nunca sincronizado";
   if (ultimaSync > 0) {
     const dataUltimaSync = new Date(ultimaSync);
-    Logger.log("  • Última sync: " + dataUltimaSync.toLocaleString("pt-BR"));
+    ultimaSyncStr = dataUltimaSync.toLocaleString("pt-BR");
+    Logger.log("  • Última sync: " + ultimaSyncStr);
   }
+  
+  // Mostra alerta visual para o usuário
+  const mensagem = 
+    "📊 STATUS DOS GATILHOS\n\n" +
+    "• Sincronização automática (onEdit): " + (onEditAtivo ? "✅ ATIVO" : "❌ INATIVO") + "\n" +
+    "• Sincronização automática (onChange): " + (onChangeAtivo ? "✅ ATIVO" : "❌ INATIVO") + "\n" +
+    "• Envio diário às 21h: " + (diarioAtivo ? "✅ ATIVO" : "❌ INATIVO") + "\n\n" +
+    "📅 Última sincronização: " + ultimaSyncStr;
+  
+  SpreadsheetApp.getUi().alert("⚙️ Status dos Gatilhos", mensagem, SpreadsheetApp.getUi().ButtonSet.OK);
   
   return {
     onEdit: onEditAtivo,
