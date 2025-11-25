@@ -4,6 +4,13 @@
   "nomes": {
     "1601873172": "Thiago Dias Santos"
   },
+  "alunos": {
+    "1601873172": {
+      "nome": "Thiago Dias Santos",
+      "email": "",
+      "data_cadastro": ""
+    }
+  },
   "dias_teoria": [
     1,
     3

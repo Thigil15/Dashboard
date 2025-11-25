@@ -36,12 +36,21 @@ except ImportError:
     print("Execute: pip install requests")
     sys.exit(1)
 
+# Tenta importar msvcrt para Windows (leitura de teclado não-bloqueante)
+if platform.system() == "Windows":
+    try:
+        import msvcrt
+    except ImportError:
+        msvcrt = None
+else:
+    msvcrt = None
+
 # ========== CONFIG ==========
 ENDPOINT = "https://script.google.com/macros/s/AKfycbwNNwndI5_oh7klQI9zgeW5eiKhdkhHPlVbOeOuxFPF6XrEsFDtQrwqqD0J2q1CdLXy/exec"
 DEBOUNCE_SECONDS = 1.2
 CONFIG_FILE = "config_ponto.json"
 
-# Mapeie aqui os IDs para exibir nome (opcional)
+# Mapeie aqui os IDs para exibir nome (opcional) - legado, usar alunos no config
 NOMES = {
     "1601873172": "Thiago Dias Santos",
     # "1601901111": "Maria Souza",
@@ -61,6 +70,7 @@ def get_default_config():
         "endpoint": ENDPOINT,
         "debounce_seconds": DEBOUNCE_SECONDS,
         "nomes": NOMES.copy(),
+        "alunos": {},  # Novo campo para cadastro de alunos
         "dias_teoria": DIAS_TEORIA_PADRAO.copy(),
         "dias_especiais_teoria": [],
         "log_file": None
@@ -381,6 +391,289 @@ def hide_console_window():
             pass
     return False
 
+def clear_screen():
+    """Limpa a tela do terminal."""
+    os.system('cls' if platform.system() == 'Windows' else 'clear')
+
+def print_header():
+    """Exibe o cabeçalho do programa."""
+    print("\n" + "=" * 60)
+    print("           🎓 SISTEMA DE PONTO NFC - ENSINO FISIO")
+    print("=" * 60)
+    data_hora = datetime.now().strftime("%d/%m/%Y às %H:%M:%S")
+    print(f"                    {data_hora}")
+    print("=" * 60 + "\n")
+
+def aluno_existe(uid, config):
+    """Verifica se o aluno já está cadastrado pelo UID."""
+    # Verifica na lista de alunos (novo formato)
+    alunos = config.get("alunos", {})
+    if uid in alunos:
+        return True
+    
+    # Verifica no formato antigo (nomes)
+    nomes = config.get("nomes", {})
+    if uid in nomes:
+        return True
+    
+    return False
+
+def get_nome_aluno(uid, config):
+    """Obtém o nome do aluno pelo UID."""
+    # Primeiro verifica na lista de alunos (novo formato)
+    alunos = config.get("alunos", {})
+    if uid in alunos:
+        aluno = alunos[uid]
+        if isinstance(aluno, dict):
+            return aluno.get("nome", "Desconhecido")
+        return aluno
+    
+    # Fallback para o formato antigo (nomes)
+    nomes = config.get("nomes", NOMES)
+    return nomes.get(uid, "Desconhecido")
+
+def salvar_config(config, config_path=None):
+    """Salva a configuração no arquivo JSON."""
+    if config_path is None:
+        # Procura o arquivo de configuração existente ou usa o padrão
+        config_paths = [
+            Path(CONFIG_FILE),
+            Path(__file__).parent / CONFIG_FILE,
+        ]
+        for path in config_paths:
+            if path.exists():
+                config_path = path
+                break
+        if config_path is None:
+            config_path = Path(__file__).parent / CONFIG_FILE
+    
+    try:
+        with open(config_path, 'w', encoding='utf-8') as f:
+            json.dump(config, f, indent=2, ensure_ascii=False)
+        return True
+    except IOError as e:
+        print(f"   ❌ Erro ao salvar configuração: {e}")
+        return False
+
+def cadastrar_aluno_inline(uid, config):
+    """
+    Cadastra um novo aluno diretamente quando o UID não é encontrado.
+    Retorna o nome do aluno cadastrado ou None se cancelado.
+    """
+    print("\n   " + "═" * 50)
+    print("   📝 NOVO CRACHÁ DETECTADO - CADASTRO NECESSÁRIO")
+    print("   " + "═" * 50)
+    print(f"   🔢 UID: {uid}")
+    print("   " + "─" * 50)
+    
+    print("\n   Digite o nome completo do aluno:")
+    print("   (ou deixe em branco para pular o cadastro)")
+    nome = input("   Nome: ").strip()
+    
+    if not nome:
+        print("\n   ⚠️  Cadastro pulado. Ponto será registrado como 'Desconhecido'.")
+        return None
+    
+    # Salvar no config
+    if "alunos" not in config:
+        config["alunos"] = {}
+    
+    config["alunos"][uid] = {
+        "nome": nome,
+        "email": "",  # Preenchido manualmente depois
+        "data_cadastro": datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    }
+    
+    # Também atualiza o campo nomes para compatibilidade
+    if "nomes" not in config:
+        config["nomes"] = {}
+    config["nomes"][uid] = nome
+    
+    # Salvar configuração
+    if salvar_config(config):
+        print("\n   " + "═" * 50)
+        print("   ✅ ALUNO CADASTRADO COM SUCESSO!")
+        print("   " + "═" * 50)
+        print(f"   📛 Nome: {nome}")
+        print(f"   🔢 UID: {uid}")
+        print(f"   📧 Email: (preencher manualmente no config_ponto.json)")
+        print("   " + "═" * 50)
+        return nome
+    else:
+        print("\n   ❌ Erro ao salvar cadastro.")
+        return None
+
+def listar_alunos_cadastrados(config):
+    """Lista todos os alunos cadastrados de forma compacta."""
+    alunos = config.get("alunos", {})
+    nomes = config.get("nomes", {})
+    
+    # Combina as duas listas (alunos tem prioridade)
+    todos_alunos = {}
+    
+    # Adiciona do formato antigo
+    for uid, nome in nomes.items():
+        if uid not in todos_alunos:
+            todos_alunos[uid] = {"nome": nome, "email": ""}
+    
+    # Adiciona/sobrescreve do formato novo
+    for uid, dados in alunos.items():
+        if isinstance(dados, dict):
+            todos_alunos[uid] = dados
+        else:
+            todos_alunos[uid] = {"nome": dados, "email": ""}
+    
+    return todos_alunos
+
+def main_interativo(config):
+    """Loop principal interativo com detecção automática de cadastro."""
+    global _last_time
+    
+    clear_screen()
+    print_header()
+    
+    print("┌─────────────────────────────────────────────────────────┐")
+    print("│              ⏰ SISTEMA DE PONTO NFC                    │")
+    print("└─────────────────────────────────────────────────────────┘")
+    
+    endpoint = config.get("endpoint", ENDPOINT)
+    debounce = config.get("debounce_seconds", DEBOUNCE_SECONDS)
+    
+    # Verifica se hoje é dia de teoria
+    is_teoria = is_dia_teoria(config)
+    
+    print("\n   📅 Status do dia:")
+    if is_teoria:
+        print("   ✅ Hoje é dia de TEORIA (aulas teóricas permitidas)")
+    else:
+        print("   📚 Hoje NÃO é dia de teoria (apenas prática)")
+    
+    # Mostra alunos cadastrados
+    alunos = listar_alunos_cadastrados(config)
+    print(f"\n   👥 Alunos cadastrados: {len(alunos)}")
+    
+    print("\n" + "═" * 60)
+    print("   👆 APROXIME O CRACHÁ DO LEITOR PARA BATER PONTO")
+    print("      • Aluno cadastrado → Ponto registrado automaticamente")
+    print("      • Aluno novo → Cadastro será solicitado")
+    print("   (Ctrl+C para sair)")
+    print("═" * 60)
+    
+    # Controle de data para recarregar config apenas uma vez por dia
+    last_config_date = date.today()
+    
+    try:
+        while True:
+            print("\n   ⏳ Aguardando leitura do crachá...")
+            
+            # Lê linha do stdin
+            line = sys.stdin.readline()
+            if not line:
+                break
+            
+            serial = line.strip()
+            
+            if not serial:
+                continue
+            
+            # Validação: espera 8+ dígitos numéricos
+            if not (serial.isdigit() and len(serial) >= 8):
+                if serial:
+                    print(f"   ⚠️  Leitura não reconhecida: '{serial}'")
+                continue
+            
+            now = time.time()
+            if now - _last_time < debounce:
+                # debounce para evitar duplicados
+                continue
+            _last_time = now
+            
+            # Recarrega configuração se mudou o dia
+            current_date = date.today()
+            if current_date != last_config_date:
+                config = load_config()
+                is_teoria = is_dia_teoria(config)
+                last_config_date = current_date
+                print(f"\n   🔄 Novo dia detectado. Dia de teoria: {is_teoria}")
+            
+            hora = datetime.now().strftime("%H:%M:%S")
+            data = datetime.now().strftime("%d/%m/%Y")
+            
+            # Verifica se o aluno já está cadastrado
+            if aluno_existe(serial, config):
+                # ALUNO EXISTE - Bater ponto normalmente
+                nome = get_nome_aluno(serial, config)
+                
+                print("\n   " + "─" * 50)
+                print("   ✅ CRACHÁ RECONHECIDO!")
+                print("   " + "─" * 50)
+                print(f"   📛 Nome: {nome}")
+                print(f"   🔢 UID: {serial}")
+                print(f"   📅 Data: {data}")
+                print(f"   ⏰ Hora: {hora}")
+                print(f"   📚 Tipo: {'Teoria' if is_teoria else 'Prática'}")
+                print("   " + "─" * 50)
+                
+                print("   📤 Enviando para o servidor...")
+                
+                code, text = send_to_endpoint(serial, nome, endpoint, is_teoria)
+                
+                if code is None:
+                    print(f"   ❌ ERRO DE ENVIO: {text}")
+                    beep("long")
+                else:
+                    if code == 200:
+                        print("   ✅ PONTO REGISTRADO COM SUCESSO!")
+                        beep("short")
+                    else:
+                        print(f"   ⚠️  Resposta do servidor: {code}")
+                        beep("long")
+                
+                print("   " + "─" * 50)
+            
+            else:
+                # ALUNO NÃO EXISTE - Solicitar cadastro
+                nome = cadastrar_aluno_inline(serial, config)
+                
+                if nome:
+                    # Aluno foi cadastrado, registrar ponto
+                    print(f"\n   📤 Registrando ponto para {nome}...")
+                    
+                    code, text = send_to_endpoint(serial, nome, endpoint, is_teoria)
+                    
+                    if code is None:
+                        print(f"   ❌ ERRO DE ENVIO: {text}")
+                        beep("long")
+                    else:
+                        if code == 200:
+                            print("   ✅ PONTO REGISTRADO COM SUCESSO!")
+                            beep("short")
+                        else:
+                            print(f"   ⚠️  Resposta do servidor: {code}")
+                            beep("long")
+                else:
+                    # Usuário pulou o cadastro, registrar como desconhecido
+                    print(f"\n   📤 Registrando ponto como 'Desconhecido'...")
+                    
+                    code, text = send_to_endpoint(serial, "Desconhecido", endpoint, is_teoria)
+                    
+                    if code is None:
+                        print(f"   ❌ ERRO DE ENVIO: {text}")
+                        beep("long")
+                    else:
+                        if code == 200:
+                            print("   ✅ PONTO REGISTRADO (como Desconhecido)")
+                            beep("short")
+                        else:
+                            print(f"   ⚠️  Resposta do servidor: {code}")
+                            beep("long")
+                
+                print("   " + "─" * 50)
+    
+    except KeyboardInterrupt:
+        print("\n\n   👋 Sistema encerrado pelo usuário.")
+        print("   Até logo!\n")
+
 def main(config):
     """Loop principal do programa."""
     global _last_time
@@ -462,13 +755,19 @@ if __name__ == "__main__":
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Exemplos de uso:
-  python SistemaPonto.py                          # Execução normal
+  python SistemaPonto.py                          # Execução interativa (padrão)
   python SistemaPonto.py --background             # Executar em segundo plano (Windows)
   python SistemaPonto.py --add-dia 25/12/2024     # Adicionar dia especial de teoria
   python SistemaPonto.py --remove-dia 25/12/2024  # Remover dia especial
   python SistemaPonto.py --list-dias              # Listar dias configurados
+  python SistemaPonto.py --list-alunos            # Listar alunos cadastrados
   python SistemaPonto.py --install-startup        # Instalar para iniciar com Windows
   python SistemaPonto.py --create-config          # Criar arquivo de configuração padrão
+
+Funcionamento:
+  - Ao aproximar um crachá, o sistema verifica se o aluno está cadastrado
+  - Se cadastrado: registra o ponto automaticamente
+  - Se não cadastrado: solicita o nome para cadastro
         """
     )
     parser.add_argument("--endpoint", "-e", help="URL do Apps Script endpoint")
@@ -482,6 +781,8 @@ Exemplos de uso:
                         help="Remover um dia especial de teoria")
     parser.add_argument("--list-dias", action="store_true",
                         help="Listar dias de teoria configurados")
+    parser.add_argument("--list-alunos", action="store_true",
+                        help="Listar alunos cadastrados")
     parser.add_argument("--install-startup", action="store_true",
                         help="Instalar para iniciar com o Windows")
     parser.add_argument("--uninstall-startup", action="store_true",
@@ -506,6 +807,20 @@ Exemplos de uso:
         list_dias_especiais()
         sys.exit(0)
     
+    if args.list_alunos:
+        config = load_config()
+        alunos = listar_alunos_cadastrados(config)
+        print("\n=== Alunos Cadastrados ===\n")
+        if not alunos:
+            print("Nenhum aluno cadastrado.")
+        else:
+            for uid, dados in sorted(alunos.items(), key=lambda x: x[1].get("nome", "")):
+                nome = dados.get("nome", "")
+                email = dados.get("email", "") or "(sem email)"
+                print(f"  {uid}: {nome} - {email}")
+        print("")
+        sys.exit(0)
+    
     if args.install_startup:
         install_windows_startup()
         sys.exit(0)
@@ -517,16 +832,17 @@ Exemplos de uso:
     # Carrega configuração
     config = load_config()
     
-    # Configura logging
-    setup_logging(config.get("log_file"))
-    
     # Sobrescreve endpoint se fornecido via argumento
     if args.endpoint:
         config["endpoint"] = args.endpoint
     
-    # Modo background (esconde console no Windows)
+    # Modo background (esconde console no Windows e usa logging)
     if args.background:
         hide_console_window()
-    
-    # Executa o loop principal
-    main(config)
+        # Configura logging para modo background
+        setup_logging(config.get("log_file"))
+        # Executa o loop principal silencioso (antigo)
+        main(config)
+    else:
+        # Modo interativo (padrão) - com visual melhorado
+        main_interativo(config)
