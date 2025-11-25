@@ -1,5 +1,19 @@
 /**
- * Atualizado para inserir apenas "HH:MM:SS - HH:MM:SS" (sem "Prática:"/ "Teoria:")
+ * Sistema de sincronização de pontos para escalas.
+ * 
+ * Funcionalidade:
+ * - PontoTeoria sincroniza para EscalaTeoria + número (ex: EscalaTeoria1, EscalaTeoria2, etc.)
+ * - PontoPratica sincroniza para EscalaPratica + número (ex: EscalaPratica1, EscalaPratica2, etc.)
+ * 
+ * Identificação de alunos:
+ * - O aluno é identificado por pelo menos 2 dos 3 campos: SerialNumber, EmailHC, NomeCompleto
+ * - Os dois identificadores precisam coincidir para encontrar o aluno na escala
+ * 
+ * Formato das datas nas colunas da escala:
+ * - Formato DD_MM (ex: 10_03 para 10 de março)
+ * - Também aceita DD/MM, DD/MM/YYYY, DD_MM/YYYY
+ * 
+ * Atualizado para inserir apenas "HH:MM:SS às HH:MM:SS" (sem "Prática:"/ "Teoria:")
  * Cole em Extensions → Apps Script do seu Google Sheets.
  * 
  * IMPORTANTE: Para funcionar automaticamente mesmo com a planilha fechada,
@@ -126,13 +140,16 @@ function syncAllRowsInSheet_(ss, sheet, sheetName) {
     var i = headers.indexOf(colName);
     return i >= 0 ? i+1 : -1;
   };
+  var serialCol = idx('SerialNumber');
   var emailCol = idx('EmailHC');
+  var nomeCol = idx('NomeCompleto');
   var dataCol = idx('Data');
   var horaEntCol = idx('HoraEntrada');
   var horaSaiCol = idx('HoraSaida');
   var escalaCol = idx('Escala');
   
-  if (emailCol < 0 || dataCol < 0 || horaEntCol < 0) return;
+  // Requer pelo menos email ou serial e data/hora entrada
+  if ((emailCol < 0 && serialCol < 0) || dataCol < 0 || horaEntCol < 0) return;
   
   var lastRow = sheet.getLastRow();
   if (lastRow < 2) return;
@@ -141,8 +158,12 @@ function syncAllRowsInSheet_(ss, sheet, sheetName) {
   
   for (var i = 0; i < rows.length; i++) {
     var r = rows[i];
-    var email = r[emailCol - 1];
-    if (!email) continue;
+    var serial = (serialCol > 0) ? r[serialCol - 1] : '';
+    var email = (emailCol > 0) ? r[emailCol - 1] : '';
+    var nome = (nomeCol > 0) ? r[nomeCol - 1] : '';
+    
+    // Precisa de pelo menos um identificador
+    if (!email && !serial && !nome) continue;
     
     var dataRaw = r[dataCol - 1];
     var horaEnt = r[horaEntCol - 1];
@@ -150,7 +171,7 @@ function syncAllRowsInSheet_(ss, sheet, sheetName) {
     var escalaNumber = (escalaCol > 0 && r[escalaCol - 1]) ? String(r[escalaCol - 1]) : '9';
     
     try {
-      syncOnePontoRow_(ss, escalaNumber, email, dataRaw, horaEnt, horaSai);
+      syncOnePontoRow_(ss, escalaNumber, serial, email, nome, dataRaw, horaEnt, horaSai, sheetName);
       if (sheetName === 'PontoTeoria') {
         syncToFrequenciaTeorica_(ss, sheet, i + 2, escalaNumber);
       }
@@ -172,13 +193,16 @@ function handlePontoChange(e){
     var i = headers.indexOf(colName);
     return i >= 0 ? i+1 : -1;
   };
+  var serialCol = idx('SerialNumber');
   var emailCol = idx('EmailHC');
+  var nomeCol = idx('NomeCompleto');
   var dataCol = idx('Data');
   var horaEntCol = idx('HoraEntrada');
   var horaSaiCol = idx('HoraSaida');
   var escalaCol = idx('Escala');
 
-  if (emailCol < 0 || dataCol < 0 || horaEntCol < 0) {
+  // Requer pelo menos um identificador e data/hora entrada
+  if ((emailCol < 0 && serialCol < 0 && nomeCol < 0) || dataCol < 0 || horaEntCol < 0) {
     console.warn('Cabeçalhos obrigatórios não encontrados na aba ' + sheetName);
     return;
   }
@@ -188,8 +212,12 @@ function handlePontoChange(e){
 
   for (var r = startRow; r <= endRow; r++){
     var row = sheet.getRange(r,1,1,sheet.getLastColumn()).getValues()[0];
-    var email = row[emailCol-1];
-    if (!email) continue;
+    var serial = (serialCol > 0) ? row[serialCol-1] : '';
+    var email = (emailCol > 0) ? row[emailCol-1] : '';
+    var nome = (nomeCol > 0) ? row[nomeCol-1] : '';
+    
+    // Precisa de pelo menos um identificador
+    if (!email && !serial && !nome) continue;
 
     var dataRaw = row[dataCol-1];
     var horaEnt = row[horaEntCol-1];
@@ -197,7 +225,7 @@ function handlePontoChange(e){
     var escalaNumber = (escalaCol>0 && row[escalaCol-1]) ? String(row[escalaCol-1]) : '9';
 
     try {
-      syncOnePontoRow_(e.source, escalaNumber, email, dataRaw, horaEnt, horaSai);
+      syncOnePontoRow_(e.source, escalaNumber, serial, email, nome, dataRaw, horaEnt, horaSai, sheetName);
       // Sincroniza também para FrequenciaTeorica se for aba PontoTeoria
       if (sheetName === 'PontoTeoria') {
         syncToFrequenciaTeorica_(e.source, sheet, r, escalaNumber);
@@ -208,8 +236,25 @@ function handlePontoChange(e){
   }
 }
 
-function syncOnePontoRow_(spreadsheet, escalaNumber, email, dataRaw, horaEnt, horaSai){
-  var escalaName = 'Escala' + escalaNumber;
+/**
+ * Sincroniza uma linha de ponto para a aba de escala correspondente.
+ * PontoTeoria -> EscalaTeoria + número (ex: EscalaTeoria1)
+ * PontoPratica -> EscalaPratica + número (ex: EscalaPratica1)
+ * Identifica o aluno por pelo menos 2 dos 3 identificadores: SerialNumber, EmailHC, NomeCompleto
+ * @param {Spreadsheet} spreadsheet - A planilha ativa
+ * @param {string} escalaNumber - O número da escala (1-12)
+ * @param {string} serial - Número de série do aluno (SerialNumber)
+ * @param {string} email - Email do aluno (EmailHC)
+ * @param {string} nome - Nome completo do aluno (NomeCompleto)
+ * @param {*} dataRaw - Data do ponto
+ * @param {*} horaEnt - Hora de entrada
+ * @param {*} horaSai - Hora de saída
+ * @param {string} pontoSheetName - Nome da aba de origem ('PontoTeoria' ou 'PontoPratica')
+ */
+function syncOnePontoRow_(spreadsheet, escalaNumber, serial, email, nome, dataRaw, horaEnt, horaSai, pontoSheetName){
+  // Determina o prefixo da escala baseado na aba de origem
+  var escalaPrefix = (pontoSheetName === 'PontoTeoria') ? 'EscalaTeoria' : 'EscalaPratica';
+  var escalaName = escalaPrefix + escalaNumber;
   var escalaSheet = spreadsheet.getSheetByName(escalaName);
   if (!escalaSheet){
     console.warn('Aba ' + escalaName + ' não encontrada.');
@@ -218,33 +263,78 @@ function syncOnePontoRow_(spreadsheet, escalaNumber, email, dataRaw, horaEnt, ho
 
   // ler cabeçalho da escala
   var headersEsc = escalaSheet.getRange(1,1,1,escalaSheet.getLastColumn()).getValues()[0];
-  var emailColEsc = headersEsc.indexOf('EmailHC') + 1;
-  if (emailColEsc === 0) {
-    for (var i=0;i<headersEsc.length;i++){
-      var h = String(headersEsc[i]||'').toLowerCase();
-      if (h.indexOf('email') !== -1) { emailColEsc = i+1; break; }
-    }
-    if (emailColEsc === 0){
-      console.warn('Coluna EmailHC não encontrada na ' + escalaName);
-      return;
+  
+  // Encontrar colunas de identificação na escala
+  var serialColEsc = -1;
+  var emailColEsc = -1;
+  var nomeColEsc = -1;
+  
+  for (var i = 0; i < headersEsc.length; i++) {
+    var h = String(headersEsc[i] || '').toLowerCase().trim();
+    if (h === 'serialnumber' || h === 'serial') {
+      serialColEsc = i + 1;
+    } else if (h === 'emailhc' || h === 'email') {
+      emailColEsc = i + 1;
+    } else if (h === 'nomecompleto' || h === 'nome') {
+      nomeColEsc = i + 1;
     }
   }
+  
+  // Precisa de pelo menos duas colunas de identificação
+  var numIdCols = (serialColEsc > 0 ? 1 : 0) + (emailColEsc > 0 ? 1 : 0) + (nomeColEsc > 0 ? 1 : 0);
+  if (numIdCols < 2) {
+    console.warn('A aba ' + escalaName + ' precisa de pelo menos 2 colunas de identificação (SerialNumber, EmailHC, NomeCompleto)');
+    return;
+  }
 
-  // localizar a linha do aluno (buscando EmailHC)
+  // localizar a linha do aluno (verificando pelo menos 2 identificadores)
   var lastRow = Math.max(escalaSheet.getLastRow(), 2);
   if (lastRow < 2) { console.warn('Escala vazia'); return; }
-  var emails = escalaSheet.getRange(2, emailColEsc, lastRow-1, 1).getValues();
+  
+  var allData = escalaSheet.getRange(2, 1, lastRow - 1, escalaSheet.getLastColumn()).getValues();
   var studentRow = -1;
-  for (var rr=0; rr<emails.length; rr++){
-    var val = emails[rr][0];
-    if (!val) continue;
-    if (String(val).trim().toLowerCase() === String(email).trim().toLowerCase()){
+  
+  for (var rr = 0; rr < allData.length; rr++) {
+    var rowData = allData[rr];
+    var matches = 0;
+    
+    // Verificar SerialNumber
+    if (serialColEsc > 0 && serial) {
+      var escSerial = String(rowData[serialColEsc - 1] || '').trim();
+      if (escSerial && escSerial.toLowerCase() === String(serial).trim().toLowerCase()) {
+        matches++;
+      }
+    }
+    
+    // Verificar EmailHC
+    if (emailColEsc > 0 && email) {
+      var escEmail = String(rowData[emailColEsc - 1] || '').trim();
+      if (escEmail && escEmail.toLowerCase() === String(email).trim().toLowerCase()) {
+        matches++;
+      }
+    }
+    
+    // Verificar NomeCompleto
+    if (nomeColEsc > 0 && nome) {
+      var escNome = String(rowData[nomeColEsc - 1] || '').trim();
+      if (escNome && escNome.toLowerCase() === String(nome).trim().toLowerCase()) {
+        matches++;
+      }
+    }
+    
+    // Precisa de pelo menos 2 matches
+    if (matches >= 2) {
       studentRow = rr + 2;
       break;
     }
   }
+  
   if (studentRow === -1){
-    console.warn('Aluno com email ' + email + ' não encontrado em ' + escalaName);
+    var idInfo = [];
+    if (serial) idInfo.push('Serial: ' + serial);
+    if (email) idInfo.push('Email: ' + email);
+    if (nome) idInfo.push('Nome: ' + nome);
+    console.warn('Aluno com ' + idInfo.join(', ') + ' não encontrado em ' + escalaName + ' (precisa de pelo menos 2 identificadores correspondentes)');
     return;
   }
 
@@ -276,7 +366,7 @@ function syncOnePontoRow_(spreadsheet, escalaNumber, email, dataRaw, horaEnt, ho
   else if (horaEnt) timeStr = entradaSaidaToString_(horaEnt, '');
   else if (horaSai) timeStr = entradaSaidaToString_('', horaSai);
   else {
-    console.warn('Sem horário para gravar para ' + email + ' em ' + ddmm);
+    console.warn('Sem horário para gravar para aluno na linha ' + studentRow + ' em ' + ddmm);
     return;
   }
 
@@ -289,7 +379,7 @@ function syncOnePontoRow_(spreadsheet, escalaNumber, email, dataRaw, horaEnt, ho
     var existingStr = String(existing);
     // Se o horário já existe, não sobrescreve
     if (existingStr.indexOf(newEntry) !== -1) {
-      console.log('Horário já registrado para ' + email + ' em ' + ddmm + '. Ignorando duplicata.');
+      console.log('Horário já registrado na linha ' + studentRow + ' em ' + ddmm + '. Ignorando duplicata.');
       return;
     }
     // Adiciona nova entrada em nova linha
@@ -517,25 +607,33 @@ function syncAllPontos(){
     var sheet = ss.getSheetByName(name);
     if (!sheet) return;
     var headers = sheet.getRange(1,1,1,sheet.getLastColumn()).getValues()[0];
+    var serialCol = headers.indexOf('SerialNumber') + 1;
     var emailCol = headers.indexOf('EmailHC') + 1;
+    var nomeCol = headers.indexOf('NomeCompleto') + 1;
     var dataCol = headers.indexOf('Data') + 1;
     var horaEntCol = headers.indexOf('HoraEntrada') + 1;
     var horaSaiCol = headers.indexOf('HoraSaida') + 1;
     var escalaCol = headers.indexOf('Escala') + 1;
 
-    if (emailCol < 1 || dataCol < 1 || horaEntCol < 1) return;
+    // Requer pelo menos um identificador e data/hora entrada
+    if ((emailCol < 1 && serialCol < 1 && nomeCol < 1) || dataCol < 1 || horaEntCol < 1) return;
     var lastRow = sheet.getLastRow();
     if (lastRow < 2) return;
     var rows = sheet.getRange(2,1,lastRow-1,sheet.getLastColumn()).getValues();
     for (var i=0;i<rows.length;i++){
       var r = rows[i];
-      var email = r[emailCol-1];
-      if (!email) continue;
+      var serial = (serialCol > 0) ? r[serialCol-1] : '';
+      var email = (emailCol > 0) ? r[emailCol-1] : '';
+      var nome = (nomeCol > 0) ? r[nomeCol-1] : '';
+      
+      // Precisa de pelo menos um identificador
+      if (!email && !serial && !nome) continue;
+      
       var dataRaw = r[dataCol-1];
       var horaEnt = r[horaEntCol-1];
       var horaSai = (horaSaiCol>0) ? r[horaSaiCol-1] : '';
       var escalaNumber = (escalaCol>0 && r[escalaCol-1]) ? String(r[escalaCol-1]) : '9';
-      syncOnePontoRow_(ss, escalaNumber, email, dataRaw, horaEnt, horaSai);
+      syncOnePontoRow_(ss, escalaNumber, serial, email, nome, dataRaw, horaEnt, horaSai, name);
       // Sincroniza também para FrequenciaTeorica se for aba PontoTeoria
       if (name === 'PontoTeoria') {
         syncToFrequenciaTeorica_(ss, sheet, i + 2, escalaNumber);
@@ -674,13 +772,16 @@ function syncPontoTeoriaOnly() {
  */
 function syncSinglePontoSheet_(ss, sheet, sheetName) {
   var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var serialCol = headers.indexOf('SerialNumber') + 1;
   var emailCol = headers.indexOf('EmailHC') + 1;
+  var nomeCol = headers.indexOf('NomeCompleto') + 1;
   var dataCol = headers.indexOf('Data') + 1;
   var horaEntCol = headers.indexOf('HoraEntrada') + 1;
   var horaSaiCol = headers.indexOf('HoraSaida') + 1;
   var escalaCol = headers.indexOf('Escala') + 1;
 
-  if (emailCol < 1 || dataCol < 1 || horaEntCol < 1) {
+  // Requer pelo menos um identificador e data/hora entrada
+  if ((emailCol < 1 && serialCol < 1 && nomeCol < 1) || dataCol < 1 || horaEntCol < 1) {
     console.warn('Cabeçalhos obrigatórios não encontrados na aba ' + sheetName);
     return;
   }
@@ -693,15 +794,19 @@ function syncSinglePontoSheet_(ss, sheet, sheetName) {
   
   for (var i = 0; i < rows.length; i++) {
     var r = rows[i];
-    var email = r[emailCol - 1];
-    if (!email) continue;
+    var serial = (serialCol > 0) ? r[serialCol - 1] : '';
+    var email = (emailCol > 0) ? r[emailCol - 1] : '';
+    var nome = (nomeCol > 0) ? r[nomeCol - 1] : '';
+    
+    // Precisa de pelo menos um identificador
+    if (!email && !serial && !nome) continue;
     
     var dataRaw = r[dataCol - 1];
     var horaEnt = r[horaEntCol - 1];
     var horaSai = (horaSaiCol > 0) ? r[horaSaiCol - 1] : '';
     var escalaNumber = (escalaCol > 0 && r[escalaCol - 1]) ? String(r[escalaCol - 1]) : '9';
     
-    syncOnePontoRow_(ss, escalaNumber, email, dataRaw, horaEnt, horaSai);
+    syncOnePontoRow_(ss, escalaNumber, serial, email, nome, dataRaw, horaEnt, horaSai, sheetName);
     
     if (sheetName === 'PontoTeoria') {
       syncToFrequenciaTeorica_(ss, sheet, i + 2, escalaNumber);
