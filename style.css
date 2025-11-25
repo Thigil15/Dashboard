@@ -1537,20 +1537,31 @@
         
         .student-group-header { 
             font-family: var(--font-display);
-            font-size: 0.75rem;
+            font-size: 0.8125rem;
             font-weight: 700;
-            color: var(--incor-blue-700);
-            background: linear-gradient(to bottom, var(--body-bg-color) 85%, transparent);
-            padding: 0.625rem 0.5rem;
-            margin-top: 2rem;
+            color: white;
+            background: linear-gradient(135deg, var(--incor-blue-700) 0%, var(--incor-blue-600) 100%);
+            padding: 0.75rem 1rem;
+            margin-top: 1.5rem;
             margin-bottom: 1rem;
-            border: none;
-            border-bottom: 2px solid var(--incor-blue-500);
+            border-radius: var(--radius-lg);
             position: sticky;
             top: -1px;
             z-index: 5;
-            letter-spacing: 0.03em;
-            text-transform: uppercase;
+            letter-spacing: 0.02em;
+            box-shadow: 0 4px 12px rgba(0, 51, 160, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .student-group-header::before {
+            content: '📚';
+            font-size: 1rem;
+        }
+        
+        .student-group:first-child .student-group-header {
+            margin-top: 0;
         }
         
         /* Student Cards - Premium Style with Performance Optimizations */
@@ -1691,29 +1702,46 @@
         }
         #back-to-dashboard:hover { color: #0033A0; } 
         
+        #student-header { 
+            background: linear-gradient(135deg, white 0%, var(--incor-blue-50) 100%);
+            border: 1px solid rgba(229, 233, 239, 0.6);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--card-shadow);
+        }
+        
         #student-header img { 
-            width: 5rem; height: 5rem;
+            width: 5.5rem; 
+            height: 5.5rem;
             object-fit: cover;
             border-radius: 9999px;
             border: 4px solid white;
-            box-shadow: 0 0 0 4px var(--accent-blue);
+            box-shadow: 0 8px 24px rgba(0, 51, 160, 0.15), 0 0 0 4px var(--incor-blue-500);
+        }
+        
+        #student-header h2 {
+            background: linear-gradient(90deg, var(--incor-blue-700) 0%, var(--incor-blue-500) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         
         #student-kpi-header .kpi-card {
-            background: var(--card-bg-darker);
-            border: 1px solid #ffffff;
-            box-shadow: none;
+            background: white;
+            border: 1px solid rgba(229, 233, 239, 0.6);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--card-shadow);
+            transition: all 0.2s ease;
         }
         #student-kpi-header .kpi-card:hover {
-             transform: scale(1.03); 
+             transform: translateY(-2px); 
              box-shadow: var(--card-shadow-hover); 
-             border-color: var(--accent-blue);
+             border-color: var(--incor-blue-400);
              z-index: 5;
         }
-        #student-kpi-header .kpi-label { font-size: 0.7rem; font-weight: 600; color: var(--content-text-secondary); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.1rem; }
-        #student-kpi-header .kpi-value { font-family: var(--font-display); font-size: 1.8rem; font-weight: 700; color: var(--content-text-primary); line-height: 1.1; }
-        #student-kpi-header .icon-bg { padding: 0.8rem; border-radius: 0.75rem; }
-        #kpi-pendentes, #kpi-total-faltas { color: var(--accent-red); }
+        #student-kpi-header .kpi-label { font-size: 0.6875rem; font-weight: 600; color: var(--content-text-secondary); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.125rem; }
+        #student-kpi-header .kpi-value { font-family: var(--font-display); font-size: 1.75rem; font-weight: 700; color: var(--content-text-primary); line-height: 1.1; }
+        #student-kpi-header .icon-bg { padding: 0.75rem; border-radius: var(--radius-lg); }
+        #kpi-pendentes, #kpi-total-faltas { color: var(--incor-red-600); }
 
 
         /* --- Abas (Tabs) --- */
@@ -2132,6 +2160,187 @@
         /* --- Aba Informações (dl list) --- */
         #tab-info dl dt { font-weight: 500; color: var(--content-text-secondary); }
         #tab-info dl dd { font-weight: 600; color: var(--content-text-primary); margin-top: 0.15rem; }
+        
+        /* === Student Info Section - Professional Design === */
+        .student-info-section {
+            background: white;
+            border-radius: var(--radius-xl);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(229, 233, 239, 0.6);
+            box-shadow: var(--card-shadow);
+        }
+        
+        .student-info-section-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-family: var(--font-display);
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--incor-blue-700);
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--incor-blue-100);
+        }
+        
+        .student-info-icon {
+            width: 1.5rem;
+            height: 1.5rem;
+            color: var(--incor-blue-500);
+        }
+        
+        .student-info-badge {
+            font-size: 0.6875rem;
+            font-weight: 600;
+            padding: 0.25rem 0.625rem;
+            background: var(--incor-blue-100);
+            color: var(--incor-blue-600);
+            border-radius: var(--radius-full);
+            margin-left: auto;
+        }
+        
+        .student-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        
+        .student-info-item {
+            background: var(--incor-blue-50);
+            padding: 0.875rem 1rem;
+            border-radius: var(--radius-lg);
+            border-left: 3px solid var(--incor-blue-400);
+        }
+        
+        .student-info-label {
+            font-size: 0.6875rem;
+            font-weight: 600;
+            color: var(--content-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+        }
+        
+        .student-info-value {
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: var(--content-text-primary);
+        }
+        
+        /* === Theory Class Days Section === */
+        .student-theory-section {
+            background: linear-gradient(135deg, #FFF7ED 0%, #FFFBEB 100%);
+            border-color: rgba(251, 191, 36, 0.3);
+        }
+        
+        .student-theory-section .student-info-section-title {
+            color: var(--warning-amber);
+            border-bottom-color: rgba(251, 191, 36, 0.3);
+        }
+        
+        .student-theory-section .student-info-icon {
+            color: var(--warning-amber);
+        }
+        
+        .student-theory-section .student-info-badge {
+            background: rgba(251, 191, 36, 0.2);
+            color: #92400E;
+        }
+        
+        .student-theory-description {
+            font-size: 0.8125rem;
+            color: var(--content-text-secondary);
+            margin-bottom: 1rem;
+        }
+        
+        .theory-scales-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .theory-scale-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 1rem;
+            border: 1px solid rgba(251, 191, 36, 0.2);
+        }
+        
+        .theory-scale-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px dashed rgba(251, 191, 36, 0.3);
+        }
+        
+        .theory-scale-name {
+            font-weight: 600;
+            color: var(--content-text-primary);
+            font-size: 0.9375rem;
+        }
+        
+        .theory-scale-count {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--warning-amber);
+            background: rgba(251, 191, 36, 0.15);
+            padding: 0.25rem 0.5rem;
+            border-radius: var(--radius-full);
+        }
+        
+        .theory-days-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        
+        .theory-day-chip {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.375rem 0.75rem;
+            border-radius: var(--radius-md);
+            font-size: 0.75rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        
+        .theory-day-chip.terca {
+            background: rgba(59, 130, 246, 0.1);
+            color: #1E40AF;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+        
+        .theory-day-chip.quinta {
+            background: rgba(139, 92, 246, 0.1);
+            color: #6D28D9;
+            border: 1px solid rgba(139, 92, 246, 0.2);
+        }
+        
+        .theory-day-chip:hover {
+            transform: scale(1.05);
+        }
+        
+        .theory-day-name {
+            font-size: 0.625rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .theory-day-date {
+            font-size: 0.8125rem;
+            font-weight: 600;
+        }
+        
+        .theory-no-days {
+            font-size: 0.8125rem;
+            color: var(--content-text-muted);
+            font-style: italic;
+        }
 
         /* --- Aba Escala (Heatmap) --- */
         .heatmap-day { 
