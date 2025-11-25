@@ -161,21 +161,23 @@
                     
                     if (data && typeof data === 'object') {
                         const allKeys = Object.keys(data);
-                        const escalaKeys = allKeys.filter(key => key.match(/^Escala\d+$/i));
+                        // Support Escala, EscalaTeoria, and EscalaPratica patterns
+                        const escalaKeys = allKeys.filter(key => key.match(/^Escala(Teoria|Pratica)?\d+$/i));
                         
                         if (escalaKeys.length === 0) {
                             console.warn('[setupDatabaseListeners] ⚠️ Nenhuma escala encontrada em exportAll');
-                            console.warn('[setupDatabaseListeners] Procurando por abas que começam com "Escala" seguido de número (ex: Escala1, Escala2)');
+                            console.warn('[setupDatabaseListeners] Procurando por abas: Escala1, EscalaTeoria1, EscalaPratica1, etc.');
                             console.warn('[setupDatabaseListeners] Abas disponíveis:', allKeys.slice(0, 10).join(', '));
                         }
                         
                         escalaKeys.forEach(key => {
                             const escalaData = data[key];
                             
-                            // Extract scale number and track the highest one (current scale)
-                            const scaleMatch = key.match(/^Escala(\d+)$/i);
+                            // Extract scale number and type (Teoria/Pratica) and track the highest one
+                            const scaleMatch = key.match(/^Escala(Teoria|Pratica)?(\d+)$/i);
                             if (scaleMatch) {
-                                const scaleNumber = parseInt(scaleMatch[1], 10);
+                                const scaleType = scaleMatch[1] || ''; // 'Teoria', 'Pratica', or ''
+                                const scaleNumber = parseInt(scaleMatch[2], 10);
                                 if (scaleNumber > maxScaleNumber) {
                                     maxScaleNumber = scaleNumber;
                                 }
@@ -230,10 +232,19 @@
                                     console.warn(`[setupDatabaseListeners] ⚠️ Escala ${key} não tem alunos`);
                                 }
                                 
+                                // Determine scale type from key
+                                const typeMatch = key.match(/^Escala(Teoria|Pratica)?(\d+)$/i);
+                                const scaleType = typeMatch && typeMatch[1] ? typeMatch[1].toLowerCase() : 'pratica'; // Default to pratica
+                                const scaleNum = typeMatch ? parseInt(typeMatch[2], 10) : 0;
+                                
                                 escalasData[key] = {
                                     nomeEscala: key,
+                                    tipo: scaleType, // 'teoria' or 'pratica'
+                                    numero: scaleNum,
                                     alunos: alunos,
-                                    headersDay: headersDay
+                                    headersDay: headersDay,
+                                    // For teoria scales, extract class days (Tuesdays and Thursdays)
+                                    diasAula: scaleType === 'teoria' ? extractTheoryClassDays(headersDay) : []
                                 };
                             } else {
                                 console.warn(`[setupDatabaseListeners] ⚠️ Escala ${key} não tem campo 'dados'`);
@@ -1383,6 +1394,41 @@ const pontoState = {
         }
 
         /**
+         * Extract theory class days (Tuesdays and Thursdays) from header days
+         * Theory classes only happen on Terças (Tuesdays) and Quintas (Thursdays)
+         * @param {Array} headersDay - Array of dates in DD/MM format
+         * @returns {Array} - Array of dates that are Tuesdays or Thursdays
+         */
+        function extractTheoryClassDays(headersDay) {
+            if (!headersDay || !Array.isArray(headersDay)) return [];
+            
+            const currentYear = new Date().getFullYear();
+            const theoryDays = [];
+            
+            headersDay.forEach(dateStr => {
+                // Parse DD/MM format
+                const parts = dateStr.split('/');
+                if (parts.length === 2) {
+                    const day = parseInt(parts[0], 10);
+                    const month = parseInt(parts[1], 10) - 1; // JS months are 0-indexed
+                    const date = new Date(currentYear, month, day);
+                    const dayOfWeek = date.getDay();
+                    
+                    // Tuesday = 2, Thursday = 4
+                    if (dayOfWeek === 2 || dayOfWeek === 4) {
+                        const dayName = dayOfWeek === 2 ? 'Terça' : 'Quinta';
+                        theoryDays.push({
+                            data: dateStr,
+                            diaSemana: dayName
+                        });
+                    }
+                }
+            });
+            
+            return theoryDays;
+        }
+
+        /**
          * Extract ponto (time tracking) data from Escalas
          * This function parses time information from the date columns in Escalas
          * Format example: "08h às 13h - Escala 1" or just "08h às 13h"
@@ -1979,18 +2025,145 @@ const pontoState = {
                     practicalBar.style.width = `${(oPAvg / 10) * 100}%`;
                 }
                 
+                // Render students with pending replacements (clickable list)
+                renderStudentsWithReplacements();
+                
                 renderCourseDistributionChart(cDist);
                 renderModuleAverages(tAvgs, pAvgs);
             } catch (e) { console.error("[renderAtAGlance] Erro:", e); showError("Erro ao renderizar visão geral."); }
         }
         
+        // Render clickable list of students with pending replacements
+        function renderStudentsWithReplacements() {
+            const container = document.getElementById('students-with-replacements-list');
+            if (!container) return;
+            
+            // Group pending replacements by student
+            const pendingByStudent = {};
+            appState.ausenciasReposicoes.forEach(f => {
+                if (f && !f.DataReposicaoISO && (f.EmailHC || f.NomeCompleto)) {
+                    const email = f.EmailHC || '';
+                    const nome = f.NomeCompleto || 'Aluno';
+                    const key = email || nome;
+                    if (!pendingByStudent[key]) {
+                        pendingByStudent[key] = { email, nome, count: 0 };
+                    }
+                    pendingByStudent[key].count++;
+                }
+            });
+            
+            const studentsArray = Object.values(pendingByStudent).sort((a, b) => b.count - a.count);
+            
+            if (studentsArray.length === 0) {
+                container.innerHTML = '<div class="db-students-empty">Nenhuma reposição pendente</div>';
+                return;
+            }
+            
+            // Store student data for click handling (avoids XSS from inline onclick)
+            const MAX_VISIBLE_STUDENTS = 6;
+            window._pendingStudentsData = studentsArray.slice(0, MAX_VISIBLE_STUDENTS);
+            
+            let html = '';
+            studentsArray.slice(0, MAX_VISIBLE_STUDENTS).forEach((student, index) => {
+                const displayName = student.nome.split(' ').slice(0, 2).join(' ');
+                // Escape HTML entities to prevent XSS
+                const escapedDisplayName = displayName.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+                const escapedFullName = student.nome.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+                
+                html += `
+                    <div class="db-student-link" data-student-index="${index}">
+                        <span class="db-student-link-name" title="${escapedFullName}">${escapedDisplayName}</span>
+                        <span class="db-student-link-count">${student.count}</span>
+                        <svg class="db-student-link-arrow" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </div>
+                `;
+            });
+            
+            if (studentsArray.length > MAX_VISIBLE_STUDENTS) {
+                html += `<div class="db-students-empty">+ ${studentsArray.length - MAX_VISIBLE_STUDENTS} mais...</div>`;
+            }
+            
+            container.innerHTML = html;
+            
+            // Add click event listeners (safer than inline onclick)
+            container.querySelectorAll('.db-student-link[data-student-index]').forEach(link => {
+                link.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-student-index'), 10);
+                    const student = window._pendingStudentsData[index];
+                    if (student) {
+                        handleStudentReplacementClick(student.email, student.nome);
+                    }
+                });
+            });
+        }
+        
+        // Handle click on student with replacement - navigate to their absences tab
+        function handleStudentReplacementClick(email, nome) {
+            console.log(`[handleStudentReplacementClick] Navegando para faltas do aluno: ${email || nome}`);
+            
+            // Try to find the student by email first, then by name
+            let studentEmail = email;
+            if (!studentEmail && nome) {
+                const nomeNormalizado = normalizeString(nome);
+                for (const [e, info] of appState.alunosMap) {
+                    if (normalizeString(info.NomeCompleto) === nomeNormalizado) {
+                        studentEmail = e;
+                        break;
+                    }
+                }
+            }
+            
+            if (studentEmail && appState.alunosMap.has(studentEmail)) {
+                showStudentDetail(studentEmail);
+                // Switch to faltas (absences) tab after a short delay to ensure view is rendered
+                setTimeout(() => {
+                    switchStudentTab('faltas');
+                }, 100);
+            } else {
+                showError(`Aluno não encontrado: ${nome || email}`);
+            }
+        };
+        
         function renderCourseDistributionChart(distribution) {
-             const c=document.getElementById('course-distribution-chart'); if(!distribution||distribution.length===0){c.innerHTML='<p class="text-slate-500 text-sm italic">S/ dados curso.</p>'; return;} 
-             const colors=['var(--accent-blue)', 'var(--accent-red)', 'var(--accent-green)', 'var(--accent-yellow)', '#a855f7', '#64748b']; 
-             let grad=''; let cum=0; const leg=[]; 
-             distribution.forEach((item,i)=>{const clr=colors[i%colors.length]; const s=cum; const e=cum+item.percentage; if(item.percentage>0){grad+=`, ${clr} ${s}% ${e}%`;} cum=e; leg.push(`<li><span class="legend-color-box" style="background-color:${clr};"></span>${item.course} (${item.count})</li>`);}); 
-             if(cum<100){grad+=`, #E5E9EF ${cum}% 100%`;} 
-             c.innerHTML=`<div class="donut-chart" style="--chart-segments:${grad.substring(1)};"></div><div class="donut-legend"><ul>${leg.join('')}</ul></div>`;
+            const c = document.getElementById('course-distribution-chart');
+            if (!c) return;
+            
+            if (!distribution || distribution.length === 0) {
+                c.innerHTML = '<p class="db-students-empty">Sem dados de distribuição por curso.</p>';
+                return;
+            }
+            
+            const COURSE_NAME_MAX_LENGTH = 12;
+            const colors = [
+                'db-dist-bar-1', 'db-dist-bar-2', 'db-dist-bar-3', 
+                'db-dist-bar-4', 'db-dist-bar-5', 'db-dist-bar-6'
+            ];
+            const maxCount = Math.max(...distribution.map(d => d.count));
+            
+            let html = '';
+            distribution.forEach((item, i) => {
+                const barWidth = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
+                const colorClass = colors[i % colors.length];
+                const courseName = item.course.length > COURSE_NAME_MAX_LENGTH 
+                    ? item.course.substring(0, COURSE_NAME_MAX_LENGTH) + '...' 
+                    : item.course;
+                
+                html += `
+                    <div class="db-dist-bar-item">
+                        <span class="db-dist-bar-label" title="${item.course}">${courseName}</span>
+                        <div class="db-dist-bar-track">
+                            <div class="db-dist-bar-fill ${colorClass}" style="width: ${barWidth}%;">
+                                <span>${item.percentage.toFixed(0)}%</span>
+                            </div>
+                        </div>
+                        <span class="db-dist-bar-count">${item.count}</span>
+                    </div>
+                `;
+            });
+            
+            c.innerHTML = html;
         }
         
         function renderModuleAverages(tAvgs, pAvgs) {
@@ -3414,30 +3587,63 @@ const pontoState = {
                      return; 
                  } 
                  
+                 // Use DocumentFragment for better performance
+                 const fragment = document.createDocumentFragment();
+                 
                  const grouped = students.reduce((acc, s) => { const c = s.Curso || 'Sem Curso'; if (!acc[c]) acc[c] = []; acc[c].push(s); return acc; }, {}); 
                  const courses = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
                  
-                 let html = ''; 
+                 // Pre-sort students once per group
+                 courses.forEach(c => {
+                     grouped[c].sort((a, b) => a.NomeCompleto.localeCompare(b.NomeCompleto));
+                 });
+                 
+                 // Placeholder image URL - defined once
+                 const placeholderImg = 'https://placehold.co/60x60/e2e8f0/64748b?text=?';
+                 
                  courses.forEach(c => { 
-                     html += `<div class="student-group" data-course="${c}"><h3 class="student-group-header">${c} (${grouped[c].length})</h3><div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-1">`; 
+                     const groupDiv = document.createElement('div');
+                     groupDiv.className = 'student-group';
+                     groupDiv.setAttribute('data-course', c);
                      
-                     grouped[c].sort((a,b) => a.NomeCompleto.localeCompare(b.NomeCompleto)).forEach(s => { 
-                         const img = s.FotoID ? `https://lh3.googleusercontent.com/d/${s.FotoID}=s96-c` : 'https://placehold.co/60x60/e2e8f0/64748b?text=?'; 
-                         const inactive = s.Status !== 'Ativo'; 
-                         const inactiveClass = inactive ? 'inactive-card' : ''; 
-                         const inactiveBadge = inactive ? '<span class="badge badge-red inactive-badge">Inativo</span>' : ''; 
+                     const header = document.createElement('h3');
+                     header.className = 'student-group-header';
+                     header.textContent = `${c} (${grouped[c].length})`;
+                     groupDiv.appendChild(header);
+                     
+                     const grid = document.createElement('div');
+                     grid.className = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-1';
+                     
+                     grouped[c].forEach(s => { 
+                         const card = document.createElement('div');
+                         const inactive = s.Status !== 'Ativo';
+                         card.className = `student-card${inactive ? ' inactive-card' : ''}`;
+                         card.setAttribute('data-student-email', s.EmailHC || '');
+                         card.setAttribute('data-student-name', normalizeString(s.NomeCompleto));
                          
-                         // [ORION] Removido 'onclick' do HTML.
-                         html += `<div class="student-card ${inactiveClass}" data-student-email="${s.EmailHC}" data-student-name="${normalizeString(s.NomeCompleto)}">
-                                      ${inactiveBadge}
-                                      <img src="${img}" alt="Foto" onerror="this.src='https://placehold.co/60x60/e2e8f0/64748b?text=?'">
-                                      <p class="student-name">${s.NomeCompleto}</p>
-                                      <p class="student-course mt-0.5">${s.Curso}</p>
-                                  </div>`; 
+                         // Build card content more efficiently
+                         let cardHTML = '';
+                         if (inactive) {
+                             cardHTML += '<span class="badge badge-red inactive-badge">Inativo</span>';
+                         }
+                         
+                         // Use loading="lazy" for images to improve initial load
+                         const imgSrc = s.FotoID ? `https://lh3.googleusercontent.com/d/${s.FotoID}=s96-c` : placeholderImg;
+                         cardHTML += `<img src="${imgSrc}" alt="Foto" loading="lazy" onerror="this.src='${placeholderImg}'">`;
+                         cardHTML += `<p class="student-name">${s.NomeCompleto}</p>`;
+                         cardHTML += `<p class="student-course mt-0.5">${s.Curso || 'Sem Curso'}</p>`;
+                         
+                         card.innerHTML = cardHTML;
+                         grid.appendChild(card);
                      }); 
-                     html += `</div></div>`; 
+                     
+                     groupDiv.appendChild(grid);
+                     fragment.appendChild(groupDiv);
                  }); 
-                 panel.innerHTML = html;
+                 
+                 // Clear and append in one operation
+                 panel.innerHTML = '';
+                 panel.appendChild(fragment);
              } catch (e) { console.error("[renderStudentList] Erro:", e); showError("Erro ao renderizar lista de alunos."); }
         }
 
@@ -3640,7 +3846,118 @@ const pontoState = {
         }
         
         function renderTabInfo(info) {
-             const p=document.getElementById('tab-info'); p.innerHTML=`<dl class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6 text-sm"><div class="border-b border-slate-200 pb-3"><dt>Email</dt><dd>${info.EmailHC||'N/A'}</dd></div><div class="border-b border-slate-200 pb-3"><dt>Nascimento</dt><dd>${info.DataNascimento ? new Date(info.DataNascimento).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : 'N/A'}</dd></div><div class="border-b border-slate-200 pb-3"><dt>Sexo</dt><dd>${info.Sexo||'N/A'}</dd></div><div class="border-b border-slate-200 pb-3"><dt>Estado Civil</dt><dd>${info.EstadoCivil||'N/A'}</dd></div><div class="md:col-span-2 lg:col-span-1 border-b border-slate-200 pb-3"><dt>CREFITO</dt><dd>${info.Crefito||'N/A'}</dd></div></dl>`;
+             const p=document.getElementById('tab-info');
+             
+             // Find theory class days for this student
+             const theoryDaysHtml = renderTheoryClassDays();
+             
+             p.innerHTML=`
+                <div class="student-info-section">
+                    <h3 class="student-info-section-title">
+                        <svg class="student-info-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        Dados Pessoais
+                    </h3>
+                    <dl class="student-info-grid">
+                        <div class="student-info-item">
+                            <dt class="student-info-label">Email Institucional</dt>
+                            <dd class="student-info-value">${info.EmailHC||'N/A'}</dd>
+                        </div>
+                        <div class="student-info-item">
+                            <dt class="student-info-label">Data de Nascimento</dt>
+                            <dd class="student-info-value">${info.DataNascimento ? new Date(info.DataNascimento).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : 'N/A'}</dd>
+                        </div>
+                        <div class="student-info-item">
+                            <dt class="student-info-label">Sexo</dt>
+                            <dd class="student-info-value">${info.Sexo||'N/A'}</dd>
+                        </div>
+                        <div class="student-info-item">
+                            <dt class="student-info-label">Estado Civil</dt>
+                            <dd class="student-info-value">${info.EstadoCivil||'N/A'}</dd>
+                        </div>
+                        <div class="student-info-item">
+                            <dt class="student-info-label">CREFITO</dt>
+                            <dd class="student-info-value">${info.Crefito||'N/A'}</dd>
+                        </div>
+                        <div class="student-info-item">
+                            <dt class="student-info-label">Curso</dt>
+                            <dd class="student-info-value">${info.Curso||'N/A'}</dd>
+                        </div>
+                    </dl>
+                </div>
+                
+                ${theoryDaysHtml}
+             `;
+        }
+        
+        /**
+         * Render theory class days section based on current scales
+         * Shows the days when theory classes occur (Tuesdays and Thursdays)
+         */
+        function renderTheoryClassDays() {
+            // Find all theory scales (EscalaTeoria1, EscalaTeoria2, etc.)
+            const theoryScales = Object.entries(appState.escalas || {})
+                .filter(([key, escala]) => escala.tipo === 'teoria')
+                .sort((a, b) => a[1].numero - b[1].numero);
+            
+            if (theoryScales.length === 0) {
+                // No theory scales found
+                return '';
+            }
+            
+            let theoryHtml = `
+                <div class="student-info-section student-theory-section">
+                    <h3 class="student-info-section-title">
+                        <svg class="student-info-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
+                        Aulas Teóricas
+                        <span class="student-info-badge">Terças e Quintas</span>
+                    </h3>
+                    <p class="student-theory-description">Dias de aula teórica por período de escala</p>
+                    
+                    <div class="theory-scales-container">
+            `;
+            
+            theoryScales.forEach(([key, escala]) => {
+                const diasAula = escala.diasAula || [];
+                
+                theoryHtml += `
+                    <div class="theory-scale-card">
+                        <div class="theory-scale-header">
+                            <span class="theory-scale-name">${escala.nomeEscala}</span>
+                            <span class="theory-scale-count">${diasAula.length} dias</span>
+                        </div>
+                        <div class="theory-days-list">
+                `;
+                
+                if (diasAula.length > 0) {
+                    diasAula.forEach(dia => {
+                        const isQuinta = dia.diaSemana === 'Quinta';
+                        theoryHtml += `
+                            <span class="theory-day-chip ${isQuinta ? 'quinta' : 'terca'}">
+                                <span class="theory-day-name">${dia.diaSemana}</span>
+                                <span class="theory-day-date">${dia.data}</span>
+                            </span>
+                        `;
+                    });
+                } else {
+                    theoryHtml += `<span class="theory-no-days">Nenhum dia de aula encontrado</span>`;
+                }
+                
+                theoryHtml += `
+                        </div>
+                    </div>
+                `;
+            });
+            
+            theoryHtml += `
+                    </div>
+                </div>
+            `;
+            
+            return theoryHtml;
         }
         
 /* =======================================================================
