@@ -928,37 +928,81 @@
         #recent-absences-list li:hover { background-color: rgba(248, 250, 252, 0.8); }
         #last-update-timestamp { font-size: 0.7rem; color: var(--content-text-secondary); opacity: 0.7; }
 
-        /* --- Badges --- */
-        .badge { font-size: 0.65rem; padding: 0.25em 0.75em; border: 1px solid transparent; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; border-radius: 99px;}
-        .badge-green { background-color: #dcfce7; color: #166534; border-color: #86efac;}
-        .badge-yellow { background-color: #fef9c3; color: #854d0e; border-color: #fde047;}
-        .badge-gray { background-color: #f1f5f9; color: #475569; border-color: #e2e8f0;}
-        .badge-red { background-color: rgba(226, 30, 38, 0.1); color: var(--accent-red); border-color: rgba(226, 30, 38, 0.2);}
+        /* --- Badges Premium --- */
+        .badge { 
+            font-size: 0.625rem;
+            padding: 0.3em 0.875em;
+            border: 1px solid transparent;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-radius: var(--radius-full);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        
+        .badge-green { 
+            background: linear-gradient(135deg, #dcfce7 0%, #d1fae5 100%);
+            color: #047857;
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+        
+        .badge-yellow { 
+            background: linear-gradient(135deg, #fef9c3 0%, #fef3c7 100%);
+            color: #b45309;
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+        
+        .badge-gray { 
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            color: #475569;
+            border-color: rgba(100, 116, 139, 0.2);
+        }
+        
+        .badge-red { 
+            background: linear-gradient(135deg, rgba(226, 30, 38, 0.1) 0%, rgba(226, 30, 38, 0.15) 100%);
+            color: var(--incor-red-700);
+            border-color: rgba(226, 30, 38, 0.25);
+        }
+        
+        .badge-blue {
+            background: linear-gradient(135deg, var(--incor-blue-100) 0%, var(--incor-blue-50) 100%);
+            color: var(--incor-blue-700);
+            border-color: rgba(0, 51, 160, 0.2);
+        }
 
         /* --- Lista de Alunos (View Alunos) --- */
         #search-student { 
-            background: #ffffff;
-            border: 1px solid var(--card-border);
-            transition: var(--transition-fast); 
+            background: var(--card-bg-solid);
+            border: 2px solid transparent;
+            border-radius: var(--radius-xl);
+            transition: var(--transition-fast);
+            box-shadow: var(--card-shadow);
         }
+        
         #search-student:focus {
-            border-color: var(--accent-blue);
-            box-shadow: 0 0 0 3px rgba(0, 84, 180, 0.2);
+            border-color: var(--incor-blue-400);
+            box-shadow: 0 0 0 4px rgba(0, 84, 180, 0.12);
             outline: none;
         }
         
         .student-group-header { 
             font-family: var(--font-display);
-            font-size: 0.8rem; 
-            font-weight: 600; 
-            color: var(--accent-blue);
-            background-color: transparent; 
-            padding: 0.5rem 0.25rem; 
-            margin-top: 1.75rem; margin-bottom: 1rem; 
-            border: none; 
-            border-bottom: 2px solid var(--accent-blue); 
-            position: sticky; top: -1px; z-index: 5; 
-            background: linear-gradient(to bottom, var(--body-bg-color) 80%, transparent); 
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--incor-blue-700);
+            background: linear-gradient(to bottom, var(--body-bg-color) 85%, transparent);
+            padding: 0.625rem 0.5rem;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            border: none;
+            border-bottom: 2px solid var(--incor-blue-500);
+            position: sticky;
+            top: -1px;
+            z-index: 5;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
         }
         
         /* Student Cards - Premium Style */
