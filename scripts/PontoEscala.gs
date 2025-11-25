@@ -99,21 +99,26 @@ function syncOnePontoRow_(spreadsheet, escalaNumber, email, dataRaw, horaEnt, ho
     return;
   }
 
-  // formatar data (procuramos dd/mm nas colunas)
+  // formatar data (procuramos dd/mm ou dd_mm nas colunas)
   var parsed = parseDateFlexible_(dataRaw);
   if (!parsed){
     console.warn('Data inválida:', dataRaw);
     return;
   }
   var ddmm = two(parsed.getDate()) + '/' + two(parsed.getMonth()+1);
+  var ddmm_underscore = two(parsed.getDate()) + '_' + two(parsed.getMonth()+1);
 
-  // localizar coluna de data na escala (procura por "dd/mm" dentro do cabeçalho)
+  // localizar coluna de data na escala (procura por "dd/mm" ou "dd_mm" dentro do cabeçalho)
   var dateColIndex = -1;
   for (var j=0;j<headersEsc.length;j++){
     var h = headersEsc[j];
     if (!h) continue;
     var hs = String(h);
-    if (hs.indexOf(ddmm) !== -1 || hs.trim() === ddmm || hs.indexOf(ddmm + '/' + parsed.getFullYear()) !== -1) {
+    // Verifica formato com barra (dd/mm) ou com underscore (dd_mm)
+    if (hs.indexOf(ddmm) !== -1 || hs.trim() === ddmm || 
+        hs.indexOf(ddmm_underscore) !== -1 || hs.trim() === ddmm_underscore ||
+        hs.indexOf(ddmm + '/' + parsed.getFullYear()) !== -1 ||
+        hs.indexOf(ddmm_underscore + '_' + parsed.getFullYear()) !== -1) {
       dateColIndex = j+1;
       break;
     }
@@ -124,7 +129,7 @@ function syncOnePontoRow_(spreadsheet, escalaNumber, email, dataRaw, horaEnt, ho
     }
   }
   if (dateColIndex === -1){
-    console.warn('Coluna de data ' + ddmm + ' não encontrada em ' + escalaName);
+    console.warn('Coluna de data ' + ddmm + ' (ou ' + ddmm_underscore + ') não encontrada em ' + escalaName);
     return;
   }
 
