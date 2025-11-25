@@ -2013,12 +2013,20 @@ const pontoState = {
                 return;
             }
             
+            // Store student data for click handling (avoids XSS from inline onclick)
+            const MAX_VISIBLE_STUDENTS = 6;
+            window._pendingStudentsData = studentsArray.slice(0, MAX_VISIBLE_STUDENTS);
+            
             let html = '';
-            studentsArray.slice(0, 6).forEach(student => {
+            studentsArray.slice(0, MAX_VISIBLE_STUDENTS).forEach((student, index) => {
                 const displayName = student.nome.split(' ').slice(0, 2).join(' ');
+                // Escape HTML entities to prevent XSS
+                const escapedDisplayName = displayName.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+                const escapedFullName = student.nome.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+                
                 html += `
-                    <div class="db-student-link" data-email="${student.email}" data-name="${student.nome}" onclick="handleStudentReplacementClick('${student.email}', '${student.nome}')">
-                        <span class="db-student-link-name" title="${student.nome}">${displayName}</span>
+                    <div class="db-student-link" data-student-index="${index}">
+                        <span class="db-student-link-name" title="${escapedFullName}">${escapedDisplayName}</span>
                         <span class="db-student-link-count">${student.count}</span>
                         <svg class="db-student-link-arrow" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
@@ -2027,15 +2035,26 @@ const pontoState = {
                 `;
             });
             
-            if (studentsArray.length > 6) {
-                html += `<div class="db-students-empty">+ ${studentsArray.length - 6} mais...</div>`;
+            if (studentsArray.length > MAX_VISIBLE_STUDENTS) {
+                html += `<div class="db-students-empty">+ ${studentsArray.length - MAX_VISIBLE_STUDENTS} mais...</div>`;
             }
             
             container.innerHTML = html;
+            
+            // Add click event listeners (safer than inline onclick)
+            container.querySelectorAll('.db-student-link[data-student-index]').forEach(link => {
+                link.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-student-index'), 10);
+                    const student = window._pendingStudentsData[index];
+                    if (student) {
+                        handleStudentReplacementClick(student.email, student.nome);
+                    }
+                });
+            });
         }
         
         // Handle click on student with replacement - navigate to their absences tab
-        window.handleStudentReplacementClick = function(email, nome) {
+        function handleStudentReplacementClick(email, nome) {
             console.log(`[handleStudentReplacementClick] Navegando para faltas do aluno: ${email || nome}`);
             
             // Try to find the student by email first, then by name
@@ -2070,6 +2089,7 @@ const pontoState = {
                 return;
             }
             
+            const COURSE_NAME_MAX_LENGTH = 12;
             const colors = [
                 'db-dist-bar-1', 'db-dist-bar-2', 'db-dist-bar-3', 
                 'db-dist-bar-4', 'db-dist-bar-5', 'db-dist-bar-6'
@@ -2080,7 +2100,9 @@ const pontoState = {
             distribution.forEach((item, i) => {
                 const barWidth = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
                 const colorClass = colors[i % colors.length];
-                const courseName = item.course.length > 12 ? item.course.substring(0, 12) + '...' : item.course;
+                const courseName = item.course.length > COURSE_NAME_MAX_LENGTH 
+                    ? item.course.substring(0, COURSE_NAME_MAX_LENGTH) + '...' 
+                    : item.course;
                 
                 html += `
                     <div class="db-dist-bar-item">
