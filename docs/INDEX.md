@@ -153,6 +153,11 @@ Este diretório contém toda a documentação do Portal do Ensino. Os documentos
 
 ## 🔥 Firebase
 
+- **[SINCRONIZACAO_AUTOMATICA_FIREBASE.md](./SINCRONIZACAO_AUTOMATICA_FIREBASE.md)** ⚡ **NOVO**
+  - Como ativar sincronização automática
+  - Alterações são enviadas automaticamente ao Firebase
+  - Sem necessidade de executar função manualmente
+
 - **[MIGRACAO_FIREBASE_COMPLETA.md](./MIGRACAO_FIREBASE_COMPLETA.md)**
   - Documentação completa da migração para Firebase
 
@@ -178,11 +183,11 @@ Este diretório contém toda a documentação do Portal do Ensino. Os documentos
 
 ## 🗂️ Organização
 
-**Total de Documentos**: 40 arquivos
+**Total de Documentos**: 41 arquivos
 
-**Última Atualização**: 2025-11-18
+**Última Atualização**: 2025-11-25
 
-**Versão**: v32.8.1
+**Versão**: v33.0.0
 
 ---
 
