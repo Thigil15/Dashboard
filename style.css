@@ -1553,14 +1553,14 @@
             text-transform: uppercase;
         }
         
-        /* Student Cards - Premium Style */
+        /* Student Cards - Premium Style with Performance Optimizations */
         .student-card { 
             background: var(--card-bg-solid);
             border-radius: var(--radius-xl);
             border: 1px solid rgba(229, 233, 239, 0.6);
             padding: 1.25rem 1rem;
             box-shadow: var(--card-shadow);
-            transition: var(--transition-medium);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
             cursor: pointer;
             position: relative;
             display: flex;
@@ -1568,6 +1568,9 @@
             align-items: center;
             text-align: center;
             overflow: hidden;
+            /* Performance optimizations */
+            will-change: transform;
+            contain: layout style;
         }
         
         .student-card::before {
@@ -1583,7 +1586,7 @@
         }
         
         .student-card:hover { 
-            transform: translateY(-6px) scale(1.02);
+            transform: translateY(-4px);
             box-shadow: var(--card-shadow-hover);
             border-color: var(--incor-blue-400);
             z-index: 10;
@@ -1602,12 +1605,11 @@
             border: 3px solid white;
             box-shadow: 0 4px 12px rgba(0, 51, 160, 0.15);
             margin-bottom: 0.875rem;
-            transition: var(--transition-fast);
+            transition: box-shadow 0.2s ease;
         }
         
         .student-card:hover img { 
             box-shadow: 0 6px 16px rgba(0, 51, 160, 0.25);
-            transform: scale(1.05);
         }
         
         .student-card .student-name { 
@@ -1643,7 +1645,7 @@
         
         .student-card.inactive-card:hover { 
             opacity: 0.85;
-            transform: translateY(-3px) scale(1.01);
+            transform: translateY(-2px);
         }
         
         .inactive-badge { 

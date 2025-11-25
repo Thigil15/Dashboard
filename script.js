@@ -3541,30 +3541,63 @@ const pontoState = {
                      return; 
                  } 
                  
+                 // Use DocumentFragment for better performance
+                 const fragment = document.createDocumentFragment();
+                 
                  const grouped = students.reduce((acc, s) => { const c = s.Curso || 'Sem Curso'; if (!acc[c]) acc[c] = []; acc[c].push(s); return acc; }, {}); 
                  const courses = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
                  
-                 let html = ''; 
+                 // Pre-sort students once per group
+                 courses.forEach(c => {
+                     grouped[c].sort((a, b) => a.NomeCompleto.localeCompare(b.NomeCompleto));
+                 });
+                 
+                 // Placeholder image URL - defined once
+                 const placeholderImg = 'https://placehold.co/60x60/e2e8f0/64748b?text=?';
+                 
                  courses.forEach(c => { 
-                     html += `<div class="student-group" data-course="${c}"><h3 class="student-group-header">${c} (${grouped[c].length})</h3><div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-1">`; 
+                     const groupDiv = document.createElement('div');
+                     groupDiv.className = 'student-group';
+                     groupDiv.setAttribute('data-course', c);
                      
-                     grouped[c].sort((a,b) => a.NomeCompleto.localeCompare(b.NomeCompleto)).forEach(s => { 
-                         const img = s.FotoID ? `https://lh3.googleusercontent.com/d/${s.FotoID}=s96-c` : 'https://placehold.co/60x60/e2e8f0/64748b?text=?'; 
-                         const inactive = s.Status !== 'Ativo'; 
-                         const inactiveClass = inactive ? 'inactive-card' : ''; 
-                         const inactiveBadge = inactive ? '<span class="badge badge-red inactive-badge">Inativo</span>' : ''; 
+                     const header = document.createElement('h3');
+                     header.className = 'student-group-header';
+                     header.textContent = `${c} (${grouped[c].length})`;
+                     groupDiv.appendChild(header);
+                     
+                     const grid = document.createElement('div');
+                     grid.className = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-1';
+                     
+                     grouped[c].forEach(s => { 
+                         const card = document.createElement('div');
+                         const inactive = s.Status !== 'Ativo';
+                         card.className = `student-card${inactive ? ' inactive-card' : ''}`;
+                         card.setAttribute('data-student-email', s.EmailHC || '');
+                         card.setAttribute('data-student-name', normalizeString(s.NomeCompleto));
                          
-                         // [ORION] Removido 'onclick' do HTML.
-                         html += `<div class="student-card ${inactiveClass}" data-student-email="${s.EmailHC}" data-student-name="${normalizeString(s.NomeCompleto)}">
-                                      ${inactiveBadge}
-                                      <img src="${img}" alt="Foto" onerror="this.src='https://placehold.co/60x60/e2e8f0/64748b?text=?'">
-                                      <p class="student-name">${s.NomeCompleto}</p>
-                                      <p class="student-course mt-0.5">${s.Curso}</p>
-                                  </div>`; 
+                         // Build card content more efficiently
+                         let cardHTML = '';
+                         if (inactive) {
+                             cardHTML += '<span class="badge badge-red inactive-badge">Inativo</span>';
+                         }
+                         
+                         // Use loading="lazy" for images to improve initial load
+                         const imgSrc = s.FotoID ? `https://lh3.googleusercontent.com/d/${s.FotoID}=s96-c` : placeholderImg;
+                         cardHTML += `<img src="${imgSrc}" alt="Foto" loading="lazy" onerror="this.src='${placeholderImg}'">`;
+                         cardHTML += `<p class="student-name">${s.NomeCompleto}</p>`;
+                         cardHTML += `<p class="student-course mt-0.5">${s.Curso || ''}</p>`;
+                         
+                         card.innerHTML = cardHTML;
+                         grid.appendChild(card);
                      }); 
-                     html += `</div></div>`; 
+                     
+                     groupDiv.appendChild(grid);
+                     fragment.appendChild(groupDiv);
                  }); 
-                 panel.innerHTML = html;
+                 
+                 // Clear and append in one operation
+                 panel.innerHTML = '';
+                 panel.appendChild(fragment);
              } catch (e) { console.error("[renderStudentList] Erro:", e); showError("Erro ao renderizar lista de alunos."); }
         }
 
