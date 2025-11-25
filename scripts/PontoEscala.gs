@@ -148,8 +148,8 @@ function syncAllRowsInSheet_(ss, sheet, sheetName) {
   var horaSaiCol = idx('HoraSaida');
   var escalaCol = idx('Escala');
   
-  // Requer pelo menos email ou serial e data/hora entrada
-  if ((emailCol < 0 && serialCol < 0) || dataCol < 0 || horaEntCol < 0) return;
+  // Requer pelo menos um identificador e data/hora entrada
+  if ((emailCol < 0 && serialCol < 0 && nomeCol < 0) || dataCol < 0 || horaEntCol < 0) return;
   
   var lastRow = sheet.getLastRow();
   if (lastRow < 2) return;
@@ -252,6 +252,17 @@ function handlePontoChange(e){
  * @param {string} pontoSheetName - Nome da aba de origem ('PontoTeoria' ou 'PontoPratica')
  */
 function syncOnePontoRow_(spreadsheet, escalaNumber, serial, email, nome, dataRaw, horaEnt, horaSai, pontoSheetName){
+  // Verifica se há pelo menos 2 identificadores no registro de origem
+  var numSourceIds = (serial ? 1 : 0) + (email ? 1 : 0) + (nome ? 1 : 0);
+  if (numSourceIds < 2) {
+    var idInfo = [];
+    if (serial) idInfo.push('Serial: ' + serial);
+    if (email) idInfo.push('Email: ' + email);
+    if (nome) idInfo.push('Nome: ' + nome);
+    console.warn('Registro com identificadores insuficientes (' + idInfo.join(', ') + '). Precisa de pelo menos 2 identificadores.');
+    return;
+  }
+  
   // Determina o prefixo da escala baseado na aba de origem
   var escalaPrefix = (pontoSheetName === 'PontoTeoria') ? 'EscalaTeoria' : 'EscalaPratica';
   var escalaName = escalaPrefix + escalaNumber;
