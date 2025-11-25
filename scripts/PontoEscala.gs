@@ -1,13 +1,156 @@
 /**
  * Atualizado para inserir apenas "HH:MM:SS - HH:MM:SS" (sem "Prática:"/ "Teoria:")
  * Cole em Extensions → Apps Script do seu Google Sheets.
+ * 
+ * IMPORTANTE: Para funcionar automaticamente mesmo com a planilha fechada,
+ * execute a função criarGatilhosPontoAutomatico() UMA VEZ para criar
+ * os gatilhos instaláveis.
  */
 
+/**
+ * Função simples onEdit (gatilho simples) - funciona apenas com planilha aberta.
+ * Para funcionar com planilha fechada, use o gatilho instalável (criarGatilhosPontoAutomatico).
+ */
 function onEdit(e){
   try {
     handlePontoChange(e);
   } catch(err) {
     console.error("Erro em onEdit:", err);
+  }
+}
+
+/**
+ * Função chamada pelo gatilho INSTALÁVEL onEdit.
+ * Funciona mesmo quando a planilha está fechada.
+ * Sincroniza pontos para Escalas e envia para Firebase automaticamente.
+ * @param {Object} e - Objeto evento do Google Apps Script
+ */
+function onEditPontoInstalavel(e) {
+  try {
+    // Primeiro sincroniza para as escalas
+    handlePontoChange(e);
+    
+    // Depois envia para o Firebase (se a função existir no Code.gs)
+    if (typeof enviarTodasAsAbasParaFirebase === 'function') {
+      enviarTodasAsAbasParaFirebase();
+    }
+  } catch(err) {
+    console.error("Erro em onEditPontoInstalavel:", err);
+  }
+}
+
+/**
+ * Cria gatilhos instaláveis para sincronização automática de pontos.
+ * EXECUTE ESTA FUNÇÃO UMA VEZ para ativar a sincronização automática
+ * mesmo quando a planilha está fechada.
+ */
+function criarGatilhosPontoAutomatico() {
+  var ss = SpreadsheetApp.getActive();
+  
+  // Remove gatilhos antigos para evitar duplicação
+  var gatilhos = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < gatilhos.length; i++) {
+    var funcao = gatilhos[i].getHandlerFunction();
+    if (funcao === 'onEditPontoInstalavel' || funcao === 'onChangePontoInstalavel') {
+      ScriptApp.deleteTrigger(gatilhos[i]);
+    }
+  }
+  
+  // Cria gatilho onEdit instalável
+  ScriptApp.newTrigger('onEditPontoInstalavel')
+    .forSpreadsheet(ss)
+    .onEdit()
+    .create();
+  
+  // Cria gatilho onChange instalável (para inserção de linhas)
+  ScriptApp.newTrigger('onChangePontoInstalavel')
+    .forSpreadsheet(ss)
+    .onChange()
+    .create();
+  
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    '✅ Gatilhos de sincronização automática criados!\n' +
+    'Os pontos serão sincronizados automaticamente mesmo com a planilha fechada.',
+    'Sincronização Automática',
+    10
+  );
+  
+  console.log('✅ Gatilhos instaláveis criados: onEditPontoInstalavel e onChangePontoInstalavel');
+}
+
+/**
+ * Função chamada pelo gatilho INSTALÁVEL onChange.
+ * Processa inserção de novas linhas mesmo com planilha fechada.
+ * @param {Object} e - Objeto evento do Google Apps Script
+ */
+function onChangePontoInstalavel(e) {
+  try {
+    if (!e || !e.source) return;
+    
+    // Verifica se foi uma inserção de linha
+    if (e.changeType === 'INSERT_ROW' || e.changeType === 'EDIT') {
+      var ss = e.source;
+      var sheets = ['PontoPratica', 'PontoTeoria'];
+      
+      for (var i = 0; i < sheets.length; i++) {
+        var sheet = ss.getSheetByName(sheets[i]);
+        if (sheet) {
+          syncAllRowsInSheet_(ss, sheet, sheets[i]);
+        }
+      }
+      
+      // Envia para Firebase
+      if (typeof enviarTodasAsAbasParaFirebase === 'function') {
+        enviarTodasAsAbasParaFirebase();
+      }
+    }
+  } catch(err) {
+    console.error("Erro em onChangePontoInstalavel:", err);
+  }
+}
+
+/**
+ * Sincroniza todas as linhas de uma aba de ponto.
+ * Usado quando há inserção de linhas via onChange.
+ */
+function syncAllRowsInSheet_(ss, sheet, sheetName) {
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  
+  var idx = function(colName){
+    var i = headers.indexOf(colName);
+    return i >= 0 ? i+1 : -1;
+  };
+  var emailCol = idx('EmailHC');
+  var dataCol = idx('Data');
+  var horaEntCol = idx('HoraEntrada');
+  var horaSaiCol = idx('HoraSaida');
+  var escalaCol = idx('Escala');
+  
+  if (emailCol < 0 || dataCol < 0 || horaEntCol < 0) return;
+  
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) return;
+  
+  var rows = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
+  
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i];
+    var email = r[emailCol - 1];
+    if (!email) continue;
+    
+    var dataRaw = r[dataCol - 1];
+    var horaEnt = r[horaEntCol - 1];
+    var horaSai = (horaSaiCol > 0) ? r[horaSaiCol - 1] : '';
+    var escalaNumber = (escalaCol > 0 && r[escalaCol - 1]) ? String(r[escalaCol - 1]) : '9';
+    
+    try {
+      syncOnePontoRow_(ss, escalaNumber, email, dataRaw, horaEnt, horaSai);
+      if (sheetName === 'PontoTeoria') {
+        syncToFrequenciaTeorica_(ss, sheet, i + 2, escalaNumber);
+      }
+    } catch(err) {
+      console.error('Erro sincronizando linha ' + (i + 2) + ':', err);
+    }
   }
 }
 
@@ -134,8 +277,20 @@ function syncOnePontoRow_(spreadsheet, escalaNumber, email, dataRaw, horaEnt, ho
   var cell = escalaSheet.getRange(studentRow, dateColIndex);
   var existing = cell.getValue();
   var newEntry = timeStr; // **somente o horário** (ex: 07:00:54 - 12:00:54)
-  var finalValue = existing ? (String(existing) + '\n' + newEntry) : newEntry;
-  cell.setValue(finalValue);
+  
+  // Verifica se já existe esse horário exato para evitar duplicatas
+  if (existing) {
+    var existingStr = String(existing);
+    // Se o horário já existe, não sobrescreve
+    if (existingStr.indexOf(newEntry) !== -1) {
+      console.log('Horário já registrado para ' + email + ' em ' + ddmm + '. Ignorando duplicata.');
+      return;
+    }
+    // Adiciona nova entrada em nova linha
+    cell.setValue(existingStr + '\n' + newEntry);
+  } else {
+    cell.setValue(newEntry);
+  }
 }
 
 /**
@@ -405,8 +560,11 @@ function onOpen(){
     
     // === SEÇÃO 3: CONFIGURAÇÃO DE GATILHOS ===
     .addSubMenu(ui.createMenu('⚙️ Configurar Gatilhos')
-      .addItem('✅ Ativar sincronização automática', 'criarGatilhosAutomaticos')
-      .addItem('⏸️ Desativar sincronização automática', 'removerGatilhosAutomaticos')
+      .addItem('✅ Ativar sincronização automática (Pontos + Firebase)', 'ativarTodosGatilhosAutomaticos')
+      .addItem('⏸️ Desativar sincronização automática', 'desativarTodosGatilhosAutomaticos')
+      .addSeparator()
+      .addItem('🔄 Apenas gatilhos de Ponto (Escalas)', 'criarGatilhosPontoAutomatico')
+      .addItem('🔥 Apenas gatilhos de Firebase', 'criarGatilhosAutomaticos')
       .addItem('🕒 Ativar envio diário (21h)', 'criarGatilhoDiario')
       .addItem('🗑️ Remover gatilho diário', 'removerGatilhoDiario'))
     .addSeparator()
@@ -678,23 +836,115 @@ function mostrarAjuda() {
     '• Ver Última Sincronização - Mostra quando foi a última sync\n\n' +
     '═══════════════════════════════════════\n\n' +
     '🔄 SINCRONIZAR PONTOS:\n' +
-    '• Use ANTES de enviar para o Firebase\n' +
-    '• Sincroniza os pontos das abas PontoPratica e PontoTeoria\n' +
-    '• Os dados são copiados para as abas de Escala correspondentes\n\n' +
+    '• Sincroniza pontos de PontoPratica e PontoTeoria para Escalas\n' +
+    '• Evita duplicatas automaticamente\n\n' +
     '═══════════════════════════════════════\n\n' +
     '⚙️ CONFIGURAR GATILHOS:\n' +
-    '• Ativa/desativa a sincronização automática\n' +
-    '• Configura envio diário automático às 21h\n\n' +
+    '• Ativar sincronização automática - Ativa TUDO automaticamente:\n' +
+    '  → Pontos para Escalas\n' +
+    '  → Escalas para Firebase\n' +
+    '  → Funciona mesmo com a planilha FECHADA!\n' +
+    '• Desativar - Remove todas as automações\n' +
+    '• Gatilhos específicos disponíveis separadamente\n\n' +
     '═══════════════════════════════════════\n\n' +
     '🔥 FIREBASE:\n' +
     '• Verificar configuração - Checa se o Firebase está pronto\n' +
-    '• ENVIAR DADOS - Envia tudo para o Firebase\n' +
-    '  ⚠️ Use sempre APÓS sincronizar os pontos!\n\n' +
+    '• ENVIAR DADOS - Envia tudo manualmente para o Firebase\n\n' +
     '═══════════════════════════════════════\n\n' +
-    '💡 ORDEM RECOMENDADA:\n' +
-    '1. Faça alterações nos pontos\n' +
-    '2. Sincronize os pontos (menu Sincronizar Pontos)\n' +
-    '3. Envie para o Firebase (menu Firebase)';
+    '💡 RECOMENDAÇÃO:\n' +
+    'Ative a sincronização automática uma vez e deixe o sistema\n' +
+    'trabalhar sozinho! Dados são sincronizados imediatamente\n' +
+    'a cada alteração, sem duplicatas.';
   
   ui.alert('❓ Ajuda - Menu de Gestão de Pontos', mensagem, ui.ButtonSet.OK);
+}
+
+/**********************************************
+ * 🔧 FUNÇÕES COMBINADAS DE GATILHOS
+ **********************************************/
+
+/**
+ * Ativa TODOS os gatilhos automáticos:
+ * - Sincronização de pontos para Escalas
+ * - Envio automático para Firebase
+ * Funciona mesmo com a planilha fechada.
+ */
+function ativarTodosGatilhosAutomaticos() {
+  var ss = SpreadsheetApp.getActive();
+  
+  // Remove todos os gatilhos antigos
+  var gatilhos = ScriptApp.getProjectTriggers();
+  var funcoesParaRemover = [
+    'onEditPontoInstalavel', 'onChangePontoInstalavel',
+    'onEditFirebase', 'onChangeFirebase'
+  ];
+  
+  for (var i = 0; i < gatilhos.length; i++) {
+    var funcao = gatilhos[i].getHandlerFunction();
+    if (funcoesParaRemover.indexOf(funcao) !== -1) {
+      ScriptApp.deleteTrigger(gatilhos[i]);
+    }
+  }
+  
+  // Cria gatilhos para sincronização de Pontos
+  ScriptApp.newTrigger('onEditPontoInstalavel')
+    .forSpreadsheet(ss)
+    .onEdit()
+    .create();
+  
+  ScriptApp.newTrigger('onChangePontoInstalavel')
+    .forSpreadsheet(ss)
+    .onChange()
+    .create();
+  
+  // Cria gatilhos para Firebase
+  ScriptApp.newTrigger('onEditFirebase')
+    .forSpreadsheet(ss)
+    .onEdit()
+    .create();
+  
+  ScriptApp.newTrigger('onChangeFirebase')
+    .forSpreadsheet(ss)
+    .onChange()
+    .create();
+  
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    '✅ Sincronização COMPLETA ativada!\n\n' +
+    '• Pontos → Escalas: Automático\n' +
+    '• Escalas → Firebase: Automático\n\n' +
+    'Funciona mesmo com a planilha fechada!',
+    'Sincronização Automática',
+    10
+  );
+  
+  console.log('✅ Todos os gatilhos automáticos criados!');
+}
+
+/**
+ * Desativa TODOS os gatilhos automáticos.
+ */
+function desativarTodosGatilhosAutomaticos() {
+  var gatilhos = ScriptApp.getProjectTriggers();
+  var funcoesParaRemover = [
+    'onEditPontoInstalavel', 'onChangePontoInstalavel',
+    'onEditFirebase', 'onChangeFirebase'
+  ];
+  var removidos = 0;
+  
+  for (var i = 0; i < gatilhos.length; i++) {
+    var funcao = gatilhos[i].getHandlerFunction();
+    if (funcoesParaRemover.indexOf(funcao) !== -1) {
+      ScriptApp.deleteTrigger(gatilhos[i]);
+      removidos++;
+    }
+  }
+  
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    '⏸️ Sincronização automática DESATIVADA.\n' +
+    removidos + ' gatilho(s) removido(s).',
+    'Sincronização Automática',
+    5
+  );
+  
+  console.log('⏸️ ' + removidos + ' gatilhos removidos.');
 }

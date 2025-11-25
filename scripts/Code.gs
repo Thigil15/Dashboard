@@ -173,32 +173,21 @@ function criarGatilhoDiario() {
  * ⚡ SINCRONIZAÇÃO AUTOMÁTICA — Detecta alterações
  **********************************************/
 
-// Tempo mínimo entre sincronizações (em milissegundos) - 30 segundos
-const DEBOUNCE_INTERVAL = 30000;
-
 /**
  * Função chamada automaticamente quando há alteração na planilha.
- * Usa debounce para evitar múltiplas chamadas em edições rápidas.
+ * Sincroniza imediatamente com o Firebase sem debounce.
  * NOTA: Esta função precisa ser configurada como gatilho instalável
- * para funcionar com UrlFetchApp (veja criarGatilhoOnEdit).
+ * para funcionar com UrlFetchApp (veja criarGatilhosAutomaticos).
+ * Gatilhos instaláveis funcionam mesmo com a planilha fechada.
  * @param {Object} e - Objeto evento do Google Apps Script
  */
 function onEditFirebase(e) {
   try {
-    // Verifica se passou tempo suficiente desde última sync
-    const agora = new Date().getTime();
-    const ultimaSync = getUltimaSync();
-    
-    if (agora - ultimaSync < DEBOUNCE_INTERVAL) {
-      Logger.log("⏳ Debounce ativo. Próxima sync permitida em " + 
-        Math.ceil((DEBOUNCE_INTERVAL - (agora - ultimaSync)) / 1000) + " segundos.");
-      return;
-    }
-    
     // Registra timestamp da sync atual
+    const agora = new Date().getTime();
     salvarUltimaSync(agora);
     
-    // Sincroniza a aba que foi editada
+    // Sincroniza a aba que foi editada imediatamente
     if (e && e.source && e.range) {
       const abaEditada = e.range.getSheet();
       enviarAbaParaFirebase(abaEditada);
@@ -214,20 +203,13 @@ function onEditFirebase(e) {
 /**
  * Função chamada quando há alterações estruturais na planilha
  * (adicionar/remover abas, linhas, colunas, etc.)
+ * Sincroniza imediatamente com o Firebase.
+ * Gatilhos instaláveis funcionam mesmo com a planilha fechada.
  * @param {Object} e - Objeto evento do Google Apps Script
  */
 function onChangeFirebase(e) {
   try {
-    // onChange pode ser chamado para vários tipos de alterações
-    // Sincroniza tudo para garantir consistência
     const agora = new Date().getTime();
-    const ultimaSync = getUltimaSync();
-    
-    if (agora - ultimaSync < DEBOUNCE_INTERVAL) {
-      Logger.log("⏳ Debounce ativo no onChange.");
-      return;
-    }
-    
     salvarUltimaSync(agora);
     enviarTodasAsAbasParaFirebase();
   } catch (erro) {
