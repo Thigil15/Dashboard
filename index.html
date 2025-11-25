@@ -16,10 +16,62 @@
 
 <body class="flex flex-col min-h-screen">
 
-    <!-- Overlay de Loading -->
+    <!-- Overlay de Loading - Professional InCor Design -->
     <div id="loading-overlay">
-        <div class="loader"></div>
-        <p>Carregando dados...</p>
+        <!-- Floating Particles -->
+        <div class="loading-particles">
+            <div class="loading-particle"></div>
+            <div class="loading-particle"></div>
+            <div class="loading-particle"></div>
+            <div class="loading-particle"></div>
+            <div class="loading-particle"></div>
+            <div class="loading-particle"></div>
+            <div class="loading-particle"></div>
+        </div>
+        
+        <!-- Main Loading Content -->
+        <div class="loading-content">
+            <!-- Logo with Heartbeat -->
+            <div class="loading-logo-container">
+                <div class="loading-logo">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    </svg>
+                </div>
+            </div>
+            
+            <!-- Branding -->
+            <div class="loading-brand">
+                <h1 class="loading-brand-title">Portal de Ensino</h1>
+                <div class="loading-brand-subtitle">
+                    <span class="loading-brand-incor">INCOR</span>
+                    <span class="loading-brand-dot"></span>
+                    <span class="loading-brand-hc">HC FMUSP</span>
+                </div>
+                <p class="loading-brand-dept">Fisioterapia Cardiovascular e Respiratória</p>
+            </div>
+            
+            <!-- Spinner -->
+            <div class="loader">
+                <div class="loader-inner"></div>
+            </div>
+            
+            <!-- Message -->
+            <p class="loading-message">Carregando dados...</p>
+            
+            <!-- Progress Bar -->
+            <div class="loading-progress">
+                <div class="loading-progress-bar"></div>
+            </div>
+            
+            <!-- Tip -->
+            <div class="loading-tip">
+                <svg class="loading-tip-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p class="loading-tip-text">Sincronizando informações acadêmicas em tempo real com o Firebase.</p>
+            </div>
+        </div>
     </div>
 
     <!-- Caixa de Erro (Usada pelo JS) -->
@@ -28,35 +80,49 @@
         <button onclick="document.getElementById('error-message').style.display = 'none'" class="ml-4 font-bold opacity-70 hover:opacity-100 transition-opacity">X</button>
     </div>
 
-    <!-- Tela de Login -->
+    <!-- Tela de Login - Professional InCor Design -->
     <div id="login-view" class="view-container" style="display: flex;">
         <div id="login-card">
-            <div class="login-card-header">
-                <!-- Logo InCor Ensino -->
-                <div class="login-logo-container">
-                    <div class="login-logo-icon">
-                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                        </svg>
+            <!-- Inner Content with padding -->
+            <div class="login-card-inner">
+                <div class="login-card-header">
+                    <!-- Logo InCor Ensino with Animation -->
+                    <div class="login-logo-container">
+                        <div class="login-logo-icon">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                            </svg>
+                        </div>
                     </div>
+                    <h1 class="login-title">Portal de Ensino</h1>
+                    <div class="login-subtitle">
+                        <span class="login-incor">INCOR</span>
+                        <span class="login-dot"></span>
+                        <span class="login-hc">HC FMUSP</span>
+                    </div>
+                    <p class="login-description">Sistema de Gestão Acadêmica<br>Fisioterapia Cardiovascular e Respiratória</p>
                 </div>
-                <h1 class="login-title">Portal de Ensino</h1>
-                <div class="login-subtitle">
-                    <span class="login-incor">INCOR</span>
-                    <span class="login-dot"></span>
-                    <span class="login-hc">HC FMUSP</span>
-                </div>
-                <p class="login-description">Fisioterapia Cardiovascular e Respiratória</p>
             </div>
+            
             <form id="login-form">
                 <div class="login-form-fields">
                     <div class="login-field">
-                        <label for="email" class="login-label">Email Institucional</label>
-                        <input type="email" id="login-email" placeholder="seu.email@hc.fm.usp.br" class="login-input" required>
+                        <label for="email" class="login-label">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            Email Institucional
+                        </label>
+                        <input type="email" id="login-email" placeholder="seu.email@hc.fm.usp.br" class="login-input" required autocomplete="email">
                     </div>
                     <div class="login-field">
-                        <label for="password" class="login-label">Senha</label>
-                        <input type="password" id="login-password" placeholder="••••••••" class="login-input" required>
+                        <label for="password" class="login-label">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                            Senha
+                        </label>
+                        <input type="password" id="login-password" placeholder="••••••••" class="login-input" required autocomplete="current-password">
                     </div>
                     <button type="submit" id="login-button" class="login-submit-btn">
                         <span>Acessar Sistema</span>
@@ -67,7 +133,14 @@
                 </div>
                 <div id="login-error"></div>
             </form>
+            
             <div class="login-footer">
+                <div class="login-footer-brand">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    </svg>
+                    <span>Fisioterapia InCor</span>
+                </div>
                 <p>Instituto do Coração • Hospital das Clínicas</p>
                 <p>Faculdade de Medicina da Universidade de São Paulo</p>
             </div>
