@@ -183,17 +183,21 @@ function criarGatilhoDiario() {
  */
 function onEditFirebase(e) {
   try {
-    // Registra timestamp da sync atual
-    const agora = new Date().getTime();
-    salvarUltimaSync(agora);
+    let sucesso = false;
     
     // Sincroniza a aba que foi editada imediatamente
     if (e && e.source && e.range) {
       const abaEditada = e.range.getSheet();
-      enviarAbaParaFirebase(abaEditada);
+      sucesso = enviarAbaParaFirebaseComRetorno(abaEditada);
     } else {
       // Se não tiver informação da aba, sincroniza tudo
-      enviarTodasAsAbasParaFirebase();
+      sucesso = enviarTodasAsAbasParaFirebaseComRetorno();
+    }
+    
+    // Registra timestamp apenas se a sync foi bem-sucedida
+    if (sucesso) {
+      const agora = new Date().getTime();
+      salvarUltimaSync(agora);
     }
   } catch (erro) {
     Logger.log("❌ Erro no onEditFirebase: " + erro);
@@ -209,12 +213,101 @@ function onEditFirebase(e) {
  */
 function onChangeFirebase(e) {
   try {
-    const agora = new Date().getTime();
-    salvarUltimaSync(agora);
-    enviarTodasAsAbasParaFirebase();
+    const sucesso = enviarTodasAsAbasParaFirebaseComRetorno();
+    
+    // Registra timestamp apenas se a sync foi bem-sucedida
+    if (sucesso) {
+      const agora = new Date().getTime();
+      salvarUltimaSync(agora);
+    }
   } catch (erro) {
     Logger.log("❌ Erro no onChangeFirebase: " + erro);
   }
+}
+
+/**
+ * Envia uma aba para o Firebase e retorna true se bem-sucedido.
+ * @param {Sheet} aba - A aba a ser enviada
+ * @returns {boolean} true se enviou com sucesso
+ */
+function enviarAbaParaFirebaseComRetorno(aba) {
+  if (!FIREBASE_SECRET) {
+    Logger.log("❌ ERRO: chave do Firebase não configurada.");
+    return false;
+  }
+  
+  const nomeAba = sanitizeKey(aba.getName());
+  const dados = aba.getDataRange().getValues();
+  
+  if (dados.length < 2) {
+    Logger.log("⏭️ Aba vazia ignorada: " + nomeAba);
+    return true; // Considera sucesso pois não havia nada para enviar
+  }
+  
+  const cabecalhos = dados.shift().map(h => sanitizeKey(h));
+  
+  const hashAtual = gerarHashDados(dados);
+  const hashAnterior = getHashAnterior(nomeAba);
+  
+  if (hashAtual === hashAnterior) {
+    Logger.log("⏭️ Nenhuma alteração real em: " + nomeAba);
+    return true; // Considera sucesso pois não havia alteração
+  }
+  
+  const registros = criarRegistrosDeAba(dados, cabecalhos);
+  const sucesso = enviarParaFirebase(nomeAba, registros, aba.getName());
+  
+  if (sucesso) {
+    salvarHash(nomeAba, hashAtual);
+    Logger.log("✅ Sincronizado automaticamente: " + nomeAba);
+  } else {
+    Logger.log("⚠️ Falha ao sincronizar " + nomeAba);
+  }
+  
+  return sucesso;
+}
+
+/**
+ * Envia todas as abas para o Firebase e retorna true se todas foram bem-sucedidas.
+ * @returns {boolean} true se todas as abas foram enviadas com sucesso
+ */
+function enviarTodasAsAbasParaFirebaseComRetorno() {
+  if (!FIREBASE_SECRET) {
+    Logger.log("❌ ERRO: chave do Firebase não configurada.");
+    return false;
+  }
+
+  const planilha = SpreadsheetApp.getActiveSpreadsheet();
+  const abas = planilha.getSheets();
+  let todasSucesso = true;
+
+  for (let aba of abas) {
+    const nomeAba = sanitizeKey(aba.getName());
+    const dados = aba.getDataRange().getValues();
+    if (dados.length < 2) continue;
+
+    const cabecalhos = dados.shift().map(h => sanitizeKey(h));
+
+    const hashAtual = gerarHashDados(dados);
+    const hashAnterior = getHashAnterior(nomeAba);
+
+    if (hashAtual === hashAnterior) {
+      continue;
+    }
+
+    const registros = criarRegistrosDeAba(dados, cabecalhos);
+    const sucesso = enviarParaFirebase(nomeAba, registros, aba.getName());
+
+    if (sucesso) {
+      salvarHash(nomeAba, hashAtual);
+      Logger.log("✅ Enviado com sucesso: " + nomeAba);
+    } else {
+      Logger.log("⚠️ Falha ao enviar " + nomeAba);
+      todasSucesso = false;
+    }
+  }
+
+  return todasSucesso;
 }
 
 /**

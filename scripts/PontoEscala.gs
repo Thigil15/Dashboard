@@ -7,6 +7,21 @@
  * os gatilhos instaláveis.
  */
 
+// Nomes das funções de gatilhos para evitar duplicação
+var TRIGGER_FUNCTIONS = [
+  'onEditPontoInstalavel', 'onChangePontoInstalavel',
+  'onEditFirebase', 'onChangeFirebase'
+];
+
+/**
+ * Verifica se uma função existe no escopo global.
+ * @param {string} funcName - Nome da função
+ * @returns {boolean} true se a função existe
+ */
+function functionExists_(funcName) {
+  return typeof this[funcName] === 'function';
+}
+
 /**
  * Função simples onEdit (gatilho simples) - funciona apenas com planilha aberta.
  * Para funcionar com planilha fechada, use o gatilho instalável (criarGatilhosPontoAutomatico).
@@ -872,16 +887,12 @@ function mostrarAjuda() {
 function ativarTodosGatilhosAutomaticos() {
   var ss = SpreadsheetApp.getActive();
   
-  // Remove todos os gatilhos antigos
+  // Remove todos os gatilhos antigos usando a constante TRIGGER_FUNCTIONS
   var gatilhos = ScriptApp.getProjectTriggers();
-  var funcoesParaRemover = [
-    'onEditPontoInstalavel', 'onChangePontoInstalavel',
-    'onEditFirebase', 'onChangeFirebase'
-  ];
   
   for (var i = 0; i < gatilhos.length; i++) {
     var funcao = gatilhos[i].getHandlerFunction();
-    if (funcoesParaRemover.indexOf(funcao) !== -1) {
+    if (TRIGGER_FUNCTIONS.indexOf(funcao) !== -1) {
       ScriptApp.deleteTrigger(gatilhos[i]);
     }
   }
@@ -925,15 +936,11 @@ function ativarTodosGatilhosAutomaticos() {
  */
 function desativarTodosGatilhosAutomaticos() {
   var gatilhos = ScriptApp.getProjectTriggers();
-  var funcoesParaRemover = [
-    'onEditPontoInstalavel', 'onChangePontoInstalavel',
-    'onEditFirebase', 'onChangeFirebase'
-  ];
   var removidos = 0;
   
   for (var i = 0; i < gatilhos.length; i++) {
     var funcao = gatilhos[i].getHandlerFunction();
-    if (funcoesParaRemover.indexOf(funcao) !== -1) {
+    if (TRIGGER_FUNCTIONS.indexOf(funcao) !== -1) {
       ScriptApp.deleteTrigger(gatilhos[i]);
       removidos++;
     }
