@@ -357,8 +357,318 @@ function syncAllPontos(){
   });
 }
 
+/**********************************************
+ * 📋 MENU PRINCIPAL — Criado ao abrir a planilha
+ **********************************************/
 function onOpen(){
-  SpreadsheetApp.getUi().createMenu('Pontos')
-    .addItem('Sincronizar todos os pontos', 'syncAllPontos')
+  var ui = SpreadsheetApp.getUi();
+  
+  ui.createMenu('📋 Gestão de Pontos')
+    // === SEÇÃO 1: INFORMAÇÕES E STATUS ===
+    .addItem('ℹ️ Ver Status dos Gatilhos', 'verificarStatusGatilhos')
+    .addItem('📊 Ver Última Sincronização', 'mostrarUltimaSincronizacao')
+    .addSeparator()
+    
+    // === SEÇÃO 2: SINCRONIZAÇÃO DE PONTOS (PRIMEIRO) ===
+    .addSubMenu(ui.createMenu('🔄 Sincronizar Pontos')
+      .addItem('📝 Sincronizar TODOS os pontos para Escalas', 'syncAllPontos')
+      .addItem('📋 Sincronizar apenas PontoPrática', 'syncPontoPraticaOnly')
+      .addItem('📚 Sincronizar apenas PontoTeoria', 'syncPontoTeoriaOnly')
+      .addItem('🎯 Sincronizar para FrequenciaTeorica', 'syncAllFrequenciaTeorica'))
+    .addSeparator()
+    
+    // === SEÇÃO 3: CONFIGURAÇÃO DE GATILHOS ===
+    .addSubMenu(ui.createMenu('⚙️ Configurar Gatilhos')
+      .addItem('✅ Ativar sincronização automática', 'criarGatilhosAutomaticos')
+      .addItem('⏸️ Desativar sincronização automática', 'removerGatilhosAutomaticos')
+      .addItem('🕒 Ativar envio diário (21h)', 'criarGatilhoDiario')
+      .addItem('🗑️ Remover gatilho diário', 'removerGatilhoDiario'))
+    .addSeparator()
+    
+    // === SEÇÃO 4: ENVIO PARA FIREBASE (ÚLTIMO) ===
+    .addSubMenu(ui.createMenu('🔥 Firebase')
+      .addItem('⚠️ Verificar configuração do Firebase', 'verificarConfiguracaoFirebase')
+      .addSeparator()
+      .addItem('🚀 ENVIAR TODOS OS DADOS PARA FIREBASE', 'confirmarEnvioFirebase'))
+    
+    .addSeparator()
+    .addItem('❓ Ajuda - Como usar este menu', 'mostrarAjuda')
     .addToUi();
+}
+
+/**********************************************
+ * 📊 FUNÇÕES DE INFORMAÇÃO E STATUS
+ **********************************************/
+
+/**
+ * Mostra a última sincronização realizada
+ */
+function mostrarUltimaSincronizacao() {
+  var ultimaSync = getUltimaSync();
+  var mensagem = '';
+  
+  if (ultimaSync > 0) {
+    var dataUltimaSync = new Date(ultimaSync);
+    mensagem = '📅 Última sincronização:\n\n' + 
+               dataUltimaSync.toLocaleString('pt-BR') + 
+               '\n\n(há ' + calcularTempoDecorrido(ultimaSync) + ')';
+  } else {
+    mensagem = '⚠️ Nenhuma sincronização foi realizada ainda.\n\n' +
+               'Use o menu "Sincronizar Pontos" para começar.';
+  }
+  
+  SpreadsheetApp.getUi().alert('📊 Status da Sincronização', mensagem, SpreadsheetApp.getUi().ButtonSet.OK);
+}
+
+/**
+ * Calcula o tempo decorrido desde um timestamp
+ * @param {number} timestamp - Timestamp em milissegundos
+ * @returns {string} Tempo decorrido formatado
+ */
+function calcularTempoDecorrido(timestamp) {
+  var agora = new Date().getTime();
+  var diferenca = agora - timestamp;
+  
+  var segundos = Math.floor(diferenca / 1000);
+  var minutos = Math.floor(segundos / 60);
+  var horas = Math.floor(minutos / 60);
+  var dias = Math.floor(horas / 24);
+  
+  if (dias > 0) return dias + ' dia(s)';
+  if (horas > 0) return horas + ' hora(s)';
+  if (minutos > 0) return minutos + ' minuto(s)';
+  return segundos + ' segundo(s)';
+}
+
+/**********************************************
+ * 🔄 FUNÇÕES DE SINCRONIZAÇÃO ESPECÍFICAS
+ **********************************************/
+
+/**
+ * Sincroniza apenas a aba PontoPrática para as Escalas
+ */
+function syncPontoPraticaOnly() {
+  var ss = SpreadsheetApp.getActive();
+  var sheet = ss.getSheetByName('PontoPratica');
+  
+  if (!sheet) {
+    SpreadsheetApp.getUi().alert('❌ Erro', 'Aba "PontoPratica" não encontrada!', SpreadsheetApp.getUi().ButtonSet.OK);
+    return;
+  }
+  
+  syncSinglePontoSheet_(ss, sheet, 'PontoPratica');
+  SpreadsheetApp.getActiveSpreadsheet().toast('✅ PontoPrática sincronizado com sucesso!', 'Sincronização', 5);
+}
+
+/**
+ * Sincroniza apenas a aba PontoTeoria para as Escalas
+ */
+function syncPontoTeoriaOnly() {
+  var ss = SpreadsheetApp.getActive();
+  var sheet = ss.getSheetByName('PontoTeoria');
+  
+  if (!sheet) {
+    SpreadsheetApp.getUi().alert('❌ Erro', 'Aba "PontoTeoria" não encontrada!', SpreadsheetApp.getUi().ButtonSet.OK);
+    return;
+  }
+  
+  syncSinglePontoSheet_(ss, sheet, 'PontoTeoria');
+  SpreadsheetApp.getActiveSpreadsheet().toast('✅ PontoTeoria sincronizado com sucesso!', 'Sincronização', 5);
+}
+
+/**
+ * Sincroniza uma aba de ponto específica
+ * @param {Spreadsheet} ss - A planilha ativa
+ * @param {Sheet} sheet - A aba a ser sincronizada
+ * @param {string} sheetName - Nome da aba
+ */
+function syncSinglePontoSheet_(ss, sheet, sheetName) {
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var emailCol = headers.indexOf('EmailHC') + 1;
+  var dataCol = headers.indexOf('Data') + 1;
+  var horaEntCol = headers.indexOf('HoraEntrada') + 1;
+  var horaSaiCol = headers.indexOf('HoraSaida') + 1;
+  var escalaCol = headers.indexOf('Escala') + 1;
+
+  if (emailCol < 1 || dataCol < 1 || horaEntCol < 1) {
+    console.warn('Cabeçalhos obrigatórios não encontrados na aba ' + sheetName);
+    return;
+  }
+  
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) return;
+  
+  var rows = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
+  var sincronizados = 0;
+  
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i];
+    var email = r[emailCol - 1];
+    if (!email) continue;
+    
+    var dataRaw = r[dataCol - 1];
+    var horaEnt = r[horaEntCol - 1];
+    var horaSai = (horaSaiCol > 0) ? r[horaSaiCol - 1] : '';
+    var escalaNumber = (escalaCol > 0 && r[escalaCol - 1]) ? String(r[escalaCol - 1]) : '9';
+    
+    syncOnePontoRow_(ss, escalaNumber, email, dataRaw, horaEnt, horaSai);
+    
+    if (sheetName === 'PontoTeoria') {
+      syncToFrequenciaTeorica_(ss, sheet, i + 2, escalaNumber);
+    }
+    sincronizados++;
+  }
+  
+  console.log('✅ ' + sincronizados + ' registros sincronizados de ' + sheetName);
+}
+
+/**
+ * Sincroniza todas as linhas de PontoTeoria para FrequenciaTeorica
+ */
+function syncAllFrequenciaTeorica() {
+  var ss = SpreadsheetApp.getActive();
+  var sheet = ss.getSheetByName('PontoTeoria');
+  
+  if (!sheet) {
+    SpreadsheetApp.getUi().alert('❌ Erro', 'Aba "PontoTeoria" não encontrada!', SpreadsheetApp.getUi().ButtonSet.OK);
+    return;
+  }
+  
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var escalaCol = headers.indexOf('Escala') + 1;
+  
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) {
+    SpreadsheetApp.getActiveSpreadsheet().toast('⚠️ Nenhum dado para sincronizar em PontoTeoria', 'Sincronização', 5);
+    return;
+  }
+  
+  var rows = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
+  var sincronizados = 0;
+  
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i];
+    var escalaNumber = (escalaCol > 0 && r[escalaCol - 1]) ? String(r[escalaCol - 1]) : '9';
+    syncToFrequenciaTeorica_(ss, sheet, i + 2, escalaNumber);
+    sincronizados++;
+  }
+  
+  SpreadsheetApp.getActiveSpreadsheet().toast('✅ ' + sincronizados + ' registros sincronizados para FrequenciaTeorica!', 'Sincronização', 5);
+}
+
+/**********************************************
+ * ⚙️ FUNÇÕES DE GATILHOS
+ **********************************************/
+
+/**
+ * Remove o gatilho diário
+ */
+function removerGatilhoDiario() {
+  var gatilhos = ScriptApp.getProjectTriggers();
+  var removidos = 0;
+  
+  for (var i = 0; i < gatilhos.length; i++) {
+    var t = gatilhos[i];
+    if (t.getHandlerFunction() === 'enviarTodasAsAbasParaFirebase') {
+      ScriptApp.deleteTrigger(t);
+      removidos++;
+    }
+  }
+  
+  if (removidos > 0) {
+    SpreadsheetApp.getActiveSpreadsheet().toast('🗑️ Gatilho diário removido!', 'Gatilhos', 5);
+  } else {
+    SpreadsheetApp.getActiveSpreadsheet().toast('⚠️ Nenhum gatilho diário encontrado para remover.', 'Gatilhos', 5);
+  }
+}
+
+/**********************************************
+ * 🔥 FUNÇÕES DO FIREBASE
+ **********************************************/
+
+/**
+ * Verifica se o Firebase está configurado corretamente
+ */
+function verificarConfiguracaoFirebase() {
+  var secret = PropertiesService.getScriptProperties().getProperty('FIREBASE_SECRET');
+  var ui = SpreadsheetApp.getUi();
+  
+  if (secret) {
+    ui.alert('✅ Configuração OK', 
+             'A chave do Firebase está configurada.\n\n' +
+             'Você pode enviar dados para o Firebase.',
+             ui.ButtonSet.OK);
+  } else {
+    ui.alert('❌ Firebase NÃO configurado', 
+             'A chave do Firebase (FIREBASE_SECRET) não está configurada.\n\n' +
+             'Para configurar:\n' +
+             '1. Vá em "Extensões" → "Apps Script"\n' +
+             '2. Clique em "Configurações do projeto" (ícone de engrenagem)\n' +
+             '3. Role até "Propriedades de script"\n' +
+             '4. Adicione a propriedade FIREBASE_SECRET com sua chave',
+             ui.ButtonSet.OK);
+  }
+}
+
+/**
+ * Confirmação antes de enviar dados para o Firebase
+ */
+function confirmarEnvioFirebase() {
+  var ui = SpreadsheetApp.getUi();
+  
+  var resposta = ui.alert(
+    '🔥 Enviar Dados para o Firebase',
+    '⚠️ ATENÇÃO: Antes de enviar, certifique-se de que:\n\n' +
+    '1️⃣ Você sincronizou todos os pontos (menu "Sincronizar Pontos")\n' +
+    '2️⃣ Todas as alterações nos pontos foram feitas\n' +
+    '3️⃣ Os dados nas abas estão corretos\n\n' +
+    '📤 Deseja enviar TODOS os dados para o Firebase agora?\n\n' +
+    '(Esta ação irá atualizar o Firebase com os dados atuais da planilha)',
+    ui.ButtonSet.YES_NO
+  );
+  
+  if (resposta === ui.Button.YES) {
+    enviarTodasAsAbasParaFirebase();
+  } else {
+    SpreadsheetApp.getActiveSpreadsheet().toast('❌ Envio cancelado pelo usuário.', 'Firebase', 3);
+  }
+}
+
+/**********************************************
+ * ❓ AJUDA
+ **********************************************/
+
+/**
+ * Mostra a ajuda sobre como usar o menu
+ */
+function mostrarAjuda() {
+  var ui = SpreadsheetApp.getUi();
+  
+  var mensagem = 
+    '📋 GUIA DO MENU DE GESTÃO DE PONTOS\n\n' +
+    '═══════════════════════════════════════\n\n' +
+    '📊 VER STATUS:\n' +
+    '• Ver Status dos Gatilhos - Mostra quais automações estão ativas\n' +
+    '• Ver Última Sincronização - Mostra quando foi a última sync\n\n' +
+    '═══════════════════════════════════════\n\n' +
+    '🔄 SINCRONIZAR PONTOS:\n' +
+    '• Use ANTES de enviar para o Firebase\n' +
+    '• Sincroniza os pontos das abas PontoPratica e PontoTeoria\n' +
+    '• Os dados são copiados para as abas de Escala correspondentes\n\n' +
+    '═══════════════════════════════════════\n\n' +
+    '⚙️ CONFIGURAR GATILHOS:\n' +
+    '• Ativa/desativa a sincronização automática\n' +
+    '• Configura envio diário automático às 21h\n\n' +
+    '═══════════════════════════════════════\n\n' +
+    '🔥 FIREBASE:\n' +
+    '• Verificar configuração - Checa se o Firebase está pronto\n' +
+    '• ENVIAR DADOS - Envia tudo para o Firebase\n' +
+    '  ⚠️ Use sempre APÓS sincronizar os pontos!\n\n' +
+    '═══════════════════════════════════════\n\n' +
+    '💡 ORDEM RECOMENDADA:\n' +
+    '1. Faça alterações nos pontos\n' +
+    '2. Sincronize os pontos (menu Sincronizar Pontos)\n' +
+    '3. Envie para o Firebase (menu Firebase)';
+  
+  ui.alert('❓ Ajuda - Menu de Gestão de Pontos', mensagem, ui.ButtonSet.OK);
 }

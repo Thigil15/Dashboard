@@ -385,10 +385,22 @@ function verificarStatusGatilhos() {
   Logger.log("  • Diário (21h): " + (diarioAtivo ? "✅ ATIVO" : "❌ INATIVO"));
   
   const ultimaSync = getUltimaSync();
+  let ultimaSyncStr = "Nunca sincronizado";
   if (ultimaSync > 0) {
     const dataUltimaSync = new Date(ultimaSync);
-    Logger.log("  • Última sync: " + dataUltimaSync.toLocaleString("pt-BR"));
+    ultimaSyncStr = dataUltimaSync.toLocaleString("pt-BR");
+    Logger.log("  • Última sync: " + ultimaSyncStr);
   }
+  
+  // Mostra alerta visual para o usuário
+  const mensagem = 
+    "📊 STATUS DOS GATILHOS\n\n" +
+    "• Sincronização automática (onEdit): " + (onEditAtivo ? "✅ ATIVO" : "❌ INATIVO") + "\n" +
+    "• Sincronização automática (onChange): " + (onChangeAtivo ? "✅ ATIVO" : "❌ INATIVO") + "\n" +
+    "• Envio diário às 21h: " + (diarioAtivo ? "✅ ATIVO" : "❌ INATIVO") + "\n\n" +
+    "📅 Última sincronização: " + ultimaSyncStr;
+  
+  SpreadsheetApp.getUi().alert("⚙️ Status dos Gatilhos", mensagem, SpreadsheetApp.getUi().ButtonSet.OK);
   
   return {
     onEdit: onEditAtivo,
