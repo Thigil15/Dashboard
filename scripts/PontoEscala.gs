@@ -14,15 +14,6 @@ var TRIGGER_FUNCTIONS = [
 ];
 
 /**
- * Verifica se uma função existe no escopo global.
- * @param {string} funcName - Nome da função
- * @returns {boolean} true se a função existe
- */
-function functionExists_(funcName) {
-  return typeof this[funcName] === 'function';
-}
-
-/**
  * Função simples onEdit (gatilho simples) - funciona apenas com planilha aberta.
  * Para funcionar com planilha fechada, use o gatilho instalável (criarGatilhosPontoAutomatico).
  */
