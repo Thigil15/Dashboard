@@ -47,6 +47,12 @@ function onEdit(e){
  */
 function onEditPontoInstalavel(e) {
   try {
+    // Identifica a aba editada
+    var sheetName = '';
+    if (e && e.range) {
+      sheetName = e.range.getSheet().getName();
+    }
+    
     // Primeiro sincroniza para as escalas
     handlePontoChange(e);
     
@@ -54,6 +60,13 @@ function onEditPontoInstalavel(e) {
     if (typeof enviarTodasAsAbasParaFirebase === 'function') {
       enviarTodasAsAbasParaFirebase();
     }
+    
+    // Salva detalhes da sincronização
+    var agora = new Date().getTime();
+    salvarUltimaSync(agora);
+    var detalhe = '• Alteração em: ' + sheetName + '\n• Pontos sincronizados para Escalas\n• Dados enviados para Firebase';
+    salvarDetalheSincronizacao(detalhe);
+    
   } catch(err) {
     console.error("Erro em onEditPontoInstalavel:", err);
   }
@@ -111,11 +124,13 @@ function onChangePontoInstalavel(e) {
     if (e.changeType === 'INSERT_ROW' || e.changeType === 'EDIT') {
       var ss = e.source;
       var sheets = ['PontoPratica', 'PontoTeoria'];
+      var syncedSheets = [];
       
       for (var i = 0; i < sheets.length; i++) {
         var sheet = ss.getSheetByName(sheets[i]);
         if (sheet) {
           syncAllRowsInSheet_(ss, sheet, sheets[i]);
+          syncedSheets.push(sheets[i]);
         }
       }
       
@@ -123,6 +138,12 @@ function onChangePontoInstalavel(e) {
       if (typeof enviarTodasAsAbasParaFirebase === 'function') {
         enviarTodasAsAbasParaFirebase();
       }
+      
+      // Salva detalhes da sincronização
+      var agora = new Date().getTime();
+      salvarUltimaSync(agora);
+      var detalhe = '• Tipo de alteração: ' + e.changeType + '\n• Abas sincronizadas: ' + syncedSheets.join(', ') + '\n• Dados enviados para Firebase';
+      salvarDetalheSincronizacao(detalhe);
     }
   } catch(err) {
     console.error("Erro em onChangePontoInstalavel:", err);
@@ -660,38 +681,12 @@ function onOpen(){
   var ui = SpreadsheetApp.getUi();
   
   ui.createMenu('📋 Gestão de Pontos')
-    // === SEÇÃO 1: INFORMAÇÕES E STATUS ===
-    .addItem('ℹ️ Ver Status dos Gatilhos', 'verificarStatusGatilhos')
     .addItem('📊 Ver Última Sincronização', 'mostrarUltimaSincronizacao')
     .addSeparator()
-    
-    // === SEÇÃO 2: SINCRONIZAÇÃO DE PONTOS (PRIMEIRO) ===
-    .addSubMenu(ui.createMenu('🔄 Sincronizar Pontos')
-      .addItem('📝 Sincronizar TODOS os pontos para Escalas', 'syncAllPontos')
-      .addItem('📋 Sincronizar apenas PontoPrática', 'syncPontoPraticaOnly')
-      .addItem('📚 Sincronizar apenas PontoTeoria', 'syncPontoTeoriaOnly')
-      .addItem('🎯 Sincronizar para FrequenciaTeorica', 'syncAllFrequenciaTeorica'))
+    .addItem('✅ Ativar Sincronização Automática', 'ativarSincronizacaoAutomatica')
+    .addItem('⏸️ Desativar Sincronização Automática', 'desativarSincronizacaoAutomatica')
     .addSeparator()
-    
-    // === SEÇÃO 3: CONFIGURAÇÃO DE GATILHOS ===
-    .addSubMenu(ui.createMenu('⚙️ Configurar Gatilhos')
-      .addItem('✅ Ativar sincronização automática (Pontos + Firebase)', 'ativarTodosGatilhosAutomaticos')
-      .addItem('⏸️ Desativar sincronização automática', 'desativarTodosGatilhosAutomaticos')
-      .addSeparator()
-      .addItem('🔄 Apenas gatilhos de Ponto (Escalas)', 'criarGatilhosPontoAutomatico')
-      .addItem('🔥 Apenas gatilhos de Firebase', 'criarGatilhosAutomaticos')
-      .addItem('🕒 Ativar envio diário (21h)', 'criarGatilhoDiario')
-      .addItem('🗑️ Remover gatilho diário', 'removerGatilhoDiario'))
-    .addSeparator()
-    
-    // === SEÇÃO 4: ENVIO PARA FIREBASE (ÚLTIMO) ===
-    .addSubMenu(ui.createMenu('🔥 Firebase')
-      .addItem('⚠️ Verificar configuração do Firebase', 'verificarConfiguracaoFirebase')
-      .addSeparator()
-      .addItem('🚀 ENVIAR TODOS OS DADOS PARA FIREBASE', 'confirmarEnvioFirebase'))
-    
-    .addSeparator()
-    .addItem('❓ Ajuda - Como usar este menu', 'mostrarAjuda')
+    .addItem('🔥 Enviar Todos os Dados para Firebase', 'enviarDadosParaFirebase')
     .addToUi();
 }
 
@@ -700,23 +695,74 @@ function onOpen(){
  **********************************************/
 
 /**
- * Mostra a última sincronização realizada
+ * Mostra a última sincronização realizada e detalhes do que foi sincronizado
  */
 function mostrarUltimaSincronizacao() {
   var ultimaSync = getUltimaSync();
+  var ultimoDetalhe = getUltimoDetalheSincronizacao();
   var mensagem = '';
   
   if (ultimaSync > 0) {
     var dataUltimaSync = new Date(ultimaSync);
-    mensagem = '📅 Última sincronização:\n\n' + 
+    mensagem = '📅 Última sincronização:\n' + 
                dataUltimaSync.toLocaleString('pt-BR') + 
-               '\n\n(há ' + calcularTempoDecorrido(ultimaSync) + ')';
+               '\n(há ' + calcularTempoDecorrido(ultimaSync) + ')\n\n';
+    
+    if (ultimoDetalhe) {
+      mensagem += '📋 O que foi sincronizado:\n' + ultimoDetalhe;
+    } else {
+      mensagem += '📋 Sincronização automática ativa.';
+    }
   } else {
     mensagem = '⚠️ Nenhuma sincronização foi realizada ainda.\n\n' +
-               'Use o menu "Sincronizar Pontos" para começar.';
+               'Ative a sincronização automática para começar.';
   }
   
+  // Verifica status dos gatilhos
+  var statusGatilhos = verificarStatusGatilhosInterno();
+  mensagem += '\n\n═══════════════════════════════════════\n';
+  mensagem += '⚙️ Status da Sincronização Automática:\n';
+  mensagem += statusGatilhos.ativo ? '✅ ATIVADA' : '❌ DESATIVADA';
+  
   SpreadsheetApp.getUi().alert('📊 Status da Sincronização', mensagem, SpreadsheetApp.getUi().ButtonSet.OK);
+}
+
+/**
+ * Verifica o status dos gatilhos internamente (sem mostrar UI)
+ * @returns {Object} Objeto com status dos gatilhos
+ */
+function verificarStatusGatilhosInterno() {
+  var gatilhos = ScriptApp.getProjectTriggers();
+  var onEditAtivo = false;
+  var onChangeAtivo = false;
+  
+  for (var i = 0; i < gatilhos.length; i++) {
+    var funcao = gatilhos[i].getHandlerFunction();
+    if (funcao === 'onEditPontoInstalavel' || funcao === 'onEditFirebase') onEditAtivo = true;
+    if (funcao === 'onChangePontoInstalavel' || funcao === 'onChangeFirebase') onChangeAtivo = true;
+  }
+  
+  return {
+    ativo: onEditAtivo && onChangeAtivo,
+    onEdit: onEditAtivo,
+    onChange: onChangeAtivo
+  };
+}
+
+/**
+ * Obtém os detalhes da última sincronização
+ * @returns {string} Detalhes da última sincronização
+ */
+function getUltimoDetalheSincronizacao() {
+  return PropertiesService.getScriptProperties().getProperty('ULTIMO_DETALHE_SYNC') || '';
+}
+
+/**
+ * Salva os detalhes da última sincronização
+ * @param {string} detalhe - Detalhes do que foi sincronizado
+ */
+function salvarDetalheSincronizacao(detalhe) {
+  PropertiesService.getScriptProperties().setProperty('ULTIMO_DETALHE_SYNC', detalhe);
 }
 
 /**
@@ -1061,4 +1107,114 @@ function desativarTodosGatilhosAutomaticos() {
   );
   
   console.log('⏸️ ' + removidos + ' gatilhos removidos.');
+}
+
+/**********************************************
+ * 📋 FUNÇÕES DO MENU SIMPLIFICADO
+ **********************************************/
+
+/**
+ * Ativa a sincronização automática completa:
+ * 1. Primeiro sincroniza todos os pontos para as Escalas
+ * 2. Depois envia todos os dados para o Firebase
+ * 3. Configura gatilhos para sincronização automática em cada alteração
+ */
+function ativarSincronizacaoAutomatica() {
+  var ui = SpreadsheetApp.getUi();
+  
+  SpreadsheetApp.getActiveSpreadsheet().toast('🔄 Ativando sincronização automática...', 'Aguarde', 3);
+  
+  try {
+    // 1. Sincroniza todos os pontos para as Escalas
+    console.log('Sincronizando pontos para Escalas...');
+    syncAllPontos();
+    
+    // 2. Envia todos os dados para o Firebase
+    console.log('Enviando dados para Firebase...');
+    if (typeof enviarTodasAsAbasParaFirebase === 'function') {
+      enviarTodasAsAbasParaFirebase();
+    }
+    
+    // 3. Salva detalhes da sincronização
+    var timestamp = new Date().getTime();
+    salvarUltimaSync(timestamp);
+    salvarDetalheSincronizacao('• PontoTeoria → EscalaTeoria\n• PontoPratica → EscalaPratica\n• Todas as abas → Firebase');
+    
+    // 4. Ativa os gatilhos automáticos
+    ativarTodosGatilhosAutomaticos();
+    
+    ui.alert('✅ Sincronização Automática Ativada', 
+      'A sincronização automática foi ativada com sucesso!\n\n' +
+      '📋 O que foi feito agora:\n' +
+      '• Pontos sincronizados para Escalas\n' +
+      '• Dados enviados para Firebase\n\n' +
+      '⚡ A partir de agora:\n' +
+      'Qualquer alteração na planilha será sincronizada automaticamente.',
+      ui.ButtonSet.OK);
+      
+  } catch (err) {
+    console.error('Erro ao ativar sincronização:', err);
+    ui.alert('❌ Erro', 'Ocorreu um erro ao ativar a sincronização:\n' + err.message, ui.ButtonSet.OK);
+  }
+}
+
+/**
+ * Desativa a sincronização automática para manutenção
+ */
+function desativarSincronizacaoAutomatica() {
+  var ui = SpreadsheetApp.getUi();
+  
+  var resposta = ui.alert(
+    '⏸️ Desativar Sincronização',
+    'Você está prestes a desativar a sincronização automática.\n\n' +
+    'Isso é útil para fazer manutenção na planilha sem que as alterações sejam sincronizadas.\n\n' +
+    'Deseja continuar?',
+    ui.ButtonSet.YES_NO
+  );
+  
+  if (resposta === ui.Button.YES) {
+    desativarTodosGatilhosAutomaticos();
+    
+    ui.alert('⏸️ Sincronização Desativada', 
+      'A sincronização automática foi desativada.\n\n' +
+      'Você pode fazer manutenção na planilha.\n\n' +
+      '⚠️ Lembre-se de reativar quando terminar!',
+      ui.ButtonSet.OK);
+  }
+}
+
+/**
+ * Envia todos os dados para o Firebase manualmente
+ */
+function enviarDadosParaFirebase() {
+  var ui = SpreadsheetApp.getUi();
+  
+  var resposta = ui.alert(
+    '🔥 Enviar para Firebase',
+    'Deseja enviar todos os dados da planilha para o Firebase agora?\n\n' +
+    '⚠️ Isso irá sobrescrever os dados atuais no Firebase.',
+    ui.ButtonSet.YES_NO
+  );
+  
+  if (resposta === ui.Button.YES) {
+    SpreadsheetApp.getActiveSpreadsheet().toast('🔄 Enviando dados para Firebase...', 'Aguarde', 5);
+    
+    try {
+      if (typeof enviarTodasAsAbasParaFirebase === 'function') {
+        enviarTodasAsAbasParaFirebase();
+        
+        // Salva o timestamp e detalhes
+        var agora = new Date().getTime();
+        salvarUltimaSync(agora);
+        salvarDetalheSincronizacao('• Envio manual para Firebase\n• Todas as abas enviadas');
+        
+        ui.alert('✅ Sucesso', 'Todos os dados foram enviados para o Firebase!', ui.ButtonSet.OK);
+      } else {
+        ui.alert('❌ Erro', 'Função de envio para Firebase não encontrada.\nVerifique se o arquivo Code.gs está configurado corretamente.', ui.ButtonSet.OK);
+      }
+    } catch (err) {
+      console.error('Erro ao enviar para Firebase:', err);
+      ui.alert('❌ Erro', 'Ocorreu um erro ao enviar para o Firebase:\n' + err.message, ui.ButtonSet.OK);
+    }
+  }
 }
