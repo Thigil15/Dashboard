@@ -284,7 +284,7 @@ function parseDateFlexible_(v){
 
 /**
  * Verifica se um cabeçalho de coluna corresponde a uma data.
- * Suporta formatos: dd/mm, dd_mm, dd/mm/yyyy, dd_mm_yyyy, ou objetos Date.
+ * Suporta formatos: dd/mm, dd_mm, dd/mm/yyyy, dd_mm/yyyy, ou objetos Date.
  * @param {*} header - O valor do cabeçalho (string ou Date)
  * @param {Date} parsedDate - A data parseada para comparar
  * @returns {boolean} true se o cabeçalho corresponde à data
@@ -300,17 +300,19 @@ function isDateHeaderMatch_(header, parsedDate) {
   
   // Converte para string e verifica os formatos
   var hs = String(header).trim();
-  var ddmm_slash = two(parsedDate.getDate()) + '/' + two(parsedDate.getMonth() + 1);
-  var ddmm_underscore = two(parsedDate.getDate()) + '_' + two(parsedDate.getMonth() + 1);
+  var dd = two(parsedDate.getDate());
+  var mm = two(parsedDate.getMonth() + 1);
   var year = parsedDate.getFullYear();
   
-  // Verifica formato com barra (dd/mm) ou com underscore (dd_mm)
+  // Formatos suportados: dd/mm, dd_mm, dd/mm/yyyy, dd_mm/yyyy
+  var ddmm_slash = dd + '/' + mm;
+  var ddmm_underscore = dd + '_' + mm;
+  
+  // Verifica se o cabeçalho contém a data em qualquer formato suportado
   return hs.indexOf(ddmm_slash) !== -1 || 
-         hs === ddmm_slash || 
-         hs.indexOf(ddmm_underscore) !== -1 || 
-         hs === ddmm_underscore ||
+         hs.indexOf(ddmm_underscore) !== -1 ||
          hs.indexOf(ddmm_slash + '/' + year) !== -1 ||
-         hs.indexOf(ddmm_underscore + '_' + year) !== -1;
+         hs.indexOf(ddmm_underscore + '/' + year) !== -1;
 }
 
 /** normaliza entrada/saida para formato HH:MM:SS - HH:MM:SS
