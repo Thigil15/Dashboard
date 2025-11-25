@@ -278,16 +278,18 @@
                             </div>
                         </div>
                         
-                        <!-- KPI Card: Distribuição -->
-                        <div class="db-kpi-large db-gradient-orange">
+                        <!-- KPI Card: Alunos com Reposições - Lista Clicável -->
+                        <div class="db-kpi-large db-kpi-clickable db-gradient-orange">
                             <div class="db-kpi-icon-large">
                                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                             </div>
                             <div class="db-kpi-info">
-                                <div class="db-kpi-large-value" id="kpi-course-count">-</div>
-                                <div class="db-kpi-large-label">Cursos Ativos</div>
+                                <div class="db-kpi-large-label">Alunos com Reposições</div>
+                                <div id="students-with-replacements-list" class="db-students-list">
+                                    <!-- Lista de alunos será preenchida via JavaScript -->
+                                </div>
                             </div>
                         </div>
                         
@@ -347,7 +349,10 @@
                                         <p class="db-dist-subtitle">Alunos ativos por programa</p>
                                     </div>
                                 </div>
-                                <div id="course-distribution-chart" class="db-dist-chart"></div>
+                                <div id="course-distribution-chart" class="db-dist-bars">
+                                    <!-- Barras de progresso por curso serão preenchidas via JavaScript -->
+                                </div>
+                            </div>
                             </div>
                         </div>
                         

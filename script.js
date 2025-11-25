@@ -1979,18 +1979,123 @@ const pontoState = {
                     practicalBar.style.width = `${(oPAvg / 10) * 100}%`;
                 }
                 
+                // Render students with pending replacements (clickable list)
+                renderStudentsWithReplacements();
+                
                 renderCourseDistributionChart(cDist);
                 renderModuleAverages(tAvgs, pAvgs);
             } catch (e) { console.error("[renderAtAGlance] Erro:", e); showError("Erro ao renderizar visão geral."); }
         }
         
+        // Render clickable list of students with pending replacements
+        function renderStudentsWithReplacements() {
+            const container = document.getElementById('students-with-replacements-list');
+            if (!container) return;
+            
+            // Group pending replacements by student
+            const pendingByStudent = {};
+            appState.ausenciasReposicoes.forEach(f => {
+                if (f && !f.DataReposicaoISO && (f.EmailHC || f.NomeCompleto)) {
+                    const email = f.EmailHC || '';
+                    const nome = f.NomeCompleto || 'Aluno';
+                    const key = email || nome;
+                    if (!pendingByStudent[key]) {
+                        pendingByStudent[key] = { email, nome, count: 0 };
+                    }
+                    pendingByStudent[key].count++;
+                }
+            });
+            
+            const studentsArray = Object.values(pendingByStudent).sort((a, b) => b.count - a.count);
+            
+            if (studentsArray.length === 0) {
+                container.innerHTML = '<div class="db-students-empty">Nenhuma reposição pendente</div>';
+                return;
+            }
+            
+            let html = '';
+            studentsArray.slice(0, 6).forEach(student => {
+                const displayName = student.nome.split(' ').slice(0, 2).join(' ');
+                html += `
+                    <div class="db-student-link" data-email="${student.email}" data-name="${student.nome}" onclick="handleStudentReplacementClick('${student.email}', '${student.nome}')">
+                        <span class="db-student-link-name" title="${student.nome}">${displayName}</span>
+                        <span class="db-student-link-count">${student.count}</span>
+                        <svg class="db-student-link-arrow" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </div>
+                `;
+            });
+            
+            if (studentsArray.length > 6) {
+                html += `<div class="db-students-empty">+ ${studentsArray.length - 6} mais...</div>`;
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        // Handle click on student with replacement - navigate to their absences tab
+        window.handleStudentReplacementClick = function(email, nome) {
+            console.log(`[handleStudentReplacementClick] Navegando para faltas do aluno: ${email || nome}`);
+            
+            // Try to find the student by email first, then by name
+            let studentEmail = email;
+            if (!studentEmail && nome) {
+                const nomeNormalizado = normalizeString(nome);
+                for (const [e, info] of appState.alunosMap) {
+                    if (normalizeString(info.NomeCompleto) === nomeNormalizado) {
+                        studentEmail = e;
+                        break;
+                    }
+                }
+            }
+            
+            if (studentEmail && appState.alunosMap.has(studentEmail)) {
+                showStudentDetail(studentEmail);
+                // Switch to faltas (absences) tab after a short delay to ensure view is rendered
+                setTimeout(() => {
+                    switchStudentTab('faltas');
+                }, 100);
+            } else {
+                showError(`Aluno não encontrado: ${nome || email}`);
+            }
+        };
+        
         function renderCourseDistributionChart(distribution) {
-             const c=document.getElementById('course-distribution-chart'); if(!distribution||distribution.length===0){c.innerHTML='<p class="text-slate-500 text-sm italic">S/ dados curso.</p>'; return;} 
-             const colors=['var(--accent-blue)', 'var(--accent-red)', 'var(--accent-green)', 'var(--accent-yellow)', '#a855f7', '#64748b']; 
-             let grad=''; let cum=0; const leg=[]; 
-             distribution.forEach((item,i)=>{const clr=colors[i%colors.length]; const s=cum; const e=cum+item.percentage; if(item.percentage>0){grad+=`, ${clr} ${s}% ${e}%`;} cum=e; leg.push(`<li><span class="legend-color-box" style="background-color:${clr};"></span>${item.course} (${item.count})</li>`);}); 
-             if(cum<100){grad+=`, #E5E9EF ${cum}% 100%`;} 
-             c.innerHTML=`<div class="donut-chart" style="--chart-segments:${grad.substring(1)};"></div><div class="donut-legend"><ul>${leg.join('')}</ul></div>`;
+            const c = document.getElementById('course-distribution-chart');
+            if (!c) return;
+            
+            if (!distribution || distribution.length === 0) {
+                c.innerHTML = '<p class="db-students-empty">Sem dados de distribuição por curso.</p>';
+                return;
+            }
+            
+            const colors = [
+                'db-dist-bar-1', 'db-dist-bar-2', 'db-dist-bar-3', 
+                'db-dist-bar-4', 'db-dist-bar-5', 'db-dist-bar-6'
+            ];
+            const maxCount = Math.max(...distribution.map(d => d.count));
+            
+            let html = '';
+            distribution.forEach((item, i) => {
+                const barWidth = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
+                const colorClass = colors[i % colors.length];
+                const courseName = item.course.length > 12 ? item.course.substring(0, 12) + '...' : item.course;
+                
+                html += `
+                    <div class="db-dist-bar-item">
+                        <span class="db-dist-bar-label" title="${item.course}">${courseName}</span>
+                        <div class="db-dist-bar-track">
+                            <div class="db-dist-bar-fill ${colorClass}" style="width: ${barWidth}%;">
+                                <span>${item.percentage.toFixed(0)}%</span>
+                            </div>
+                        </div>
+                        <span class="db-dist-bar-count">${item.count}</span>
+                    </div>
+                `;
+            });
+            
+            c.innerHTML = html;
         }
         
         function renderModuleAverages(tAvgs, pAvgs) {

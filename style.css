@@ -6382,6 +6382,185 @@
     min-height: 120px;
 }
 
+/* === Distribution Bars - Enhanced Visualization === */
+.db-dist-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.db-dist-bar-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.db-dist-bar-label {
+    flex-shrink: 0;
+    width: 100px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--content-text-secondary);
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.db-dist-bar-track {
+    flex: 1;
+    height: 24px;
+    background: rgba(0, 51, 160, 0.08);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    position: relative;
+}
+
+.db-dist-bar-fill {
+    height: 100%;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 0.5rem;
+    transition: width 0.8s ease;
+    min-width: 32px;
+}
+
+.db-dist-bar-fill span {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.db-dist-bar-count {
+    flex-shrink: 0;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--content-text-primary);
+    min-width: 24px;
+    text-align: right;
+}
+
+/* Distribution bar colors */
+.db-dist-bar-1 { background: linear-gradient(90deg, var(--incor-blue-600), var(--incor-blue-500)); }
+.db-dist-bar-2 { background: linear-gradient(90deg, #059669, #10b981); }
+.db-dist-bar-3 { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+.db-dist-bar-4 { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+.db-dist-bar-5 { background: linear-gradient(90deg, #ef4444, #f87171); }
+.db-dist-bar-6 { background: linear-gradient(90deg, #06b6d4, #22d3ee); }
+
+/* === Clickable Students List with Replacements === */
+.db-kpi-clickable {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1rem;
+}
+
+.db-kpi-clickable .db-kpi-icon-large {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    width: 32px;
+    height: 32px;
+}
+
+.db-kpi-clickable .db-kpi-icon-large svg {
+    width: 16px;
+    height: 16px;
+}
+
+.db-kpi-clickable .db-kpi-info {
+    width: 100%;
+}
+
+.db-kpi-clickable .db-kpi-large-label {
+    margin-bottom: 0.5rem;
+    font-size: 0.8125rem;
+}
+
+.db-students-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    max-height: 120px;
+    overflow-y: auto;
+    width: 100%;
+}
+
+.db-students-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.db-students-list::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+}
+
+.db-students-list::-webkit-scrollbar-thumb {
+    background: rgba(245, 158, 11, 0.4);
+    border-radius: 4px;
+}
+
+.db-student-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.375rem 0.5rem;
+    background: rgba(245, 158, 11, 0.1);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.db-student-link:hover {
+    background: rgba(245, 158, 11, 0.2);
+    border-color: rgba(245, 158, 11, 0.3);
+    transform: translateX(4px);
+}
+
+.db-student-link-name {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #b45309;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    max-width: 140px;
+}
+
+.db-student-link-count {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+    padding: 0.125rem 0.375rem;
+    border-radius: 999px;
+    min-width: 20px;
+    text-align: center;
+}
+
+.db-student-link-arrow {
+    width: 12px;
+    height: 12px;
+    color: #b45309;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.db-student-link:hover .db-student-link-arrow {
+    opacity: 1;
+}
+
+.db-students-empty {
+    font-size: 0.75rem;
+    color: var(--content-text-muted);
+    font-style: italic;
+    text-align: center;
+    padding: 0.5rem;
+}
+
 /* === Activities Column - Compact === */
 .db-activities-column {
     grid-column: span 2;
