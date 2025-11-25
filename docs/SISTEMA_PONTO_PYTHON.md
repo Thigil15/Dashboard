@@ -102,6 +102,7 @@ O arquivo `config_ponto.json` permite personalizar o sistema:
     "25/12/2024",
     "01/01/2025"
   ],
+  "escala_atual": "9",
   "log_file": "logs/sistema_ponto.log"
 }
 ```
@@ -115,6 +116,7 @@ O arquivo `config_ponto.json` permite personalizar o sistema:
 | `nomes` | Mapa de SerialNumber para nome do aluno |
 | `dias_teoria` | Dias da semana para teoria (0=Seg, 1=Ter, ..., 6=Dom) |
 | `dias_especiais_teoria` | Lista de datas específicas no formato dd/mm/yyyy |
+| `escala_atual` | Número da escala atual (1-12) para registro de ponto |
 | `log_file` | Caminho para arquivo de log (opcional) |
 
 ## Comandos Disponíveis
@@ -130,6 +132,10 @@ python SistemaPonto.py --background
 python SistemaPonto.py --add-dia DD/MM/YYYY
 python SistemaPonto.py --remove-dia DD/MM/YYYY
 python SistemaPonto.py --list-dias
+
+# Gerenciar escala atual
+python SistemaPonto.py --set-escala 9      # Define escala atual como 9
+python SistemaPonto.py --show-escala       # Mostra escala atual
 
 # Inicialização do Windows
 python SistemaPonto.py --install-startup
