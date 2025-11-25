@@ -164,6 +164,9 @@ Reautorize o script:
 ## 📝 Resumo das Alterações no Code.gs
 
 **Novas funções adicionadas:**
+- `gerarHashDados(dados)` - Gera hash MD5 dos dados
+- `criarRegistrosDeAba(dados, cabecalhos)` - Cria array de objetos dos dados
+- `enviarParaFirebase(nomeAba, registros, nomeAbaOriginal)` - Envia registros ao Firebase
 - `onEditFirebase(e)` - Gatilho de edição
 - `onChangeFirebase(e)` - Gatilho de alterações estruturais
 - `enviarAbaParaFirebase(aba)` - Envia uma aba específica
