@@ -1,4 +1,5 @@
 @echo off
+REM Define UTF-8 encoding for proper emoji/special character display
 chcp 65001 >nul 2>&1
 REM =========================================
 REM  Sistema de Ponto NFC - Ensino Fisio

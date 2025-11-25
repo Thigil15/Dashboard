@@ -25,7 +25,6 @@ import json
 import logging
 import argparse
 import platform
-import select
 from datetime import datetime, date
 from pathlib import Path
 
@@ -55,14 +54,6 @@ CONFIG_FILE = "config_ponto.json"
 NOMES = {
     "1601873172": "Thiago Dias Santos",
     # "1601901111": "Maria Souza",
-}
-
-# Template para alunos no config (uid -> dados do aluno)
-ALUNOS_TEMPLATE = {
-    # "1601873172": {
-    #     "nome": "Thiago Dias Santos",
-    #     "email": ""  # Preencher manualmente depois
-    # }
 }
 
 # Dias padrão para aulas de teoria (0=Segunda, 1=Terça, ..., 6=Domingo)
