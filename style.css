@@ -8755,6 +8755,340 @@
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
+   NÍVEL 3: DESEMPENHO ACADÊMICO GERAL
+   Academic Performance Section - Visual Overview
+   ════════════════════════════════════════════════════════════════════════════ */
+
+.incor-academic-section {
+    background: white;
+    border-radius: var(--radius-xl);
+    box-shadow: 0 2px 8px rgba(0, 51, 160, 0.06);
+    border: 1px solid rgba(229, 233, 239, 0.8);
+    overflow: hidden;
+}
+
+.incor-academic-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--incor-spacing-sm) var(--incor-spacing-md);
+    background: linear-gradient(to bottom, #fafbfc, #f8fafc);
+    border-bottom: 1px solid rgba(229, 233, 239, 0.8);
+    gap: var(--incor-spacing-md);
+    flex-wrap: wrap;
+}
+
+.incor-academic-title-group {
+    display: flex;
+    align-items: center;
+    gap: var(--incor-spacing-sm);
+}
+
+.incor-academic-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--incor-blue-600), var(--incor-blue-500));
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.incor-academic-icon svg {
+    width: 20px;
+    height: 20px;
+    color: white;
+}
+
+.incor-academic-title {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--content-text-primary);
+    margin: 0;
+}
+
+.incor-academic-subtitle {
+    font-size: 0.75rem;
+    color: var(--content-text-muted);
+    margin: 0;
+}
+
+.incor-academic-content {
+    padding: var(--incor-spacing-md);
+}
+
+/* Academic Performance Grid */
+.incor-academic-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr;
+    gap: var(--incor-spacing-md);
+    align-items: stretch;
+}
+
+/* Academic Card Base */
+.incor-academic-card {
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+    border-radius: var(--radius-xl);
+    padding: var(--incor-spacing-md);
+    border: 1px solid rgba(229, 233, 239, 0.8);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+}
+
+.incor-academic-card:hover {
+    box-shadow: 0 8px 24px rgba(0, 51, 160, 0.1);
+    border-color: rgba(0, 84, 180, 0.2);
+    transform: translateY(-2px);
+}
+
+/* Main Card - Overall Average with Ring */
+.incor-academic-card--main {
+    background: linear-gradient(135deg, var(--incor-blue-800), var(--incor-blue-600));
+    border: none;
+    color: white;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 180px;
+}
+
+.incor-academic-ring-container {
+    margin-bottom: var(--incor-spacing-sm);
+}
+
+.incor-academic-ring {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: 
+        conic-gradient(
+            from 0deg,
+            rgba(255, 255, 255, 0.3) 0%,
+            rgba(255, 255, 255, 0.1) 100%
+        );
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.2),
+        inset 0 2px 4px rgba(255, 255, 255, 0.1);
+}
+
+.incor-academic-ring::before {
+    content: '';
+    position: absolute;
+    inset: 8px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--incor-blue-700), var(--incor-blue-600));
+}
+
+.incor-academic-ring-value {
+    position: relative;
+    z-index: 1;
+    font-family: var(--font-display);
+    font-size: 2.25rem;
+    font-weight: 800;
+    line-height: 1;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.incor-academic-ring-label {
+    position: relative;
+    z-index: 1;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+    margin-top: 4px;
+}
+
+.incor-academic-ring-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.incor-academic-ring-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 14px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: white;
+    backdrop-filter: blur(4px);
+}
+
+.incor-academic-ring-status--excellent {
+    background: rgba(16, 185, 129, 0.25);
+}
+
+.incor-academic-ring-status--good {
+    background: rgba(59, 130, 246, 0.25);
+}
+
+.incor-academic-ring-status--alert {
+    background: rgba(245, 158, 11, 0.25);
+}
+
+.incor-academic-ring-status--critical {
+    background: rgba(239, 68, 68, 0.25);
+}
+
+.incor-academic-ring-subtitle {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* Theoretical/Practical Cards */
+.incor-academic-card--theoretical,
+.incor-academic-card--practical {
+    justify-content: space-between;
+}
+
+.incor-academic-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: var(--incor-spacing-sm);
+}
+
+.incor-academic-card-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.incor-academic-card-icon svg {
+    width: 18px;
+    height: 18px;
+    color: white;
+}
+
+.incor-academic-card-icon--amber {
+    background: linear-gradient(135deg, #d97706, #f59e0b);
+}
+
+.incor-academic-card-icon--cyan {
+    background: linear-gradient(135deg, #0891b2, #06b6d4);
+}
+
+.incor-academic-card-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--content-text-secondary);
+}
+
+.incor-academic-card-value {
+    font-family: var(--font-display);
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--content-text-primary);
+    line-height: 1;
+    margin-bottom: var(--incor-spacing-xs);
+}
+
+.incor-academic-card--theoretical .incor-academic-card-value {
+    color: #b45309;
+}
+
+.incor-academic-card--practical .incor-academic-card-value {
+    color: #0e7490;
+}
+
+.incor-academic-card-progress {
+    width: 100%;
+    height: 8px;
+    background: rgba(0, 51, 160, 0.1);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.incor-academic-card-progress-fill {
+    height: 100%;
+    border-radius: var(--radius-full);
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.incor-academic-card-progress-fill--amber {
+    background: linear-gradient(90deg, #d97706, #f59e0b);
+}
+
+.incor-academic-card-progress-fill--cyan {
+    background: linear-gradient(90deg, #0891b2, #22d3ee);
+}
+
+.incor-academic-card-detail {
+    font-size: 0.75rem;
+    color: var(--content-text-muted);
+}
+
+/* Empty State */
+.incor-academic-empty {
+    padding: var(--incor-spacing-2xl);
+    text-align: center;
+    color: var(--content-text-muted);
+}
+
+.incor-academic-empty svg {
+    width: 48px;
+    height: 48px;
+    margin-bottom: var(--incor-spacing-sm);
+    opacity: 0.4;
+}
+
+.incor-academic-empty p {
+    font-size: 0.9375rem;
+    margin: 0;
+}
+
+/* Responsive Academic Section */
+@media (max-width: 1024px) {
+    .incor-academic-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .incor-academic-card--main {
+        grid-column: span 2;
+    }
+}
+
+@media (max-width: 768px) {
+    .incor-academic-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .incor-academic-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .incor-academic-card--main {
+        grid-column: span 1;
+    }
+    
+    .incor-academic-ring {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .incor-academic-ring-value {
+        font-size: 1.75rem;
+    }
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
    RESPONSIVE DESIGN - InCor Dashboard
    ════════════════════════════════════════════════════════════════════════════ */
 

@@ -466,58 +466,82 @@
                     </section>
 
                     <!-- ═══════════════════════════════════════════════════════════════
-                         NÍVEL 3: TABELA DE AÇÃO IMEDIATA (Hub de Interação)
-                         Atividades Recentes da Secretaria com Tags de Status
+                         NÍVEL 3: DESEMPENHO ACADÊMICO GERAL
+                         Visão geral das médias teóricas e práticas dos alunos
                          ═══════════════════════════════════════════════════════════════ -->
-                    <section class="incor-action-section" aria-label="Atividades Recentes">
-                        <header class="incor-action-header">
-                            <div class="incor-action-title-group">
-                                <div class="incor-action-icon">
+                    <section class="incor-academic-section" aria-label="Desempenho Acadêmico">
+                        <header class="incor-academic-header">
+                            <div class="incor-academic-title-group">
+                                <div class="incor-academic-icon">
                                     <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
                                     </svg>
                                 </div>
                                 <div>
-                                    <h2 class="incor-action-title">Atividades Recentes da Secretaria</h2>
-                                    <p class="incor-action-subtitle">Registros de ausências e reposições para ação administrativa</p>
+                                    <h2 class="incor-academic-title">Desempenho Acadêmico Geral</h2>
+                                    <p class="incor-academic-subtitle">Médias teóricas e práticas dos alunos ativos</p>
                                 </div>
-                            </div>
-                            <div class="incor-action-filters">
-                                <button class="incor-action-filter incor-action-filter--active" data-filter="all">
-                                    Todos
-                                </button>
-                                <button class="incor-action-filter" data-filter="pending">
-                                    <span class="incor-action-filter-dot incor-action-filter-dot--pending"></span>
-                                    Pendentes
-                                </button>
-                                <button class="incor-action-filter" data-filter="completed">
-                                    <span class="incor-action-filter-dot incor-action-filter-dot--completed"></span>
-                                    Concluídas
-                                </button>
                             </div>
                         </header>
                         
-                        <div class="incor-action-table-wrapper">
-                            <table class="incor-action-table">
-                                <thead>
-                                    <tr>
-                                        <th scope="col" class="incor-action-th--status">Status</th>
-                                        <th scope="col" class="incor-action-th--name">Aluno</th>
-                                        <th scope="col" class="incor-action-th--type">Tipo</th>
-                                        <th scope="col" class="incor-action-th--local">Local</th>
-                                        <th scope="col" class="incor-action-th--date">Data</th>
-                                        <th scope="col" class="incor-action-th--actions">Ações</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="recent-absences-list" class="incor-action-tbody">
-                                    <!-- Populated by JavaScript -->
-                                </tbody>
-                            </table>
-                            <div id="incor-action-empty" class="incor-action-empty" hidden>
+                        <div class="incor-academic-content">
+                            <!-- Academic Performance Overview Grid -->
+                            <div class="incor-academic-grid" id="academic-performance-grid">
+                                <!-- Overall Average Card -->
+                                <div class="incor-academic-card incor-academic-card--main">
+                                    <div class="incor-academic-ring-container">
+                                        <div class="incor-academic-ring" id="academic-ring">
+                                            <div class="incor-academic-ring-value" id="academic-overall-avg">-</div>
+                                            <div class="incor-academic-ring-label">Média Geral</div>
+                                        </div>
+                                    </div>
+                                    <div class="incor-academic-ring-info">
+                                        <span class="incor-academic-ring-status" id="academic-status-badge">Carregando...</span>
+                                        <span class="incor-academic-ring-subtitle">Baseado em <span id="academic-student-count">0</span> alunos ativos</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Theoretical Average Card -->
+                                <div class="incor-academic-card incor-academic-card--theoretical">
+                                    <div class="incor-academic-card-header">
+                                        <div class="incor-academic-card-icon incor-academic-card-icon--amber">
+                                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                                            </svg>
+                                        </div>
+                                        <span class="incor-academic-card-label">Média Teórica</span>
+                                    </div>
+                                    <div class="incor-academic-card-value" id="academic-theoretical-avg">-</div>
+                                    <div class="incor-academic-card-progress">
+                                        <div class="incor-academic-card-progress-fill incor-academic-card-progress-fill--amber" id="academic-theoretical-bar" style="width: 0%;"></div>
+                                    </div>
+                                    <span class="incor-academic-card-detail" id="academic-theoretical-count">0 avaliações</span>
+                                </div>
+                                
+                                <!-- Practical Average Card -->
+                                <div class="incor-academic-card incor-academic-card--practical">
+                                    <div class="incor-academic-card-header">
+                                        <div class="incor-academic-card-icon incor-academic-card-icon--cyan">
+                                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                                            </svg>
+                                        </div>
+                                        <span class="incor-academic-card-label">Média Prática</span>
+                                    </div>
+                                    <div class="incor-academic-card-value" id="academic-practical-avg">-</div>
+                                    <div class="incor-academic-card-progress">
+                                        <div class="incor-academic-card-progress-fill incor-academic-card-progress-fill--cyan" id="academic-practical-bar" style="width: 0%;"></div>
+                                    </div>
+                                    <span class="incor-academic-card-detail" id="academic-practical-count">0 avaliações</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Empty State -->
+                            <div id="academic-empty-state" class="incor-academic-empty" hidden>
                                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
                                 </svg>
-                                <p>Nenhum registro de atividade encontrado.</p>
+                                <p>Nenhuma avaliação disponível para calcular o desempenho acadêmico.</p>
                             </div>
                         </div>
                     </section>

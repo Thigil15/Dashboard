@@ -656,9 +656,6 @@
                     break;
                     
                 case 'ausenciasReposicoes':
-                    if (typeof renderRecentAbsences === 'function') {
-                        renderRecentAbsences();
-                    }
                     if (typeof renderAtAGlance === 'function') {
                         renderAtAGlance();
                     }
@@ -2328,9 +2325,121 @@ const pontoState = {
                 renderCourseDistributionChart(cDist);
                 renderModuleAverages(tAvgs, pAvgs);
                 
-                // Render recent activities table
-                renderRecentAbsences();
+                // Render academic performance section
+                renderAcademicPerformance(oTAvg, oPAvg, tAvgs, pAvgs, aS);
             } catch (e) { console.error("[renderAtAGlance] Erro:", e); showError("Erro ao renderizar visão geral."); }
+        }
+        
+        /**
+         * Render Academic Performance Section
+         * Displays overall, theoretical, and practical averages
+         */
+        function renderAcademicPerformance(theoreticalAvg, practicalAvg, theoreticalAverages, practicalAverages, activeStudentsCount) {
+            try {
+                const emptyState = document.getElementById('academic-empty-state');
+                const grid = document.getElementById('academic-performance-grid');
+                
+                // Check if we have any data
+                const hasData = theoreticalAvg > 0 || practicalAvg > 0;
+                
+                if (!hasData) {
+                    if (emptyState) emptyState.hidden = false;
+                    if (grid) grid.style.display = 'none';
+                    return;
+                }
+                
+                if (emptyState) emptyState.hidden = true;
+                if (grid) grid.style.display = '';
+                
+                // Calculate overall average (combined theoretical and practical)
+                let overallAvg = 0;
+                let avgCount = 0;
+                if (theoreticalAvg > 0) { overallAvg += theoreticalAvg; avgCount++; }
+                if (practicalAvg > 0) { overallAvg += practicalAvg; avgCount++; }
+                overallAvg = avgCount > 0 ? overallAvg / avgCount : 0;
+                
+                // Determine performance status
+                let statusText = 'Carregando...';
+                let statusClass = '';
+                
+                if (overallAvg >= 9.0) {
+                    statusText = '🌟 Excelência';
+                    statusClass = 'incor-academic-ring-status--excellent';
+                } else if (overallAvg >= 8.0) {
+                    statusText = '⭐ Muito Bom';
+                    statusClass = 'incor-academic-ring-status--good';
+                } else if (overallAvg >= 7.0) {
+                    statusText = '✓ Bom';
+                    statusClass = 'incor-academic-ring-status--good';
+                } else if (overallAvg >= 6.0) {
+                    statusText = '⚠ Alerta';
+                    statusClass = 'incor-academic-ring-status--alert';
+                } else if (overallAvg > 0) {
+                    statusText = '❌ Crítico';
+                    statusClass = 'incor-academic-ring-status--critical';
+                }
+                
+                // Update overall average ring
+                const overallAvgEl = document.getElementById('academic-overall-avg');
+                if (overallAvgEl) {
+                    overallAvgEl.textContent = overallAvg > 0 ? overallAvg.toFixed(1) : '-';
+                }
+                
+                // Update status badge
+                const statusBadge = document.getElementById('academic-status-badge');
+                if (statusBadge) {
+                    statusBadge.textContent = statusText;
+                    statusBadge.className = 'incor-academic-ring-status ' + statusClass;
+                }
+                
+                // Update student count
+                const studentCountEl = document.getElementById('academic-student-count');
+                if (studentCountEl) {
+                    studentCountEl.textContent = activeStudentsCount || 0;
+                }
+                
+                // Update theoretical average
+                const theoreticalAvgEl = document.getElementById('academic-theoretical-avg');
+                const theoreticalBar = document.getElementById('academic-theoretical-bar');
+                const theoreticalCount = document.getElementById('academic-theoretical-count');
+                
+                if (theoreticalAvgEl) {
+                    theoreticalAvgEl.textContent = theoreticalAvg > 0 ? theoreticalAvg.toFixed(1) : '-';
+                }
+                if (theoreticalBar && theoreticalAvg > 0) {
+                    theoreticalBar.style.width = `${(theoreticalAvg / 10) * 100}%`;
+                }
+                if (theoreticalCount) {
+                    const numTheoretical = Object.keys(theoreticalAverages || {}).filter(k => !k.toUpperCase().includes('MÉDIA')).length;
+                    theoreticalCount.textContent = `${numTheoretical} módulos avaliados`;
+                }
+                
+                // Update practical average
+                const practicalAvgEl = document.getElementById('academic-practical-avg');
+                const practicalBar = document.getElementById('academic-practical-bar');
+                const practicalCount = document.getElementById('academic-practical-count');
+                
+                if (practicalAvgEl) {
+                    practicalAvgEl.textContent = practicalAvg > 0 ? practicalAvg.toFixed(1) : '-';
+                }
+                if (practicalBar && practicalAvg > 0) {
+                    practicalBar.style.width = `${(practicalAvg / 10) * 100}%`;
+                }
+                if (practicalCount) {
+                    const numPractical = Object.keys(practicalAverages || {}).length;
+                    practicalCount.textContent = `${numPractical} práticas avaliadas`;
+                }
+                
+                console.log('[renderAcademicPerformance] Rendered successfully:', {
+                    overall: overallAvg.toFixed(1),
+                    theoretical: theoreticalAvg.toFixed(1),
+                    practical: practicalAvg.toFixed(1),
+                    students: activeStudentsCount
+                });
+                
+            } catch (e) {
+                console.error('[renderAcademicPerformance] Erro:', e);
+            }
         }
         
         // Calculate today's shifts from escalas
