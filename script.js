@@ -1036,6 +1036,23 @@ const ATRASO_THRESHOLD_MINUTES = 10;
 const TOTAL_ESCALADOS = 25;
 const MAX_RECENT_ACTIVITIES = 10;
 // MAX_PENDING_STUDENTS removed - now shows all students
+
+// InCor Dashboard KPI Thresholds (Semantic Status Configuration)
+const INCOR_KPI_THRESHOLDS = {
+    // Frequency: ratio of active to total students
+    FREQUENCY_CRITICAL: 0.70,      // Below 70% active = Critical
+    FREQUENCY_ALERT: 0.85,         // Below 85% active = Alert
+    
+    // Pending replacements count
+    PENDING_CRITICAL: 10,          // 10+ pending = Critical
+    PENDING_ALERT: 5,              // 5+ pending = Alert
+    
+    // Grade averages
+    GRADE_CRITICAL: 6.0,           // Below 6.0 = Critical
+    GRADE_ALERT: 7.0,              // Below 7.0 = Alert
+    GRADE_EXCELLENT: 8.0           // 8.0+ = Excellent
+};
+
 const pontoState = {
     rawRows: [],
     byDate: new Map(),
@@ -1311,8 +1328,9 @@ const pontoState = {
         }
         
         // Handle action filter switching (All, Pending, Completed)
+        // Uses data-status attribute for reliable filtering
         function handleActionFilterSwitch(e) {
-            const filterValue = e.target.getAttribute('data-filter');
+            const filterValue = e.target.closest('.incor-action-filter')?.getAttribute('data-filter');
             if (!filterValue) return;
             
             // Update active filter button
@@ -1320,22 +1338,19 @@ const pontoState = {
                 btn.classList.toggle('incor-action-filter--active', btn.getAttribute('data-filter') === filterValue);
             });
             
-            // Filter the table rows
+            // Filter the table rows using data-status attribute
             const tbody = document.getElementById('recent-absences-list');
             if (!tbody) return;
             
             tbody.querySelectorAll('tr').forEach(row => {
-                const statusCell = row.querySelector('.incor-action-status');
-                if (!statusCell) return;
-                
-                const isPending = statusCell.classList.contains('incor-action-status--pending');
+                const rowStatus = row.getAttribute('data-status');
                 
                 if (filterValue === 'all') {
                     row.style.display = '';
                 } else if (filterValue === 'pending') {
-                    row.style.display = isPending ? '' : 'none';
+                    row.style.display = rowStatus === 'pending' ? '' : 'none';
                 } else if (filterValue === 'completed') {
-                    row.style.display = !isPending ? '' : 'none';
+                    row.style.display = rowStatus === 'completed' ? '' : 'none';
                 }
             });
         }
@@ -2320,14 +2335,16 @@ const pontoState = {
         
         // Calculate today's shifts from escalas
         function calculateTodayShifts() {
-            const today = appState.todayBR;
+            const today = appState.todayBR || '';
+            if (!today) return '-';
+            
             let totalShifts = 0;
             
             Object.values(appState.escalas || {}).forEach(escala => {
                 if (!escala || !escala.headersDay || !escala.alunos) return;
                 
                 const hasToday = escala.headersDay.some(day => {
-                    const normalizedDay = day.replace(/\//g, '/').trim();
+                    const normalizedDay = String(day || '').trim();
                     return normalizedDay === today;
                 });
                 
@@ -2346,6 +2363,7 @@ const pontoState = {
         }
         
         // Update KPI semantic status (Normal, Alerta, Crítico)
+        // Uses INCOR_KPI_THRESHOLDS constants for maintainability
         function updateKPISemanticStatus(cardId, value, secondaryValue) {
             const card = document.getElementById(cardId);
             if (!card) return;
@@ -2356,22 +2374,22 @@ const pontoState = {
             switch(cardId) {
                 case 'kpi-card-frequency':
                     // Frequency: check if active students ratio is good
-                    const ratio = secondaryValue / value;
-                    if (ratio < 0.7) {
+                    const ratio = value > 0 ? (secondaryValue / value) : 1;
+                    if (ratio < INCOR_KPI_THRESHOLDS.FREQUENCY_CRITICAL) {
                         status = 'critical';
                         statusText = 'Crítico';
-                    } else if (ratio < 0.85) {
+                    } else if (ratio < INCOR_KPI_THRESHOLDS.FREQUENCY_ALERT) {
                         status = 'alert';
                         statusText = 'Alerta';
                     }
                     break;
                     
                 case 'kpi-card-pending':
-                    // Pending replacements: more than 10 is critical, more than 5 is alert
-                    if (value >= 10) {
+                    // Pending replacements
+                    if (value >= INCOR_KPI_THRESHOLDS.PENDING_CRITICAL) {
                         status = 'critical';
                         statusText = 'Crítico';
-                    } else if (value >= 5) {
+                    } else if (value >= INCOR_KPI_THRESHOLDS.PENDING_ALERT) {
                         status = 'alert';
                         statusText = 'Alerta';
                     } else if (value === 0) {
@@ -2395,14 +2413,14 @@ const pontoState = {
                     
                 case 'kpi-card-theoretical':
                 case 'kpi-card-practical':
-                    // Grades: below 7 is alert, below 6 is critical
-                    if (value < 6) {
+                    // Grades: use configured thresholds
+                    if (value < INCOR_KPI_THRESHOLDS.GRADE_CRITICAL) {
                         status = 'critical';
                         statusText = 'Crítico';
-                    } else if (value < 7) {
+                    } else if (value < INCOR_KPI_THRESHOLDS.GRADE_ALERT) {
                         status = 'alert';
                         statusText = 'Alerta';
-                    } else if (value >= 8) {
+                    } else if (value >= INCOR_KPI_THRESHOLDS.GRADE_EXCELLENT) {
                         statusText = 'Excelente';
                     } else {
                         statusText = 'Bom';
@@ -2622,7 +2640,7 @@ const pontoState = {
                      const typeClass = isPending ? 'incor-action-type--absence' : 'incor-action-type--makeup';
                      const typeText = isPending ? 'Ausência' : 'Reposição';
                      
-                     return `<tr data-email="${escapeHtml(item.EmailHC || '')}" data-index="${index}">
+                     return `<tr data-email="${escapeHtml(item.EmailHC || '')}" data-index="${index}" data-status="${isPending ? 'pending' : 'completed'}">
                          <td>
                              <span class="incor-action-status ${statusClass}">${statusText}</span>
                          </td>
