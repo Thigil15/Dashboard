@@ -2410,8 +2410,13 @@ const pontoState = {
                     theoreticalBar.style.width = `${(theoreticalAvg / 10) * 100}%`;
                 }
                 if (theoreticalCount) {
-                    const numTheoretical = Object.keys(theoreticalAverages || {}).filter(k => !k.toUpperCase().includes('MÉDIA')).length;
-                    theoreticalCount.textContent = `${numTheoretical} módulos avaliados`;
+                    // Count only discipline-specific keys (excluding summary/average keys)
+                    const numTheoretical = Object.keys(theoreticalAverages || {}).filter(k => {
+                        const upper = k.toUpperCase();
+                        const normalized = k.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+                        return !upper.includes('MÉDIA') && !normalized.includes('MEDIA') && !upper.includes('GERAL');
+                    }).length;
+                    theoreticalCount.textContent = numTheoretical === 1 ? '1 módulo' : `${numTheoretical} módulos`;
                 }
                 
                 // Update practical average
@@ -2427,7 +2432,7 @@ const pontoState = {
                 }
                 if (practicalCount) {
                     const numPractical = Object.keys(practicalAverages || {}).length;
-                    practicalCount.textContent = `${numPractical} práticas avaliadas`;
+                    practicalCount.textContent = numPractical === 1 ? '1 prática' : `${numPractical} práticas`;
                 }
                 
                 console.log('[renderAcademicPerformance] Rendered successfully:', {
