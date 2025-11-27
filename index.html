@@ -255,89 +255,273 @@
             
             <main class="dashboard-content">
 
-                <!-- View Principal: Dashboard Profissional -->
-                <div id="content-dashboard" class="view-container dash">
+                <!-- View Principal: Dashboard InCor Ensino - Arquitetura de Visualização Clínica -->
+                <div id="content-dashboard" class="view-container incor-dash">
                     
-                    <!-- KPIs Row -->
-                    <div class="dash-kpis">
-                        <article class="dash-kpi dash-kpi--blue">
-                            <strong id="kpi-total-students">-</strong>
-                            <span>Alunos Matriculados</span>
-                        </article>
-                        <article class="dash-kpi dash-kpi--green">
-                            <strong id="kpi-active-students">-</strong>
-                            <span>Ativos no Programa</span>
-                        </article>
-                        <article class="dash-kpi dash-kpi--orange">
-                            <strong id="kpi-pending-replacements">-</strong>
-                            <span>Reposições Pendentes</span>
-                        </article>
-                        <article class="dash-kpi dash-kpi--amber">
-                            <strong id="kpi-avg-theoretical">-</strong>
-                            <span>Média Teórica</span>
-                        </article>
-                        <article class="dash-kpi dash-kpi--cyan">
-                            <strong id="kpi-avg-practical">-</strong>
-                            <span>Média Prática</span>
-                        </article>
-                    </div>
-
-                    <!-- Main Content Grid -->
-                    <div class="dash-grid">
+                    <!-- ═══════════════════════════════════════════════════════════════
+                         NÍVEL 1: MONITOR DE SAÚDE OPERACIONAL (KPIs de Primeiro Nível)
+                         Status Semântico: Normal, Alerta, Crítico
+                         ═══════════════════════════════════════════════════════════════ -->
+                    <section class="incor-kpi-section" aria-label="Indicadores de Primeiro Nível">
+                        <header class="incor-kpi-header">
+                            <div class="incor-kpi-header-left">
+                                <div class="incor-kpi-header-icon">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h2 class="incor-kpi-header-title">Monitor de Saúde Operacional</h2>
+                                    <p class="incor-kpi-header-subtitle">Indicadores em tempo real do programa de ensino</p>
+                                </div>
+                            </div>
+                            <div class="incor-kpi-timestamp">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <span id="kpi-last-update">Atualizado agora</span>
+                            </div>
+                        </header>
                         
-                        <!-- Desempenho Acadêmico -->
-                        <section class="dash-card dash-card--wide">
-                            <header class="dash-card__header">
-                                <h2>Desempenho Acadêmico</h2>
-                                <nav class="dash-tabs">
-                                    <button class="dash-tab dash-tab--active" data-tab="modulos">Módulos</button>
-                                    <button class="dash-tab" data-tab="teoricas">Teóricas</button>
-                                    <button class="dash-tab" data-tab="praticas">Práticas</button>
-                                </nav>
-                            </header>
-                            <div class="dash-card__body">
-                                <div id="module-averages-chart" class="dash-modules"></div>
-                                <div id="theoretical-grades-list" class="dash-grades" hidden></div>
-                                <div id="practical-grades-list" class="dash-grades" hidden></div>
+                        <div class="incor-kpi-grid">
+                            <!-- KPI: Frequência Geral -->
+                            <article class="incor-kpi-card" id="kpi-card-frequency" data-status="normal">
+                                <div class="incor-kpi-status-indicator"></div>
+                                <div class="incor-kpi-icon-wrapper incor-kpi-icon--blue">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                    </svg>
+                                </div>
+                                <div class="incor-kpi-content">
+                                    <div class="incor-kpi-value-row">
+                                        <strong class="incor-kpi-value" id="kpi-total-students">-</strong>
+                                        <span class="incor-kpi-status-badge" id="kpi-frequency-status">Normal</span>
+                                    </div>
+                                    <span class="incor-kpi-label">Alunos Matriculados</span>
+                                    <div class="incor-kpi-sublabel">
+                                        <span id="kpi-active-students">-</span> ativos no programa
+                                    </div>
+                                </div>
+                            </article>
+                            
+                            <!-- KPI: Pendências Urgentes -->
+                            <article class="incor-kpi-card" id="kpi-card-pending" data-status="normal">
+                                <div class="incor-kpi-status-indicator"></div>
+                                <div class="incor-kpi-icon-wrapper incor-kpi-icon--orange">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                    </svg>
+                                </div>
+                                <div class="incor-kpi-content">
+                                    <div class="incor-kpi-value-row">
+                                        <strong class="incor-kpi-value" id="kpi-pending-replacements">-</strong>
+                                        <span class="incor-kpi-status-badge" id="kpi-pending-status">Normal</span>
+                                    </div>
+                                    <span class="incor-kpi-label">Reposições Pendentes</span>
+                                    <div class="incor-kpi-sublabel">
+                                        Ações administrativas necessárias
+                                    </div>
+                                </div>
+                            </article>
+                            
+                            <!-- KPI: Alocação de Plantões -->
+                            <article class="incor-kpi-card" id="kpi-card-shifts" data-status="normal">
+                                <div class="incor-kpi-status-indicator"></div>
+                                <div class="incor-kpi-icon-wrapper incor-kpi-icon--green">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                    </svg>
+                                </div>
+                                <div class="incor-kpi-content">
+                                    <div class="incor-kpi-value-row">
+                                        <strong class="incor-kpi-value" id="kpi-today-shifts">-</strong>
+                                        <span class="incor-kpi-status-badge" id="kpi-shifts-status">Normal</span>
+                                    </div>
+                                    <span class="incor-kpi-label">Escalados Hoje</span>
+                                    <div class="incor-kpi-sublabel" id="kpi-shifts-sublabel">
+                                        Alocação da escala atual
+                                    </div>
+                                </div>
+                            </article>
+                            
+                            <!-- KPI: Média Teórica -->
+                            <article class="incor-kpi-card" id="kpi-card-theoretical" data-status="normal">
+                                <div class="incor-kpi-status-indicator"></div>
+                                <div class="incor-kpi-icon-wrapper incor-kpi-icon--amber">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                                    </svg>
+                                </div>
+                                <div class="incor-kpi-content">
+                                    <div class="incor-kpi-value-row">
+                                        <strong class="incor-kpi-value" id="kpi-avg-theoretical">-</strong>
+                                        <span class="incor-kpi-status-badge" id="kpi-theoretical-status">Normal</span>
+                                    </div>
+                                    <span class="incor-kpi-label">Média Teórica Geral</span>
+                                    <div class="incor-kpi-progress-bar">
+                                        <div class="incor-kpi-progress-fill" id="db-theoretical-bar" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+                            </article>
+                            
+                            <!-- KPI: Média Prática -->
+                            <article class="incor-kpi-card" id="kpi-card-practical" data-status="normal">
+                                <div class="incor-kpi-status-indicator"></div>
+                                <div class="incor-kpi-icon-wrapper incor-kpi-icon--cyan">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                                    </svg>
+                                </div>
+                                <div class="incor-kpi-content">
+                                    <div class="incor-kpi-value-row">
+                                        <strong class="incor-kpi-value" id="kpi-avg-practical">-</strong>
+                                        <span class="incor-kpi-status-badge" id="kpi-practical-status">Normal</span>
+                                    </div>
+                                    <span class="incor-kpi-label">Média Prática Geral</span>
+                                    <div class="incor-kpi-progress-bar">
+                                        <div class="incor-kpi-progress-fill incor-kpi-progress--cyan" id="db-practical-bar" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+                            </article>
+                        </div>
+                    </section>
+
+                    <!-- ═══════════════════════════════════════════════════════════════
+                         NÍVEL 2: DATA STORYTELLING (Mapeamento da Jornada do Aluno)
+                         Narrativa Visual: Evolução Individual vs Média da Turma
+                         ═══════════════════════════════════════════════════════════════ -->
+                    <section class="incor-storytelling-section" aria-label="Análise de Performance">
+                        <div class="incor-storytelling-grid">
+                            
+                            <!-- Performance Evolution Chart -->
+                            <article class="incor-story-card incor-story-card--primary">
+                                <header class="incor-story-header">
+                                    <div class="incor-story-title-group">
+                                        <div class="incor-story-icon">
+                                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h3 class="incor-story-title">Desempenho por Módulos</h3>
+                                            <p class="incor-story-subtitle">Comparativo de médias teóricas e práticas</p>
+                                        </div>
+                                    </div>
+                                    <nav class="incor-story-tabs">
+                                        <button class="incor-story-tab incor-story-tab--active" data-tab="modulos">Módulos</button>
+                                        <button class="incor-story-tab" data-tab="teoricas">Teóricas</button>
+                                        <button class="incor-story-tab" data-tab="praticas">Práticas</button>
+                                    </nav>
+                                </header>
+                                <div class="incor-story-body">
+                                    <div id="module-averages-chart" class="incor-modules-grid"></div>
+                                    <div id="theoretical-grades-list" class="incor-grades-list" hidden></div>
+                                    <div id="practical-grades-list" class="incor-grades-list" hidden></div>
+                                </div>
+                            </article>
+                            
+                            <!-- Course Distribution -->
+                            <article class="incor-story-card incor-story-card--secondary">
+                                <header class="incor-story-header">
+                                    <div class="incor-story-title-group">
+                                        <div class="incor-story-icon incor-story-icon--green">
+                                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/>
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h3 class="incor-story-title">Distribuição por Curso</h3>
+                                            <p class="incor-story-subtitle">Composição do corpo discente</p>
+                                        </div>
+                                    </div>
+                                </header>
+                                <div class="incor-story-body">
+                                    <div id="course-distribution-chart" class="incor-distribution-chart"></div>
+                                </div>
+                            </article>
+                            
+                            <!-- Pending Replacements Panel -->
+                            <article class="incor-story-card incor-story-card--alert">
+                                <header class="incor-story-header">
+                                    <div class="incor-story-title-group">
+                                        <div class="incor-story-icon incor-story-icon--orange">
+                                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h3 class="incor-story-title">Alunos com Pendências</h3>
+                                            <p class="incor-story-subtitle">Reposições aguardando agendamento</p>
+                                        </div>
+                                    </div>
+                                    <span class="incor-story-badge" id="pending-count-badge">0</span>
+                                </header>
+                                <div class="incor-story-body incor-story-body--scroll">
+                                    <div id="students-with-replacements-list" class="incor-pending-list"></div>
+                                </div>
+                            </article>
+                            
+                        </div>
+                    </section>
+
+                    <!-- ═══════════════════════════════════════════════════════════════
+                         NÍVEL 3: TABELA DE AÇÃO IMEDIATA (Hub de Interação)
+                         Atividades Recentes da Secretaria com Tags de Status
+                         ═══════════════════════════════════════════════════════════════ -->
+                    <section class="incor-action-section" aria-label="Atividades Recentes">
+                        <header class="incor-action-header">
+                            <div class="incor-action-title-group">
+                                <div class="incor-action-icon">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h2 class="incor-action-title">Atividades Recentes da Secretaria</h2>
+                                    <p class="incor-action-subtitle">Registros de ausências e reposições para ação administrativa</p>
+                                </div>
                             </div>
-                        </section>
-
-                        <!-- Distribuição por Curso -->
-                        <section class="dash-card">
-                            <header class="dash-card__header">
-                                <h2>Distribuição por Curso</h2>
-                            </header>
-                            <div class="dash-card__body">
-                                <div id="course-distribution-chart" class="dash-distribution"></div>
+                            <div class="incor-action-filters">
+                                <button class="incor-action-filter incor-action-filter--active" data-filter="all">
+                                    Todos
+                                </button>
+                                <button class="incor-action-filter" data-filter="pending">
+                                    <span class="incor-action-filter-dot incor-action-filter-dot--pending"></span>
+                                    Pendentes
+                                </button>
+                                <button class="incor-action-filter" data-filter="completed">
+                                    <span class="incor-action-filter-dot incor-action-filter-dot--completed"></span>
+                                    Concluídas
+                                </button>
                             </div>
-                        </section>
-
-                        <!-- Alunos com Reposições -->
-                        <section class="dash-card dash-card--scroll">
-                            <header class="dash-card__header">
-                                <h2>Alunos com Reposições</h2>
-                                <span id="pending-count-badge" class="dash-badge">0</span>
-                            </header>
-                            <div class="dash-card__body dash-card__body--scroll">
-                                <div id="students-with-replacements-list" class="dash-pending"></div>
+                        </header>
+                        
+                        <div class="incor-action-table-wrapper">
+                            <table class="incor-action-table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" class="incor-action-th--status">Status</th>
+                                        <th scope="col" class="incor-action-th--name">Aluno</th>
+                                        <th scope="col" class="incor-action-th--type">Tipo</th>
+                                        <th scope="col" class="incor-action-th--local">Local</th>
+                                        <th scope="col" class="incor-action-th--date">Data</th>
+                                        <th scope="col" class="incor-action-th--actions">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recent-absences-list" class="incor-action-tbody">
+                                    <!-- Populated by JavaScript -->
+                                </tbody>
+                            </table>
+                            <div id="incor-action-empty" class="incor-action-empty" hidden>
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                                <p>Nenhum registro de atividade encontrado.</p>
                             </div>
-                        </section>
+                        </div>
+                    </section>
 
-                        <!-- Registros Recentes -->
-                        <section class="dash-card dash-card--full">
-                            <header class="dash-card__header">
-                                <h2>Registros Recentes</h2>
-                            </header>
-                            <div class="dash-card__body">
-                                <ul id="recent-absences-list" class="dash-recent"></ul>
-                            </div>
-                        </section>
-
-                    </div>
-
-                    <!-- Hidden elements for JS compatibility -->
-                    <div hidden id="db-theoretical-bar"></div>
-                    <div hidden id="db-practical-bar"></div>
                 </div>
 
                 <!-- View: Lista de Alunos -->
