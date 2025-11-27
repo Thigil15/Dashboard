@@ -1034,6 +1034,8 @@ const appState = {
 
 const ATRASO_THRESHOLD_MINUTES = 10;
 const TOTAL_ESCALADOS = 25;
+const MAX_RECENT_ACTIVITIES = 10;
+// MAX_PENDING_STUDENTS removed - now shows all students
 const pontoState = {
     rawRows: [],
     byDate: new Map(),
@@ -1293,7 +1295,156 @@ const pontoState = {
                 pontoNextButton.addEventListener('click', handlePontoNextDate);
             }
 
+            // Academic Performance tabs
+            const performanceTabs = document.querySelectorAll('.dash-tab');
+            performanceTabs.forEach(tab => {
+                tab.addEventListener('click', handleAcademicTabSwitch);
+            });
+
             console.log('[setupEventHandlers] Listeners configurados.');
+        }
+
+        // Handle academic performance tab switching
+        function handleAcademicTabSwitch(e) {
+            const tabName = e.target.getAttribute('data-tab');
+            if (!tabName) return;
+            
+            // Update active tab
+            document.querySelectorAll('.dash-tab').forEach(btn => {
+                btn.classList.toggle('dash-tab--active', btn.getAttribute('data-tab') === tabName);
+            });
+            
+            // Show/hide content
+            const modulesContainer = document.getElementById('module-averages-chart');
+            const theoreticalContainer = document.getElementById('theoretical-grades-list');
+            const practicalContainer = document.getElementById('practical-grades-list');
+            
+            if (modulesContainer) modulesContainer.hidden = tabName !== 'modulos';
+            if (theoreticalContainer) theoreticalContainer.hidden = tabName !== 'teoricas';
+            if (practicalContainer) practicalContainer.hidden = tabName !== 'praticas';
+            
+            // Render the grades list if needed
+            if (tabName === 'teoricas') {
+                renderTheoreticalGradesList();
+            } else if (tabName === 'praticas') {
+                renderPracticalGradesList();
+            }
+        }
+
+        // Render list of all students with theoretical grades
+        function renderTheoreticalGradesList() {
+            const container = document.getElementById('theoretical-grades-list');
+            if (!container) return;
+            
+            const activeStudents = appState.alunos.filter(s => s.Status === 'Ativo');
+            
+            if (activeStudents.length === 0) {
+                container.innerHTML = '<div class="dash-empty">Nenhum aluno ativo encontrado</div>';
+                return;
+            }
+            
+            // Calculate average for each student
+            const studentsWithGrades = activeStudents.map(student => {
+                let totalNota = 0;
+                let countNota = 0;
+                
+                Object.entries(student).forEach(([key, value]) => {
+                    if (key.toUpperCase().includes('MÉDIA') && key.toUpperCase().includes('FISIO')) {
+                        const nota = parseNota(value);
+                        if (nota > 0) {
+                            totalNota += nota;
+                            countNota++;
+                        }
+                    }
+                });
+                
+                return {
+                    email: student.EmailHC,
+                    nome: student.NomeCompleto || student.EmailHC,
+                    media: countNota > 0 ? (totalNota / countNota) : 0
+                };
+            }).sort((a, b) => b.media - a.media);
+            
+            let html = '';
+            studentsWithGrades.forEach((student, index) => {
+                const escapedName = escapeHtml(student.nome);
+                html += `
+                    <div class="dash-grade dash-grade--theoretical" data-email="${escapeHtml(student.email || '')}" data-index="${index}">
+                        <span class="dash-grade__name" title="${escapedName}">${escapedName}</span>
+                        <span class="dash-grade__value">${student.media > 0 ? student.media.toFixed(1) : '-'}</span>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            
+            // Add click handlers to navigate to student detail
+            container.querySelectorAll('.dash-grade').forEach(item => {
+                item.addEventListener('click', function() {
+                    const email = this.getAttribute('data-email');
+                    if (email && appState.alunosMap.has(email)) {
+                        showStudentDetail(email);
+                        setTimeout(() => switchStudentTab('notas-t'), 100);
+                    }
+                });
+            });
+        }
+
+        // Render list of all students with practical grades
+        function renderPracticalGradesList() {
+            const container = document.getElementById('practical-grades-list');
+            if (!container) return;
+            
+            const activeStudents = appState.alunos.filter(s => s.Status === 'Ativo');
+            
+            if (activeStudents.length === 0) {
+                container.innerHTML = '<div class="dash-empty">Nenhum aluno ativo encontrado</div>';
+                return;
+            }
+            
+            // Get practical grades from notasPraticas
+            const studentsWithGrades = activeStudents.map(student => {
+                const email = student.EmailHC;
+                const praticaData = appState.notasPraticas.find(np => 
+                    normalizeString(np.EmailHC) === normalizeString(email) ||
+                    normalizeString(np.NomeCompleto) === normalizeString(student.NomeCompleto)
+                );
+                
+                let media = 0;
+                if (praticaData && praticaData['Média Geral']) {
+                    media = parseNota(praticaData['Média Geral']);
+                }
+                
+                return {
+                    email: email,
+                    nome: student.NomeCompleto || email,
+                    media: media
+                };
+            }).sort((a, b) => b.media - a.media);
+            
+            let html = '';
+            studentsWithGrades.forEach((student, index) => {
+                const escapedName = escapeHtml(student.nome);
+                html += `
+                    <div class="dash-grade dash-grade--practical" data-email="${escapeHtml(student.email || '')}" data-index="${index}">
+                        <span class="dash-grade__name" title="${escapedName}">${escapedName}</span>
+                        <span class="dash-grade__value">${student.media > 0 ? student.media.toFixed(1) : '-'}</span>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            
+            // Add click handlers to navigate to student detail
+            container.querySelectorAll('.dash-grade').forEach(item => {
+                item.addEventListener('click', function() {
+                    const email = this.getAttribute('data-email');
+                    if (email && appState.alunosMap.has(email)) {
+                        showStudentDetail(email);
+                        setTimeout(() => switchStudentTab('notas-p'), 100);
+                    }
+                });
+            });
         }
 
         async function handleLogin(event) {
@@ -2108,6 +2259,7 @@ const pontoState = {
         // Render clickable list of students with pending replacements
         function renderStudentsWithReplacements() {
             const container = document.getElementById('students-with-replacements-list');
+            const countBadge = document.getElementById('pending-count-badge');
             if (!container) return;
             
             // Group pending replacements by student
@@ -2126,42 +2278,35 @@ const pontoState = {
             
             const studentsArray = Object.values(pendingByStudent).sort((a, b) => b.count - a.count);
             
+            // Update count badge
+            if (countBadge) {
+                countBadge.textContent = studentsArray.length;
+            }
+            
             if (studentsArray.length === 0) {
-                container.innerHTML = '<div class="db-students-empty">Nenhuma reposição pendente</div>';
+                container.innerHTML = '<div class="dash-pending__empty">Nenhuma reposição pendente</div>';
                 return;
             }
             
-            // Store student data for click handling (avoids XSS from inline onclick)
-            const MAX_VISIBLE_STUDENTS = 6;
-            window._pendingStudentsData = studentsArray.slice(0, MAX_VISIBLE_STUDENTS);
+            // Store ALL student data for click handling (no limit now)
+            window._pendingStudentsData = studentsArray;
             
             let html = '';
-            studentsArray.slice(0, MAX_VISIBLE_STUDENTS).forEach((student, index) => {
-                // Show full name - user requested no truncation
-                const displayName = student.nome;
-                // Escape HTML entities to prevent XSS
-                const escapedDisplayName = displayName.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-                const escapedFullName = student.nome.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+            studentsArray.forEach((student, index) => {
+                const escapedName = escapeHtml(student.nome);
                 
                 html += `
-                    <div class="db-student-link" data-student-index="${index}">
-                        <span class="db-student-link-name" title="${escapedFullName}">${escapedDisplayName}</span>
-                        <span class="db-student-link-count">${student.count}</span>
-                        <svg class="db-student-link-arrow" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                        </svg>
+                    <div class="dash-pending__item" data-student-index="${index}">
+                        <span class="dash-pending__name" title="${escapedName}">${escapedName}</span>
+                        <span class="dash-pending__count">${student.count}</span>
                     </div>
                 `;
             });
             
-            if (studentsArray.length > MAX_VISIBLE_STUDENTS) {
-                html += `<div class="db-students-empty">+ ${studentsArray.length - MAX_VISIBLE_STUDENTS} mais...</div>`;
-            }
-            
             container.innerHTML = html;
             
-            // Add click event listeners (safer than inline onclick)
-            container.querySelectorAll('.db-student-link[data-student-index]').forEach(link => {
+            // Add click event listeners
+            container.querySelectorAll('.dash-pending__item[data-student-index]').forEach(link => {
                 link.addEventListener('click', function() {
                     const index = parseInt(this.getAttribute('data-student-index'), 10);
                     const student = window._pendingStudentsData[index];
@@ -2204,33 +2349,25 @@ const pontoState = {
             if (!c) return;
             
             if (!distribution || distribution.length === 0) {
-                c.innerHTML = '<p class="db-students-empty">Sem dados de distribuição por curso.</p>';
+                c.innerHTML = '<p class="dash-empty">Sem dados de distribuição por curso.</p>';
                 return;
             }
             
-            // Show full course names - user specifically requested no truncation
-            const colors = [
-                'db-dist-bar-1', 'db-dist-bar-2', 'db-dist-bar-3', 
-                'db-dist-bar-4', 'db-dist-bar-5', 'db-dist-bar-6'
-            ];
             const maxCount = Math.max(...distribution.map(d => d.count));
             
+            const MAX_DISTRIBUTION_COLORS = 6;
             let html = '';
             distribution.forEach((item, i) => {
                 const barWidth = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
-                const colorClass = colors[i % colors.length];
-                // Show full course name - no truncation as per user request
-                const courseName = item.course;
+                const colorNum = (i % MAX_DISTRIBUTION_COLORS) + 1;
                 
                 html += `
-                    <div class="db-dist-bar-item">
-                        <span class="db-dist-bar-label" title="${item.course}">${courseName}</span>
-                        <div class="db-dist-bar-track">
-                            <div class="db-dist-bar-fill ${colorClass}" style="width: ${barWidth}%;">
-                                <span>${item.percentage.toFixed(0)}%</span>
-                            </div>
+                    <div class="dash-dist">
+                        <span class="dash-dist__label" title="${escapeHtml(item.course)}">${escapeHtml(item.course)}</span>
+                        <div class="dash-dist__bar">
+                            <div class="dash-dist__fill dash-dist__fill--${colorNum}" style="width: ${barWidth}%;"></div>
                         </div>
-                        <span class="db-dist-bar-count">${item.count}</span>
+                        <span class="dash-dist__count">${escapeHtml(String(item.count))}</span>
                     </div>
                 `;
             });
@@ -2242,43 +2379,39 @@ const pontoState = {
             const container = document.getElementById('module-averages-chart');
             if (!container) return;
             let html = '';
+            
+            // Render theoretical averages
             Object.entries(tAvgs)
                 .filter(([key]) => key.toUpperCase().includes('MÉDIA'))
                 .sort(([keyA], [keyB]) => keyA.localeCompare(keyB)) 
                 .forEach(([key, value]) => {
                     if (value > 0) {
+                        const moduleName = key.replace(/MÉDIA\s*/i, '').replace(/\s*FISIO/i, ' Fisio').trim();
                         html += `
-                        <div class="radial-card-small">
-                            <div class="radial-progress-small" style="--value:${value * 10}; --progress-color: var(--accent-orange);">
-                                <span class="radial-progress-small-value" style="color: var(--accent-orange);">${value.toFixed(1)}</span>
-                            </div>
-                            <div>
-                                <span class="radial-label">${key}</span>
-                                <span class="block text-xs text-slate-500">Média Teórica</span>
-                            </div>
+                        <div class="dash-module">
+                            <div class="dash-module__value">${value.toFixed(1)}</div>
+                            <div class="dash-module__name">${moduleName || 'Teórica'}</div>
                         </div>
                         `;
                     }
                 });
+            
+            // Render practical averages
             Object.entries(pAvgs)
                 .sort(([keyA], [keyB]) => keyA.localeCompare(keyB)) 
                 .forEach(([key, value]) => {
                     if (value > 0) {
                         html += `
-                        <div class="radial-card-small">
-                            <div class="radial-progress-small" style="--value:${value * 10}; --progress-color: var(--accent-blue);">
-                                <span class="radial-progress-small-value" style="color: var(--accent-blue);">${value.toFixed(1)}</span>
-                            </div>
-                            <div>
-                                <span class="radial-label">${key}</span>
-                                <span class="block text-xs text-slate-500">Média Prática</span>
-                            </div>
+                        <div class="dash-module">
+                            <div class="dash-module__value dash-module__value--practical">${value.toFixed(1)}</div>
+                            <div class="dash-module__name">${escapeHtml(key)}</div>
                         </div>
                         `;
                     }
                 });
+            
             if (html === '') {
-                container.innerHTML = '<p class="text-slate-500 text-sm italic col-span-full">Nenhuma média de módulo calculada para alunos ativos.</p>';
+                container.innerHTML = '<p class="dash-empty">Nenhuma média de módulo calculada.</p>';
                 return;
             }
             container.innerHTML = html;
@@ -2288,7 +2421,7 @@ const pontoState = {
              try {
                  const l=document.getElementById('recent-absences-list');
                  if(!appState.ausenciasReposicoes||appState.ausenciasReposicoes.length===0){
-                     l.innerHTML='<li class="text-slate-500 italic p-2">Nenhum registro de ausências ou reposições.</li>';
+                     l.innerHTML='<li class="dash-empty">Nenhum registro de ausências ou reposições.</li>';
                      return;
                  } 
                  const sorted=[...appState.ausenciasReposicoes]
@@ -2300,18 +2433,28 @@ const pontoState = {
                          return new Date(dB+'T00:00:00')-new Date(dA+'T00:00:00');
                      }); 
                 
-                 // Show more items since we have more space now
-                 l.innerHTML=sorted.slice(0,8).map(i=>{
+                 l.innerHTML=sorted.slice(0, MAX_RECENT_ACTIVITIES).map(i=>{
                      const al = appState.alunos.find(a => 
                          (i.EmailHC && normalizeString(a.EmailHC) === normalizeString(i.EmailHC)) ||
                          (i.NomeCompleto && normalizeString(a.NomeCompleto) === normalizeString(i.NomeCompleto))
                      );
                      const n = al ? al.NomeCompleto : (i.NomeCompleto || i.EmailHC); 
-                     const iP=!i.DataReposicaoISO; 
-                     const sB=iP?'<span class="badge badge-yellow ml-2">Pendente</span>':'<span class="badge badge-green ml-2">Reposto</span>'; 
+                     const isPending=!i.DataReposicaoISO; 
                      const dT=i.DataReposicaoISO||i.DataAusenciaISO; 
-                     const fD=dT?new Date(dT+'T00:00:00').toLocaleDateString('pt-BR'):'Data Indef.'; 
-                     return `<li class="text-xs"><div class="flex justify-between items-center mb-0.5"><span class="font-semibold text-slate-700 truncate pr-2" title="${n}">${n}</span><span class="text-slate-500 text-[11px] flex-shrink-0">${fD}</span></div><div class="flex justify-between items-center"><span class="text-slate-500 truncate pr-2" title="${i.Motivo||''}">${iP?'Ausência':'Reposição'} (${i.Local||'N/A'})</span>${sB}</div></li>`;
+                     const fD=dT?new Date(dT+'T00:00:00').toLocaleDateString('pt-BR'):'--/--'; 
+                     const iconClass = isPending ? 'dash-recent__icon--absent' : 'dash-recent__icon--makeup';
+                     const iconSvg = isPending 
+                         ? '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>'
+                         : '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>';
+                     
+                     return `<li class="dash-recent__item">
+                         <div class="dash-recent__icon ${iconClass}">${iconSvg}</div>
+                         <div class="dash-recent__info">
+                             <span class="dash-recent__name" title="${escapeHtml(n)}">${escapeHtml(n)}</span>
+                             <span class="dash-recent__detail">${isPending ? 'Ausência' : 'Reposição'} • ${escapeHtml(i.Local||'N/A')}</span>
+                         </div>
+                         <span class="dash-recent__date">${fD}</span>
+                     </li>`;
                  }).join('');
              } catch(e) { console.error("[renderRecentAbsences] Erro:", e); showError("Erro ao renderizar registros recentes."); }
         }
