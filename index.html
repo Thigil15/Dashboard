@@ -196,16 +196,6 @@
                     <span class="sidebar-link-text">Escala</span>
                 </a>
             </nav>
-            
-            <!-- Logout button at bottom of sidebar -->
-            <div class="sidebar-footer">
-                <button id="logout-button" class="sidebar-link logout-btn">
-                    <svg class="sidebar-link-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
-                    <span class="sidebar-link-text">Sair do Sistema</span>
-                </button>
-            </div>
         </aside>
 
         <!-- Conteúdo Principal -->
@@ -320,26 +310,6 @@
                                     <span class="incor-kpi-label">Reposições Pendentes</span>
                                     <div class="incor-kpi-sublabel">
                                         Ações administrativas necessárias
-                                    </div>
-                                </div>
-                            </article>
-                            
-                            <!-- KPI: Alocação de Plantões -->
-                            <article class="incor-kpi-card" id="kpi-card-shifts" data-status="normal">
-                                <div class="incor-kpi-status-indicator"></div>
-                                <div class="incor-kpi-icon-wrapper incor-kpi-icon--green">
-                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                    </svg>
-                                </div>
-                                <div class="incor-kpi-content">
-                                    <div class="incor-kpi-value-row">
-                                        <strong class="incor-kpi-value" id="kpi-today-shifts">-</strong>
-                                        <span class="incor-kpi-status-badge" id="kpi-shifts-status">Normal</span>
-                                    </div>
-                                    <span class="incor-kpi-label">Escalados Hoje</span>
-                                    <div class="incor-kpi-sublabel" id="kpi-shifts-sublabel">
-                                        Alocação da escala atual
                                     </div>
                                 </div>
                             </article>
@@ -462,87 +432,6 @@
                                 </div>
                             </article>
                             
-                        </div>
-                    </section>
-
-                    <!-- ═══════════════════════════════════════════════════════════════
-                         NÍVEL 3: DESEMPENHO ACADÊMICO GERAL
-                         Visão geral das médias teóricas e práticas dos alunos
-                         ═══════════════════════════════════════════════════════════════ -->
-                    <section class="incor-academic-section" aria-label="Desempenho Acadêmico">
-                        <header class="incor-academic-header">
-                            <div class="incor-academic-title-group">
-                                <div class="incor-academic-icon">
-                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h2 class="incor-academic-title">Desempenho Acadêmico Geral</h2>
-                                    <p class="incor-academic-subtitle">Médias teóricas e práticas dos alunos ativos</p>
-                                </div>
-                            </div>
-                        </header>
-                        
-                        <div class="incor-academic-content">
-                            <!-- Academic Performance Overview Grid -->
-                            <div class="incor-academic-grid" id="academic-performance-grid">
-                                <!-- Overall Average Card -->
-                                <div class="incor-academic-card incor-academic-card--main">
-                                    <div class="incor-academic-ring-container">
-                                        <div class="incor-academic-ring" id="academic-ring">
-                                            <div class="incor-academic-ring-value" id="academic-overall-avg">-</div>
-                                            <div class="incor-academic-ring-label">Média Geral</div>
-                                        </div>
-                                    </div>
-                                    <div class="incor-academic-ring-info">
-                                        <span class="incor-academic-ring-status" id="academic-status-badge">Carregando...</span>
-                                        <span class="incor-academic-ring-subtitle">Baseado em <span id="academic-student-count">0</span> alunos ativos</span>
-                                    </div>
-                                </div>
-                                
-                                <!-- Theoretical Average Card -->
-                                <div class="incor-academic-card incor-academic-card--theoretical">
-                                    <div class="incor-academic-card-header">
-                                        <div class="incor-academic-card-icon incor-academic-card-icon--amber">
-                                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-                                            </svg>
-                                        </div>
-                                        <span class="incor-academic-card-label">Média Teórica</span>
-                                    </div>
-                                    <div class="incor-academic-card-value" id="academic-theoretical-avg">-</div>
-                                    <div class="incor-academic-card-progress">
-                                        <div class="incor-academic-card-progress-fill incor-academic-card-progress-fill--amber" id="academic-theoretical-bar" style="width: 0%;"></div>
-                                    </div>
-                                    <span class="incor-academic-card-detail" id="academic-theoretical-count">0 módulos</span>
-                                </div>
-                                
-                                <!-- Practical Average Card -->
-                                <div class="incor-academic-card incor-academic-card--practical">
-                                    <div class="incor-academic-card-header">
-                                        <div class="incor-academic-card-icon incor-academic-card-icon--cyan">
-                                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
-                                            </svg>
-                                        </div>
-                                        <span class="incor-academic-card-label">Média Prática</span>
-                                    </div>
-                                    <div class="incor-academic-card-value" id="academic-practical-avg">-</div>
-                                    <div class="incor-academic-card-progress">
-                                        <div class="incor-academic-card-progress-fill incor-academic-card-progress-fill--cyan" id="academic-practical-bar" style="width: 0%;"></div>
-                                    </div>
-                                    <span class="incor-academic-card-detail" id="academic-practical-count">0 práticas</span>
-                                </div>
-                            </div>
-                            
-                            <!-- Empty State -->
-                            <div id="academic-empty-state" class="incor-academic-empty" hidden>
-                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-                                </svg>
-                                <p>Nenhuma avaliação disponível para calcular o desempenho acadêmico.</p>
-                            </div>
                         </div>
                     </section>
 
