@@ -1035,7 +1035,7 @@ const appState = {
 const ATRASO_THRESHOLD_MINUTES = 10;
 const TOTAL_ESCALADOS = 25;
 const MAX_RECENT_ACTIVITIES = 10;
-const MAX_PENDING_STUDENTS = 8;
+// MAX_PENDING_STUDENTS removed - now shows all students
 const pontoState = {
     rawRows: [],
     byDate: new Map(),
@@ -1295,7 +1295,156 @@ const pontoState = {
                 pontoNextButton.addEventListener('click', handlePontoNextDate);
             }
 
+            // Academic Performance tabs
+            const performanceTabs = document.querySelectorAll('.pro-tab-btn');
+            performanceTabs.forEach(tab => {
+                tab.addEventListener('click', handleAcademicTabSwitch);
+            });
+
             console.log('[setupEventHandlers] Listeners configurados.');
+        }
+
+        // Handle academic performance tab switching
+        function handleAcademicTabSwitch(e) {
+            const tabName = e.target.getAttribute('data-tab');
+            if (!tabName) return;
+            
+            // Update active tab
+            document.querySelectorAll('.pro-tab-btn').forEach(btn => {
+                btn.classList.toggle('pro-tab-active', btn.getAttribute('data-tab') === tabName);
+            });
+            
+            // Show/hide content
+            const modulesContainer = document.getElementById('module-averages-chart');
+            const theoreticalContainer = document.getElementById('theoretical-grades-list');
+            const practicalContainer = document.getElementById('practical-grades-list');
+            
+            if (modulesContainer) modulesContainer.style.display = tabName === 'modulos' ? 'grid' : 'none';
+            if (theoreticalContainer) theoreticalContainer.style.display = tabName === 'teoricas' ? 'flex' : 'none';
+            if (practicalContainer) practicalContainer.style.display = tabName === 'praticas' ? 'flex' : 'none';
+            
+            // Render the grades list if needed
+            if (tabName === 'teoricas') {
+                renderTheoreticalGradesList();
+            } else if (tabName === 'praticas') {
+                renderPracticalGradesList();
+            }
+        }
+
+        // Render list of all students with theoretical grades
+        function renderTheoreticalGradesList() {
+            const container = document.getElementById('theoretical-grades-list');
+            if (!container) return;
+            
+            const activeStudents = appState.alunos.filter(s => s.Status === 'Ativo');
+            
+            if (activeStudents.length === 0) {
+                container.innerHTML = '<div class="pro-pending-empty">Nenhum aluno ativo encontrado</div>';
+                return;
+            }
+            
+            // Calculate average for each student
+            const studentsWithGrades = activeStudents.map(student => {
+                let totalNota = 0;
+                let countNota = 0;
+                
+                Object.entries(student).forEach(([key, value]) => {
+                    if (key.toUpperCase().includes('MÉDIA') && key.toUpperCase().includes('FISIO')) {
+                        const nota = parseNota(value);
+                        if (nota > 0) {
+                            totalNota += nota;
+                            countNota++;
+                        }
+                    }
+                });
+                
+                return {
+                    email: student.EmailHC,
+                    nome: student.NomeCompleto || student.EmailHC,
+                    media: countNota > 0 ? (totalNota / countNota) : 0
+                };
+            }).sort((a, b) => b.media - a.media);
+            
+            let html = '';
+            studentsWithGrades.forEach((student, index) => {
+                const escapedName = escapeHtml(student.nome);
+                html += `
+                    <div class="pro-grade-item theoretical" data-email="${escapeHtml(student.email || '')}" data-index="${index}">
+                        <span class="pro-grade-name" title="${escapedName}">${escapedName}</span>
+                        <span class="pro-grade-value theoretical">${student.media > 0 ? student.media.toFixed(1) : '-'}</span>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            
+            // Add click handlers to navigate to student detail
+            container.querySelectorAll('.pro-grade-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const email = this.getAttribute('data-email');
+                    if (email && appState.alunosMap.has(email)) {
+                        showStudentDetail(email);
+                        setTimeout(() => switchStudentTab('notas-t'), 100);
+                    }
+                });
+            });
+        }
+
+        // Render list of all students with practical grades
+        function renderPracticalGradesList() {
+            const container = document.getElementById('practical-grades-list');
+            if (!container) return;
+            
+            const activeStudents = appState.alunos.filter(s => s.Status === 'Ativo');
+            
+            if (activeStudents.length === 0) {
+                container.innerHTML = '<div class="pro-pending-empty">Nenhum aluno ativo encontrado</div>';
+                return;
+            }
+            
+            // Get practical grades from notasPraticas
+            const studentsWithGrades = activeStudents.map(student => {
+                const email = student.EmailHC;
+                const praticaData = appState.notasPraticas.find(np => 
+                    normalizeString(np.EmailHC) === normalizeString(email) ||
+                    normalizeString(np.NomeCompleto) === normalizeString(student.NomeCompleto)
+                );
+                
+                let media = 0;
+                if (praticaData && praticaData['Média Geral']) {
+                    media = parseNota(praticaData['Média Geral']);
+                }
+                
+                return {
+                    email: email,
+                    nome: student.NomeCompleto || email,
+                    media: media
+                };
+            }).sort((a, b) => b.media - a.media);
+            
+            let html = '';
+            studentsWithGrades.forEach((student, index) => {
+                const escapedName = escapeHtml(student.nome);
+                html += `
+                    <div class="pro-grade-item practical" data-email="${escapeHtml(student.email || '')}" data-index="${index}">
+                        <span class="pro-grade-name" title="${escapedName}">${escapedName}</span>
+                        <span class="pro-grade-value practical">${student.media > 0 ? student.media.toFixed(1) : '-'}</span>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            
+            // Add click handlers to navigate to student detail
+            container.querySelectorAll('.pro-grade-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const email = this.getAttribute('data-email');
+                    if (email && appState.alunosMap.has(email)) {
+                        showStudentDetail(email);
+                        setTimeout(() => switchStudentTab('notas-p'), 100);
+                    }
+                });
+            });
         }
 
         async function handleLogin(event) {
@@ -2110,6 +2259,7 @@ const pontoState = {
         // Render clickable list of students with pending replacements
         function renderStudentsWithReplacements() {
             const container = document.getElementById('students-with-replacements-list');
+            const countBadge = document.getElementById('pending-count-badge');
             if (!container) return;
             
             // Group pending replacements by student
@@ -2128,31 +2278,30 @@ const pontoState = {
             
             const studentsArray = Object.values(pendingByStudent).sort((a, b) => b.count - a.count);
             
+            // Update count badge
+            if (countBadge) {
+                countBadge.textContent = studentsArray.length;
+            }
+            
             if (studentsArray.length === 0) {
                 container.innerHTML = '<div class="pro-pending-empty">Nenhuma reposição pendente</div>';
                 return;
             }
             
-            // Store student data for click handling
-            window._pendingStudentsData = studentsArray.slice(0, MAX_PENDING_STUDENTS);
+            // Store ALL student data for click handling (no limit now)
+            window._pendingStudentsData = studentsArray;
             
             let html = '';
-            studentsArray.slice(0, MAX_PENDING_STUDENTS).forEach((student, index) => {
-                const displayName = student.nome;
-                const escapedDisplayName = displayName.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-                const escapedFullName = student.nome.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+            studentsArray.forEach((student, index) => {
+                const escapedName = escapeHtml(student.nome);
                 
                 html += `
                     <div class="pro-pending-item" data-student-index="${index}">
-                        <span class="pro-pending-name" title="${escapedFullName}">${escapedDisplayName}</span>
+                        <span class="pro-pending-name" title="${escapedName}">${escapedName}</span>
                         <span class="pro-pending-count">${student.count}</span>
                     </div>
                 `;
             });
-            
-            if (studentsArray.length > MAX_PENDING_STUDENTS) {
-                html += `<div class="pro-pending-empty">+ ${studentsArray.length - MAX_PENDING_STUDENTS} mais...</div>`;
-            }
             
             container.innerHTML = html;
             

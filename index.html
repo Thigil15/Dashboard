@@ -287,12 +287,23 @@
                         
                         <!-- Coluna Esquerda: Desempenho Acadêmico -->
                         <div class="pro-panel pro-panel-performance">
-                            <header class="pro-panel-header">
+                            <header class="pro-panel-header pro-panel-header-clickable">
                                 <h2 class="pro-panel-title">Desempenho Acadêmico</h2>
+                                <div class="pro-panel-tabs">
+                                    <button class="pro-tab-btn pro-tab-active" data-tab="modulos">Módulos</button>
+                                    <button class="pro-tab-btn" data-tab="teoricas">Teóricas</button>
+                                    <button class="pro-tab-btn" data-tab="praticas">Práticas</button>
+                                </div>
                             </header>
                             <div class="pro-panel-body">
                                 <div id="module-averages-chart" class="pro-modules-grid">
                                     <!-- Módulos serão renderizados via JavaScript -->
+                                </div>
+                                <div id="theoretical-grades-list" class="pro-grades-list" style="display: none;">
+                                    <!-- Notas teóricas serão renderizadas via JavaScript -->
+                                </div>
+                                <div id="practical-grades-list" class="pro-grades-list" style="display: none;">
+                                    <!-- Notas práticas serão renderizadas via JavaScript -->
                                 </div>
                             </div>
                         </div>
@@ -310,11 +321,12 @@
                         </div>
 
                         <!-- Coluna Direita: Atividades e Pendências -->
-                        <div class="pro-panel pro-panel-activities">
+                        <div class="pro-panel pro-panel-activities pro-panel-scrollable">
                             <header class="pro-panel-header">
                                 <h2 class="pro-panel-title">Alunos com Reposições</h2>
+                                <span id="pending-count-badge" class="pro-count-badge">0</span>
                             </header>
-                            <div class="pro-panel-body">
+                            <div class="pro-panel-body pro-panel-body-scroll">
                                 <div id="students-with-replacements-list" class="pro-pending-list">
                                     <!-- Lista será preenchida via JavaScript -->
                                 </div>
