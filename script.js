@@ -1296,7 +1296,7 @@ const pontoState = {
             }
 
             // Academic Performance tabs
-            const performanceTabs = document.querySelectorAll('.pro-tab-btn');
+            const performanceTabs = document.querySelectorAll('.dash-tab');
             performanceTabs.forEach(tab => {
                 tab.addEventListener('click', handleAcademicTabSwitch);
             });
@@ -1310,8 +1310,8 @@ const pontoState = {
             if (!tabName) return;
             
             // Update active tab
-            document.querySelectorAll('.pro-tab-btn').forEach(btn => {
-                btn.classList.toggle('pro-tab-active', btn.getAttribute('data-tab') === tabName);
+            document.querySelectorAll('.dash-tab').forEach(btn => {
+                btn.classList.toggle('dash-tab--active', btn.getAttribute('data-tab') === tabName);
             });
             
             // Show/hide content
@@ -1319,9 +1319,9 @@ const pontoState = {
             const theoreticalContainer = document.getElementById('theoretical-grades-list');
             const practicalContainer = document.getElementById('practical-grades-list');
             
-            if (modulesContainer) modulesContainer.style.display = tabName === 'modulos' ? 'grid' : 'none';
-            if (theoreticalContainer) theoreticalContainer.style.display = tabName === 'teoricas' ? 'flex' : 'none';
-            if (practicalContainer) practicalContainer.style.display = tabName === 'praticas' ? 'flex' : 'none';
+            if (modulesContainer) modulesContainer.hidden = tabName !== 'modulos';
+            if (theoreticalContainer) theoreticalContainer.hidden = tabName !== 'teoricas';
+            if (practicalContainer) practicalContainer.hidden = tabName !== 'praticas';
             
             // Render the grades list if needed
             if (tabName === 'teoricas') {
@@ -1339,7 +1339,7 @@ const pontoState = {
             const activeStudents = appState.alunos.filter(s => s.Status === 'Ativo');
             
             if (activeStudents.length === 0) {
-                container.innerHTML = '<div class="pro-pending-empty">Nenhum aluno ativo encontrado</div>';
+                container.innerHTML = '<div class="dash-empty">Nenhum aluno ativo encontrado</div>';
                 return;
             }
             
@@ -1369,9 +1369,9 @@ const pontoState = {
             studentsWithGrades.forEach((student, index) => {
                 const escapedName = escapeHtml(student.nome);
                 html += `
-                    <div class="pro-grade-item theoretical" data-email="${escapeHtml(student.email || '')}" data-index="${index}">
-                        <span class="pro-grade-name" title="${escapedName}">${escapedName}</span>
-                        <span class="pro-grade-value theoretical">${student.media > 0 ? student.media.toFixed(1) : '-'}</span>
+                    <div class="dash-grade dash-grade--theoretical" data-email="${escapeHtml(student.email || '')}" data-index="${index}">
+                        <span class="dash-grade__name" title="${escapedName}">${escapedName}</span>
+                        <span class="dash-grade__value">${student.media > 0 ? student.media.toFixed(1) : '-'}</span>
                     </div>
                 `;
             });
@@ -1379,7 +1379,7 @@ const pontoState = {
             container.innerHTML = html;
             
             // Add click handlers to navigate to student detail
-            container.querySelectorAll('.pro-grade-item').forEach(item => {
+            container.querySelectorAll('.dash-grade').forEach(item => {
                 item.addEventListener('click', function() {
                     const email = this.getAttribute('data-email');
                     if (email && appState.alunosMap.has(email)) {
@@ -1398,7 +1398,7 @@ const pontoState = {
             const activeStudents = appState.alunos.filter(s => s.Status === 'Ativo');
             
             if (activeStudents.length === 0) {
-                container.innerHTML = '<div class="pro-pending-empty">Nenhum aluno ativo encontrado</div>';
+                container.innerHTML = '<div class="dash-empty">Nenhum aluno ativo encontrado</div>';
                 return;
             }
             
@@ -1426,9 +1426,9 @@ const pontoState = {
             studentsWithGrades.forEach((student, index) => {
                 const escapedName = escapeHtml(student.nome);
                 html += `
-                    <div class="pro-grade-item practical" data-email="${escapeHtml(student.email || '')}" data-index="${index}">
-                        <span class="pro-grade-name" title="${escapedName}">${escapedName}</span>
-                        <span class="pro-grade-value practical">${student.media > 0 ? student.media.toFixed(1) : '-'}</span>
+                    <div class="dash-grade dash-grade--practical" data-email="${escapeHtml(student.email || '')}" data-index="${index}">
+                        <span class="dash-grade__name" title="${escapedName}">${escapedName}</span>
+                        <span class="dash-grade__value">${student.media > 0 ? student.media.toFixed(1) : '-'}</span>
                     </div>
                 `;
             });
@@ -1436,7 +1436,7 @@ const pontoState = {
             container.innerHTML = html;
             
             // Add click handlers to navigate to student detail
-            container.querySelectorAll('.pro-grade-item').forEach(item => {
+            container.querySelectorAll('.dash-grade').forEach(item => {
                 item.addEventListener('click', function() {
                     const email = this.getAttribute('data-email');
                     if (email && appState.alunosMap.has(email)) {
@@ -2284,7 +2284,7 @@ const pontoState = {
             }
             
             if (studentsArray.length === 0) {
-                container.innerHTML = '<div class="pro-pending-empty">Nenhuma reposição pendente</div>';
+                container.innerHTML = '<div class="dash-pending__empty">Nenhuma reposição pendente</div>';
                 return;
             }
             
@@ -2296,9 +2296,9 @@ const pontoState = {
                 const escapedName = escapeHtml(student.nome);
                 
                 html += `
-                    <div class="pro-pending-item" data-student-index="${index}">
-                        <span class="pro-pending-name" title="${escapedName}">${escapedName}</span>
-                        <span class="pro-pending-count">${student.count}</span>
+                    <div class="dash-pending__item" data-student-index="${index}">
+                        <span class="dash-pending__name" title="${escapedName}">${escapedName}</span>
+                        <span class="dash-pending__count">${student.count}</span>
                     </div>
                 `;
             });
@@ -2306,7 +2306,7 @@ const pontoState = {
             container.innerHTML = html;
             
             // Add click event listeners
-            container.querySelectorAll('.pro-pending-item[data-student-index]').forEach(link => {
+            container.querySelectorAll('.dash-pending__item[data-student-index]').forEach(link => {
                 link.addEventListener('click', function() {
                     const index = parseInt(this.getAttribute('data-student-index'), 10);
                     const student = window._pendingStudentsData[index];
@@ -2349,29 +2349,25 @@ const pontoState = {
             if (!c) return;
             
             if (!distribution || distribution.length === 0) {
-                c.innerHTML = '<p class="pro-pending-empty">Sem dados de distribuição por curso.</p>';
+                c.innerHTML = '<p class="dash-empty">Sem dados de distribuição por curso.</p>';
                 return;
             }
             
-            const colors = [
-                'pro-dist-bar-1', 'pro-dist-bar-2', 'pro-dist-bar-3', 
-                'pro-dist-bar-4', 'pro-dist-bar-5', 'pro-dist-bar-6'
-            ];
             const maxCount = Math.max(...distribution.map(d => d.count));
             
+            const MAX_DISTRIBUTION_COLORS = 6;
             let html = '';
             distribution.forEach((item, i) => {
                 const barWidth = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
-                const colorClass = colors[i % colors.length];
-                const courseName = item.course;
+                const colorNum = (i % MAX_DISTRIBUTION_COLORS) + 1;
                 
                 html += `
-                    <div class="pro-dist-item">
-                        <span class="pro-dist-label" title="${item.course}">${courseName}</span>
-                        <div class="pro-dist-bar-container">
-                            <div class="pro-dist-bar ${colorClass}" style="width: ${barWidth}%;"></div>
+                    <div class="dash-dist">
+                        <span class="dash-dist__label" title="${escapeHtml(item.course)}">${escapeHtml(item.course)}</span>
+                        <div class="dash-dist__bar">
+                            <div class="dash-dist__fill dash-dist__fill--${colorNum}" style="width: ${barWidth}%;"></div>
                         </div>
-                        <span class="pro-dist-count">${item.count}</span>
+                        <span class="dash-dist__count">${escapeHtml(String(item.count))}</span>
                     </div>
                 `;
             });
@@ -2392,9 +2388,9 @@ const pontoState = {
                     if (value > 0) {
                         const moduleName = key.replace(/MÉDIA\s*/i, '').replace(/\s*FISIO/i, ' Fisio').trim();
                         html += `
-                        <div class="pro-module-item">
-                            <div class="pro-module-value">${value.toFixed(1)}</div>
-                            <div class="pro-module-name">${moduleName || 'Teórica'}</div>
+                        <div class="dash-module">
+                            <div class="dash-module__value">${value.toFixed(1)}</div>
+                            <div class="dash-module__name">${moduleName || 'Teórica'}</div>
                         </div>
                         `;
                     }
@@ -2406,16 +2402,16 @@ const pontoState = {
                 .forEach(([key, value]) => {
                     if (value > 0) {
                         html += `
-                        <div class="pro-module-item">
-                            <div class="pro-module-value" style="color: #2563eb;">${value.toFixed(1)}</div>
-                            <div class="pro-module-name">${key}</div>
+                        <div class="dash-module">
+                            <div class="dash-module__value dash-module__value--practical">${value.toFixed(1)}</div>
+                            <div class="dash-module__name">${escapeHtml(key)}</div>
                         </div>
                         `;
                     }
                 });
             
             if (html === '') {
-                container.innerHTML = '<p class="pro-pending-empty">Nenhuma média de módulo calculada.</p>';
+                container.innerHTML = '<p class="dash-empty">Nenhuma média de módulo calculada.</p>';
                 return;
             }
             container.innerHTML = html;
@@ -2425,7 +2421,7 @@ const pontoState = {
              try {
                  const l=document.getElementById('recent-absences-list');
                  if(!appState.ausenciasReposicoes||appState.ausenciasReposicoes.length===0){
-                     l.innerHTML='<li class="pro-pending-empty">Nenhum registro de ausências ou reposições.</li>';
+                     l.innerHTML='<li class="dash-empty">Nenhum registro de ausências ou reposições.</li>';
                      return;
                  } 
                  const sorted=[...appState.ausenciasReposicoes]
@@ -2446,18 +2442,18 @@ const pontoState = {
                      const isPending=!i.DataReposicaoISO; 
                      const dT=i.DataReposicaoISO||i.DataAusenciaISO; 
                      const fD=dT?new Date(dT+'T00:00:00').toLocaleDateString('pt-BR'):'--/--'; 
-                     const iconClass = isPending ? 'absent' : 'makeup';
+                     const iconClass = isPending ? 'dash-recent__icon--absent' : 'dash-recent__icon--makeup';
                      const iconSvg = isPending 
                          ? '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>'
                          : '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>';
                      
-                     return `<li class="pro-recent-item">
-                         <div class="pro-recent-icon ${iconClass}">${iconSvg}</div>
-                         <div class="pro-recent-info">
-                             <span class="pro-recent-name" title="${n}">${n}</span>
-                             <span class="pro-recent-detail">${isPending ? 'Ausência' : 'Reposição'} • ${i.Local||'N/A'}</span>
+                     return `<li class="dash-recent__item">
+                         <div class="dash-recent__icon ${iconClass}">${iconSvg}</div>
+                         <div class="dash-recent__info">
+                             <span class="dash-recent__name" title="${escapeHtml(n)}">${escapeHtml(n)}</span>
+                             <span class="dash-recent__detail">${isPending ? 'Ausência' : 'Reposição'} • ${escapeHtml(i.Local||'N/A')}</span>
                          </div>
-                         <span class="pro-recent-date">${fD}</span>
+                         <span class="dash-recent__date">${fD}</span>
                      </li>`;
                  }).join('');
              } catch(e) { console.error("[renderRecentAbsences] Erro:", e); showError("Erro ao renderizar registros recentes."); }

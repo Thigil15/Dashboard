@@ -255,101 +255,87 @@
             
             <main class="dashboard-content">
 
-                <!-- View Principal: Dashboard Minimalista Profissional -->
-                <div id="content-dashboard" class="view-container pro-dashboard">
+                <!-- View Principal: Dashboard Profissional -->
+                <div id="content-dashboard" class="view-container dash">
                     
-                    <!-- Seção Superior: Métricas Principais -->
-                    <section class="pro-metrics-row">
-                        <div class="pro-metric-card pro-metric-primary">
-                            <span class="pro-metric-value" id="kpi-total-students">-</span>
-                            <span class="pro-metric-label">Alunos Matriculados</span>
-                        </div>
-                        <div class="pro-metric-card pro-metric-success">
-                            <span class="pro-metric-value" id="kpi-active-students">-</span>
-                            <span class="pro-metric-label">Ativos no Programa</span>
-                        </div>
-                        <div class="pro-metric-card pro-metric-warning">
-                            <span class="pro-metric-value" id="kpi-pending-replacements">-</span>
-                            <span class="pro-metric-label">Reposições Pendentes</span>
-                        </div>
-                        <div class="pro-metric-card pro-metric-info">
-                            <span class="pro-metric-value" id="kpi-avg-theoretical">-</span>
-                            <span class="pro-metric-label">Média Teórica</span>
-                        </div>
-                        <div class="pro-metric-card pro-metric-accent">
-                            <span class="pro-metric-value" id="kpi-avg-practical">-</span>
-                            <span class="pro-metric-label">Média Prática</span>
-                        </div>
-                    </section>
+                    <!-- KPIs Row -->
+                    <div class="dash-kpis">
+                        <article class="dash-kpi dash-kpi--blue">
+                            <strong id="kpi-total-students">-</strong>
+                            <span>Alunos Matriculados</span>
+                        </article>
+                        <article class="dash-kpi dash-kpi--green">
+                            <strong id="kpi-active-students">-</strong>
+                            <span>Ativos no Programa</span>
+                        </article>
+                        <article class="dash-kpi dash-kpi--orange">
+                            <strong id="kpi-pending-replacements">-</strong>
+                            <span>Reposições Pendentes</span>
+                        </article>
+                        <article class="dash-kpi dash-kpi--amber">
+                            <strong id="kpi-avg-theoretical">-</strong>
+                            <span>Média Teórica</span>
+                        </article>
+                        <article class="dash-kpi dash-kpi--cyan">
+                            <strong id="kpi-avg-practical">-</strong>
+                            <span>Média Prática</span>
+                        </article>
+                    </div>
 
-                    <!-- Área Principal: Grade de Conteúdo -->
-                    <section class="pro-content-grid">
+                    <!-- Main Content Grid -->
+                    <div class="dash-grid">
                         
-                        <!-- Coluna Esquerda: Desempenho Acadêmico -->
-                        <div class="pro-panel pro-panel-performance">
-                            <header class="pro-panel-header pro-panel-header-clickable">
-                                <h2 class="pro-panel-title">Desempenho Acadêmico</h2>
-                                <div class="pro-panel-tabs">
-                                    <button class="pro-tab-btn pro-tab-active" data-tab="modulos">Módulos</button>
-                                    <button class="pro-tab-btn" data-tab="teoricas">Teóricas</button>
-                                    <button class="pro-tab-btn" data-tab="praticas">Práticas</button>
-                                </div>
+                        <!-- Desempenho Acadêmico -->
+                        <section class="dash-card dash-card--wide">
+                            <header class="dash-card__header">
+                                <h2>Desempenho Acadêmico</h2>
+                                <nav class="dash-tabs">
+                                    <button class="dash-tab dash-tab--active" data-tab="modulos">Módulos</button>
+                                    <button class="dash-tab" data-tab="teoricas">Teóricas</button>
+                                    <button class="dash-tab" data-tab="praticas">Práticas</button>
+                                </nav>
                             </header>
-                            <div class="pro-panel-body">
-                                <div id="module-averages-chart" class="pro-modules-grid">
-                                    <!-- Módulos serão renderizados via JavaScript -->
-                                </div>
-                                <div id="theoretical-grades-list" class="pro-grades-list" style="display: none;">
-                                    <!-- Notas teóricas serão renderizadas via JavaScript -->
-                                </div>
-                                <div id="practical-grades-list" class="pro-grades-list" style="display: none;">
-                                    <!-- Notas práticas serão renderizadas via JavaScript -->
-                                </div>
+                            <div class="dash-card__body">
+                                <div id="module-averages-chart" class="dash-modules"></div>
+                                <div id="theoretical-grades-list" class="dash-grades" hidden></div>
+                                <div id="practical-grades-list" class="dash-grades" hidden></div>
                             </div>
-                        </div>
+                        </section>
 
-                        <!-- Coluna Central: Distribuição e Pendências -->
-                        <div class="pro-panel pro-panel-distribution">
-                            <header class="pro-panel-header">
-                                <h2 class="pro-panel-title">Distribuição por Curso</h2>
+                        <!-- Distribuição por Curso -->
+                        <section class="dash-card">
+                            <header class="dash-card__header">
+                                <h2>Distribuição por Curso</h2>
                             </header>
-                            <div class="pro-panel-body">
-                                <div id="course-distribution-chart" class="pro-distribution-list">
-                                    <!-- Distribuição será renderizada via JavaScript -->
-                                </div>
+                            <div class="dash-card__body">
+                                <div id="course-distribution-chart" class="dash-distribution"></div>
                             </div>
-                        </div>
+                        </section>
 
-                        <!-- Coluna Direita: Atividades e Pendências -->
-                        <div class="pro-panel pro-panel-activities pro-panel-scrollable">
-                            <header class="pro-panel-header">
-                                <h2 class="pro-panel-title">Alunos com Reposições</h2>
-                                <span id="pending-count-badge" class="pro-count-badge">0</span>
+                        <!-- Alunos com Reposições -->
+                        <section class="dash-card dash-card--scroll">
+                            <header class="dash-card__header">
+                                <h2>Alunos com Reposições</h2>
+                                <span id="pending-count-badge" class="dash-badge">0</span>
                             </header>
-                            <div class="pro-panel-body pro-panel-body-scroll">
-                                <div id="students-with-replacements-list" class="pro-pending-list">
-                                    <!-- Lista será preenchida via JavaScript -->
-                                </div>
+                            <div class="dash-card__body dash-card__body--scroll">
+                                <div id="students-with-replacements-list" class="dash-pending"></div>
                             </div>
-                        </div>
+                        </section>
 
-                    </section>
-
-                    <!-- Seção Inferior: Atividades Recentes -->
-                    <section class="pro-footer-section">
-                        <div class="pro-panel pro-panel-recent">
-                            <header class="pro-panel-header">
-                                <h2 class="pro-panel-title">Registros Recentes</h2>
+                        <!-- Registros Recentes -->
+                        <section class="dash-card dash-card--full">
+                            <header class="dash-card__header">
+                                <h2>Registros Recentes</h2>
                             </header>
-                            <div class="pro-panel-body">
-                                <ul id="recent-absences-list" class="pro-recent-list">
-                                    <!-- Lista será preenchida via JavaScript -->
-                                </ul>
+                            <div class="dash-card__body">
+                                <ul id="recent-absences-list" class="dash-recent"></ul>
                             </div>
-                        </div>
-                    </section>
+                        </section>
 
-                    <!-- Elementos hidden para compatibilidade com JS existente -->
+                    </div>
+
+                    <!-- Hidden elements for JS compatibility -->
                     <div hidden id="db-theoretical-bar"></div>
                     <div hidden id="db-practical-bar"></div>
                 </div>
