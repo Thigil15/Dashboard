@@ -8051,6 +8051,7 @@
 
 .incor-storytelling-section {
     /* Whitespace as design element */
+    margin-top: var(--incor-spacing-md);
 }
 
 .incor-storytelling-grid {
