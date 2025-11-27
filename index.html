@@ -361,34 +361,7 @@
                          Narrativa Visual: Evolução Individual vs Média da Turma
                          ═══════════════════════════════════════════════════════════════ -->
                     <section class="incor-storytelling-section" aria-label="Análise de Performance">
-                        <div class="incor-storytelling-grid">
-                            
-                            <!-- Performance Evolution Chart -->
-                            <article class="incor-story-card incor-story-card--primary">
-                                <header class="incor-story-header">
-                                    <div class="incor-story-title-group">
-                                        <div class="incor-story-icon">
-                                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
-                                            </svg>
-                                        </div>
-                                        <div>
-                                            <h3 class="incor-story-title">Desempenho por Módulos</h3>
-                                            <p class="incor-story-subtitle">Comparativo de médias teóricas e práticas</p>
-                                        </div>
-                                    </div>
-                                    <nav class="incor-story-tabs">
-                                        <button class="incor-story-tab incor-story-tab--active" data-tab="modulos">Módulos</button>
-                                        <button class="incor-story-tab" data-tab="teoricas">Teóricas</button>
-                                        <button class="incor-story-tab" data-tab="praticas">Práticas</button>
-                                    </nav>
-                                </header>
-                                <div class="incor-story-body">
-                                    <div id="module-averages-chart" class="incor-modules-grid"></div>
-                                    <div id="theoretical-grades-list" class="incor-grades-list" hidden></div>
-                                    <div id="practical-grades-list" class="incor-grades-list" hidden></div>
-                                </div>
-                            </article>
+                        <div class="incor-storytelling-grid incor-storytelling-grid--two-cols">
                             
                             <!-- Course Distribution -->
                             <article class="incor-story-card incor-story-card--secondary">
@@ -432,6 +405,36 @@
                                 </div>
                             </article>
                             
+                        </div>
+                    </section>
+                    
+                    <!-- ═══════════════════════════════════════════════════════════════
+                         NÍVEL 3: DESEMPENHO POR MÓDULOS
+                         Análise detalhada das notas teóricas e práticas por módulo
+                         ═══════════════════════════════════════════════════════════════ -->
+                    <section class="incor-modules-section" aria-label="Desempenho por Módulos">
+                        <header class="incor-modules-header">
+                            <div class="incor-modules-title-group">
+                                <div class="incor-modules-icon">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h2 class="incor-modules-title">Desempenho por Módulos</h2>
+                                    <p class="incor-modules-subtitle">Comparativo de médias teóricas e práticas</p>
+                                </div>
+                            </div>
+                            <nav class="incor-modules-tabs">
+                                <button class="incor-modules-tab incor-modules-tab--active" data-tab="modulos">Módulos</button>
+                                <button class="incor-modules-tab" data-tab="teoricas">Teóricas</button>
+                                <button class="incor-modules-tab" data-tab="praticas">Práticas</button>
+                            </nav>
+                        </header>
+                        <div class="incor-modules-content">
+                            <div id="module-averages-chart" class="incor-modules-grid"></div>
+                            <div id="theoretical-grades-list" class="incor-grades-list" hidden></div>
+                            <div id="practical-grades-list" class="incor-grades-list" hidden></div>
                         </div>
                     </section>
 

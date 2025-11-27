@@ -8736,6 +8736,111 @@
     font-size: 0.9375rem;
     margin: 0;
 }
+
+/* Two column layout for storytelling grid */
+.incor-storytelling-grid--two-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--incor-spacing-md);
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   NÍVEL 3: DESEMPENHO POR MÓDULOS
+   Full-width section for module performance analysis
+   ════════════════════════════════════════════════════════════════════════════ */
+
+.incor-modules-section {
+    background: white;
+    border-radius: var(--radius-xl);
+    box-shadow: 0 2px 8px rgba(0, 51, 160, 0.06);
+    border: 1px solid rgba(229, 233, 239, 0.8);
+    overflow: hidden;
+    margin-top: var(--incor-spacing-md);
+}
+
+.incor-modules-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--incor-spacing-sm) var(--incor-spacing-md);
+    background: linear-gradient(135deg, var(--incor-blue-700), var(--incor-blue-600));
+    gap: var(--incor-spacing-md);
+    flex-wrap: wrap;
+}
+
+.incor-modules-title-group {
+    display: flex;
+    align-items: center;
+    gap: var(--incor-spacing-sm);
+}
+
+.incor-modules-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+}
+
+.incor-modules-icon svg {
+    width: 22px;
+    height: 22px;
+    color: white;
+}
+
+.incor-modules-title {
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: white;
+    margin: 0;
+}
+
+.incor-modules-subtitle {
+    font-size: 0.8125rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0;
+}
+
+.incor-modules-tabs {
+    display: flex;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.25rem;
+    border-radius: var(--radius-lg);
+}
+
+.incor-modules-tab {
+    padding: 0.5rem 1rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.incor-modules-tab:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.incor-modules-tab--active {
+    background: white;
+    color: var(--incor-blue-700);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.incor-modules-content {
+    padding: var(--incor-spacing-md);
+    min-height: 200px;
+}
+
 /* ════════════════════════════════════════════════════════════════════════════
    RESPONSIVE DESIGN - InCor Dashboard
    ════════════════════════════════════════════════════════════════════════════ */
@@ -8746,6 +8851,10 @@
     }
     
     .incor-storytelling-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .incor-storytelling-grid--two-cols {
         grid-template-columns: 1fr 1fr;
     }
     
@@ -8763,11 +8872,20 @@
         grid-template-columns: 1fr;
     }
     
+    .incor-storytelling-grid--two-cols {
+        grid-template-columns: 1fr;
+    }
+    
     .incor-story-card--primary {
         grid-column: span 1;
     }
     
     .incor-action-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .incor-modules-header {
         flex-direction: column;
         align-items: flex-start;
     }
