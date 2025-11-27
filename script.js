@@ -1295,13 +1295,49 @@ const pontoState = {
                 pontoNextButton.addEventListener('click', handlePontoNextDate);
             }
 
-            // Academic Performance tabs
-            const performanceTabs = document.querySelectorAll('.dash-tab');
+            // Academic Performance tabs - support both old and new class names
+            const performanceTabs = document.querySelectorAll('.dash-tab, .incor-story-tab');
             performanceTabs.forEach(tab => {
                 tab.addEventListener('click', handleAcademicTabSwitch);
             });
+            
+            // InCor Action filters
+            const actionFilters = document.querySelectorAll('.incor-action-filter');
+            actionFilters.forEach(filter => {
+                filter.addEventListener('click', handleActionFilterSwitch);
+            });
 
             console.log('[setupEventHandlers] Listeners configurados.');
+        }
+        
+        // Handle action filter switching (All, Pending, Completed)
+        function handleActionFilterSwitch(e) {
+            const filterValue = e.target.getAttribute('data-filter');
+            if (!filterValue) return;
+            
+            // Update active filter button
+            document.querySelectorAll('.incor-action-filter').forEach(btn => {
+                btn.classList.toggle('incor-action-filter--active', btn.getAttribute('data-filter') === filterValue);
+            });
+            
+            // Filter the table rows
+            const tbody = document.getElementById('recent-absences-list');
+            if (!tbody) return;
+            
+            tbody.querySelectorAll('tr').forEach(row => {
+                const statusCell = row.querySelector('.incor-action-status');
+                if (!statusCell) return;
+                
+                const isPending = statusCell.classList.contains('incor-action-status--pending');
+                
+                if (filterValue === 'all') {
+                    row.style.display = '';
+                } else if (filterValue === 'pending') {
+                    row.style.display = isPending ? '' : 'none';
+                } else if (filterValue === 'completed') {
+                    row.style.display = !isPending ? '' : 'none';
+                }
+            });
         }
 
         // Handle academic performance tab switching
@@ -1309,9 +1345,11 @@ const pontoState = {
             const tabName = e.target.getAttribute('data-tab');
             if (!tabName) return;
             
-            // Update active tab
-            document.querySelectorAll('.dash-tab').forEach(btn => {
-                btn.classList.toggle('dash-tab--active', btn.getAttribute('data-tab') === tabName);
+            // Update active tab - support both old and new class names
+            document.querySelectorAll('.dash-tab, .incor-story-tab').forEach(btn => {
+                const isActive = btn.getAttribute('data-tab') === tabName;
+                btn.classList.toggle('dash-tab--active', isActive);
+                btn.classList.toggle('incor-story-tab--active', isActive);
             });
             
             // Show/hide content
@@ -1339,7 +1377,7 @@ const pontoState = {
             const activeStudents = appState.alunos.filter(s => s.Status === 'Ativo');
             
             if (activeStudents.length === 0) {
-                container.innerHTML = '<div class="dash-empty">Nenhum aluno ativo encontrado</div>';
+                container.innerHTML = '<div class="incor-pending__empty">Nenhum aluno ativo encontrado</div>';
                 return;
             }
             
@@ -1369,9 +1407,9 @@ const pontoState = {
             studentsWithGrades.forEach((student, index) => {
                 const escapedName = escapeHtml(student.nome);
                 html += `
-                    <div class="dash-grade dash-grade--theoretical" data-email="${escapeHtml(student.email || '')}" data-index="${index}">
-                        <span class="dash-grade__name" title="${escapedName}">${escapedName}</span>
-                        <span class="dash-grade__value">${student.media > 0 ? student.media.toFixed(1) : '-'}</span>
+                    <div class="incor-grade" data-email="${escapeHtml(student.email || '')}" data-index="${index}">
+                        <span class="incor-grade__name" title="${escapedName}">${escapedName}</span>
+                        <span class="incor-grade__value">${student.media > 0 ? student.media.toFixed(1) : '-'}</span>
                     </div>
                 `;
             });
@@ -1379,7 +1417,7 @@ const pontoState = {
             container.innerHTML = html;
             
             // Add click handlers to navigate to student detail
-            container.querySelectorAll('.dash-grade').forEach(item => {
+            container.querySelectorAll('.incor-grade').forEach(item => {
                 item.addEventListener('click', function() {
                     const email = this.getAttribute('data-email');
                     if (email && appState.alunosMap.has(email)) {
@@ -1398,7 +1436,7 @@ const pontoState = {
             const activeStudents = appState.alunos.filter(s => s.Status === 'Ativo');
             
             if (activeStudents.length === 0) {
-                container.innerHTML = '<div class="dash-empty">Nenhum aluno ativo encontrado</div>';
+                container.innerHTML = '<div class="incor-pending__empty">Nenhum aluno ativo encontrado</div>';
                 return;
             }
             
@@ -1426,9 +1464,9 @@ const pontoState = {
             studentsWithGrades.forEach((student, index) => {
                 const escapedName = escapeHtml(student.nome);
                 html += `
-                    <div class="dash-grade dash-grade--practical" data-email="${escapeHtml(student.email || '')}" data-index="${index}">
-                        <span class="dash-grade__name" title="${escapedName}">${escapedName}</span>
-                        <span class="dash-grade__value">${student.media > 0 ? student.media.toFixed(1) : '-'}</span>
+                    <div class="incor-grade incor-grade--practical" data-email="${escapeHtml(student.email || '')}" data-index="${index}">
+                        <span class="incor-grade__name" title="${escapedName}">${escapedName}</span>
+                        <span class="incor-grade__value">${student.media > 0 ? student.media.toFixed(1) : '-'}</span>
                     </div>
                 `;
             });
@@ -1436,7 +1474,7 @@ const pontoState = {
             container.innerHTML = html;
             
             // Add click handlers to navigate to student detail
-            container.querySelectorAll('.dash-grade').forEach(item => {
+            container.querySelectorAll('.incor-grade').forEach(item => {
                 item.addEventListener('click', function() {
                     const email = this.getAttribute('data-email');
                     if (email && appState.alunosMap.has(email)) {
@@ -2218,7 +2256,7 @@ const pontoState = {
                 const pR = appState.ausenciasReposicoes.filter(f => f && !f.DataReposicaoISO && (f.EmailHC || f.NomeCompleto)).length;
                 
                 // Log data state for debugging
-                console.log('[renderAtAGlance] Renderizando dashboard com:', {
+                console.log('[renderAtAGlance] Renderizando dashboard InCor com:', {
                     totalAlunos: tS,
                     alunosAtivos: aS,
                     reposiçõesPendentes: pR
@@ -2232,11 +2270,26 @@ const pontoState = {
                     courseDistribution:cDist
                 } = calculateAveragesAndDistribution();
                 
+                // === NÍVEL 1: KPIs com Status Semântico ===
                 document.getElementById('kpi-total-students').textContent = tS;
                 document.getElementById('kpi-active-students').textContent = aS;
                 document.getElementById('kpi-pending-replacements').textContent = pR;
                 document.getElementById('kpi-avg-theoretical').textContent = oTAvg > 0 ? oTAvg.toFixed(1) : 'N/A';
                 document.getElementById('kpi-avg-practical').textContent = oPAvg > 0 ? oPAvg.toFixed(1) : 'N/A';
+                
+                // Calculate today's shifts from escala
+                const todayShifts = calculateTodayShifts();
+                const todayShiftsEl = document.getElementById('kpi-today-shifts');
+                if (todayShiftsEl) {
+                    todayShiftsEl.textContent = todayShifts;
+                }
+                
+                // Update semantic status for KPIs
+                updateKPISemanticStatus('kpi-card-frequency', tS, aS);
+                updateKPISemanticStatus('kpi-card-pending', pR);
+                updateKPISemanticStatus('kpi-card-shifts', todayShifts);
+                updateKPISemanticStatus('kpi-card-theoretical', oTAvg);
+                updateKPISemanticStatus('kpi-card-practical', oPAvg);
                 
                 // Update progress bars
                 const theoreticalBar = document.getElementById('db-theoretical-bar');
@@ -2248,12 +2301,122 @@ const pontoState = {
                     practicalBar.style.width = `${(oPAvg / 10) * 100}%`;
                 }
                 
+                // Update timestamp
+                const timestampEl = document.getElementById('kpi-last-update');
+                if (timestampEl) {
+                    timestampEl.textContent = `Atualizado às ${new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}`;
+                }
+                
                 // Render students with pending replacements (clickable list)
                 renderStudentsWithReplacements();
                 
                 renderCourseDistributionChart(cDist);
                 renderModuleAverages(tAvgs, pAvgs);
+                
+                // Render recent activities table
+                renderRecentAbsences();
             } catch (e) { console.error("[renderAtAGlance] Erro:", e); showError("Erro ao renderizar visão geral."); }
+        }
+        
+        // Calculate today's shifts from escalas
+        function calculateTodayShifts() {
+            const today = appState.todayBR;
+            let totalShifts = 0;
+            
+            Object.values(appState.escalas || {}).forEach(escala => {
+                if (!escala || !escala.headersDay || !escala.alunos) return;
+                
+                const hasToday = escala.headersDay.some(day => {
+                    const normalizedDay = day.replace(/\//g, '/').trim();
+                    return normalizedDay === today;
+                });
+                
+                if (hasToday) {
+                    escala.alunos.forEach(aluno => {
+                        if (!aluno) return;
+                        const todayValue = aluno[today] || aluno[today.replace('/', '_')];
+                        if (todayValue && !['off', 'folga', '-', ''].includes(String(todayValue).toLowerCase().trim())) {
+                            totalShifts++;
+                        }
+                    });
+                }
+            });
+            
+            return totalShifts || '-';
+        }
+        
+        // Update KPI semantic status (Normal, Alerta, Crítico)
+        function updateKPISemanticStatus(cardId, value, secondaryValue) {
+            const card = document.getElementById(cardId);
+            if (!card) return;
+            
+            let status = 'normal';
+            let statusText = 'Normal';
+            
+            switch(cardId) {
+                case 'kpi-card-frequency':
+                    // Frequency: check if active students ratio is good
+                    const ratio = secondaryValue / value;
+                    if (ratio < 0.7) {
+                        status = 'critical';
+                        statusText = 'Crítico';
+                    } else if (ratio < 0.85) {
+                        status = 'alert';
+                        statusText = 'Alerta';
+                    }
+                    break;
+                    
+                case 'kpi-card-pending':
+                    // Pending replacements: more than 10 is critical, more than 5 is alert
+                    if (value >= 10) {
+                        status = 'critical';
+                        statusText = 'Crítico';
+                    } else if (value >= 5) {
+                        status = 'alert';
+                        statusText = 'Alerta';
+                    } else if (value === 0) {
+                        statusText = 'Ótimo';
+                    }
+                    break;
+                    
+                case 'kpi-card-shifts':
+                    // Shifts: if 0 and it's a weekday, that might be alert
+                    if (value === 0 || value === '-') {
+                        const today = new Date();
+                        const dayOfWeek = today.getDay();
+                        if (dayOfWeek > 0 && dayOfWeek < 6) {
+                            status = 'alert';
+                            statusText = 'Sem escala';
+                        } else {
+                            statusText = 'Fim de semana';
+                        }
+                    }
+                    break;
+                    
+                case 'kpi-card-theoretical':
+                case 'kpi-card-practical':
+                    // Grades: below 7 is alert, below 6 is critical
+                    if (value < 6) {
+                        status = 'critical';
+                        statusText = 'Crítico';
+                    } else if (value < 7) {
+                        status = 'alert';
+                        statusText = 'Alerta';
+                    } else if (value >= 8) {
+                        statusText = 'Excelente';
+                    } else {
+                        statusText = 'Bom';
+                    }
+                    break;
+            }
+            
+            card.setAttribute('data-status', status);
+            
+            // Update status badge text
+            const statusBadge = card.querySelector('.incor-kpi-status-badge');
+            if (statusBadge) {
+                statusBadge.textContent = statusText;
+            }
         }
         
         // Render clickable list of students with pending replacements
@@ -2284,7 +2447,7 @@ const pontoState = {
             }
             
             if (studentsArray.length === 0) {
-                container.innerHTML = '<div class="dash-pending__empty">Nenhuma reposição pendente</div>';
+                container.innerHTML = '<div class="incor-pending__empty">Nenhuma reposição pendente</div>';
                 return;
             }
             
@@ -2296,9 +2459,9 @@ const pontoState = {
                 const escapedName = escapeHtml(student.nome);
                 
                 html += `
-                    <div class="dash-pending__item" data-student-index="${index}">
-                        <span class="dash-pending__name" title="${escapedName}">${escapedName}</span>
-                        <span class="dash-pending__count">${student.count}</span>
+                    <div class="incor-pending__item" data-student-index="${index}">
+                        <span class="incor-pending__name" title="${escapedName}">${escapedName}</span>
+                        <span class="incor-pending__count">${student.count}</span>
                     </div>
                 `;
             });
@@ -2306,7 +2469,7 @@ const pontoState = {
             container.innerHTML = html;
             
             // Add click event listeners
-            container.querySelectorAll('.dash-pending__item[data-student-index]').forEach(link => {
+            container.querySelectorAll('.incor-pending__item[data-student-index]').forEach(link => {
                 link.addEventListener('click', function() {
                     const index = parseInt(this.getAttribute('data-student-index'), 10);
                     const student = window._pendingStudentsData[index];
@@ -2349,7 +2512,7 @@ const pontoState = {
             if (!c) return;
             
             if (!distribution || distribution.length === 0) {
-                c.innerHTML = '<p class="dash-empty">Sem dados de distribuição por curso.</p>';
+                c.innerHTML = '<p class="incor-pending__empty">Sem dados de distribuição por curso.</p>';
                 return;
             }
             
@@ -2362,12 +2525,12 @@ const pontoState = {
                 const colorNum = (i % MAX_DISTRIBUTION_COLORS) + 1;
                 
                 html += `
-                    <div class="dash-dist">
-                        <span class="dash-dist__label" title="${escapeHtml(item.course)}">${escapeHtml(item.course)}</span>
-                        <div class="dash-dist__bar">
-                            <div class="dash-dist__fill dash-dist__fill--${colorNum}" style="width: ${barWidth}%;"></div>
+                    <div class="incor-dist">
+                        <span class="incor-dist__label" title="${escapeHtml(item.course)}">${escapeHtml(item.course)}</span>
+                        <div class="incor-dist__bar">
+                            <div class="incor-dist__fill incor-dist__fill--${colorNum}" style="width: ${barWidth}%;"></div>
                         </div>
-                        <span class="dash-dist__count">${escapeHtml(String(item.count))}</span>
+                        <span class="incor-dist__count">${escapeHtml(String(item.count))}</span>
                     </div>
                 `;
             });
@@ -2388,9 +2551,9 @@ const pontoState = {
                     if (value > 0) {
                         const moduleName = key.replace(/MÉDIA\s*/i, '').replace(/\s*FISIO/i, ' Fisio').trim();
                         html += `
-                        <div class="dash-module">
-                            <div class="dash-module__value">${value.toFixed(1)}</div>
-                            <div class="dash-module__name">${moduleName || 'Teórica'}</div>
+                        <div class="incor-module">
+                            <div class="incor-module__value">${value.toFixed(1)}</div>
+                            <div class="incor-module__name">${moduleName || 'Teórica'}</div>
                         </div>
                         `;
                     }
@@ -2402,16 +2565,16 @@ const pontoState = {
                 .forEach(([key, value]) => {
                     if (value > 0) {
                         html += `
-                        <div class="dash-module">
-                            <div class="dash-module__value dash-module__value--practical">${value.toFixed(1)}</div>
-                            <div class="dash-module__name">${escapeHtml(key)}</div>
+                        <div class="incor-module">
+                            <div class="incor-module__value incor-module__value--practical">${value.toFixed(1)}</div>
+                            <div class="incor-module__name">${escapeHtml(key)}</div>
                         </div>
                         `;
                     }
                 });
             
             if (html === '') {
-                container.innerHTML = '<p class="dash-empty">Nenhuma média de módulo calculada.</p>';
+                container.innerHTML = '<p class="incor-pending__empty">Nenhuma média de módulo calculada.</p>';
                 return;
             }
             container.innerHTML = html;
@@ -2419,44 +2582,113 @@ const pontoState = {
 
         function renderRecentAbsences() {
              try {
-                 const l=document.getElementById('recent-absences-list');
-                 if(!appState.ausenciasReposicoes||appState.ausenciasReposicoes.length===0){
-                     l.innerHTML='<li class="dash-empty">Nenhum registro de ausências ou reposições.</li>';
+                 const tbody = document.getElementById('recent-absences-list');
+                 const emptyState = document.getElementById('incor-action-empty');
+                 
+                 if (!tbody) return;
+                 
+                 if (!appState.ausenciasReposicoes || appState.ausenciasReposicoes.length === 0) {
+                     tbody.innerHTML = '';
+                     if (emptyState) emptyState.hidden = false;
                      return;
-                 } 
-                 const sorted=[...appState.ausenciasReposicoes]
+                 }
+                 
+                 if (emptyState) emptyState.hidden = true;
+                 
+                 const sorted = [...appState.ausenciasReposicoes]
                      .filter(f => f.EmailHC || f.NomeCompleto) 
-                     .sort((a,b)=>{
-                         const dA=a.DataReposicaoISO||a.DataAusenciaISO; 
-                         const dB=b.DataReposicaoISO||b.DataAusenciaISO; 
-                         if(!dB)return -1; if(!dA)return 1; 
-                         return new Date(dB+'T00:00:00')-new Date(dA+'T00:00:00');
+                     .sort((a, b) => {
+                         const dA = a.DataReposicaoISO || a.DataAusenciaISO; 
+                         const dB = b.DataReposicaoISO || b.DataAusenciaISO; 
+                         if (!dB) return -1; 
+                         if (!dA) return 1; 
+                         return new Date(dB + 'T00:00:00') - new Date(dA + 'T00:00:00');
                      }); 
                 
-                 l.innerHTML=sorted.slice(0, MAX_RECENT_ACTIVITIES).map(i=>{
-                     const al = appState.alunos.find(a => 
-                         (i.EmailHC && normalizeString(a.EmailHC) === normalizeString(i.EmailHC)) ||
-                         (i.NomeCompleto && normalizeString(a.NomeCompleto) === normalizeString(i.NomeCompleto))
+                 tbody.innerHTML = sorted.slice(0, MAX_RECENT_ACTIVITIES).map((item, index) => {
+                     const aluno = appState.alunos.find(a => 
+                         (item.EmailHC && normalizeString(a.EmailHC) === normalizeString(item.EmailHC)) ||
+                         (item.NomeCompleto && normalizeString(a.NomeCompleto) === normalizeString(item.NomeCompleto))
                      );
-                     const n = al ? al.NomeCompleto : (i.NomeCompleto || i.EmailHC); 
-                     const isPending=!i.DataReposicaoISO; 
-                     const dT=i.DataReposicaoISO||i.DataAusenciaISO; 
-                     const fD=dT?new Date(dT+'T00:00:00').toLocaleDateString('pt-BR'):'--/--'; 
-                     const iconClass = isPending ? 'dash-recent__icon--absent' : 'dash-recent__icon--makeup';
-                     const iconSvg = isPending 
-                         ? '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>'
-                         : '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>';
+                     const nome = aluno ? aluno.NomeCompleto : (item.NomeCompleto || item.EmailHC);
+                     const initials = getInitials(nome);
+                     const isPending = !item.DataReposicaoISO;
+                     const dateValue = item.DataReposicaoISO || item.DataAusenciaISO;
+                     const formattedDate = dateValue ? new Date(dateValue + 'T00:00:00').toLocaleDateString('pt-BR') : '--/--';
+                     const local = item.Local || 'N/A';
                      
-                     return `<li class="dash-recent__item">
-                         <div class="dash-recent__icon ${iconClass}">${iconSvg}</div>
-                         <div class="dash-recent__info">
-                             <span class="dash-recent__name" title="${escapeHtml(n)}">${escapeHtml(n)}</span>
-                             <span class="dash-recent__detail">${isPending ? 'Ausência' : 'Reposição'} • ${escapeHtml(i.Local||'N/A')}</span>
-                         </div>
-                         <span class="dash-recent__date">${fD}</span>
-                     </li>`;
+                     const statusClass = isPending ? 'incor-action-status--pending' : 'incor-action-status--completed';
+                     const statusText = isPending ? 'Pendente' : 'Concluída';
+                     const typeClass = isPending ? 'incor-action-type--absence' : 'incor-action-type--makeup';
+                     const typeText = isPending ? 'Ausência' : 'Reposição';
+                     
+                     return `<tr data-email="${escapeHtml(item.EmailHC || '')}" data-index="${index}">
+                         <td>
+                             <span class="incor-action-status ${statusClass}">${statusText}</span>
+                         </td>
+                         <td>
+                             <div class="incor-action-name">
+                                 <div class="incor-action-avatar">${escapeHtml(initials)}</div>
+                                 <span class="incor-action-name-text" title="${escapeHtml(nome)}">${escapeHtml(nome)}</span>
+                             </div>
+                         </td>
+                         <td>
+                             <span class="incor-action-type ${typeClass}">${typeText}</span>
+                         </td>
+                         <td class="incor-action-local">${escapeHtml(local)}</td>
+                         <td class="incor-action-date">${formattedDate}</td>
+                         <td>
+                             <div class="incor-action-buttons">
+                                 <button class="incor-action-btn incor-action-btn--view" title="Visualizar aluno" data-action="view">
+                                     <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                         <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                     </svg>
+                                 </button>
+                                 ${isPending ? `
+                                     <button class="incor-action-btn incor-action-btn--approve" title="Aprovar reposição" data-action="approve">
+                                         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                         </svg>
+                                     </button>
+                                     <button class="incor-action-btn incor-action-btn--notify" title="Enviar notificação" data-action="notify">
+                                         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                             <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                                         </svg>
+                                     </button>
+                                 ` : ''}
+                             </div>
+                         </td>
+                     </tr>`;
                  }).join('');
-             } catch(e) { console.error("[renderRecentAbsences] Erro:", e); showError("Erro ao renderizar registros recentes."); }
+                 
+                 // Add click listeners to action buttons
+                 tbody.querySelectorAll('.incor-action-btn').forEach(btn => {
+                     btn.addEventListener('click', function(e) {
+                         e.stopPropagation();
+                         const row = this.closest('tr');
+                         const email = row.getAttribute('data-email');
+                         const action = this.getAttribute('data-action');
+                         
+                         if (action === 'view' && email) {
+                             if (appState.alunosMap.has(email)) {
+                                 showStudentDetail(email);
+                                 setTimeout(() => switchStudentTab('faltas'), 100);
+                             }
+                         } else if (action === 'approve') {
+                             console.log('[incor-action] Aprovar ação para:', email);
+                             // Future: implement approval workflow
+                         } else if (action === 'notify') {
+                             console.log('[incor-action] Notificar ação para:', email);
+                             // Future: implement notification workflow
+                         }
+                     });
+                 });
+                 
+             } catch(e) { 
+                 console.error("[renderRecentAbsences] Erro:", e); 
+                 showError("Erro ao renderizar registros recentes."); 
+             }
         }
 
         function findActiveScale() {
