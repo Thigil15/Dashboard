@@ -656,9 +656,6 @@
                     break;
                     
                 case 'ausenciasReposicoes':
-                    if (typeof renderRecentAbsences === 'function') {
-                        renderRecentAbsences();
-                    }
                     if (typeof renderAtAGlance === 'function') {
                         renderAtAGlance();
                     }
@@ -1313,7 +1310,7 @@ const pontoState = {
             }
 
             // Academic Performance tabs - support both old and new class names
-            const performanceTabs = document.querySelectorAll('.dash-tab, .incor-story-tab');
+            const performanceTabs = document.querySelectorAll('.dash-tab, .incor-story-tab, .incor-modules-tab');
             performanceTabs.forEach(tab => {
                 tab.addEventListener('click', handleAcademicTabSwitch);
             });
@@ -1361,10 +1358,11 @@ const pontoState = {
             if (!tabName) return;
             
             // Update active tab - support both old and new class names
-            document.querySelectorAll('.dash-tab, .incor-story-tab').forEach(btn => {
+            document.querySelectorAll('.dash-tab, .incor-story-tab, .incor-modules-tab').forEach(btn => {
                 const isActive = btn.getAttribute('data-tab') === tabName;
                 btn.classList.toggle('dash-tab--active', isActive);
                 btn.classList.toggle('incor-story-tab--active', isActive);
+                btn.classList.toggle('incor-modules-tab--active', isActive);
             });
             
             // Show/hide content
@@ -2327,9 +2325,6 @@ const pontoState = {
                 
                 renderCourseDistributionChart(cDist);
                 renderModuleAverages(tAvgs, pAvgs);
-                
-                // Render recent activities table
-                renderRecentAbsences();
             } catch (e) { console.error("[renderAtAGlance] Erro:", e); showError("Erro ao renderizar visão geral."); }
         }
         

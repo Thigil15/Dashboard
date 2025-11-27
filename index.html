@@ -196,16 +196,6 @@
                     <span class="sidebar-link-text">Escala</span>
                 </a>
             </nav>
-            
-            <!-- Logout button at bottom of sidebar -->
-            <div class="sidebar-footer">
-                <button id="logout-button" class="sidebar-link logout-btn">
-                    <svg class="sidebar-link-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
-                    <span class="sidebar-link-text">Sair do Sistema</span>
-                </button>
-            </div>
         </aside>
 
         <!-- Conteúdo Principal -->
@@ -324,26 +314,6 @@
                                 </div>
                             </article>
                             
-                            <!-- KPI: Alocação de Plantões -->
-                            <article class="incor-kpi-card" id="kpi-card-shifts" data-status="normal">
-                                <div class="incor-kpi-status-indicator"></div>
-                                <div class="incor-kpi-icon-wrapper incor-kpi-icon--green">
-                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                    </svg>
-                                </div>
-                                <div class="incor-kpi-content">
-                                    <div class="incor-kpi-value-row">
-                                        <strong class="incor-kpi-value" id="kpi-today-shifts">-</strong>
-                                        <span class="incor-kpi-status-badge" id="kpi-shifts-status">Normal</span>
-                                    </div>
-                                    <span class="incor-kpi-label">Escalados Hoje</span>
-                                    <div class="incor-kpi-sublabel" id="kpi-shifts-sublabel">
-                                        Alocação da escala atual
-                                    </div>
-                                </div>
-                            </article>
-                            
                             <!-- KPI: Média Teórica -->
                             <article class="incor-kpi-card" id="kpi-card-theoretical" data-status="normal">
                                 <div class="incor-kpi-status-indicator"></div>
@@ -391,34 +361,7 @@
                          Narrativa Visual: Evolução Individual vs Média da Turma
                          ═══════════════════════════════════════════════════════════════ -->
                     <section class="incor-storytelling-section" aria-label="Análise de Performance">
-                        <div class="incor-storytelling-grid">
-                            
-                            <!-- Performance Evolution Chart -->
-                            <article class="incor-story-card incor-story-card--primary">
-                                <header class="incor-story-header">
-                                    <div class="incor-story-title-group">
-                                        <div class="incor-story-icon">
-                                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
-                                            </svg>
-                                        </div>
-                                        <div>
-                                            <h3 class="incor-story-title">Desempenho por Módulos</h3>
-                                            <p class="incor-story-subtitle">Comparativo de médias teóricas e práticas</p>
-                                        </div>
-                                    </div>
-                                    <nav class="incor-story-tabs">
-                                        <button class="incor-story-tab incor-story-tab--active" data-tab="modulos">Módulos</button>
-                                        <button class="incor-story-tab" data-tab="teoricas">Teóricas</button>
-                                        <button class="incor-story-tab" data-tab="praticas">Práticas</button>
-                                    </nav>
-                                </header>
-                                <div class="incor-story-body">
-                                    <div id="module-averages-chart" class="incor-modules-grid"></div>
-                                    <div id="theoretical-grades-list" class="incor-grades-list" hidden></div>
-                                    <div id="practical-grades-list" class="incor-grades-list" hidden></div>
-                                </div>
-                            </article>
+                        <div class="incor-storytelling-grid incor-storytelling-grid--two-cols">
                             
                             <!-- Course Distribution -->
                             <article class="incor-story-card incor-story-card--secondary">
@@ -464,61 +407,34 @@
                             
                         </div>
                     </section>
-
+                    
                     <!-- ═══════════════════════════════════════════════════════════════
-                         NÍVEL 3: TABELA DE AÇÃO IMEDIATA (Hub de Interação)
-                         Atividades Recentes da Secretaria com Tags de Status
+                         NÍVEL 3: DESEMPENHO POR MÓDULOS
+                         Análise detalhada das notas teóricas e práticas por módulo
                          ═══════════════════════════════════════════════════════════════ -->
-                    <section class="incor-action-section" aria-label="Atividades Recentes">
-                        <header class="incor-action-header">
-                            <div class="incor-action-title-group">
-                                <div class="incor-action-icon">
+                    <section class="incor-modules-section" aria-label="Desempenho por Módulos">
+                        <header class="incor-modules-header">
+                            <div class="incor-modules-title-group">
+                                <div class="incor-modules-icon">
                                     <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
                                     </svg>
                                 </div>
                                 <div>
-                                    <h2 class="incor-action-title">Atividades Recentes da Secretaria</h2>
-                                    <p class="incor-action-subtitle">Registros de ausências e reposições para ação administrativa</p>
+                                    <h2 class="incor-modules-title">Desempenho por Módulos</h2>
+                                    <p class="incor-modules-subtitle">Comparativo de médias teóricas e práticas</p>
                                 </div>
                             </div>
-                            <div class="incor-action-filters">
-                                <button class="incor-action-filter incor-action-filter--active" data-filter="all">
-                                    Todos
-                                </button>
-                                <button class="incor-action-filter" data-filter="pending">
-                                    <span class="incor-action-filter-dot incor-action-filter-dot--pending"></span>
-                                    Pendentes
-                                </button>
-                                <button class="incor-action-filter" data-filter="completed">
-                                    <span class="incor-action-filter-dot incor-action-filter-dot--completed"></span>
-                                    Concluídas
-                                </button>
-                            </div>
+                            <nav class="incor-modules-tabs">
+                                <button class="incor-modules-tab incor-modules-tab--active" data-tab="modulos">Módulos</button>
+                                <button class="incor-modules-tab" data-tab="teoricas">Teóricas</button>
+                                <button class="incor-modules-tab" data-tab="praticas">Práticas</button>
+                            </nav>
                         </header>
-                        
-                        <div class="incor-action-table-wrapper">
-                            <table class="incor-action-table">
-                                <thead>
-                                    <tr>
-                                        <th scope="col" class="incor-action-th--status">Status</th>
-                                        <th scope="col" class="incor-action-th--name">Aluno</th>
-                                        <th scope="col" class="incor-action-th--type">Tipo</th>
-                                        <th scope="col" class="incor-action-th--local">Local</th>
-                                        <th scope="col" class="incor-action-th--date">Data</th>
-                                        <th scope="col" class="incor-action-th--actions">Ações</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="recent-absences-list" class="incor-action-tbody">
-                                    <!-- Populated by JavaScript -->
-                                </tbody>
-                            </table>
-                            <div id="incor-action-empty" class="incor-action-empty" hidden>
-                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                </svg>
-                                <p>Nenhum registro de atividade encontrado.</p>
-                            </div>
+                        <div class="incor-modules-content">
+                            <div id="module-averages-chart" class="incor-modules-grid"></div>
+                            <div id="theoretical-grades-list" class="incor-grades-list" hidden></div>
+                            <div id="practical-grades-list" class="incor-grades-list" hidden></div>
                         </div>
                     </section>
 
