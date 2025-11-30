@@ -1041,8 +1041,11 @@ function getFieldValue(obj, fieldVariants) {
  * 
  * Note: This is different from normalizeString() which:
  * - Converts to lowercase (for general string comparison)
+ * - Removes accents (same as this function)
  * - Does NOT remove spaces/underscores (preserves word boundaries)
- * This function needs uppercase and no spaces to match all variant patterns.
+ * 
+ * This function needs uppercase and no spaces/underscores to match all 
+ * variant patterns created by addKeyVariants().
  * 
  * @param {string} key - The field key to normalize
  * @returns {string} - Normalized key for comparison
@@ -2437,8 +2440,8 @@ const pontoState = {
                                     } else if (keyHasAccents(k) && !keyHasAccents(canonicalKey)) {
                                         // Update to key with accents (likely original Firebase name)
                                         canonicalKeyMap.set(kNormalized, k);
-                                        // Transfer sums/counts to new canonical key
-                                        if (tSums[canonicalKey] !== undefined) {
+                                        // Transfer sums/counts to new canonical key (check both exist)
+                                        if (tSums[canonicalKey] !== undefined && tCounts[canonicalKey] !== undefined) {
                                             tSums[k] = tSums[canonicalKey];
                                             tCounts[k] = tCounts[canonicalKey];
                                             delete tSums[canonicalKey];
