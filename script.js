@@ -1499,9 +1499,9 @@ const pontoState = {
         function findPracticalGradeKey(record) {
             return Object.keys(record).find(k => {
                 const keyNorm = k.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
-                return keyNorm.includes('MEDIA') && keyNorm.includes('NOTA') && keyNorm.includes('FINAL') ||
-                       keyNorm.includes('MEDIA') && keyNorm.includes('FINAL') ||
-                       keyNorm.includes('NOTA') && keyNorm.includes('FINAL') ||
+                return (keyNorm.includes('MEDIA') && keyNorm.includes('NOTA') && keyNorm.includes('FINAL')) ||
+                       (keyNorm.includes('MEDIA') && keyNorm.includes('FINAL')) ||
+                       (keyNorm.includes('NOTA') && keyNorm.includes('FINAL')) ||
                        keyNorm === 'MEDIANOTAFINAL';
             });
         }
