@@ -2440,8 +2440,8 @@ const pontoState = {
                                     } else if (keyHasAccents(k) && !keyHasAccents(canonicalKey)) {
                                         // Update to key with accents (likely original Firebase name)
                                         canonicalKeyMap.set(kNormalized, k);
-                                        // Transfer sums/counts to new canonical key (check both exist)
-                                        if (tSums[canonicalKey] !== undefined && tCounts[canonicalKey] !== undefined) {
+                                        // Transfer sums/counts to new canonical key (use 'in' to handle 0 values)
+                                        if (canonicalKey in tSums && canonicalKey in tCounts) {
                                             tSums[k] = tSums[canonicalKey];
                                             tCounts[k] = tCounts[canonicalKey];
                                             delete tSums[canonicalKey];
