@@ -1008,6 +1008,17 @@
 
         // Estado global da aplicação
 
+// Field name variants for robust matching (handles different casing/formatting from Firebase)
+const EMAIL_FIELD_VARIANTS = ['EmailHC', 'emailHC', 'emailhc', 'EMAILHC', 'Email', 'email'];
+const NAME_FIELD_VARIANTS = ['NomeCompleto', 'nomeCompleto', 'nomecompleto', 'NOMECOMPLETO', 'Nome', 'nome'];
+
+// Helper function to get a value from an object using field name variants
+function getFieldValue(obj, fieldVariants) {
+    if (!obj || !fieldVariants) return null;
+    const matchingField = fieldVariants.find(f => obj[f] !== undefined && obj[f] !== null);
+    return matchingField ? obj[matchingField] : null;
+}
+
 const appState = {
     alunos: [],
     alunosMap: new Map(),
@@ -2259,15 +2270,13 @@ const pontoState = {
             const notasT = notasTeoricasArray.find(n => {
                 if (!n) return false;
                 
-                // Try EmailHC variants
-                const emailFields = ['EmailHC', 'emailHC', 'emailhc', 'EMAILHC', 'Email', 'email'];
-                const hasMatchingEmail = emailFields.some(field => 
+                // Try EmailHC variants using constant
+                const hasMatchingEmail = EMAIL_FIELD_VARIANTS.some(field => 
                     n[field] && normalizeString(n[field]) === emailNormalizado
                 );
                 
-                // Try NomeCompleto variants
-                const nameFields = ['NomeCompleto', 'nomeCompleto', 'nomecompleto', 'NOMECOMPLETO', 'Nome', 'nome'];
-                const hasMatchingName = nameFields.some(field => 
+                // Try NomeCompleto variants using constant
+                const hasMatchingName = NAME_FIELD_VARIANTS.some(field => 
                     n[field] && normalizeString(n[field]) === alunoNomeNormalizado
                 );
                 
@@ -2288,15 +2297,13 @@ const pontoState = {
                 const matchedRecords = (p.registros || []).filter(x => {
                     if (!x) return false;
                     
-                    // Try EmailHC variants for matching
-                    const emailFields = ['EmailHC', 'emailHC', 'emailhc', 'EMAILHC', 'Email', 'email'];
-                    const hasMatchingEmail = emailFields.some(field => 
+                    // Try EmailHC variants for matching using constant
+                    const hasMatchingEmail = EMAIL_FIELD_VARIANTS.some(field => 
                         x[field] && normalizeString(x[field]) === emailNormalizado
                     );
                     
-                    // Try NomeCompleto variants for matching
-                    const nameFields = ['NomeCompleto', 'nomeCompleto', 'nomecompleto', 'NOMECOMPLETO', 'Nome', 'nome'];
-                    const hasMatchingName = nameFields.some(field => 
+                    // Try NomeCompleto variants for matching using constant
+                    const hasMatchingName = NAME_FIELD_VARIANTS.some(field => 
                         x[field] && normalizeString(x[field]) === alunoNomeNormalizado
                     );
                     
@@ -2343,14 +2350,10 @@ const pontoState = {
             const tSums = {}; const tCounts = {};
             if(appState.notasTeoricas?.registros){
                 appState.notasTeoricas.registros.forEach(r => {
-                    // Try multiple field name variants for email
-                    const emailFields = ['EmailHC', 'emailHC', 'emailhc', 'EMAILHC', 'Email', 'email'];
-                    const rEmail = emailFields.find(f => r[f]) ? r[emailFields.find(f => r[f])] : null;
+                    // Use helper function for robust field matching
+                    const rEmail = getFieldValue(r, EMAIL_FIELD_VARIANTS);
                     const rEmailNorm = normalizeString(rEmail);
-                    
-                    // Try multiple field name variants for name
-                    const nameFields = ['NomeCompleto', 'nomeCompleto', 'nomecompleto', 'NOMECOMPLETO', 'Nome', 'nome'];
-                    const rNome = nameFields.find(f => r[f]) ? r[nameFields.find(f => r[f])] : null;
+                    const rNome = getFieldValue(r, NAME_FIELD_VARIANTS);
                     const rNomeNorm = normalizeString(rNome);
                     
                     const student = activeStudentMap.get(rEmailNorm) || activeStudentMap.get(rNomeNorm);
@@ -2391,14 +2394,10 @@ const pontoState = {
                     if (!pSums[pNome]) { pSums[pNome] = 0; pCounts[pNome] = 0; }
                     if(p && p.registros){
                         p.registros.forEach(r => {
-                            // Try multiple field name variants for email
-                            const emailFields = ['EmailHC', 'emailHC', 'emailhc', 'EMAILHC', 'Email', 'email'];
-                            const rEmail = emailFields.find(f => r[f]) ? r[emailFields.find(f => r[f])] : null;
+                            // Use helper function for robust field matching
+                            const rEmail = getFieldValue(r, EMAIL_FIELD_VARIANTS);
                             const rEmailNorm = normalizeString(rEmail);
-                            
-                            // Try multiple field name variants for name
-                            const nameFields = ['NomeCompleto', 'nomeCompleto', 'nomecompleto', 'NOMECOMPLETO', 'Nome', 'nome'];
-                            const rNome = nameFields.find(f => r[f]) ? r[nameFields.find(f => r[f])] : null;
+                            const rNome = getFieldValue(r, NAME_FIELD_VARIANTS);
                             const rNomeNorm = normalizeString(rNome);
                             
                             const isActive = activeStudentMap.has(rEmailNorm) || activeStudentMap.has(rNomeNorm);
