@@ -8266,6 +8266,29 @@
     display: flex;
     flex-direction: column;
     gap: var(--incor-spacing-xs);
+    max-height: 400px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 #f1f5f9;
+    padding: var(--incor-spacing-xs);
+}
+
+.incor-grades-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.incor-grades-list::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 3px;
+}
+
+.incor-grades-list::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+.incor-grades-list::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
 }
 
 .incor-grade {
@@ -8310,6 +8333,33 @@
 
 .incor-grade--practical .incor-grade__value {
     color: #0891b2;
+}
+
+/* Grade info container with count and value */
+.incor-grade__info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.incor-grade__count {
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: var(--content-text-muted);
+    background: rgba(0, 51, 160, 0.06);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+}
+
+.incor-grade--practical .incor-grade__count {
+    background: rgba(8, 145, 178, 0.08);
+    color: #0e7490;
+}
+
+.incor-grade__value--empty {
+    color: var(--content-text-muted);
+    opacity: 0.6;
 }
 
 /* Distribution Chart */

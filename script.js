@@ -1394,35 +1394,82 @@ const pontoState = {
                 return;
             }
             
-            // Calculate average for each student
+            // Calculate average for each student from notasTeoricas
             const studentsWithGrades = activeStudents.map(student => {
+                const emailNorm = normalizeString(student.EmailHC);
+                const nomeNorm = normalizeString(student.NomeCompleto);
+                
                 let totalNota = 0;
                 let countNota = 0;
+                let moduleCount = 0;
                 
+                // First check if student object has MÉDIA FISIO fields directly
                 Object.entries(student).forEach(([key, value]) => {
                     if (key.toUpperCase().includes('MÉDIA') && key.toUpperCase().includes('FISIO')) {
                         const nota = parseNota(value);
                         if (nota > 0) {
                             totalNota += nota;
                             countNota++;
+                            moduleCount++;
                         }
                     }
                 });
                 
+                // Also check notasTeoricas.registros for this student
+                if (appState.notasTeoricas && appState.notasTeoricas.registros) {
+                    const studentRecord = appState.notasTeoricas.registros.find(r => {
+                        const rEmail = normalizeString(r.EmailHC || r.emailHC || '');
+                        const rNome = normalizeString(r.NomeCompleto || r.nomeCompleto || '');
+                        return (emailNorm && rEmail === emailNorm) || (nomeNorm && rNome === nomeNorm);
+                    });
+                    
+                    if (studentRecord) {
+                        // Look for MÉDIA fields in the record
+                        Object.entries(studentRecord).forEach(([key, value]) => {
+                            const keyUpper = key.toUpperCase();
+                            const keyNorm = key.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+                            
+                            if ((keyUpper.includes('MÉDIA') || keyNorm.includes('MEDIA')) && 
+                                (keyUpper.includes('FISIO') || keyNorm.includes('FISIO'))) {
+                                const nota = parseNota(value);
+                                // Avoid double counting if already found in student object
+                                if (nota > 0 && countNota === 0) {
+                                    totalNota += nota;
+                                    countNota++;
+                                    moduleCount++;
+                                }
+                            }
+                        });
+                    }
+                }
+                
+                const media = countNota > 0 ? (totalNota / countNota) : 0;
+                
                 return {
                     email: student.EmailHC,
                     nome: student.NomeCompleto || student.EmailHC,
-                    media: countNota > 0 ? (totalNota / countNota) : 0
+                    media: media,
+                    moduleCount: moduleCount
                 };
             }).sort((a, b) => b.media - a.media);
             
             let html = '';
             studentsWithGrades.forEach((student, index) => {
                 const escapedName = escapeHtml(student.nome);
+                const gradeDisplay = student.media > 0 
+                    ? `<span class="incor-grade__value">${student.media.toFixed(1)}</span>` 
+                    : `<span class="incor-grade__value incor-grade__value--empty">-</span>`;
+                const moduleInfo = student.moduleCount > 0 
+                    ? `<span class="incor-grade__count">(${student.moduleCount})</span>` 
+                    : '';
+                
                 html += `
                     <div class="incor-grade" data-email="${escapeHtml(student.email || '')}" data-index="${index}">
                         <span class="incor-grade__name" title="${escapedName}">${escapedName}</span>
-                        <span class="incor-grade__value">${student.media > 0 ? student.media.toFixed(1) : '-'}</span>
+                        <div class="incor-grade__info">
+                            ${moduleInfo}
+                            ${gradeDisplay}
+                        </div>
                     </div>
                 `;
             });
@@ -1453,33 +1500,83 @@ const pontoState = {
                 return;
             }
             
-            // Get practical grades from notasPraticas
+            // Get practical grades from notasPraticas (which is an object keyed by module name)
             const studentsWithGrades = activeStudents.map(student => {
-                const email = student.EmailHC;
-                const praticaData = appState.notasPraticas.find(np => 
-                    normalizeString(np.EmailHC) === normalizeString(email) ||
-                    normalizeString(np.NomeCompleto) === normalizeString(student.NomeCompleto)
-                );
+                const emailNorm = normalizeString(student.EmailHC);
+                const nomeNorm = normalizeString(student.NomeCompleto);
                 
-                let media = 0;
-                if (praticaData && praticaData['Média Geral']) {
-                    media = parseNota(praticaData['Média Geral']);
+                // Collect all practical grades for this student across all modules
+                let totalNota = 0;
+                let countNota = 0;
+                let moduleCount = 0;
+                
+                // Iterate through all modules in notasPraticas object
+                if (appState.notasPraticas && typeof appState.notasPraticas === 'object') {
+                    Object.values(appState.notasPraticas).forEach(modulo => {
+                        if (modulo && modulo.registros && Array.isArray(modulo.registros)) {
+                            // Find records for this student in this module
+                            const studentRecords = modulo.registros.filter(r => {
+                                const rEmail = normalizeString(r.EmailHC || r.emailHC || '');
+                                const rNome = normalizeString(r.NomeCompleto || r.nomeCompleto || '');
+                                return (emailNorm && rEmail === emailNorm) || (nomeNorm && rNome === nomeNorm);
+                            });
+                            
+                            // Calculate average from the final grade field for each record
+                            studentRecords.forEach(record => {
+                                // Find the average/final grade field
+                                const gradeKey = Object.keys(record).find(k => 
+                                    /MÉDIA.*NOTA.*FINAL/i.test(k) || 
+                                    /MEDIA.*NOTA.*FINAL/i.test(k) ||
+                                    /MÉDIA.*FINAL/i.test(k) ||
+                                    /MEDIA.*FINAL/i.test(k) ||
+                                    /NOTA.*FINAL/i.test(k) ||
+                                    /MediaNotaFinal/i.test(k)
+                                );
+                                
+                                if (gradeKey && record[gradeKey]) {
+                                    const nota = parseNota(record[gradeKey]);
+                                    if (nota > 0) {
+                                        totalNota += nota;
+                                        countNota++;
+                                    }
+                                }
+                            });
+                            
+                            if (studentRecords.length > 0) {
+                                moduleCount++;
+                            }
+                        }
+                    });
                 }
                 
+                const media = countNota > 0 ? (totalNota / countNota) : 0;
+                
                 return {
-                    email: email,
-                    nome: student.NomeCompleto || email,
-                    media: media
+                    email: student.EmailHC,
+                    nome: student.NomeCompleto || student.EmailHC,
+                    media: media,
+                    moduleCount: moduleCount,
+                    avaliacoes: countNota
                 };
             }).sort((a, b) => b.media - a.media);
             
             let html = '';
             studentsWithGrades.forEach((student, index) => {
                 const escapedName = escapeHtml(student.nome);
+                const gradeDisplay = student.media > 0 
+                    ? `<span class="incor-grade__value">${student.media.toFixed(1)}</span>` 
+                    : `<span class="incor-grade__value incor-grade__value--empty">-</span>`;
+                const evalCount = student.avaliacoes > 0 
+                    ? `<span class="incor-grade__count">(${student.avaliacoes})</span>` 
+                    : '';
+                
                 html += `
                     <div class="incor-grade incor-grade--practical" data-email="${escapeHtml(student.email || '')}" data-index="${index}">
                         <span class="incor-grade__name" title="${escapedName}">${escapedName}</span>
-                        <span class="incor-grade__value">${student.media > 0 ? student.media.toFixed(1) : '-'}</span>
+                        <div class="incor-grade__info">
+                            ${evalCount}
+                            ${gradeDisplay}
+                        </div>
                     </div>
                 `;
             });
