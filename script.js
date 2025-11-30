@@ -291,6 +291,7 @@
                                 const fallbackPath = 'exportAll/NotasTeoricas';
                                 console.log(`[setupDatabaseListeners] 🔄 Tentando caminho alternativo para NotasTeoricas: ${fallbackPath}`);
                                 const fallbackRef = window.firebase.ref(fbDB, fallbackPath);
+                                // Use onlyOnce: true to avoid memory leaks - this is a one-time fallback check
                                 window.firebase.onValue(fallbackRef, (fallbackSnapshot) => {
                                     const fallbackData = fallbackSnapshot.val();
                                     if (fallbackData) {
@@ -302,7 +303,12 @@
                                             processedData = fallbackData.dados;
                                         }
                                         appState[stateKey] = processor(processedData);
+                                        // Ensure data loading state is updated for fallback
+                                        if (appState.dataLoadingState) {
+                                            appState.dataLoadingState[stateKey] = true;
+                                        }
                                         triggerUIUpdates(stateKey);
+                                        checkAndHideLoadingOverlay();
                                     }
                                 }, { onlyOnce: true });
                             }
@@ -2736,8 +2742,14 @@ const pontoState = {
             const container = document.getElementById('module-averages-chart');
             if (!container) return;
             
+            // Debug logging to understand data
+            console.log('[renderModuleAverages] Received tAvgs:', tAvgs);
+            console.log('[renderModuleAverages] Received pAvgs:', pAvgs);
+            console.log('[renderModuleAverages] tAvgs keys:', Object.keys(tAvgs));
+            console.log('[renderModuleAverages] pAvgs keys:', Object.keys(pAvgs));
+            
             // Metadata/non-grade fields to exclude from counting
-            const EXCLUDED_FIELDS = new Set(['SerialNumber', 'NomeCompleto', 'EmailHC', 'Curso', 'serialnumber', 'nomecompleto', 'emailhc', 'curso']);
+            const EXCLUDED_FIELDS = new Set(['SerialNumber', 'NomeCompleto', 'EmailHC', 'Curso', 'serialnumber', 'nomecompleto', 'emailhc', 'curso', 'email', 'nome', 'Email', 'Nome']);
             
             // Get counts for each module to show student count
             const tCounts = {};
@@ -2745,9 +2757,16 @@ const pontoState = {
             
             // Process theoretical data to get counts
             if (appState.notasTeoricas?.registros) {
+                console.log('[renderModuleAverages] NotasTeoricas registros count:', appState.notasTeoricas.registros.length);
+                if (appState.notasTeoricas.registros.length > 0) {
+                    console.log('[renderModuleAverages] First record keys:', Object.keys(appState.notasTeoricas.registros[0]));
+                }
+                
                 appState.notasTeoricas.registros.forEach(r => {
                     Object.keys(r).forEach(k => {
-                        if (!EXCLUDED_FIELDS.has(k) && k.trim() !== '') {
+                        const kUpper = k.toUpperCase();
+                        const isExcluded = Array.from(EXCLUDED_FIELDS).some(f => kUpper === f.toUpperCase());
+                        if (!isExcluded && k.trim() !== '') {
                             const n = parseNota(r[k]);
                             if (n > 0) {
                                 tCounts[k] = (tCounts[k] || 0) + 1;
@@ -2755,16 +2774,21 @@ const pontoState = {
                         }
                     });
                 });
+            } else {
+                console.warn('[renderModuleAverages] ⚠️ No theoretical records found in appState.notasTeoricas.registros');
             }
             
             // Process practical data to get counts
             if (appState.notasPraticas && typeof appState.notasPraticas === 'object') {
+                console.log('[renderModuleAverages] NotasPraticas modules:', Object.keys(appState.notasPraticas));
                 Object.values(appState.notasPraticas).forEach(p => {
                     const pNome = p.nomePratica;
                     if (p && p.registros) {
                         pCounts[pNome] = p.registros.length;
                     }
                 });
+            } else {
+                console.warn('[renderModuleAverages] ⚠️ No practical grades found in appState.notasPraticas');
             }
             
             // Helper to extract module number from key for sorting
@@ -2773,12 +2797,31 @@ const pontoState = {
                 return match ? parseInt(match[0], 10) : 999;
             };
             
-            // Filter and sort theoretical averages - only show MÉDIA entries
-            const theoreticalEntries = Object.entries(tAvgs)
-                .filter(([key, value]) => key.toUpperCase().includes('MÉDIA') && value > 0)
+            // Helper to normalize key for comparison (accent-insensitive, case-insensitive)
+            const normalizeKey = (key) => {
+                return key.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
+            };
+            
+            // Separate MÉDIA entries (module averages) from individual discipline entries
+            const mediaEntries = Object.entries(tAvgs)
+                .filter(([key, value]) => {
+                    const keyNorm = normalizeKey(key);
+                    return (keyNorm.includes('MEDIA') || keyNorm.includes('MÉDIA')) && value > 0;
+                })
                 .map(([key, value]) => ({ key, value, sortNum: extractModuleNumber(key) }))
-                .sort((a, b) => a.sortNum - b.sortNum)
-                .map(({ key, value }) => [key, value]);
+                .sort((a, b) => a.sortNum - b.sortNum);
+            
+            // Get individual discipline entries (not MÉDIA)
+            const disciplineEntries = Object.entries(tAvgs)
+                .filter(([key, value]) => {
+                    const keyNorm = normalizeKey(key);
+                    return !(keyNorm.includes('MEDIA') || keyNorm.includes('MÉDIA')) && value > 0;
+                })
+                .map(([key, value]) => ({ key, value }))
+                .sort((a, b) => a.key.localeCompare(b.key));
+            
+            console.log('[renderModuleAverages] Module averages (MÉDIA):', mediaEntries.length);
+            console.log('[renderModuleAverages] Individual disciplines:', disciplineEntries.length);
             
             // Filter and sort practical averages
             const practicalEntries = Object.entries(pAvgs)
@@ -2787,12 +2830,25 @@ const pontoState = {
                 .sort((a, b) => {
                     if (a.sortNum !== b.sortNum) return a.sortNum - b.sortNum;
                     return a.key.localeCompare(b.key);
-                })
-                .map(({ key, value }) => [key, value]);
+                });
+            
+            // Calculate overall statistics for the header
+            const theoreticalTotal = mediaEntries.length + disciplineEntries.length;
+            const practicalTotal = practicalEntries.length;
+            const avgTheoretical = mediaEntries.length > 0 
+                ? (mediaEntries.reduce((sum, e) => sum + e.value, 0) / mediaEntries.length).toFixed(1)
+                : (disciplineEntries.length > 0 
+                    ? (disciplineEntries.reduce((sum, e) => sum + e.value, 0) / disciplineEntries.length).toFixed(1)
+                    : 'N/A');
+            const avgPractical = practicalEntries.length > 0 
+                ? (practicalEntries.reduce((sum, e) => sum + e.value, 0) / practicalEntries.length).toFixed(1)
+                : 'N/A';
             
             // Build theoretical section HTML
             let theoreticalHtml = '';
-            if (theoreticalEntries.length > 0) {
+            const theoreticalEntries = mediaEntries.map(({ key, value }) => [key, value]);
+            
+            if (theoreticalEntries.length > 0 || disciplineEntries.length > 0) {
                 theoreticalHtml = `
                     <div class="incor-modules-section-container">
                         <div class="incor-modules-section-header">
@@ -2803,11 +2859,15 @@ const pontoState = {
                             </div>
                             <div>
                                 <h3 class="incor-modules-section-title">Notas Teóricas</h3>
-                                <p class="incor-modules-section-subtitle">${theoreticalEntries.length} módulo${theoreticalEntries.length > 1 ? 's' : ''} avaliado${theoreticalEntries.length > 1 ? 's' : ''}</p>
+                                <p class="incor-modules-section-subtitle">
+                                    ${theoreticalEntries.length > 0 
+                                        ? `${theoreticalEntries.length} módulo${theoreticalEntries.length > 1 ? 's' : ''} • Média geral: ${avgTheoretical}` 
+                                        : `${disciplineEntries.length} disciplina${disciplineEntries.length > 1 ? 's' : ''} avaliada${disciplineEntries.length > 1 ? 's' : ''}`}
+                                </p>
                             </div>
                         </div>
                         <div class="incor-modules-card-list">
-                            ${theoreticalEntries.map(([key, value], index) => {
+                            ${theoreticalEntries.length > 0 ? theoreticalEntries.map(([key, value], index) => {
                                 const moduleName = key.replace(/MÉDIA\s*/i, '').replace(/\s*FISIO/i, ' Fisio').trim() || 'Módulo Teórico';
                                 const percentage = (value / 10) * 100;
                                 const count = tCounts[key] || 0;
@@ -2829,7 +2889,57 @@ const pontoState = {
                                         </div>
                                     </div>
                                 `;
-                            }).join('')}
+                            }).join('') : ''}
+                            ${disciplineEntries.length > 0 && theoreticalEntries.length === 0 ? disciplineEntries.map(({ key, value }, index) => {
+                                const percentage = (value / 10) * 100;
+                                const count = tCounts[key] || 0;
+                                return `
+                                    <div class="incor-module-card incor-module-card--theoretical">
+                                        <div class="incor-module-card__info">
+                                            <span class="incor-module-card__order">Disciplina ${index + 1}</span>
+                                            <span class="incor-module-card__name" title="${escapeHtml(key)}">${escapeHtml(key)}</span>
+                                        </div>
+                                        <div class="incor-module-card__meta">
+                                            ${count > 0 ? `<span class="incor-module-card__count">${count} aluno${count > 1 ? 's' : ''}</span>` : ''}
+                                            <div class="incor-module-card__grade">
+                                                <span class="incor-module-card__value incor-module-card__value--theoretical">${value.toFixed(1)}</span>
+                                                <span class="incor-module-card__max">de 10,0</span>
+                                                <div class="incor-module-card__progress">
+                                                    <div class="incor-module-card__progress-fill incor-module-card__progress-fill--theoretical" style="width: ${percentage}%;"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('') : ''}
+                            ${disciplineEntries.length > 0 && theoreticalEntries.length > 0 ? `
+                                <details class="incor-modules-disciplines-details">
+                                    <summary class="incor-modules-disciplines-summary">
+                                        <span>Ver ${disciplineEntries.length} disciplina${disciplineEntries.length > 1 ? 's' : ''} individuai${disciplineEntries.length > 1 ? 's' : ''}</span>
+                                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </summary>
+                                    <div class="incor-modules-disciplines-content">
+                                        ${disciplineEntries.map(({ key, value }) => {
+                                            const percentage = (value / 10) * 100;
+                                            const count = tCounts[key] || 0;
+                                            return `
+                                                <div class="incor-discipline-item">
+                                                    <span class="incor-discipline-name" title="${escapeHtml(key)}">${escapeHtml(key)}</span>
+                                                    <div class="incor-discipline-grade">
+                                                        ${count > 0 ? `<span class="incor-discipline-count">(${count})</span>` : ''}
+                                                        <span class="incor-discipline-value">${value.toFixed(1)}</span>
+                                                        <div class="incor-discipline-progress">
+                                                            <div class="incor-discipline-fill" style="width: ${percentage}%;"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            `;
+                                        }).join('')}
+                                    </div>
+                                </details>
+                            ` : ''}
                         </div>
                     </div>
                 `;
@@ -2844,10 +2954,13 @@ const pontoState = {
                             </div>
                             <div>
                                 <h3 class="incor-modules-section-title">Notas Teóricas</h3>
-                                <p class="incor-modules-section-subtitle">Aguardando dados</p>
+                                <p class="incor-modules-section-subtitle">Aguardando dados do Firebase</p>
                             </div>
                         </div>
-                        <div class="incor-modules-empty">Nenhuma média teórica disponível</div>
+                        <div class="incor-modules-empty">
+                            <p>Nenhuma nota teórica disponível</p>
+                            <p class="incor-modules-empty-hint">Os dados serão carregados automaticamente quando disponíveis</p>
+                        </div>
                     </div>
                 `;
             }
@@ -2865,11 +2978,11 @@ const pontoState = {
                             </div>
                             <div>
                                 <h3 class="incor-modules-section-title">Notas Práticas</h3>
-                                <p class="incor-modules-section-subtitle">${practicalEntries.length} módulo${practicalEntries.length > 1 ? 's' : ''} avaliado${practicalEntries.length > 1 ? 's' : ''}</p>
+                                <p class="incor-modules-section-subtitle">${practicalEntries.length} módulo${practicalEntries.length > 1 ? 's' : ''} • Média geral: ${avgPractical}</p>
                             </div>
                         </div>
                         <div class="incor-modules-card-list">
-                            ${practicalEntries.map(([key, value], index) => {
+                            ${practicalEntries.map(({ key, value }, index) => {
                                 const percentage = (value / 10) * 100;
                                 const count = pCounts[key] || 0;
                                 // Format practical module name nicely
@@ -2907,10 +3020,13 @@ const pontoState = {
                             </div>
                             <div>
                                 <h3 class="incor-modules-section-title">Notas Práticas</h3>
-                                <p class="incor-modules-section-subtitle">Aguardando dados</p>
+                                <p class="incor-modules-section-subtitle">Aguardando dados do Firebase</p>
                             </div>
                         </div>
-                        <div class="incor-modules-empty">Nenhuma média prática disponível</div>
+                        <div class="incor-modules-empty">
+                            <p>Nenhuma nota prática disponível</p>
+                            <p class="incor-modules-empty-hint">Os dados serão carregados automaticamente quando disponíveis</p>
+                        </div>
                     </div>
                 `;
             }
