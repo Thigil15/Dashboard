@@ -1200,8 +1200,14 @@ const pontoState = {
             console.log('[setupEventHandlers] Configurando listeners...');
             // Login form event listener - registered only once to prevent duplicate submissions
             document.getElementById('login-form').addEventListener('submit', handleLogin);
-            setupSidebarNavigation();
-            document.getElementById('sidebar-toggle').addEventListener('click', toggleSidebar); 
+            setupHeaderNavigation();
+            
+            // Sidebar toggle - only if element exists (legacy support)
+            const sidebarToggle = document.getElementById('sidebar-toggle');
+            if (sidebarToggle) {
+                sidebarToggle.addEventListener('click', toggleSidebar); 
+            }
+            
             document.getElementById('back-to-dashboard').addEventListener('click', showAlunosList);
             document.getElementById('search-student').addEventListener('input', filterStudentList);
             setupStudentTabNavigation();
@@ -2026,29 +2032,49 @@ const pontoState = {
         }
 
         // --- NAVEGAÇÃO PRINCIPAL ---
-        function setupSidebarNavigation() {
-            const sidebar = document.querySelector('#app-sidebar nav');
-            sidebar.addEventListener('click', (e) => {
-                const link = e.target.closest('.sidebar-link');
-                if (link) {
-                    e.preventDefault();
-                    switchMainTab(link.getAttribute('data-tab'));
-                }
-            });
+        // Helper function to handle navigation link clicks
+        function handleNavLinkClick(e, linkSelector) {
+            const link = e.target.closest(linkSelector);
+            if (link) {
+                e.preventDefault();
+                switchMainTab(link.getAttribute('data-tab'));
+            }
         }
         
+        function setupHeaderNavigation() {
+            // Modern header navigation
+            const headerNav = document.querySelector('#header-nav');
+            if (headerNav) {
+                headerNav.addEventListener('click', (e) => handleNavLinkClick(e, '.header-nav-link'));
+            }
+            
+            // Legacy sidebar support (backward compatibility)
+            const sidebar = document.querySelector('#app-sidebar nav');
+            if (sidebar) {
+                sidebar.addEventListener('click', (e) => handleNavLinkClick(e, '.sidebar-link'));
+            }
+        }
+        
+        // Keep legacy function name for compatibility
+        function setupSidebarNavigation() {
+            setupHeaderNavigation();
+        }
+        
+        // Legacy function - no longer needed with top header navigation
         function toggleSidebar() {
-            appState.isSidebarCollapsed = !appState.isSidebarCollapsed;
-            console.log(`[toggleSidebar] Colapsada: ${appState.isSidebarCollapsed}`);
-            const sidebar = document.getElementById('app-sidebar');
-            sidebar.classList.toggle('collapsed', appState.isSidebarCollapsed);
+            console.log('[toggleSidebar] Função legacy - não aplicável com navegação de cabeçalho');
         }
         
         function switchMainTab(tabName) {
             console.log("[switchMainTab] Trocando para aba principal:", tabName);
-            document.querySelectorAll('.sidebar-link').forEach(l => l.classList.toggle('active', l.getAttribute('data-tab') === tabName));
             
-            const allSubViews = document.querySelectorAll('main > .view-container');
+            // Update all navigation links (both header and legacy sidebar)
+            document.querySelectorAll('.header-nav-link, .sidebar-link').forEach(l => {
+                l.classList.toggle('active', l.getAttribute('data-tab') === tabName);
+            });
+            
+            // Find all view containers in both modern and legacy layouts
+            const allSubViews = document.querySelectorAll('.main-content-area > .view-container, main > .view-container');
             allSubViews.forEach(view => {
                 const isActive = view.id === `content-${tabName}`;
                 view.style.display = isActive ? 'block' : 'none';
