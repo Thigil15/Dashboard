@@ -4793,9 +4793,6 @@ const pontoState = {
         function renderTabInfo(info) {
              const p=document.getElementById('tab-info');
              
-             // Find theory class days for this student
-             const theoryDaysHtml = renderTheoryClassDays();
-             
              p.innerHTML=`
                 <div class="student-info-section">
                     <h3 class="student-info-section-title">
@@ -4831,78 +4828,7 @@ const pontoState = {
                         </div>
                     </dl>
                 </div>
-                
-                ${theoryDaysHtml}
              `;
-        }
-        
-        /**
-         * Render theory class days section based on current scales
-         * Shows the days when theory classes occur (Tuesdays and Thursdays)
-         */
-        function renderTheoryClassDays() {
-            // Find all theory scales (EscalaTeoria1, EscalaTeoria2, etc.)
-            const theoryScales = Object.entries(appState.escalas || {})
-                .filter(([key, escala]) => escala.tipo === 'teoria')
-                .sort((a, b) => a[1].numero - b[1].numero);
-            
-            if (theoryScales.length === 0) {
-                // No theory scales found
-                return '';
-            }
-            
-            let theoryHtml = `
-                <div class="student-info-section student-theory-section">
-                    <h3 class="student-info-section-title">
-                        <svg class="student-info-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                        </svg>
-                        Aulas Teóricas
-                        <span class="student-info-badge">Terças e Quintas</span>
-                    </h3>
-                    <p class="student-theory-description">Dias de aula teórica por período de escala</p>
-                    
-                    <div class="theory-scales-container">
-            `;
-            
-            theoryScales.forEach(([key, escala]) => {
-                const diasAula = escala.diasAula || [];
-                
-                theoryHtml += `
-                    <div class="theory-scale-card">
-                        <div class="theory-scale-header">
-                            <span class="theory-scale-name">${escala.nomeEscala}</span>
-                            <span class="theory-scale-count">${diasAula.length} dias</span>
-                        </div>
-                        <div class="theory-days-list">
-                `;
-                
-                if (diasAula.length > 0) {
-                    diasAula.forEach(dia => {
-                        const isQuinta = dia.diaSemana === 'Quinta';
-                        theoryHtml += `
-                            <span class="theory-day-chip ${isQuinta ? 'quinta' : 'terca'}">
-                                <span class="theory-day-name">${dia.diaSemana}</span>
-                                <span class="theory-day-date">${dia.data}</span>
-                            </span>
-                        `;
-                    });
-                } else {
-                    theoryHtml += `<span class="theory-no-days">Nenhum dia de aula encontrado</span>`;
-                }
-                
-                theoryHtml += `
-                        </div>
-                    </div>
-                `;
-            });
-            
-            theoryHtml += `
-                    </div>
-                </div>
-            `;
-            
-            return theoryHtml;
         }
         
 /* =======================================================================
