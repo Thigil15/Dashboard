@@ -1020,6 +1020,9 @@
 const EMAIL_FIELD_VARIANTS = ['EmailHC', 'emailHC', 'emailhc', 'EMAILHC', 'Email', 'email'];
 const NAME_FIELD_VARIANTS = ['NomeCompleto', 'nomeCompleto', 'nomecompleto', 'NOMECOMPLETO', 'Nome', 'nome'];
 
+// Metadata/non-grade fields to exclude from grade calculations (uppercase for O(1) lookup)
+const EXCLUDED_FIELDS_SET = new Set(['SERIALNUMBER', 'NOMECOMPLETO', 'EMAILHC', 'CURSO', 'EMAIL', 'NOME']);
+
 // Helper function to get a value from an object using field name variants
 function getFieldValue(obj, fieldVariants) {
     if (!obj || !fieldVariants) return null;
@@ -2367,12 +2370,10 @@ const pontoState = {
                     const student = activeStudentMap.get(rEmailNorm) || activeStudentMap.get(rNomeNorm);
 
                     if(student && student.Curso !== 'Residência - 2º ano' && student.Curso !== 'Residência  - 2º ano'){
-                        // Use Set for O(1) lookup
-                        const excludedFieldsSet = new Set(['SERIALNUMBER', 'NOMECOMPLETO', 'EMAILHC', 'CURSO', 'EMAIL', 'NOME']);
                         Object.keys(r).forEach(k => {
-                            // Exclude known non-grade fields (case-insensitive)
+                            // Exclude known non-grade fields (case-insensitive) using module-level Set
                             const kUpper = k.toUpperCase();
-                            if(!excludedFieldsSet.has(kUpper) && k.trim() !== ''){
+                            if(!EXCLUDED_FIELDS_SET.has(kUpper) && k.trim() !== ''){
                                 const n = parseNota(r[k]);
                                 if(n > 0){
                                     tSums[k] = (tSums[k] || 0) + n;
@@ -2751,9 +2752,6 @@ const pontoState = {
             console.log('[renderModuleAverages] tAvgs keys:', Object.keys(tAvgs));
             console.log('[renderModuleAverages] pAvgs keys:', Object.keys(pAvgs));
             
-            // Metadata/non-grade fields to exclude from counting (uppercase for O(1) lookup)
-            const EXCLUDED_FIELDS_UPPER = new Set(['SERIALNUMBER', 'NOMECOMPLETO', 'EMAILHC', 'CURSO', 'EMAIL', 'NOME']);
-            
             // Get counts for each module to show student count
             const tCounts = {};
             const pCounts = {};
@@ -2768,8 +2766,8 @@ const pontoState = {
                 appState.notasTeoricas.registros.forEach(r => {
                     Object.keys(r).forEach(k => {
                         const kUpper = k.toUpperCase();
-                        // Use O(1) Set lookup
-                        if (!EXCLUDED_FIELDS_UPPER.has(kUpper) && k.trim() !== '') {
+                        // Use module-level Set for O(1) lookup
+                        if (!EXCLUDED_FIELDS_SET.has(kUpper) && k.trim() !== '') {
                             const n = parseNota(r[k]);
                             if (n > 0) {
                                 tCounts[k] = (tCounts[k] || 0) + 1;
