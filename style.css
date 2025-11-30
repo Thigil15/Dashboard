@@ -8983,6 +8983,14 @@
     transform: translateX(4px);
 }
 
+/* Accessibility: Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+    .incor-module-card:hover {
+        transform: none;
+        transition: none;
+    }
+}
+
 .incor-module-card--theoretical {
     border-left: 3px solid #d97706;
 }

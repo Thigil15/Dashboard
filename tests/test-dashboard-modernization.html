@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste - Modernização do Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            padding: 2rem;
+            background: linear-gradient(135deg, #F0F4F8 0%, #E8EEF4 50%, #F5F8FB 100%);
+            min-height: 100vh;
+        }
+        .test-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .test-header h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #0033A0, #0054B4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+        .test-header p {
+            color: #64748b;
+        }
+        .test-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        .test-section h2 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #0033A0;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .test-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-radius: 9999px;
+            margin-left: 0.5rem;
+        }
+        .test-badge--success {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .test-description {
+            color: #64748b;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="max-w-7xl mx-auto">
+        <header class="test-header">
+            <h1>✅ Teste de Modernização do Dashboard</h1>
+            <p>Verificação visual das mudanças implementadas</p>
+        </header>
+
+        <!-- Test 1: KPIs Reordered -->
+        <section class="test-section">
+            <h2>
+                1️⃣ Monitor de Saúde Operacional
+                <span class="test-badge test-badge--success">ATUALIZADO</span>
+            </h2>
+            <p class="test-description">
+                <strong>Mudanças:</strong> Ordem alterada - Alunos Ativos → Média Teórica → Média Prática → Reposições Pendentes<br>
+                <strong>Alunos:</strong> Agora mostra "X Ativos" (número grande) e "de Y matriculados" (sublabel)
+            </p>
+            
+            <section class="incor-kpi-section">
+                <header class="incor-kpi-header">
+                    <div class="incor-kpi-header-left">
+                        <div class="incor-kpi-header-icon">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="incor-kpi-header-title">Monitor de Saúde Operacional</h2>
+                            <p class="incor-kpi-header-subtitle">Indicadores em tempo real do programa de ensino</p>
+                        </div>
+                    </div>
+                    <div class="incor-kpi-timestamp">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>Atualizado às 10:30</span>
+                    </div>
+                </header>
+                
+                <div class="incor-kpi-grid">
+                    <!-- KPI 1: Alunos Ativos (Prominent) -->
+                    <article class="incor-kpi-card" data-status="normal">
+                        <div class="incor-kpi-status-indicator"></div>
+                        <div class="incor-kpi-icon-wrapper incor-kpi-icon--blue">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                            </svg>
+                        </div>
+                        <div class="incor-kpi-content">
+                            <div class="incor-kpi-value-row">
+                                <strong class="incor-kpi-value">25</strong>
+                                <span class="incor-kpi-status-badge">Normal</span>
+                            </div>
+                            <span class="incor-kpi-label">Alunos Ativos</span>
+                            <div class="incor-kpi-sublabel">
+                                de <span>28</span> matriculados
+                            </div>
+                        </div>
+                    </article>
+                    
+                    <!-- KPI 2: Média Teórica -->
+                    <article class="incor-kpi-card" data-status="normal">
+                        <div class="incor-kpi-status-indicator"></div>
+                        <div class="incor-kpi-icon-wrapper incor-kpi-icon--amber">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                            </svg>
+                        </div>
+                        <div class="incor-kpi-content">
+                            <div class="incor-kpi-value-row">
+                                <strong class="incor-kpi-value">8.5</strong>
+                                <span class="incor-kpi-status-badge">Excelente</span>
+                            </div>
+                            <span class="incor-kpi-label">Média Teórica Geral</span>
+                            <div class="incor-kpi-progress-bar">
+                                <div class="incor-kpi-progress-fill" style="width: 85%;"></div>
+                            </div>
+                        </div>
+                    </article>
+                    
+                    <!-- KPI 3: Média Prática -->
+                    <article class="incor-kpi-card" data-status="normal">
+                        <div class="incor-kpi-status-indicator"></div>
+                        <div class="incor-kpi-icon-wrapper incor-kpi-icon--cyan">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                            </svg>
+                        </div>
+                        <div class="incor-kpi-content">
+                            <div class="incor-kpi-value-row">
+                                <strong class="incor-kpi-value">8.8</strong>
+                                <span class="incor-kpi-status-badge">Excelente</span>
+                            </div>
+                            <span class="incor-kpi-label">Média Prática Geral</span>
+                            <div class="incor-kpi-progress-bar">
+                                <div class="incor-kpi-progress-fill incor-kpi-progress--cyan" style="width: 88%;"></div>
+                            </div>
+                        </div>
+                    </article>
+                    
+                    <!-- KPI 4: Reposições Pendentes (Now Last) -->
+                    <article class="incor-kpi-card" data-status="alert">
+                        <div class="incor-kpi-status-indicator"></div>
+                        <div class="incor-kpi-icon-wrapper incor-kpi-icon--orange">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                        </div>
+                        <div class="incor-kpi-content">
+                            <div class="incor-kpi-value-row">
+                                <strong class="incor-kpi-value">5</strong>
+                                <span class="incor-kpi-status-badge">Alerta</span>
+                            </div>
+                            <span class="incor-kpi-label">Reposições Pendentes</span>
+                            <div class="incor-kpi-sublabel">
+                                Ações administrativas necessárias
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            </section>
+        </section>
+
+        <!-- Test 2: Course Distribution -->
+        <section class="test-section">
+            <h2>
+                2️⃣ Distribuição por Curso
+                <span class="test-badge test-badge--success">CORRIGIDO</span>
+            </h2>
+            <p class="test-description">
+                <strong>Mudança:</strong> Largura do label expandida de 90px para 140px, com quebra de linha permitida
+            </p>
+            
+            <div style="max-width: 500px;">
+                <div class="incor-distribution-chart">
+                    <div class="incor-dist">
+                        <span class="incor-dist__label">Residência - 1º ano</span>
+                        <div class="incor-dist__bar">
+                            <div class="incor-dist__fill incor-dist__fill--1" style="width: 45%;"></div>
+                        </div>
+                        <span class="incor-dist__count">12</span>
+                    </div>
+                    <div class="incor-dist">
+                        <span class="incor-dist__label">Aprimoramento Cardiovascular</span>
+                        <div class="incor-dist__bar">
+                            <div class="incor-dist__fill incor-dist__fill--2" style="width: 30%;"></div>
+                        </div>
+                        <span class="incor-dist__count">8</span>
+                    </div>
+                    <div class="incor-dist">
+                        <span class="incor-dist__label">Residência - 2º ano</span>
+                        <div class="incor-dist__bar">
+                            <div class="incor-dist__fill incor-dist__fill--3" style="width: 20%;"></div>
+                        </div>
+                        <span class="incor-dist__count">5</span>
+                    </div>
+                    <div class="incor-dist">
+                        <span class="incor-dist__label">Aprimoramento Respiratório</span>
+                        <div class="incor-dist__bar">
+                            <div class="incor-dist__fill incor-dist__fill--4" style="width: 15%;"></div>
+                        </div>
+                        <span class="incor-dist__count">3</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Test 3: Module Performance -->
+        <section class="test-section">
+            <h2>
+                3️⃣ Desempenho por Módulos
+                <span class="test-badge test-badge--success">RECONSTRUÍDO</span>
+            </h2>
+            <p class="test-description">
+                <strong>Mudança:</strong> Novo layout profissional com duas colunas (Teóricas e Práticas), barras de progresso, e contagem de alunos
+            </p>
+            
+            <section class="incor-modules-section" style="border-radius: 1rem; overflow: hidden;">
+                <header class="incor-modules-header">
+                    <div class="incor-modules-title-group">
+                        <div class="incor-modules-icon">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="incor-modules-title">Desempenho por Módulos</h2>
+                            <p class="incor-modules-subtitle">Médias gerais de notas teóricas e práticas do programa</p>
+                        </div>
+                    </div>
+                </header>
+                <div class="incor-modules-content">
+                    <div class="incor-modules-professional-grid">
+                        <!-- Theoretical Section -->
+                        <div class="incor-modules-section-container">
+                            <div class="incor-modules-section-header">
+                                <div class="incor-modules-section-icon incor-modules-section-icon--theoretical">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="incor-modules-section-title">Notas Teóricas</h3>
+                                    <p class="incor-modules-section-subtitle">4 módulos avaliados</p>
+                                </div>
+                            </div>
+                            <div class="incor-modules-card-list">
+                                <div class="incor-module-card incor-module-card--theoretical">
+                                    <div class="incor-module-card__info">
+                                        <span class="incor-module-card__order">Módulo 1</span>
+                                        <span class="incor-module-card__name">Fisioterapia I</span>
+                                    </div>
+                                    <div class="incor-module-card__meta">
+                                        <span class="incor-module-card__count">25 alunos</span>
+                                        <div class="incor-module-card__grade">
+                                            <span class="incor-module-card__value incor-module-card__value--theoretical">8.7</span>
+                                            <span class="incor-module-card__max">de 10,0</span>
+                                            <div class="incor-module-card__progress">
+                                                <div class="incor-module-card__progress-fill incor-module-card__progress-fill--theoretical" style="width: 87%;"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="incor-module-card incor-module-card--theoretical">
+                                    <div class="incor-module-card__info">
+                                        <span class="incor-module-card__order">Módulo 2</span>
+                                        <span class="incor-module-card__name">Fisioterapia II</span>
+                                    </div>
+                                    <div class="incor-module-card__meta">
+                                        <span class="incor-module-card__count">24 alunos</span>
+                                        <div class="incor-module-card__grade">
+                                            <span class="incor-module-card__value incor-module-card__value--theoretical">8.3</span>
+                                            <span class="incor-module-card__max">de 10,0</span>
+                                            <div class="incor-module-card__progress">
+                                                <div class="incor-module-card__progress-fill incor-module-card__progress-fill--theoretical" style="width: 83%;"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="incor-module-card incor-module-card--theoretical">
+                                    <div class="incor-module-card__info">
+                                        <span class="incor-module-card__order">Módulo 3</span>
+                                        <span class="incor-module-card__name">Fisioterapia III</span>
+                                    </div>
+                                    <div class="incor-module-card__meta">
+                                        <span class="incor-module-card__count">22 alunos</span>
+                                        <div class="incor-module-card__grade">
+                                            <span class="incor-module-card__value incor-module-card__value--theoretical">8.5</span>
+                                            <span class="incor-module-card__max">de 10,0</span>
+                                            <div class="incor-module-card__progress">
+                                                <div class="incor-module-card__progress-fill incor-module-card__progress-fill--theoretical" style="width: 85%;"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="incor-module-card incor-module-card--theoretical">
+                                    <div class="incor-module-card__info">
+                                        <span class="incor-module-card__order">Módulo 4</span>
+                                        <span class="incor-module-card__name">Fisioterapia IV</span>
+                                    </div>
+                                    <div class="incor-module-card__meta">
+                                        <span class="incor-module-card__count">20 alunos</span>
+                                        <div class="incor-module-card__grade">
+                                            <span class="incor-module-card__value incor-module-card__value--theoretical">8.9</span>
+                                            <span class="incor-module-card__max">de 10,0</span>
+                                            <div class="incor-module-card__progress">
+                                                <div class="incor-module-card__progress-fill incor-module-card__progress-fill--theoretical" style="width: 89%;"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Practical Section -->
+                        <div class="incor-modules-section-container">
+                            <div class="incor-modules-section-header">
+                                <div class="incor-modules-section-icon incor-modules-section-icon--practical">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="incor-modules-section-title">Notas Práticas</h3>
+                                    <p class="incor-modules-section-subtitle">3 módulos avaliados</p>
+                                </div>
+                            </div>
+                            <div class="incor-modules-card-list">
+                                <div class="incor-module-card incor-module-card--practical">
+                                    <div class="incor-module-card__info">
+                                        <span class="incor-module-card__order">Prática 1</span>
+                                        <span class="incor-module-card__name">UTI Cardiológica</span>
+                                    </div>
+                                    <div class="incor-module-card__meta">
+                                        <span class="incor-module-card__count">45 avaliações</span>
+                                        <div class="incor-module-card__grade">
+                                            <span class="incor-module-card__value incor-module-card__value--practical">8.8</span>
+                                            <span class="incor-module-card__max">de 10,0</span>
+                                            <div class="incor-module-card__progress">
+                                                <div class="incor-module-card__progress-fill incor-module-card__progress-fill--practical" style="width: 88%;"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="incor-module-card incor-module-card--practical">
+                                    <div class="incor-module-card__info">
+                                        <span class="incor-module-card__order">Prática 2</span>
+                                        <span class="incor-module-card__name">Enfermaria</span>
+                                    </div>
+                                    <div class="incor-module-card__meta">
+                                        <span class="incor-module-card__count">32 avaliações</span>
+                                        <div class="incor-module-card__grade">
+                                            <span class="incor-module-card__value incor-module-card__value--practical">9.1</span>
+                                            <span class="incor-module-card__max">de 10,0</span>
+                                            <div class="incor-module-card__progress">
+                                                <div class="incor-module-card__progress-fill incor-module-card__progress-fill--practical" style="width: 91%;"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="incor-module-card incor-module-card--practical">
+                                    <div class="incor-module-card__info">
+                                        <span class="incor-module-card__order">Prática 3</span>
+                                        <span class="incor-module-card__name">Reabilitação Cardíaca</span>
+                                    </div>
+                                    <div class="incor-module-card__meta">
+                                        <span class="incor-module-card__count">28 avaliações</span>
+                                        <div class="incor-module-card__grade">
+                                            <span class="incor-module-card__value incor-module-card__value--practical">8.6</span>
+                                            <span class="incor-module-card__max">de 10,0</span>
+                                            <div class="incor-module-card__progress">
+                                                <div class="incor-module-card__progress-fill incor-module-card__progress-fill--practical" style="width: 86%;"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </section>
+
+        <!-- Summary -->
+        <section class="test-section">
+            <h2>📋 Resumo das Alterações</h2>
+            <ul style="list-style: disc; padding-left: 1.5rem; line-height: 2;">
+                <li><strong>Distribuição por Curso:</strong> Labels agora com largura de 140px e quebra de linha permitida</li>
+                <li><strong>Monitor de Saúde Operacional:</strong> Reposições aparecem por último (após as notas)</li>
+                <li><strong>Contagem de Alunos:</strong> "25 Ativos" em destaque, "de 28 matriculados" como sublabel</li>
+                <li><strong>Desempenho por Módulos:</strong> Novo layout profissional com colunas separadas para Teóricas e Práticas</li>
+            </ul>
+        </section>
+    </div>
+</body>
+</html>

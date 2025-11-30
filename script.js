@@ -2664,6 +2664,9 @@ const pontoState = {
             const container = document.getElementById('module-averages-chart');
             if (!container) return;
             
+            // Metadata/non-grade fields to exclude from counting
+            const EXCLUDED_FIELDS = new Set(['SerialNumber', 'NomeCompleto', 'EmailHC', 'Curso', 'serialnumber', 'nomecompleto', 'emailhc', 'curso']);
+            
             // Get counts for each module to show student count
             const tCounts = {};
             const pCounts = {};
@@ -2672,7 +2675,7 @@ const pontoState = {
             if (appState.notasTeoricas?.registros) {
                 appState.notasTeoricas.registros.forEach(r => {
                     Object.keys(r).forEach(k => {
-                        if (!['SerialNumber', 'NomeCompleto', 'EmailHC', 'Curso'].includes(k) && k.trim() !== '') {
+                        if (!EXCLUDED_FIELDS.has(k) && k.trim() !== '') {
                             const n = parseNota(r[k]);
                             if (n > 0) {
                                 tCounts[k] = (tCounts[k] || 0) + 1;
@@ -2692,26 +2695,28 @@ const pontoState = {
                 });
             }
             
+            // Helper to extract module number from key for sorting
+            const extractModuleNumber = (key) => {
+                const match = key.match(/\d+/);
+                return match ? parseInt(match[0], 10) : 999;
+            };
+            
             // Filter and sort theoretical averages - only show MÉDIA entries
             const theoreticalEntries = Object.entries(tAvgs)
                 .filter(([key, value]) => key.toUpperCase().includes('MÉDIA') && value > 0)
-                .sort(([keyA], [keyB]) => {
-                    // Extract module number for proper sorting (e.g., "Fisio1", "Fisio2", etc.)
-                    const numA = keyA.match(/\d+/) ? parseInt(keyA.match(/\d+/)[0], 10) : 999;
-                    const numB = keyB.match(/\d+/) ? parseInt(keyB.match(/\d+/)[0], 10) : 999;
-                    return numA - numB;
-                });
+                .map(([key, value]) => ({ key, value, sortNum: extractModuleNumber(key) }))
+                .sort((a, b) => a.sortNum - b.sortNum)
+                .map(({ key, value }) => [key, value]);
             
             // Filter and sort practical averages
             const practicalEntries = Object.entries(pAvgs)
                 .filter(([_, value]) => value > 0)
-                .sort(([keyA], [keyB]) => {
-                    // Try to extract module number for sorting
-                    const numA = keyA.match(/\d+/) ? parseInt(keyA.match(/\d+/)[0], 10) : 999;
-                    const numB = keyB.match(/\d+/) ? parseInt(keyB.match(/\d+/)[0], 10) : 999;
-                    if (numA !== numB) return numA - numB;
-                    return keyA.localeCompare(keyB);
-                });
+                .map(([key, value]) => ({ key, value, sortNum: extractModuleNumber(key) }))
+                .sort((a, b) => {
+                    if (a.sortNum !== b.sortNum) return a.sortNum - b.sortNum;
+                    return a.key.localeCompare(b.key);
+                })
+                .map(({ key, value }) => [key, value]);
             
             // Build theoretical section HTML
             let theoreticalHtml = '';
