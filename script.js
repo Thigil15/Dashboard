@@ -4645,7 +4645,8 @@ const pontoState = {
         function setupStudentTabNavigation() {
             const nav = document.getElementById('student-tabs-nav'); 
             nav.addEventListener('click', (e) => { 
-                const button = e.target.closest('.tab-button');
+                // Support both old (.tab-button) and new (.student-tab-button) button classes
+                const button = e.target.closest('.tab-button, .student-tab-button');
                 if(button){
                     const tab = button.getAttribute('data-tab'); 
                     switchStudentTab(tab);
@@ -4655,10 +4656,12 @@ const pontoState = {
         
         function switchStudentTab(tabName) {
             console.log(`Trocando para aba de detalhe: ${tabName}`);
-            document.querySelectorAll('#student-tabs-nav .tab-button').forEach(btn => {
+            // Support both old (.tab-button) and new (.student-tab-button) button classes
+            document.querySelectorAll('#student-tabs-nav .tab-button, #student-tabs-nav .student-tab-button').forEach(btn => {
                 btn.classList.toggle('active', btn.getAttribute('data-tab') === tabName);
             });
-            document.querySelectorAll('#student-tabs-content .tab-content').forEach(content => {
+            // Support both old (.tab-content) and new (.student-tab-panel) content classes
+            document.querySelectorAll('#student-tabs-content .tab-content, #student-tabs-content .student-tab-panel').forEach(content => {
                 const isActive = content.id === `tab-${tabName}`;
                 content.style.display = isActive ? 'block' : 'none';
                 content.classList.toggle('active', isActive);
@@ -4738,15 +4741,26 @@ const pontoState = {
         }
         
         function renderStudentHeader(info) {
-             const p=document.getElementById('student-header'); const i=info.FotoID?`https://lh3.googleusercontent.com/d/${info.FotoID}=s160-c`:'https://placehold.co/80x80/e8eef7/475569?text=?'; const s=info.Status==='Ativo'?'badge-green':'badge-red'; 
-             p.innerHTML=`<img src="${i}" alt="Foto" onerror="this.src='https://placehold.co/80x80/e8eef7/475569?text=?'">
-                           <div class="flex-grow text-center sm:text-left mt-4 sm:mt-0">
-                               <h2 class="text-2xl lg:text-3xl font-bold text-slate-900">${info.NomeCompleto}</h2>
-                               <p class="text-base lg:text-lg text-slate-600 mt-1">${info.Curso}</p>
-                           </div>
-                           <div class="ml-auto flex-shrink-0 mt-4 sm:mt-0">
-                               <span class="badge ${s} text-base py-2 px-4">${info.Status}</span>
-                           </div>`;
+             const p = document.getElementById('student-header');
+             const studentInitial = encodeURIComponent(info.NomeCompleto?.charAt(0) || '?');
+             const fallbackPhotoUrl = `https://placehold.co/120x120/0054B4/ffffff?text=${studentInitial}`;
+             const photoUrl = info.FotoID 
+                 ? `https://lh3.googleusercontent.com/d/${info.FotoID}=s200-c` 
+                 : fallbackPhotoUrl;
+             const statusClass = info.Status === 'Ativo' ? 'student-status-badge--active' : 'student-status-badge--inactive';
+             
+             p.innerHTML = `
+                <img src="${photoUrl}" alt="Foto de ${info.NomeCompleto}" class="student-profile-avatar" onerror="this.src='${fallbackPhotoUrl}'">
+                <div class="student-profile-info">
+                    <h2 class="student-profile-name">${info.NomeCompleto || 'Nome não disponível'}</h2>
+                    <p class="student-profile-course">${info.Curso || 'Curso não informado'}</p>
+                    <div class="student-profile-status">
+                        <span class="student-status-badge ${statusClass}">
+                            ${info.Status || 'Indefinido'}
+                        </span>
+                    </div>
+                </div>
+             `;
         }
 
         function renderStudentDetailKPIs(faltas, notasP) {
