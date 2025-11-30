@@ -1200,8 +1200,14 @@ const pontoState = {
             console.log('[setupEventHandlers] Configurando listeners...');
             // Login form event listener - registered only once to prevent duplicate submissions
             document.getElementById('login-form').addEventListener('submit', handleLogin);
-            setupSidebarNavigation();
-            document.getElementById('sidebar-toggle').addEventListener('click', toggleSidebar); 
+            setupHeaderNavigation();
+            
+            // Sidebar toggle - only if element exists (legacy support)
+            const sidebarToggle = document.getElementById('sidebar-toggle');
+            if (sidebarToggle) {
+                sidebarToggle.addEventListener('click', toggleSidebar); 
+            }
+            
             document.getElementById('back-to-dashboard').addEventListener('click', showAlunosList);
             document.getElementById('search-student').addEventListener('input', filterStudentList);
             setupStudentTabNavigation();
@@ -2026,29 +2032,49 @@ const pontoState = {
         }
 
         // --- NAVEGAÇÃO PRINCIPAL ---
-        function setupSidebarNavigation() {
-            const sidebar = document.querySelector('#app-sidebar nav');
-            sidebar.addEventListener('click', (e) => {
-                const link = e.target.closest('.sidebar-link');
-                if (link) {
-                    e.preventDefault();
-                    switchMainTab(link.getAttribute('data-tab'));
-                }
-            });
+        // Helper function to handle navigation link clicks
+        function handleNavLinkClick(e, linkSelector) {
+            const link = e.target.closest(linkSelector);
+            if (link) {
+                e.preventDefault();
+                switchMainTab(link.getAttribute('data-tab'));
+            }
         }
         
+        function setupHeaderNavigation() {
+            // Modern header navigation
+            const headerNav = document.querySelector('#header-nav');
+            if (headerNav) {
+                headerNav.addEventListener('click', (e) => handleNavLinkClick(e, '.header-nav-link'));
+            }
+            
+            // Legacy sidebar support (backward compatibility)
+            const sidebar = document.querySelector('#app-sidebar nav');
+            if (sidebar) {
+                sidebar.addEventListener('click', (e) => handleNavLinkClick(e, '.sidebar-link'));
+            }
+        }
+        
+        // Keep legacy function name for compatibility
+        function setupSidebarNavigation() {
+            setupHeaderNavigation();
+        }
+        
+        // Legacy function - no longer needed with top header navigation
         function toggleSidebar() {
-            appState.isSidebarCollapsed = !appState.isSidebarCollapsed;
-            console.log(`[toggleSidebar] Colapsada: ${appState.isSidebarCollapsed}`);
-            const sidebar = document.getElementById('app-sidebar');
-            sidebar.classList.toggle('collapsed', appState.isSidebarCollapsed);
+            console.log('[toggleSidebar] Função legacy - não aplicável com navegação de cabeçalho');
         }
         
         function switchMainTab(tabName) {
             console.log("[switchMainTab] Trocando para aba principal:", tabName);
-            document.querySelectorAll('.sidebar-link').forEach(l => l.classList.toggle('active', l.getAttribute('data-tab') === tabName));
             
-            const allSubViews = document.querySelectorAll('main > .view-container');
+            // Update all navigation links (both header and legacy sidebar)
+            document.querySelectorAll('.header-nav-link, .sidebar-link').forEach(l => {
+                l.classList.toggle('active', l.getAttribute('data-tab') === tabName);
+            });
+            
+            // Find all view containers in both modern and legacy layouts
+            const allSubViews = document.querySelectorAll('.main-content-area > .view-container, main > .view-container');
             allSubViews.forEach(view => {
                 const isActive = view.id === `content-${tabName}`;
                 view.style.display = isActive ? 'block' : 'none';
@@ -2663,43 +2689,187 @@ const pontoState = {
         function renderModuleAverages(tAvgs, pAvgs) {
             const container = document.getElementById('module-averages-chart');
             if (!container) return;
-            let html = '';
             
-            // Render theoretical averages
-            Object.entries(tAvgs)
-                .filter(([key]) => key.toUpperCase().includes('MÉDIA'))
-                .sort(([keyA], [keyB]) => keyA.localeCompare(keyB)) 
-                .forEach(([key, value]) => {
-                    if (value > 0) {
-                        const moduleName = key.replace(/MÉDIA\s*/i, '').replace(/\s*FISIO/i, ' Fisio').trim();
-                        html += `
-                        <div class="incor-module">
-                            <div class="incor-module__value">${value.toFixed(1)}</div>
-                            <div class="incor-module__name">${moduleName || 'Teórica'}</div>
-                        </div>
-                        `;
-                    }
+            // Metadata/non-grade fields to exclude from counting
+            const EXCLUDED_FIELDS = new Set(['SerialNumber', 'NomeCompleto', 'EmailHC', 'Curso', 'serialnumber', 'nomecompleto', 'emailhc', 'curso']);
+            
+            // Get counts for each module to show student count
+            const tCounts = {};
+            const pCounts = {};
+            
+            // Process theoretical data to get counts
+            if (appState.notasTeoricas?.registros) {
+                appState.notasTeoricas.registros.forEach(r => {
+                    Object.keys(r).forEach(k => {
+                        if (!EXCLUDED_FIELDS.has(k) && k.trim() !== '') {
+                            const n = parseNota(r[k]);
+                            if (n > 0) {
+                                tCounts[k] = (tCounts[k] || 0) + 1;
+                            }
+                        }
+                    });
                 });
-            
-            // Render practical averages
-            Object.entries(pAvgs)
-                .sort(([keyA], [keyB]) => keyA.localeCompare(keyB)) 
-                .forEach(([key, value]) => {
-                    if (value > 0) {
-                        html += `
-                        <div class="incor-module">
-                            <div class="incor-module__value incor-module__value--practical">${value.toFixed(1)}</div>
-                            <div class="incor-module__name">${escapeHtml(key)}</div>
-                        </div>
-                        `;
-                    }
-                });
-            
-            if (html === '') {
-                container.innerHTML = '<p class="incor-pending__empty">Nenhuma média de módulo calculada.</p>';
-                return;
             }
-            container.innerHTML = html;
+            
+            // Process practical data to get counts
+            if (appState.notasPraticas && typeof appState.notasPraticas === 'object') {
+                Object.values(appState.notasPraticas).forEach(p => {
+                    const pNome = p.nomePratica;
+                    if (p && p.registros) {
+                        pCounts[pNome] = p.registros.length;
+                    }
+                });
+            }
+            
+            // Helper to extract module number from key for sorting
+            const extractModuleNumber = (key) => {
+                const match = key.match(/\d+/);
+                return match ? parseInt(match[0], 10) : 999;
+            };
+            
+            // Filter and sort theoretical averages - only show MÉDIA entries
+            const theoreticalEntries = Object.entries(tAvgs)
+                .filter(([key, value]) => key.toUpperCase().includes('MÉDIA') && value > 0)
+                .map(([key, value]) => ({ key, value, sortNum: extractModuleNumber(key) }))
+                .sort((a, b) => a.sortNum - b.sortNum)
+                .map(({ key, value }) => [key, value]);
+            
+            // Filter and sort practical averages
+            const practicalEntries = Object.entries(pAvgs)
+                .filter(([_, value]) => value > 0)
+                .map(([key, value]) => ({ key, value, sortNum: extractModuleNumber(key) }))
+                .sort((a, b) => {
+                    if (a.sortNum !== b.sortNum) return a.sortNum - b.sortNum;
+                    return a.key.localeCompare(b.key);
+                })
+                .map(({ key, value }) => [key, value]);
+            
+            // Build theoretical section HTML
+            let theoreticalHtml = '';
+            if (theoreticalEntries.length > 0) {
+                theoreticalHtml = `
+                    <div class="incor-modules-section-container">
+                        <div class="incor-modules-section-header">
+                            <div class="incor-modules-section-icon incor-modules-section-icon--theoretical">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="incor-modules-section-title">Notas Teóricas</h3>
+                                <p class="incor-modules-section-subtitle">${theoreticalEntries.length} módulo${theoreticalEntries.length > 1 ? 's' : ''} avaliado${theoreticalEntries.length > 1 ? 's' : ''}</p>
+                            </div>
+                        </div>
+                        <div class="incor-modules-card-list">
+                            ${theoreticalEntries.map(([key, value], index) => {
+                                const moduleName = key.replace(/MÉDIA\s*/i, '').replace(/\s*FISIO/i, ' Fisio').trim() || 'Módulo Teórico';
+                                const percentage = (value / 10) * 100;
+                                const count = tCounts[key] || 0;
+                                return `
+                                    <div class="incor-module-card incor-module-card--theoretical">
+                                        <div class="incor-module-card__info">
+                                            <span class="incor-module-card__order">Módulo ${index + 1}</span>
+                                            <span class="incor-module-card__name" title="${escapeHtml(moduleName)}">${escapeHtml(moduleName)}</span>
+                                        </div>
+                                        <div class="incor-module-card__meta">
+                                            ${count > 0 ? `<span class="incor-module-card__count">${count} aluno${count > 1 ? 's' : ''}</span>` : ''}
+                                            <div class="incor-module-card__grade">
+                                                <span class="incor-module-card__value incor-module-card__value--theoretical">${value.toFixed(1)}</span>
+                                                <span class="incor-module-card__max">de 10,0</span>
+                                                <div class="incor-module-card__progress">
+                                                    <div class="incor-module-card__progress-fill incor-module-card__progress-fill--theoretical" style="width: ${percentage}%;"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            } else {
+                theoreticalHtml = `
+                    <div class="incor-modules-section-container">
+                        <div class="incor-modules-section-header">
+                            <div class="incor-modules-section-icon incor-modules-section-icon--theoretical">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="incor-modules-section-title">Notas Teóricas</h3>
+                                <p class="incor-modules-section-subtitle">Aguardando dados</p>
+                            </div>
+                        </div>
+                        <div class="incor-modules-empty">Nenhuma média teórica disponível</div>
+                    </div>
+                `;
+            }
+            
+            // Build practical section HTML
+            let practicalHtml = '';
+            if (practicalEntries.length > 0) {
+                practicalHtml = `
+                    <div class="incor-modules-section-container">
+                        <div class="incor-modules-section-header">
+                            <div class="incor-modules-section-icon incor-modules-section-icon--practical">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="incor-modules-section-title">Notas Práticas</h3>
+                                <p class="incor-modules-section-subtitle">${practicalEntries.length} módulo${practicalEntries.length > 1 ? 's' : ''} avaliado${practicalEntries.length > 1 ? 's' : ''}</p>
+                            </div>
+                        </div>
+                        <div class="incor-modules-card-list">
+                            ${practicalEntries.map(([key, value], index) => {
+                                const percentage = (value / 10) * 100;
+                                const count = pCounts[key] || 0;
+                                // Format practical module name nicely
+                                const moduleName = formatarNomeModulo(key) || key;
+                                return `
+                                    <div class="incor-module-card incor-module-card--practical">
+                                        <div class="incor-module-card__info">
+                                            <span class="incor-module-card__order">Prática ${index + 1}</span>
+                                            <span class="incor-module-card__name" title="${escapeHtml(moduleName)}">${escapeHtml(moduleName)}</span>
+                                        </div>
+                                        <div class="incor-module-card__meta">
+                                            ${count > 0 ? `<span class="incor-module-card__count">${count} avaliação${count > 1 ? 'ões' : ''}</span>` : ''}
+                                            <div class="incor-module-card__grade">
+                                                <span class="incor-module-card__value incor-module-card__value--practical">${value.toFixed(1)}</span>
+                                                <span class="incor-module-card__max">de 10,0</span>
+                                                <div class="incor-module-card__progress">
+                                                    <div class="incor-module-card__progress-fill incor-module-card__progress-fill--practical" style="width: ${percentage}%;"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            } else {
+                practicalHtml = `
+                    <div class="incor-modules-section-container">
+                        <div class="incor-modules-section-header">
+                            <div class="incor-modules-section-icon incor-modules-section-icon--practical">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="incor-modules-section-title">Notas Práticas</h3>
+                                <p class="incor-modules-section-subtitle">Aguardando dados</p>
+                            </div>
+                        </div>
+                        <div class="incor-modules-empty">Nenhuma média prática disponível</div>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = theoreticalHtml + practicalHtml;
         }
 
         function renderRecentAbsences() {
