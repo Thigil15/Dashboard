@@ -4742,16 +4742,15 @@ const pontoState = {
         
         function renderStudentHeader(info) {
              const p = document.getElementById('student-header');
+             const studentInitial = encodeURIComponent(info.NomeCompleto?.charAt(0) || '?');
+             const fallbackPhotoUrl = `https://placehold.co/120x120/0054B4/ffffff?text=${studentInitial}`;
              const photoUrl = info.FotoID 
                  ? `https://lh3.googleusercontent.com/d/${info.FotoID}=s200-c` 
-                 : 'https://placehold.co/120x120/0054B4/ffffff?text=' + encodeURIComponent(info.NomeCompleto?.charAt(0) || '?');
+                 : fallbackPhotoUrl;
              const statusClass = info.Status === 'Ativo' ? 'student-status-badge--active' : 'student-status-badge--inactive';
-             const statusIcon = info.Status === 'Ativo' 
-                 ? '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'
-                 : '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>';
              
              p.innerHTML = `
-                <img src="${photoUrl}" alt="Foto de ${info.NomeCompleto}" class="student-profile-avatar" onerror="this.src='https://placehold.co/120x120/0054B4/ffffff?text=${encodeURIComponent(info.NomeCompleto?.charAt(0) || '?')}'">
+                <img src="${photoUrl}" alt="Foto de ${info.NomeCompleto}" class="student-profile-avatar" onerror="this.src='${fallbackPhotoUrl}'">
                 <div class="student-profile-info">
                     <h2 class="student-profile-name">${info.NomeCompleto || 'Nome não disponível'}</h2>
                     <p class="student-profile-course">${info.Curso || 'Curso não informado'}</p>
