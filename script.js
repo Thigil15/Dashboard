@@ -1034,6 +1034,31 @@ function getFieldValue(obj, fieldVariants) {
     return matchingField ? obj[matchingField] : null;
 }
 
+/**
+ * Normalizes a key for deduplication of field name variants.
+ * Removes accents, spaces, underscores, and converts to uppercase.
+ * This helps detect variants like "Média Fisio1", "MediaFisio1", "_media_fisio1"
+ * @param {string} key - The field key to normalize
+ * @returns {string} - Normalized key for comparison
+ */
+function normalizeKeyForDeduplication(key) {
+    if (!key || typeof key !== 'string') return '';
+    return key.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[_\s]/g, '');
+}
+
+/**
+ * Checks if a key has accents (diacritical marks).
+ * Uses Unicode decomposition to detect accented characters.
+ * @param {string} key - The field key to check
+ * @returns {boolean} - True if key has accented characters
+ */
+function keyHasAccents(key) {
+    if (!key || typeof key !== 'string') return false;
+    const normalized = key.normalize('NFD');
+    const withoutDiacritics = normalized.replace(/[\u0300-\u036f]/g, '');
+    return normalized !== withoutDiacritics;
+}
+
 const appState = {
     alunos: [],
     alunosMap: new Map(),
@@ -2387,8 +2412,8 @@ const pontoState = {
                             if(!EXCLUDED_FIELDS_SET.has(kUpper) && k.trim() !== ''){
                                 const n = parseNota(r[k]);
                                 if(n > 0){
-                                    // Normalize key to detect variants (remove accents, spaces, underscores, convert to uppercase)
-                                    const kNormalized = k.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[_\s]/g, '');
+                                    // Normalize key to detect variants
+                                    const kNormalized = normalizeKeyForDeduplication(k);
                                     
                                     // Skip if we've already processed a variant of this key for this record
                                     if (processedKeysForRecord.has(kNormalized)) {
@@ -2397,12 +2422,11 @@ const pontoState = {
                                     processedKeysForRecord.add(kNormalized);
                                     
                                     // Determine the canonical key to use
-                                    // Prefer: 1) existing canonical key, 2) key with accents/spaces (proper formatting)
+                                    // Prefer: 1) existing canonical key, 2) key with accents (proper formatting)
                                     let canonicalKey = canonicalKeyMap.get(kNormalized);
                                     if (!canonicalKey) {
-                                        // Prefer keys with accents or spaces as they're likely the original Firebase names
-                                        const hasAccentsOrSpaces = /[À-ÿ\s]/.test(k);
-                                        canonicalKey = hasAccentsOrSpaces ? k : k;
+                                        // Prefer keys with accents as they're likely the original Firebase names
+                                        canonicalKey = k;
                                         canonicalKeyMap.set(kNormalized, canonicalKey);
                                     }
                                     
@@ -2784,7 +2808,7 @@ const pontoState = {
             
             // Build a reverse lookup from tAvgs keys to their normalized form
             Object.keys(tAvgs).forEach(k => {
-                const kNormalized = k.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[_\s]/g, '');
+                const kNormalized = normalizeKeyForDeduplication(k);
                 canonicalCountKeyMap.set(kNormalized, k);
             });
             
@@ -2799,8 +2823,8 @@ const pontoState = {
                         if (!EXCLUDED_FIELDS_SET.has(kUpper) && k.trim() !== '') {
                             const n = parseNota(r[k]);
                             if (n > 0) {
-                                // Normalize key to match canonical key (remove accents, spaces, underscores)
-                                const kNormalized = k.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[_\s]/g, '');
+                                // Normalize key to match canonical key
+                                const kNormalized = normalizeKeyForDeduplication(k);
                                 
                                 // Skip if we've already processed a variant of this key for this record
                                 if (processedKeysForRecord.has(kNormalized)) {
