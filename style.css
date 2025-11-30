@@ -1869,7 +1869,9 @@
         .donut-legend li { display: flex; align-items: center; margin-bottom: 0.5rem; }
         .legend-color-box { width: 12px; height: 12px; border-radius: 3px; margin-right: 0.75rem; flex-shrink: 0; }
 
-        /* --- Gráfico Radial (Médias Dashboard) --- */
+        /* --- Module Averages Container --- */
+        /* Changed from grid to block because the grid layout is now handled by 
+           .incor-modules-card-grid inside each tab content panel */
         #module-averages-chart {
             display: block;
             width: 100%;
@@ -9208,8 +9210,7 @@
 
 /* Stats Bar - Redesigned Summary */
 .incor-modules-stats-bar {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, auto));
+    display: flex;
     gap: 2rem;
     margin-bottom: 1.5rem;
     padding: 1.25rem 1.5rem;
@@ -9217,7 +9218,6 @@
     border-radius: var(--radius-xl);
     border: 1px solid rgba(229, 233, 239, 0.8);
     box-shadow: 0 2px 8px rgba(0, 51, 160, 0.04);
-    width: fit-content;
 }
 
 .incor-modules-stat {
