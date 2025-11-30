@@ -1034,6 +1034,40 @@ function getFieldValue(obj, fieldVariants) {
     return matchingField ? obj[matchingField] : null;
 }
 
+/**
+ * Normalizes a key for deduplication of field name variants.
+ * Removes accents, spaces, underscores, and converts to uppercase.
+ * This helps detect variants like "Média Fisio1", "MediaFisio1", "_media_fisio1"
+ * 
+ * Note: This is different from normalizeString() which:
+ * - Converts to lowercase (for general string comparison)
+ * - Removes accents (same as this function)
+ * - Does NOT remove spaces/underscores (preserves word boundaries)
+ * 
+ * This function needs uppercase and no spaces/underscores to match all 
+ * variant patterns created by addKeyVariants().
+ * 
+ * @param {string} key - The field key to normalize
+ * @returns {string} - Normalized key for comparison
+ */
+function normalizeKeyForDeduplication(key) {
+    if (!key || typeof key !== 'string') return '';
+    return key.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[_\s]/g, '');
+}
+
+/**
+ * Checks if a key has accents (diacritical marks).
+ * Uses Unicode decomposition to detect accented characters.
+ * @param {string} key - The field key to check
+ * @returns {boolean} - True if key has accented characters
+ */
+function keyHasAccents(key) {
+    if (!key || typeof key !== 'string') return false;
+    const normalized = key.normalize('NFD');
+    const withoutDiacritics = normalized.replace(/[\u0300-\u036f]/g, '');
+    return normalized !== withoutDiacritics;
+}
+
 const appState = {
     alunos: [],
     alunosMap: new Map(),
@@ -2363,6 +2397,9 @@ const pontoState = {
 
             // --- Teóricas (com filtro R2) - with improved field matching ---
             const tSums = {}; const tCounts = {};
+            // Map to track canonical key names (normalized -> original Firebase key)
+            const canonicalKeyMap = new Map();
+            
             if(appState.notasTeoricas?.registros){
                 appState.notasTeoricas.registros.forEach(r => {
                     // Use helper function for robust field matching
@@ -2374,14 +2411,47 @@ const pontoState = {
                     const student = activeStudentMap.get(rEmailNorm) || activeStudentMap.get(rNomeNorm);
 
                     if(student && student.Curso !== 'Residência - 2º ano' && student.Curso !== 'Residência  - 2º ano'){
+                        // Track which normalized keys we've already processed for THIS record
+                        // to avoid counting variants (e.g., MediaFisio1, mediaFisio1, _media_fisio1)
+                        const processedKeysForRecord = new Set();
+                        
                         Object.keys(r).forEach(k => {
                             // Exclude known non-grade fields (case-insensitive) using module-level Set
                             const kUpper = k.toUpperCase();
                             if(!EXCLUDED_FIELDS_SET.has(kUpper) && k.trim() !== ''){
                                 const n = parseNota(r[k]);
                                 if(n > 0){
-                                    tSums[k] = (tSums[k] || 0) + n;
-                                    tCounts[k] = (tCounts[k] || 0) + 1;
+                                    // Normalize key to detect variants
+                                    const kNormalized = normalizeKeyForDeduplication(k);
+                                    
+                                    // Skip if we've already processed a variant of this key for this record
+                                    if (processedKeysForRecord.has(kNormalized)) {
+                                        return;
+                                    }
+                                    processedKeysForRecord.add(kNormalized);
+                                    
+                                    // Determine the canonical key to use
+                                    // Prefer: 1) existing canonical key, 2) key with accents (proper formatting)
+                                    let canonicalKey = canonicalKeyMap.get(kNormalized);
+                                    if (!canonicalKey) {
+                                        // First key becomes canonical
+                                        canonicalKey = k;
+                                        canonicalKeyMap.set(kNormalized, canonicalKey);
+                                    } else if (keyHasAccents(k) && !keyHasAccents(canonicalKey)) {
+                                        // Update to key with accents (likely original Firebase name)
+                                        canonicalKeyMap.set(kNormalized, k);
+                                        // Transfer sums/counts to new canonical key (use 'in' to handle 0 values)
+                                        if (canonicalKey in tSums && canonicalKey in tCounts) {
+                                            tSums[k] = tSums[canonicalKey];
+                                            tCounts[k] = tCounts[canonicalKey];
+                                            delete tSums[canonicalKey];
+                                            delete tCounts[canonicalKey];
+                                        }
+                                        canonicalKey = k;
+                                    }
+                                    
+                                    tSums[canonicalKey] = (tSums[canonicalKey] || 0) + n;
+                                    tCounts[canonicalKey] = (tCounts[canonicalKey] || 0) + 1;
                                 }
                             }
                         });
@@ -2753,16 +2823,38 @@ const pontoState = {
             // Get counts for each module to show student count
             const tCounts = {};
             const pCounts = {};
+            // Map to track canonical key names for counts (normalized -> key used in tAvgs)
+            const canonicalCountKeyMap = new Map();
             
-            // Process theoretical data to get counts
+            // Build a reverse lookup from tAvgs keys to their normalized form
+            Object.keys(tAvgs).forEach(k => {
+                const kNormalized = normalizeKeyForDeduplication(k);
+                canonicalCountKeyMap.set(kNormalized, k);
+            });
+            
+            // Process theoretical data to get counts - matching the canonical keys from tAvgs
             if (appState.notasTeoricas?.registros) {
                 appState.notasTeoricas.registros.forEach(r => {
+                    // Track processed keys for this record to avoid counting variants
+                    const processedKeysForRecord = new Set();
+                    
                     Object.keys(r).forEach(k => {
                         const kUpper = k.toUpperCase();
                         if (!EXCLUDED_FIELDS_SET.has(kUpper) && k.trim() !== '') {
                             const n = parseNota(r[k]);
                             if (n > 0) {
-                                tCounts[k] = (tCounts[k] || 0) + 1;
+                                // Normalize key to match canonical key
+                                const kNormalized = normalizeKeyForDeduplication(k);
+                                
+                                // Skip if we've already processed a variant of this key for this record
+                                if (processedKeysForRecord.has(kNormalized)) {
+                                    return;
+                                }
+                                processedKeysForRecord.add(kNormalized);
+                                
+                                // Use the canonical key from tAvgs if available
+                                const canonicalKey = canonicalCountKeyMap.get(kNormalized) || k;
+                                tCounts[canonicalKey] = (tCounts[canonicalKey] || 0) + 1;
                             }
                         }
                     });
