@@ -48,26 +48,23 @@
             const pathMappings = [
                 { path: 'exportAll/Alunos/dados', stateKey: 'alunos', processor: (data) => data || [] },
                 { path: 'exportAll/AusenciasReposicoes/dados', stateKey: 'ausenciasReposicoes', processor: (data) => normalizeAusenciasReposicoes(data || []) },
-                { path: 'exportAll/NotasTeoricas', stateKey: 'notasTeoricas', processor: (data) => {
-                    // Handle both possible structures: direct array or object with 'dados' property
+                { path: 'exportAll/NotasTeoricas/dados', stateKey: 'notasTeoricas', processor: (data) => {
+                    // Handle different possible data structures from Firebase
                     let registros = [];
                     if (!data) {
-                        console.log('[setupDatabaseListeners] NotasTeoricas: Nenhum dado encontrado');
+                        console.log('[setupDatabaseListeners] NotasTeoricas: Nenhum dado encontrado no caminho /dados');
                         registros = [];
                     } else if (Array.isArray(data)) {
                         console.log('[setupDatabaseListeners] NotasTeoricas: Estrutura de array direto detectada');
                         registros = data;
-                    } else if (data.dados && Array.isArray(data.dados)) {
-                        console.log('[setupDatabaseListeners] NotasTeoricas: Estrutura com propriedade "dados" detectada');
-                        registros = data.dados;
                     } else if (typeof data === 'object') {
-                        console.warn('[setupDatabaseListeners] NotasTeoricas: Estrutura inesperada, tentando converter objeto em array');
-                        // Try to convert object to array if it has numbered keys
+                        // Try to convert object to array if it has numbered/indexed keys
                         const values = Object.values(data);
                         if (values.length > 0 && values.every(v => v && typeof v === 'object')) {
+                            console.log('[setupDatabaseListeners] NotasTeoricas: Convertendo objeto indexado em array');
                             registros = values;
                         } else {
-                            console.error('[setupDatabaseListeners] NotasTeoricas: Estrutura não reconhecida:', Object.keys(data));
+                            console.warn('[setupDatabaseListeners] NotasTeoricas: Estrutura não reconhecida:', Object.keys(data).slice(0, 10));
                             registros = [];
                         }
                     }
@@ -80,7 +77,7 @@
                         console.log('[setupDatabaseListeners] NotasTeoricas: Amostra do primeiro registro:', {
                             EmailHC: normalized[0].EmailHC || normalized[0].emailHC || normalized[0].emailhc,
                             NomeCompleto: normalized[0].NomeCompleto || normalized[0].nomeCompleto || normalized[0].nomecompleto,
-                            campos: Object.keys(normalized[0]).slice(0, 10).join(', ')
+                            campos: Object.keys(normalized[0]).slice(0, 15).join(', ')
                         });
                     }
                     
@@ -289,12 +286,33 @@
                         } else {
                             console.warn(`[setupDatabaseListeners] ⚠️ Nenhum dado em ${path} para ${stateKey}`);
                             
-                            // Try fallback path (old structure) for critical data
-                            if (stateKey === 'alunos' || stateKey === 'ausenciasReposicoes' || stateKey === 'notasTeoricas' || stateKey === 'pontoStaticRows') {
-                                const fallbackPath = path.replace('exportAll/', '').replace('/dados', '');
-                                console.log(`[setupDatabaseListeners] 🔄 Tentando caminho alternativo: ${fallbackPath}`);
-                                // Don't set up another listener here, just log the attempt
-                                // The user will need to re-run the Apps Script with the fixed version
+                            // Try fallback path for NotasTeoricas if primary path has no data
+                            if (stateKey === 'notasTeoricas') {
+                                const fallbackPath = 'exportAll/NotasTeoricas';
+                                console.log(`[setupDatabaseListeners] 🔄 Tentando caminho alternativo para NotasTeoricas: ${fallbackPath}`);
+                                const fallbackRef = window.firebase.ref(fbDB, fallbackPath);
+                                // Use get() for one-time read to avoid memory leaks
+                                window.firebase.get(fallbackRef).then((fallbackSnapshot) => {
+                                    const fallbackData = fallbackSnapshot.val();
+                                    if (fallbackData) {
+                                        console.log(`[setupDatabaseListeners] ✅ Dados encontrados no caminho alternativo: ${fallbackPath}`);
+                                        // Process with special handling for nested 'dados' property
+                                        let processedData = fallbackData;
+                                        if (fallbackData.dados && Array.isArray(fallbackData.dados)) {
+                                            console.log('[setupDatabaseListeners] NotasTeoricas: Estrutura com propriedade "dados" detectada no fallback');
+                                            processedData = fallbackData.dados;
+                                        }
+                                        appState[stateKey] = processor(processedData);
+                                        // Ensure data loading state is updated for fallback
+                                        if (appState.dataLoadingState) {
+                                            appState.dataLoadingState[stateKey] = true;
+                                        }
+                                        triggerUIUpdates(stateKey);
+                                        checkAndHideLoadingOverlay();
+                                    }
+                                }).catch((error) => {
+                                    console.error(`[setupDatabaseListeners] ❌ Erro ao buscar caminho alternativo: ${error.message}`);
+                                });
                             }
                         }
                         
@@ -997,6 +1015,24 @@
         }
 
         // Estado global da aplicação
+
+// Field name variants for robust matching (handles different casing/formatting from Firebase)
+// These arrays are used for VALUE EXTRACTION - finding and reading field values from records
+const EMAIL_FIELD_VARIANTS = ['EmailHC', 'emailHC', 'emailhc', 'EMAILHC', 'Email', 'email'];
+const NAME_FIELD_VARIANTS = ['NomeCompleto', 'nomeCompleto', 'nomecompleto', 'NOMECOMPLETO', 'Nome', 'nome'];
+
+// Metadata/non-grade fields to exclude from GRADE CALCULATIONS (uppercase for O(1) lookup)
+// Note: Some fields overlap with the variants above because they serve different purposes:
+// - Field variants are for READING values (e.g., find email to match student)
+// - Excluded fields are for FILTERING (e.g., don't calculate average of email field)
+const EXCLUDED_FIELDS_SET = new Set(['SERIALNUMBER', 'NOMECOMPLETO', 'EMAILHC', 'CURSO', 'EMAIL', 'NOME']);
+
+// Helper function to get a value from an object using field name variants
+function getFieldValue(obj, fieldVariants) {
+    if (!obj || !fieldVariants) return null;
+    const matchingField = fieldVariants.find(f => obj[f] !== undefined && obj[f] !== null);
+    return matchingField ? obj[matchingField] : null;
+}
 
 const appState = {
     alunos: [],
@@ -2249,15 +2285,13 @@ const pontoState = {
             const notasT = notasTeoricasArray.find(n => {
                 if (!n) return false;
                 
-                // Try EmailHC variants
-                const emailFields = ['EmailHC', 'emailHC', 'emailhc', 'EMAILHC', 'Email', 'email'];
-                const hasMatchingEmail = emailFields.some(field => 
+                // Try EmailHC variants using constant
+                const hasMatchingEmail = EMAIL_FIELD_VARIANTS.some(field => 
                     n[field] && normalizeString(n[field]) === emailNormalizado
                 );
                 
-                // Try NomeCompleto variants
-                const nameFields = ['NomeCompleto', 'nomeCompleto', 'nomecompleto', 'NOMECOMPLETO', 'Nome', 'nome'];
-                const hasMatchingName = nameFields.some(field => 
+                // Try NomeCompleto variants using constant
+                const hasMatchingName = NAME_FIELD_VARIANTS.some(field => 
                     n[field] && normalizeString(n[field]) === alunoNomeNormalizado
                 );
                 
@@ -2272,13 +2306,29 @@ const pontoState = {
                 console.warn('[findDataByStudent] Valores buscados:', { emailNormalizado, alunoNomeNormalizado });
             }
 
-            // Notas Práticas - with deduplication
-            const notasPRaw = Object.values(appState.notasPraticas).flatMap(p =>
-                (p.registros || []).filter(x => x && 
-                    ((x.EmailHC && normalizeString(x.EmailHC) === emailNormalizado) || 
-                     (x.NomeCompleto && normalizeString(x.NomeCompleto) === alunoNomeNormalizado))
-                ).map(i => ({ nomePratica: p.nomePratica, ...i }))
-            );
+            // Notas Práticas - with deduplication and improved field matching
+            console.log('[findDataByStudent] Buscando Notas Práticas para:', { emailNormalizado, alunoNomeNormalizado });
+            const notasPRaw = Object.values(appState.notasPraticas).flatMap(p => {
+                const matchedRecords = (p.registros || []).filter(x => {
+                    if (!x) return false;
+                    
+                    // Try EmailHC variants for matching using constant
+                    const hasMatchingEmail = EMAIL_FIELD_VARIANTS.some(field => 
+                        x[field] && normalizeString(x[field]) === emailNormalizado
+                    );
+                    
+                    // Try NomeCompleto variants for matching using constant
+                    const hasMatchingName = NAME_FIELD_VARIANTS.some(field => 
+                        x[field] && normalizeString(x[field]) === alunoNomeNormalizado
+                    );
+                    
+                    return hasMatchingEmail || hasMatchingName;
+                });
+                
+                return matchedRecords.map(i => ({ nomePratica: p.nomePratica, ...i }));
+            });
+            
+            console.log(`[findDataByStudent] Notas Práticas encontradas: ${notasPRaw.length}`);
             
             // Remove duplicates based on _uniqueId (same evaluation appearing in multiple sheets)
             const seenIds = new Set();
@@ -2311,17 +2361,23 @@ const pontoState = {
                 if (s.NomeCompleto) activeStudentMap.set(normalizeString(s.NomeCompleto), s);
             });
 
-            // --- Teóricas (com filtro R2) ---
+            // --- Teóricas (com filtro R2) - with improved field matching ---
             const tSums = {}; const tCounts = {};
             if(appState.notasTeoricas?.registros){
                 appState.notasTeoricas.registros.forEach(r => {
-                    const rEmailNorm = normalizeString(r.EmailHC);
-                    const rNomeNorm = normalizeString(r.NomeCompleto);
+                    // Use helper function for robust field matching
+                    const rEmail = getFieldValue(r, EMAIL_FIELD_VARIANTS);
+                    const rEmailNorm = normalizeString(rEmail);
+                    const rNome = getFieldValue(r, NAME_FIELD_VARIANTS);
+                    const rNomeNorm = normalizeString(rNome);
+                    
                     const student = activeStudentMap.get(rEmailNorm) || activeStudentMap.get(rNomeNorm);
 
                     if(student && student.Curso !== 'Residência - 2º ano' && student.Curso !== 'Residência  - 2º ano'){
                         Object.keys(r).forEach(k => {
-                            if(!['SerialNumber','NomeCompleto','EmailHC','Curso'].includes(k) && k.trim() !== ''){
+                            // Exclude known non-grade fields (case-insensitive) using module-level Set
+                            const kUpper = k.toUpperCase();
+                            if(!EXCLUDED_FIELDS_SET.has(kUpper) && k.trim() !== ''){
                                 const n = parseNota(r[k]);
                                 if(n > 0){
                                     tSums[k] = (tSums[k] || 0) + n;
@@ -2343,7 +2399,7 @@ const pontoState = {
             });
             const oTAvg = oTCount > 0 ? oTSum / oTCount : 0;
             
-            // --- Práticas (SEM filtro R2) ---
+            // --- Práticas (SEM filtro R2) - with improved field matching ---
             const pSums = {}; const pCounts = {};
             let oPSum = 0; let oPCount = 0;
             if(appState.notasPraticas && typeof appState.notasPraticas === 'object'){
@@ -2352,9 +2408,13 @@ const pontoState = {
                     if (!pSums[pNome]) { pSums[pNome] = 0; pCounts[pNome] = 0; }
                     if(p && p.registros){
                         p.registros.forEach(r => {
-                             const rEmailNorm = normalizeString(r.EmailHC);
-                             const rNomeNorm = normalizeString(r.NomeCompleto);
-                             const isActive = activeStudentMap.has(rEmailNorm) || activeStudentMap.has(rNomeNorm);
+                            // Use helper function for robust field matching
+                            const rEmail = getFieldValue(r, EMAIL_FIELD_VARIANTS);
+                            const rEmailNorm = normalizeString(rEmail);
+                            const rNome = getFieldValue(r, NAME_FIELD_VARIANTS);
+                            const rNomeNorm = normalizeString(rNome);
+                            
+                            const isActive = activeStudentMap.has(rEmailNorm) || activeStudentMap.has(rNomeNorm);
                             if(r && isActive){
                                 // More flexible pattern to find the average field
                                 const kM = Object.keys(r).find(k => 
@@ -2690,9 +2750,6 @@ const pontoState = {
             const container = document.getElementById('module-averages-chart');
             if (!container) return;
             
-            // Metadata/non-grade fields to exclude from counting
-            const EXCLUDED_FIELDS = new Set(['SerialNumber', 'NomeCompleto', 'EmailHC', 'Curso', 'serialnumber', 'nomecompleto', 'emailhc', 'curso']);
-            
             // Get counts for each module to show student count
             const tCounts = {};
             const pCounts = {};
@@ -2701,7 +2758,9 @@ const pontoState = {
             if (appState.notasTeoricas?.registros) {
                 appState.notasTeoricas.registros.forEach(r => {
                     Object.keys(r).forEach(k => {
-                        if (!EXCLUDED_FIELDS.has(k) && k.trim() !== '') {
+                        const kUpper = k.toUpperCase();
+                        // Use module-level Set for O(1) lookup
+                        if (!EXCLUDED_FIELDS_SET.has(kUpper) && k.trim() !== '') {
                             const n = parseNota(r[k]);
                             if (n > 0) {
                                 tCounts[k] = (tCounts[k] || 0) + 1;
@@ -2719,6 +2778,8 @@ const pontoState = {
                         pCounts[pNome] = p.registros.length;
                     }
                 });
+            } else {
+                console.warn('[renderModuleAverages] ⚠️ No practical grades found in appState.notasPraticas');
             }
             
             // Helper to extract module number from key for sorting
@@ -2727,12 +2788,28 @@ const pontoState = {
                 return match ? parseInt(match[0], 10) : 999;
             };
             
-            // Filter and sort theoretical averages - only show MÉDIA entries
-            const theoreticalEntries = Object.entries(tAvgs)
-                .filter(([key, value]) => key.toUpperCase().includes('MÉDIA') && value > 0)
+            // Helper to normalize key for comparison (accent-insensitive, case-insensitive)
+            const normalizeKey = (key) => {
+                return key.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
+            };
+            
+            // Separate MÉDIA entries (module averages) from individual discipline entries
+            const mediaEntries = Object.entries(tAvgs)
+                .filter(([key, value]) => {
+                    const keyNorm = normalizeKey(key);
+                    return (keyNorm.includes('MEDIA') || keyNorm.includes('MÉDIA')) && value > 0;
+                })
                 .map(([key, value]) => ({ key, value, sortNum: extractModuleNumber(key) }))
-                .sort((a, b) => a.sortNum - b.sortNum)
-                .map(({ key, value }) => [key, value]);
+                .sort((a, b) => a.sortNum - b.sortNum);
+            
+            // Get individual discipline entries (not MÉDIA)
+            const disciplineEntries = Object.entries(tAvgs)
+                .filter(([key, value]) => {
+                    const keyNorm = normalizeKey(key);
+                    return !(keyNorm.includes('MEDIA') || keyNorm.includes('MÉDIA')) && value > 0;
+                })
+                .map(([key, value]) => ({ key, value }))
+                .sort((a, b) => a.key.localeCompare(b.key));
             
             // Filter and sort practical averages
             const practicalEntries = Object.entries(pAvgs)
@@ -2741,12 +2818,25 @@ const pontoState = {
                 .sort((a, b) => {
                     if (a.sortNum !== b.sortNum) return a.sortNum - b.sortNum;
                     return a.key.localeCompare(b.key);
-                })
-                .map(({ key, value }) => [key, value]);
+                });
+            
+            // Calculate overall statistics for the header
+            const theoreticalTotal = mediaEntries.length + disciplineEntries.length;
+            const practicalTotal = practicalEntries.length;
+            const avgTheoretical = mediaEntries.length > 0 
+                ? (mediaEntries.reduce((sum, e) => sum + e.value, 0) / mediaEntries.length).toFixed(1)
+                : (disciplineEntries.length > 0 
+                    ? (disciplineEntries.reduce((sum, e) => sum + e.value, 0) / disciplineEntries.length).toFixed(1)
+                    : 'N/A');
+            const avgPractical = practicalEntries.length > 0 
+                ? (practicalEntries.reduce((sum, e) => sum + e.value, 0) / practicalEntries.length).toFixed(1)
+                : 'N/A';
             
             // Build theoretical section HTML
             let theoreticalHtml = '';
-            if (theoreticalEntries.length > 0) {
+            const theoreticalEntries = mediaEntries.map(({ key, value }) => [key, value]);
+            
+            if (theoreticalEntries.length > 0 || disciplineEntries.length > 0) {
                 theoreticalHtml = `
                     <div class="incor-modules-section-container">
                         <div class="incor-modules-section-header">
@@ -2757,11 +2847,15 @@ const pontoState = {
                             </div>
                             <div>
                                 <h3 class="incor-modules-section-title">Notas Teóricas</h3>
-                                <p class="incor-modules-section-subtitle">${theoreticalEntries.length} módulo${theoreticalEntries.length > 1 ? 's' : ''} avaliado${theoreticalEntries.length > 1 ? 's' : ''}</p>
+                                <p class="incor-modules-section-subtitle">
+                                    ${theoreticalEntries.length > 0 
+                                        ? `${theoreticalEntries.length} módulo${theoreticalEntries.length > 1 ? 's' : ''} • Média geral: ${avgTheoretical}` 
+                                        : `${disciplineEntries.length} disciplina${disciplineEntries.length > 1 ? 's' : ''} avaliada${disciplineEntries.length > 1 ? 's' : ''}`}
+                                </p>
                             </div>
                         </div>
                         <div class="incor-modules-card-list">
-                            ${theoreticalEntries.map(([key, value], index) => {
+                            ${theoreticalEntries.length > 0 ? theoreticalEntries.map(([key, value], index) => {
                                 const moduleName = key.replace(/MÉDIA\s*/i, '').replace(/\s*FISIO/i, ' Fisio').trim() || 'Módulo Teórico';
                                 const percentage = (value / 10) * 100;
                                 const count = tCounts[key] || 0;
@@ -2783,7 +2877,57 @@ const pontoState = {
                                         </div>
                                     </div>
                                 `;
-                            }).join('')}
+                            }).join('') : ''}
+                            ${disciplineEntries.length > 0 && theoreticalEntries.length === 0 ? disciplineEntries.map(({ key, value }, index) => {
+                                const percentage = (value / 10) * 100;
+                                const count = tCounts[key] || 0;
+                                return `
+                                    <div class="incor-module-card incor-module-card--theoretical">
+                                        <div class="incor-module-card__info">
+                                            <span class="incor-module-card__order">Disciplina ${index + 1}</span>
+                                            <span class="incor-module-card__name" title="${escapeHtml(key)}">${escapeHtml(key)}</span>
+                                        </div>
+                                        <div class="incor-module-card__meta">
+                                            ${count > 0 ? `<span class="incor-module-card__count">${count} aluno${count > 1 ? 's' : ''}</span>` : ''}
+                                            <div class="incor-module-card__grade">
+                                                <span class="incor-module-card__value incor-module-card__value--theoretical">${value.toFixed(1)}</span>
+                                                <span class="incor-module-card__max">de 10,0</span>
+                                                <div class="incor-module-card__progress">
+                                                    <div class="incor-module-card__progress-fill incor-module-card__progress-fill--theoretical" style="width: ${percentage}%;"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('') : ''}
+                            ${disciplineEntries.length > 0 && theoreticalEntries.length > 0 ? `
+                                <details class="incor-modules-disciplines-details">
+                                    <summary class="incor-modules-disciplines-summary">
+                                        <span>Ver ${disciplineEntries.length} disciplina${disciplineEntries.length > 1 ? 's' : ''} individuai${disciplineEntries.length > 1 ? 's' : ''}</span>
+                                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </summary>
+                                    <div class="incor-modules-disciplines-content">
+                                        ${disciplineEntries.map(({ key, value }) => {
+                                            const percentage = (value / 10) * 100;
+                                            const count = tCounts[key] || 0;
+                                            return `
+                                                <div class="incor-discipline-item">
+                                                    <span class="incor-discipline-name" title="${escapeHtml(key)}">${escapeHtml(key)}</span>
+                                                    <div class="incor-discipline-grade">
+                                                        ${count > 0 ? `<span class="incor-discipline-count">(${count})</span>` : ''}
+                                                        <span class="incor-discipline-value">${value.toFixed(1)}</span>
+                                                        <div class="incor-discipline-progress">
+                                                            <div class="incor-discipline-fill" style="width: ${percentage}%;"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            `;
+                                        }).join('')}
+                                    </div>
+                                </details>
+                            ` : ''}
                         </div>
                     </div>
                 `;
@@ -2798,10 +2942,13 @@ const pontoState = {
                             </div>
                             <div>
                                 <h3 class="incor-modules-section-title">Notas Teóricas</h3>
-                                <p class="incor-modules-section-subtitle">Aguardando dados</p>
+                                <p class="incor-modules-section-subtitle">Aguardando dados do Firebase</p>
                             </div>
                         </div>
-                        <div class="incor-modules-empty">Nenhuma média teórica disponível</div>
+                        <div class="incor-modules-empty">
+                            <p>Nenhuma nota teórica disponível</p>
+                            <p class="incor-modules-empty-hint">Os dados serão carregados automaticamente quando disponíveis</p>
+                        </div>
                     </div>
                 `;
             }
@@ -2819,11 +2966,11 @@ const pontoState = {
                             </div>
                             <div>
                                 <h3 class="incor-modules-section-title">Notas Práticas</h3>
-                                <p class="incor-modules-section-subtitle">${practicalEntries.length} módulo${practicalEntries.length > 1 ? 's' : ''} avaliado${practicalEntries.length > 1 ? 's' : ''}</p>
+                                <p class="incor-modules-section-subtitle">${practicalEntries.length} módulo${practicalEntries.length > 1 ? 's' : ''} • Média geral: ${avgPractical}</p>
                             </div>
                         </div>
                         <div class="incor-modules-card-list">
-                            ${practicalEntries.map(([key, value], index) => {
+                            ${practicalEntries.map(({ key, value }, index) => {
                                 const percentage = (value / 10) * 100;
                                 const count = pCounts[key] || 0;
                                 // Format practical module name nicely
@@ -2861,10 +3008,13 @@ const pontoState = {
                             </div>
                             <div>
                                 <h3 class="incor-modules-section-title">Notas Práticas</h3>
-                                <p class="incor-modules-section-subtitle">Aguardando dados</p>
+                                <p class="incor-modules-section-subtitle">Aguardando dados do Firebase</p>
                             </div>
                         </div>
-                        <div class="incor-modules-empty">Nenhuma média prática disponível</div>
+                        <div class="incor-modules-empty">
+                            <p>Nenhuma nota prática disponível</p>
+                            <p class="incor-modules-empty-hint">Os dados serão carregados automaticamente quando disponíveis</p>
+                        </div>
                     </div>
                 `;
             }
