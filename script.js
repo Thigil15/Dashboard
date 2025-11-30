@@ -48,26 +48,23 @@
             const pathMappings = [
                 { path: 'exportAll/Alunos/dados', stateKey: 'alunos', processor: (data) => data || [] },
                 { path: 'exportAll/AusenciasReposicoes/dados', stateKey: 'ausenciasReposicoes', processor: (data) => normalizeAusenciasReposicoes(data || []) },
-                { path: 'exportAll/NotasTeoricas', stateKey: 'notasTeoricas', processor: (data) => {
-                    // Handle both possible structures: direct array or object with 'dados' property
+                { path: 'exportAll/NotasTeoricas/dados', stateKey: 'notasTeoricas', processor: (data) => {
+                    // Handle different possible data structures from Firebase
                     let registros = [];
                     if (!data) {
-                        console.log('[setupDatabaseListeners] NotasTeoricas: Nenhum dado encontrado');
+                        console.log('[setupDatabaseListeners] NotasTeoricas: Nenhum dado encontrado no caminho /dados');
                         registros = [];
                     } else if (Array.isArray(data)) {
                         console.log('[setupDatabaseListeners] NotasTeoricas: Estrutura de array direto detectada');
                         registros = data;
-                    } else if (data.dados && Array.isArray(data.dados)) {
-                        console.log('[setupDatabaseListeners] NotasTeoricas: Estrutura com propriedade "dados" detectada');
-                        registros = data.dados;
                     } else if (typeof data === 'object') {
-                        console.warn('[setupDatabaseListeners] NotasTeoricas: Estrutura inesperada, tentando converter objeto em array');
-                        // Try to convert object to array if it has numbered keys
+                        // Try to convert object to array if it has numbered/indexed keys
                         const values = Object.values(data);
                         if (values.length > 0 && values.every(v => v && typeof v === 'object')) {
+                            console.log('[setupDatabaseListeners] NotasTeoricas: Convertendo objeto indexado em array');
                             registros = values;
                         } else {
-                            console.error('[setupDatabaseListeners] NotasTeoricas: Estrutura não reconhecida:', Object.keys(data));
+                            console.warn('[setupDatabaseListeners] NotasTeoricas: Estrutura não reconhecida:', Object.keys(data).slice(0, 10));
                             registros = [];
                         }
                     }
@@ -80,7 +77,7 @@
                         console.log('[setupDatabaseListeners] NotasTeoricas: Amostra do primeiro registro:', {
                             EmailHC: normalized[0].EmailHC || normalized[0].emailHC || normalized[0].emailhc,
                             NomeCompleto: normalized[0].NomeCompleto || normalized[0].nomeCompleto || normalized[0].nomecompleto,
-                            campos: Object.keys(normalized[0]).slice(0, 10).join(', ')
+                            campos: Object.keys(normalized[0]).slice(0, 15).join(', ')
                         });
                     }
                     
@@ -289,12 +286,25 @@
                         } else {
                             console.warn(`[setupDatabaseListeners] ⚠️ Nenhum dado em ${path} para ${stateKey}`);
                             
-                            // Try fallback path (old structure) for critical data
-                            if (stateKey === 'alunos' || stateKey === 'ausenciasReposicoes' || stateKey === 'notasTeoricas' || stateKey === 'pontoStaticRows') {
-                                const fallbackPath = path.replace('exportAll/', '').replace('/dados', '');
-                                console.log(`[setupDatabaseListeners] 🔄 Tentando caminho alternativo: ${fallbackPath}`);
-                                // Don't set up another listener here, just log the attempt
-                                // The user will need to re-run the Apps Script with the fixed version
+                            // Try fallback path for NotasTeoricas if primary path has no data
+                            if (stateKey === 'notasTeoricas') {
+                                const fallbackPath = 'exportAll/NotasTeoricas';
+                                console.log(`[setupDatabaseListeners] 🔄 Tentando caminho alternativo para NotasTeoricas: ${fallbackPath}`);
+                                const fallbackRef = window.firebase.ref(fbDB, fallbackPath);
+                                window.firebase.onValue(fallbackRef, (fallbackSnapshot) => {
+                                    const fallbackData = fallbackSnapshot.val();
+                                    if (fallbackData) {
+                                        console.log(`[setupDatabaseListeners] ✅ Dados encontrados no caminho alternativo: ${fallbackPath}`);
+                                        // Process with special handling for nested 'dados' property
+                                        let processedData = fallbackData;
+                                        if (fallbackData.dados && Array.isArray(fallbackData.dados)) {
+                                            console.log('[setupDatabaseListeners] NotasTeoricas: Estrutura com propriedade "dados" detectada no fallback');
+                                            processedData = fallbackData.dados;
+                                        }
+                                        appState[stateKey] = processor(processedData);
+                                        triggerUIUpdates(stateKey);
+                                    }
+                                }, { onlyOnce: true });
                             }
                         }
                         
@@ -2272,13 +2282,31 @@ const pontoState = {
                 console.warn('[findDataByStudent] Valores buscados:', { emailNormalizado, alunoNomeNormalizado });
             }
 
-            // Notas Práticas - with deduplication
-            const notasPRaw = Object.values(appState.notasPraticas).flatMap(p =>
-                (p.registros || []).filter(x => x && 
-                    ((x.EmailHC && normalizeString(x.EmailHC) === emailNormalizado) || 
-                     (x.NomeCompleto && normalizeString(x.NomeCompleto) === alunoNomeNormalizado))
-                ).map(i => ({ nomePratica: p.nomePratica, ...i }))
-            );
+            // Notas Práticas - with deduplication and improved field matching
+            console.log('[findDataByStudent] Buscando Notas Práticas para:', { emailNormalizado, alunoNomeNormalizado });
+            const notasPRaw = Object.values(appState.notasPraticas).flatMap(p => {
+                const matchedRecords = (p.registros || []).filter(x => {
+                    if (!x) return false;
+                    
+                    // Try EmailHC variants for matching
+                    const emailFields = ['EmailHC', 'emailHC', 'emailhc', 'EMAILHC', 'Email', 'email'];
+                    const hasMatchingEmail = emailFields.some(field => 
+                        x[field] && normalizeString(x[field]) === emailNormalizado
+                    );
+                    
+                    // Try NomeCompleto variants for matching
+                    const nameFields = ['NomeCompleto', 'nomeCompleto', 'nomecompleto', 'NOMECOMPLETO', 'Nome', 'nome'];
+                    const hasMatchingName = nameFields.some(field => 
+                        x[field] && normalizeString(x[field]) === alunoNomeNormalizado
+                    );
+                    
+                    return hasMatchingEmail || hasMatchingName;
+                });
+                
+                return matchedRecords.map(i => ({ nomePratica: p.nomePratica, ...i }));
+            });
+            
+            console.log(`[findDataByStudent] Notas Práticas encontradas: ${notasPRaw.length}`);
             
             // Remove duplicates based on _uniqueId (same evaluation appearing in multiple sheets)
             const seenIds = new Set();
@@ -2311,17 +2339,28 @@ const pontoState = {
                 if (s.NomeCompleto) activeStudentMap.set(normalizeString(s.NomeCompleto), s);
             });
 
-            // --- Teóricas (com filtro R2) ---
+            // --- Teóricas (com filtro R2) - with improved field matching ---
             const tSums = {}; const tCounts = {};
             if(appState.notasTeoricas?.registros){
                 appState.notasTeoricas.registros.forEach(r => {
-                    const rEmailNorm = normalizeString(r.EmailHC);
-                    const rNomeNorm = normalizeString(r.NomeCompleto);
+                    // Try multiple field name variants for email
+                    const emailFields = ['EmailHC', 'emailHC', 'emailhc', 'EMAILHC', 'Email', 'email'];
+                    const rEmail = emailFields.find(f => r[f]) ? r[emailFields.find(f => r[f])] : null;
+                    const rEmailNorm = normalizeString(rEmail);
+                    
+                    // Try multiple field name variants for name
+                    const nameFields = ['NomeCompleto', 'nomeCompleto', 'nomecompleto', 'NOMECOMPLETO', 'Nome', 'nome'];
+                    const rNome = nameFields.find(f => r[f]) ? r[nameFields.find(f => r[f])] : null;
+                    const rNomeNorm = normalizeString(rNome);
+                    
                     const student = activeStudentMap.get(rEmailNorm) || activeStudentMap.get(rNomeNorm);
 
                     if(student && student.Curso !== 'Residência - 2º ano' && student.Curso !== 'Residência  - 2º ano'){
                         Object.keys(r).forEach(k => {
-                            if(!['SerialNumber','NomeCompleto','EmailHC','Curso'].includes(k) && k.trim() !== ''){
+                            // Exclude known non-grade fields (case-insensitive)
+                            const kUpper = k.toUpperCase();
+                            const excludedFields = ['SERIALNUMBER', 'NOMECOMPLETO', 'EMAILHC', 'CURSO', 'EMAIL', 'NOME'];
+                            if(!excludedFields.includes(kUpper) && k.trim() !== ''){
                                 const n = parseNota(r[k]);
                                 if(n > 0){
                                     tSums[k] = (tSums[k] || 0) + n;
@@ -2343,7 +2382,7 @@ const pontoState = {
             });
             const oTAvg = oTCount > 0 ? oTSum / oTCount : 0;
             
-            // --- Práticas (SEM filtro R2) ---
+            // --- Práticas (SEM filtro R2) - with improved field matching ---
             const pSums = {}; const pCounts = {};
             let oPSum = 0; let oPCount = 0;
             if(appState.notasPraticas && typeof appState.notasPraticas === 'object'){
@@ -2352,9 +2391,17 @@ const pontoState = {
                     if (!pSums[pNome]) { pSums[pNome] = 0; pCounts[pNome] = 0; }
                     if(p && p.registros){
                         p.registros.forEach(r => {
-                             const rEmailNorm = normalizeString(r.EmailHC);
-                             const rNomeNorm = normalizeString(r.NomeCompleto);
-                             const isActive = activeStudentMap.has(rEmailNorm) || activeStudentMap.has(rNomeNorm);
+                            // Try multiple field name variants for email
+                            const emailFields = ['EmailHC', 'emailHC', 'emailhc', 'EMAILHC', 'Email', 'email'];
+                            const rEmail = emailFields.find(f => r[f]) ? r[emailFields.find(f => r[f])] : null;
+                            const rEmailNorm = normalizeString(rEmail);
+                            
+                            // Try multiple field name variants for name
+                            const nameFields = ['NomeCompleto', 'nomeCompleto', 'nomecompleto', 'NOMECOMPLETO', 'Nome', 'nome'];
+                            const rNome = nameFields.find(f => r[f]) ? r[nameFields.find(f => r[f])] : null;
+                            const rNomeNorm = normalizeString(rNome);
+                            
+                            const isActive = activeStudentMap.has(rEmailNorm) || activeStudentMap.has(rNomeNorm);
                             if(r && isActive){
                                 // More flexible pattern to find the average field
                                 const kM = Object.keys(r).find(k => 
