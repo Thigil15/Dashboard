@@ -1038,6 +1038,12 @@ function getFieldValue(obj, fieldVariants) {
  * Normalizes a key for deduplication of field name variants.
  * Removes accents, spaces, underscores, and converts to uppercase.
  * This helps detect variants like "Média Fisio1", "MediaFisio1", "_media_fisio1"
+ * 
+ * Note: This is different from normalizeString() which:
+ * - Converts to lowercase (for general string comparison)
+ * - Does NOT remove spaces/underscores (preserves word boundaries)
+ * This function needs uppercase and no spaces to match all variant patterns.
+ * 
  * @param {string} key - The field key to normalize
  * @returns {string} - Normalized key for comparison
  */
@@ -2425,9 +2431,20 @@ const pontoState = {
                                     // Prefer: 1) existing canonical key, 2) key with accents (proper formatting)
                                     let canonicalKey = canonicalKeyMap.get(kNormalized);
                                     if (!canonicalKey) {
-                                        // Prefer keys with accents as they're likely the original Firebase names
+                                        // First key becomes canonical
                                         canonicalKey = k;
                                         canonicalKeyMap.set(kNormalized, canonicalKey);
+                                    } else if (keyHasAccents(k) && !keyHasAccents(canonicalKey)) {
+                                        // Update to key with accents (likely original Firebase name)
+                                        canonicalKeyMap.set(kNormalized, k);
+                                        // Transfer sums/counts to new canonical key
+                                        if (tSums[canonicalKey] !== undefined) {
+                                            tSums[k] = tSums[canonicalKey];
+                                            tCounts[k] = tCounts[canonicalKey];
+                                            delete tSums[canonicalKey];
+                                            delete tCounts[canonicalKey];
+                                        }
+                                        canonicalKey = k;
                                     }
                                     
                                     tSums[canonicalKey] = (tSums[canonicalKey] || 0) + n;
