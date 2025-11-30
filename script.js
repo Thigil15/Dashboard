@@ -2856,13 +2856,14 @@ const pontoState = {
                         </div>
                         <div class="incor-modules-card-list">
                             ${theoreticalEntries.length > 0 ? theoreticalEntries.map(([key, value], index) => {
-                                const moduleName = key.replace(/MÉDIA\s*/i, '').replace(/\s*FISIO/i, ' Fisio').trim() || 'Módulo Teórico';
+                                // Use exact Firebase field name to help identify what each grade refers to
+                                const moduleName = key;
                                 const percentage = (value / 10) * 100;
                                 const count = tCounts[key] || 0;
                                 return `
                                     <div class="incor-module-card incor-module-card--theoretical">
                                         <div class="incor-module-card__info">
-                                            <span class="incor-module-card__order">Módulo ${index + 1}</span>
+                                            <span class="incor-module-card__order">Teórica ${index + 1}</span>
                                             <span class="incor-module-card__name" title="${escapeHtml(moduleName)}">${escapeHtml(moduleName)}</span>
                                         </div>
                                         <div class="incor-module-card__meta">
@@ -2973,8 +2974,8 @@ const pontoState = {
                             ${practicalEntries.map(({ key, value }, index) => {
                                 const percentage = (value / 10) * 100;
                                 const count = pCounts[key] || 0;
-                                // Format practical module name nicely
-                                const moduleName = formatarNomeModulo(key) || key;
+                                // Use exact Firebase field name to help identify what each grade refers to
+                                const moduleName = key;
                                 return `
                                     <div class="incor-module-card incor-module-card--practical">
                                         <div class="incor-module-card__info">

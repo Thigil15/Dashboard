@@ -9145,46 +9145,48 @@
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
-   PROFESSIONAL MODULE PERFORMANCE GRID (NEW)
-   Complete rebuild for professional, ordered display
+   PROFESSIONAL MODULE PERFORMANCE GRID (REDESIGNED)
+   Clean, aligned layout with exact Firebase field names
    ════════════════════════════════════════════════════════════════════════════ */
 
 .incor-modules-professional-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: var(--incor-spacing-md);
+    gap: var(--incor-spacing-lg);
 }
 
 /* Section Container for Theoretical/Practical */
 .incor-modules-section-container {
     background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
     border-radius: var(--radius-xl);
-    padding: var(--incor-spacing-md);
+    padding: var(--incor-spacing-lg);
     border: 1px solid rgba(229, 233, 239, 0.8);
+    box-shadow: 0 2px 8px rgba(0, 51, 160, 0.04);
 }
 
 .incor-modules-section-header {
     display: flex;
     align-items: center;
-    gap: var(--incor-spacing-sm);
-    margin-bottom: var(--incor-spacing-md);
-    padding-bottom: var(--incor-spacing-sm);
+    gap: var(--incor-spacing-md);
+    margin-bottom: var(--incor-spacing-lg);
+    padding-bottom: var(--incor-spacing-md);
     border-bottom: 2px solid rgba(0, 51, 160, 0.1);
 }
 
 .incor-modules-section-icon {
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
     border-radius: var(--radius-lg);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .incor-modules-section-icon svg {
-    width: 18px;
-    height: 18px;
+    width: 22px;
+    height: 22px;
     color: white;
 }
 
@@ -9198,41 +9200,44 @@
 
 .incor-modules-section-title {
     font-family: var(--font-display);
-    font-size: 1rem;
+    font-size: 1.125rem;
     font-weight: 700;
     color: var(--content-text-primary);
     margin: 0;
 }
 
 .incor-modules-section-subtitle {
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
     color: var(--content-text-muted);
     margin: 0;
+    margin-top: 0.25rem;
 }
 
 /* Module Cards List */
 .incor-modules-card-list {
     display: flex;
     flex-direction: column;
-    gap: var(--incor-spacing-xs);
+    gap: var(--incor-spacing-sm);
 }
 
-/* Individual Module Card */
+/* Individual Module Card - REDESIGNED for better alignment */
 .incor-module-card {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto;
     align-items: center;
-    justify-content: space-between;
-    padding: var(--incor-spacing-sm) var(--incor-spacing-md);
+    gap: var(--incor-spacing-md);
+    padding: var(--incor-spacing-md) var(--incor-spacing-lg);
     background: white;
     border-radius: var(--radius-lg);
     border: 1px solid rgba(229, 233, 239, 0.8);
     transition: all 0.2s ease;
+    min-height: 72px;
 }
 
 .incor-module-card:hover {
     border-color: var(--incor-blue-300);
-    box-shadow: 0 4px 12px rgba(0, 51, 160, 0.08);
-    transform: translateX(4px);
+    box-shadow: 0 4px 16px rgba(0, 51, 160, 0.1);
+    transform: translateY(-2px);
 }
 
 /* Accessibility: Reduce motion for users who prefer it */
@@ -9244,51 +9249,55 @@
 }
 
 .incor-module-card--theoretical {
-    border-left: 3px solid #d97706;
+    border-left: 4px solid #d97706;
 }
 
 .incor-module-card--practical {
-    border-left: 3px solid #0891b2;
+    border-left: 4px solid #0891b2;
 }
 
 .incor-module-card__info {
     display: flex;
     flex-direction: column;
-    flex: 1;
+    gap: 4px;
     min-width: 0;
+    overflow: hidden;
 }
 
 .incor-module-card__order {
-    font-size: 0.625rem;
+    font-size: 0.6875rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
     color: var(--content-text-muted);
-    margin-bottom: 2px;
 }
 
 .incor-module-card__name {
-    font-size: 0.875rem;
+    font-size: 0.9375rem;
     font-weight: 600;
     color: var(--content-text-primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    line-height: 1.4;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    /* Allow text to wrap for long Firebase field names */
+    white-space: normal;
 }
 
 .incor-module-card__meta {
     display: flex;
-    align-items: center;
-    gap: var(--incor-spacing-sm);
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
     flex-shrink: 0;
+    min-width: 100px;
 }
 
 .incor-module-card__count {
     font-size: 0.6875rem;
-    font-weight: 500;
+    font-weight: 600;
     color: var(--content-text-muted);
     background: rgba(0, 51, 160, 0.06);
-    padding: 2px 8px;
+    padding: 3px 10px;
     border-radius: var(--radius-full);
 }
 
@@ -9296,11 +9305,12 @@
     display: flex;
     flex-direction: column;
     align-items: flex-end;
+    gap: 4px;
 }
 
 .incor-module-card__value {
     font-family: var(--font-display);
-    font-size: 1.25rem;
+    font-size: 1.5rem;
     font-weight: 800;
     line-height: 1;
 }
@@ -9314,18 +9324,17 @@
 }
 
 .incor-module-card__max {
-    font-size: 0.625rem;
+    font-size: 0.6875rem;
     color: var(--content-text-muted);
 }
 
 /* Progress Bar within Module Card */
 .incor-module-card__progress {
-    width: 80px;
+    width: 100px;
     height: 6px;
     background: rgba(0, 51, 160, 0.08);
     border-radius: var(--radius-full);
     overflow: hidden;
-    margin-top: 4px;
 }
 
 .incor-module-card__progress-fill {
@@ -9345,7 +9354,7 @@
 /* Empty State */
 .incor-modules-empty {
     text-align: center;
-    padding: var(--incor-spacing-lg);
+    padding: var(--incor-spacing-xl);
     color: var(--content-text-muted);
     font-size: 0.875rem;
     font-style: italic;
@@ -9357,12 +9366,13 @@
     opacity: 0.7;
 }
 
-/* Disciplines Details Section (expandable) */
+/* Disciplines Details Section (expandable) - REDESIGNED */
 .incor-modules-disciplines-details {
     margin-top: var(--incor-spacing-md);
-    border: 1px solid var(--incor-border);
-    border-radius: var(--incor-radius-lg);
-    background: var(--content-bg-secondary);
+    border: 1px solid rgba(229, 233, 239, 0.8);
+    border-radius: var(--radius-lg);
+    background: rgba(248, 250, 252, 0.8);
+    overflow: hidden;
 }
 
 .incor-modules-disciplines-summary {
@@ -9371,20 +9381,28 @@
     justify-content: space-between;
     padding: var(--incor-spacing-md) var(--incor-spacing-lg);
     cursor: pointer;
-    font-weight: 500;
+    font-weight: 600;
+    font-size: 0.875rem;
     color: var(--content-text-secondary);
     transition: all 0.2s ease;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 1px solid transparent;
 }
 
 .incor-modules-disciplines-summary:hover {
-    background: var(--content-bg-tertiary);
+    background: rgba(0, 51, 160, 0.04);
     color: var(--content-text-primary);
+}
+
+.incor-modules-disciplines-details[open] .incor-modules-disciplines-summary {
+    border-bottom: 1px solid rgba(229, 233, 239, 0.8);
 }
 
 .incor-modules-disciplines-summary svg {
     width: 1.25rem;
     height: 1.25rem;
     transition: transform 0.3s ease;
+    color: var(--content-text-muted);
 }
 
 .incor-modules-disciplines-details[open] .incor-modules-disciplines-summary svg {
@@ -9392,63 +9410,77 @@
 }
 
 .incor-modules-disciplines-content {
-    padding: 0 var(--incor-spacing-lg) var(--incor-spacing-lg);
+    padding: var(--incor-spacing-md) var(--incor-spacing-lg) var(--incor-spacing-lg);
     display: flex;
     flex-direction: column;
-    gap: var(--incor-spacing-sm);
+    gap: var(--incor-spacing-xs);
+    background: white;
 }
 
 .incor-discipline-item {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto;
     align-items: center;
-    justify-content: space-between;
+    gap: var(--incor-spacing-md);
     padding: var(--incor-spacing-sm) var(--incor-spacing-md);
-    background: white;
-    border-radius: var(--incor-radius-md);
-    border: 1px solid var(--incor-border);
+    background: linear-gradient(135deg, #fafbfc 0%, #f8fafc 100%);
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(229, 233, 239, 0.6);
+    transition: all 0.15s ease;
+}
+
+.incor-discipline-item:hover {
+    background: rgba(0, 51, 160, 0.02);
+    border-color: rgba(0, 84, 180, 0.2);
 }
 
 .incor-discipline-name {
-    flex: 1;
-    font-size: 0.85rem;
+    font-size: 0.875rem;
+    font-weight: 500;
     color: var(--content-text-primary);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    line-height: 1.4;
+    /* Allow text to wrap for long Firebase field names */
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .incor-discipline-grade {
     display: flex;
     align-items: center;
     gap: var(--incor-spacing-sm);
-    min-width: 140px;
+    flex-shrink: 0;
 }
 
 .incor-discipline-count {
-    font-size: 0.7rem;
+    font-size: 0.6875rem;
+    font-weight: 500;
     color: var(--content-text-muted);
+    background: rgba(0, 51, 160, 0.04);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
 }
 
 .incor-discipline-value {
-    font-weight: 600;
-    font-size: 0.9rem;
-    color: var(--accent-blue);
-    min-width: 32px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1rem;
+    color: #b45309;
+    min-width: 36px;
     text-align: right;
 }
 
 .incor-discipline-progress {
     width: 60px;
-    height: 6px;
-    background: var(--incor-border);
-    border-radius: 3px;
+    height: 5px;
+    background: rgba(0, 51, 160, 0.08);
+    border-radius: var(--radius-full);
     overflow: hidden;
 }
 
 .incor-discipline-fill {
     height: 100%;
-    background: linear-gradient(135deg, var(--accent-blue), #6366f1);
-    border-radius: 3px;
+    background: linear-gradient(90deg, #d97706, #f59e0b);
+    border-radius: var(--radius-full);
     transition: width 0.3s ease;
 }
 
