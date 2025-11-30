@@ -1394,6 +1394,12 @@ const pontoState = {
                 return;
             }
             
+            // Helper function to check if key matches MÉDIA FISIO pattern (accent-insensitive)
+            function isMediaFisioKey(key) {
+                const keyNorm = key.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+                return keyNorm.includes('MEDIA') && keyNorm.includes('FISIO');
+            }
+            
             // Calculate average for each student from notasTeoricas
             const studentsWithGrades = activeStudents.map(student => {
                 const emailNorm = normalizeString(student.EmailHC);
@@ -1401,22 +1407,25 @@ const pontoState = {
                 
                 let totalNota = 0;
                 let countNota = 0;
-                let moduleCount = 0;
+                const countedKeys = new Set(); // Track keys to avoid double counting
                 
                 // First check if student object has MÉDIA FISIO fields directly
                 Object.entries(student).forEach(([key, value]) => {
-                    if (key.toUpperCase().includes('MÉDIA') && key.toUpperCase().includes('FISIO')) {
+                    if (isMediaFisioKey(key)) {
                         const nota = parseNota(value);
                         if (nota > 0) {
-                            totalNota += nota;
-                            countNota++;
-                            moduleCount++;
+                            const keyNorm = key.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+                            if (!countedKeys.has(keyNorm)) {
+                                totalNota += nota;
+                                countNota++;
+                                countedKeys.add(keyNorm);
+                            }
                         }
                     }
                 });
                 
-                // Also check notasTeoricas.registros for this student
-                if (appState.notasTeoricas && appState.notasTeoricas.registros) {
+                // Also check notasTeoricas.registros for this student (only if no grades found yet)
+                if (countNota === 0 && appState.notasTeoricas && appState.notasTeoricas.registros) {
                     const studentRecord = appState.notasTeoricas.registros.find(r => {
                         const rEmail = normalizeString(r.EmailHC || r.emailHC || '');
                         const rNome = normalizeString(r.NomeCompleto || r.nomeCompleto || '');
@@ -1424,19 +1433,17 @@ const pontoState = {
                     });
                     
                     if (studentRecord) {
-                        // Look for MÉDIA fields in the record
+                        // Look for MÉDIA FISIO fields in the record
                         Object.entries(studentRecord).forEach(([key, value]) => {
-                            const keyUpper = key.toUpperCase();
-                            const keyNorm = key.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
-                            
-                            if ((keyUpper.includes('MÉDIA') || keyNorm.includes('MEDIA')) && 
-                                (keyUpper.includes('FISIO') || keyNorm.includes('FISIO'))) {
+                            if (isMediaFisioKey(key)) {
                                 const nota = parseNota(value);
-                                // Avoid double counting if already found in student object
-                                if (nota > 0 && countNota === 0) {
-                                    totalNota += nota;
-                                    countNota++;
-                                    moduleCount++;
+                                if (nota > 0) {
+                                    const keyNorm = key.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+                                    if (!countedKeys.has(keyNorm)) {
+                                        totalNota += nota;
+                                        countNota++;
+                                        countedKeys.add(keyNorm);
+                                    }
                                 }
                             }
                         });
@@ -1449,7 +1456,7 @@ const pontoState = {
                     email: student.EmailHC,
                     nome: student.NomeCompleto || student.EmailHC,
                     media: media,
-                    moduleCount: moduleCount
+                    moduleCount: countNota
                 };
             }).sort((a, b) => b.media - a.media);
             
@@ -1485,6 +1492,17 @@ const pontoState = {
                         setTimeout(() => switchStudentTab('notas-t'), 100);
                     }
                 });
+            });
+        }
+
+        // Helper function to find the practical grade key in a record (accent-insensitive)
+        function findPracticalGradeKey(record) {
+            return Object.keys(record).find(k => {
+                const keyNorm = k.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+                return keyNorm.includes('MEDIA') && keyNorm.includes('NOTA') && keyNorm.includes('FINAL') ||
+                       keyNorm.includes('MEDIA') && keyNorm.includes('FINAL') ||
+                       keyNorm.includes('NOTA') && keyNorm.includes('FINAL') ||
+                       keyNorm === 'MEDIANOTAFINAL';
             });
         }
 
@@ -1524,14 +1542,8 @@ const pontoState = {
                             // Calculate average from the final grade field for each record
                             studentRecords.forEach(record => {
                                 // Find the average/final grade field
-                                const gradeKey = Object.keys(record).find(k => 
-                                    /MÉDIA.*NOTA.*FINAL/i.test(k) || 
-                                    /MEDIA.*NOTA.*FINAL/i.test(k) ||
-                                    /MÉDIA.*FINAL/i.test(k) ||
-                                    /MEDIA.*FINAL/i.test(k) ||
-                                    /NOTA.*FINAL/i.test(k) ||
-                                    /MediaNotaFinal/i.test(k)
-                                );
+                                // Use the helper function to find the grade key
+                                const gradeKey = findPracticalGradeKey(record);
                                 
                                 if (gradeKey && record[gradeKey]) {
                                     const nota = parseNota(record[gradeKey]);
