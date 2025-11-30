@@ -1017,10 +1017,14 @@
         // Estado global da aplicação
 
 // Field name variants for robust matching (handles different casing/formatting from Firebase)
+// These arrays are used for VALUE EXTRACTION - finding and reading field values from records
 const EMAIL_FIELD_VARIANTS = ['EmailHC', 'emailHC', 'emailhc', 'EMAILHC', 'Email', 'email'];
 const NAME_FIELD_VARIANTS = ['NomeCompleto', 'nomeCompleto', 'nomecompleto', 'NOMECOMPLETO', 'Nome', 'nome'];
 
-// Metadata/non-grade fields to exclude from grade calculations (uppercase for O(1) lookup)
+// Metadata/non-grade fields to exclude from GRADE CALCULATIONS (uppercase for O(1) lookup)
+// Note: Some fields overlap with the variants above because they serve different purposes:
+// - Field variants are for READING values (e.g., find email to match student)
+// - Excluded fields are for FILTERING (e.g., don't calculate average of email field)
 const EXCLUDED_FIELDS_SET = new Set(['SERIALNUMBER', 'NOMECOMPLETO', 'EMAILHC', 'CURSO', 'EMAIL', 'NOME']);
 
 // Helper function to get a value from an object using field name variants
@@ -2746,23 +2750,12 @@ const pontoState = {
             const container = document.getElementById('module-averages-chart');
             if (!container) return;
             
-            // Debug logging to understand data
-            console.log('[renderModuleAverages] Received tAvgs:', tAvgs);
-            console.log('[renderModuleAverages] Received pAvgs:', pAvgs);
-            console.log('[renderModuleAverages] tAvgs keys:', Object.keys(tAvgs));
-            console.log('[renderModuleAverages] pAvgs keys:', Object.keys(pAvgs));
-            
             // Get counts for each module to show student count
             const tCounts = {};
             const pCounts = {};
             
             // Process theoretical data to get counts
             if (appState.notasTeoricas?.registros) {
-                console.log('[renderModuleAverages] NotasTeoricas registros count:', appState.notasTeoricas.registros.length);
-                if (appState.notasTeoricas.registros.length > 0) {
-                    console.log('[renderModuleAverages] First record keys:', Object.keys(appState.notasTeoricas.registros[0]));
-                }
-                
                 appState.notasTeoricas.registros.forEach(r => {
                     Object.keys(r).forEach(k => {
                         const kUpper = k.toUpperCase();
@@ -2775,13 +2768,10 @@ const pontoState = {
                         }
                     });
                 });
-            } else {
-                console.warn('[renderModuleAverages] ⚠️ No theoretical records found in appState.notasTeoricas.registros');
             }
             
             // Process practical data to get counts
             if (appState.notasPraticas && typeof appState.notasPraticas === 'object') {
-                console.log('[renderModuleAverages] NotasPraticas modules:', Object.keys(appState.notasPraticas));
                 Object.values(appState.notasPraticas).forEach(p => {
                     const pNome = p.nomePratica;
                     if (p && p.registros) {
@@ -2820,9 +2810,6 @@ const pontoState = {
                 })
                 .map(([key, value]) => ({ key, value }))
                 .sort((a, b) => a.key.localeCompare(b.key));
-            
-            console.log('[renderModuleAverages] Module averages (MÉDIA):', mediaEntries.length);
-            console.log('[renderModuleAverages] Individual disciplines:', disciplineEntries.length);
             
             // Filter and sort practical averages
             const practicalEntries = Object.entries(pAvgs)
