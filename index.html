@@ -274,7 +274,7 @@
                         </header>
                         
                         <div class="incor-kpi-grid">
-                            <!-- KPI: Frequência Geral -->
+                            <!-- KPI: Alunos Ativos -->
                             <article class="incor-kpi-card" id="kpi-card-frequency" data-status="normal">
                                 <div class="incor-kpi-status-indicator"></div>
                                 <div class="incor-kpi-icon-wrapper incor-kpi-icon--blue">
@@ -284,32 +284,12 @@
                                 </div>
                                 <div class="incor-kpi-content">
                                     <div class="incor-kpi-value-row">
-                                        <strong class="incor-kpi-value" id="kpi-total-students">-</strong>
+                                        <strong class="incor-kpi-value" id="kpi-active-students">-</strong>
                                         <span class="incor-kpi-status-badge" id="kpi-frequency-status">Normal</span>
                                     </div>
-                                    <span class="incor-kpi-label">Alunos Matriculados</span>
+                                    <span class="incor-kpi-label">Alunos Ativos</span>
                                     <div class="incor-kpi-sublabel">
-                                        <span id="kpi-active-students">-</span> ativos no programa
-                                    </div>
-                                </div>
-                            </article>
-                            
-                            <!-- KPI: Pendências Urgentes -->
-                            <article class="incor-kpi-card" id="kpi-card-pending" data-status="normal">
-                                <div class="incor-kpi-status-indicator"></div>
-                                <div class="incor-kpi-icon-wrapper incor-kpi-icon--orange">
-                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                                    </svg>
-                                </div>
-                                <div class="incor-kpi-content">
-                                    <div class="incor-kpi-value-row">
-                                        <strong class="incor-kpi-value" id="kpi-pending-replacements">-</strong>
-                                        <span class="incor-kpi-status-badge" id="kpi-pending-status">Normal</span>
-                                    </div>
-                                    <span class="incor-kpi-label">Reposições Pendentes</span>
-                                    <div class="incor-kpi-sublabel">
-                                        Ações administrativas necessárias
+                                        de <span id="kpi-total-students">-</span> matriculados
                                     </div>
                                 </div>
                             </article>
@@ -350,6 +330,26 @@
                                     <span class="incor-kpi-label">Média Prática Geral</span>
                                     <div class="incor-kpi-progress-bar">
                                         <div class="incor-kpi-progress-fill incor-kpi-progress--cyan" id="db-practical-bar" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+                            </article>
+                            
+                            <!-- KPI: Reposições Pendentes -->
+                            <article class="incor-kpi-card" id="kpi-card-pending" data-status="normal">
+                                <div class="incor-kpi-status-indicator"></div>
+                                <div class="incor-kpi-icon-wrapper incor-kpi-icon--orange">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                    </svg>
+                                </div>
+                                <div class="incor-kpi-content">
+                                    <div class="incor-kpi-value-row">
+                                        <strong class="incor-kpi-value" id="kpi-pending-replacements">-</strong>
+                                        <span class="incor-kpi-status-badge" id="kpi-pending-status">Normal</span>
+                                    </div>
+                                    <span class="incor-kpi-label">Reposições Pendentes</span>
+                                    <div class="incor-kpi-sublabel">
+                                        Ações administrativas necessárias
                                     </div>
                                 </div>
                             </article>
@@ -422,19 +422,14 @@
                                 </div>
                                 <div>
                                     <h2 class="incor-modules-title">Desempenho por Módulos</h2>
-                                    <p class="incor-modules-subtitle">Comparativo de médias teóricas e práticas</p>
+                                    <p class="incor-modules-subtitle">Médias gerais de notas teóricas e práticas do programa</p>
                                 </div>
                             </div>
-                            <nav class="incor-modules-tabs">
-                                <button class="incor-modules-tab incor-modules-tab--active" data-tab="modulos">Módulos</button>
-                                <button class="incor-modules-tab" data-tab="teoricas">Teóricas</button>
-                                <button class="incor-modules-tab" data-tab="praticas">Práticas</button>
-                            </nav>
                         </header>
                         <div class="incor-modules-content">
-                            <div id="module-averages-chart" class="incor-modules-grid"></div>
-                            <div id="theoretical-grades-list" class="incor-grades-list" hidden></div>
-                            <div id="practical-grades-list" class="incor-grades-list" hidden></div>
+                            <div class="incor-modules-professional-grid" id="module-averages-chart">
+                                <!-- Module cards will be rendered by JavaScript -->
+                            </div>
                         </div>
                     </section>
 
