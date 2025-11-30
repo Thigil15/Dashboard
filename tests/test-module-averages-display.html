@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teste: Exibição de Médias por Módulo</title>
+    <title>Teste: Desempenho por Módulos - Nova Interface</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="../style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,26 +16,23 @@
             padding: 2rem;
         }
         .test-container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
         }
-        h1 {
+        h1.test-title {
             font-family: var(--font-display);
             font-size: 1.5rem;
             font-weight: 700;
             margin-bottom: 1.5rem;
             color: var(--incor-blue-700);
         }
-        .test-section {
-            margin-bottom: 2rem;
-        }
     </style>
 </head>
 <body>
     <div class="test-container">
-        <h1>🧪 Teste: Exibição de Médias por Módulo (Firebase Exact Names)</h1>
+        <h1 class="test-title">🧪 Teste: Desempenho por Módulos - Nova Interface com Abas</h1>
         
-        <section class="incor-modules-section test-section" aria-label="Desempenho por Módulos">
+        <section class="incor-modules-section" aria-label="Desempenho por Módulos">
             <header class="incor-modules-header">
                 <div class="incor-modules-title-group">
                     <div class="incor-modules-icon">
@@ -48,182 +45,192 @@
                         <p class="incor-modules-subtitle">Médias gerais de notas teóricas e práticas do programa</p>
                     </div>
                 </div>
+                <!-- Toggle buttons for Teoria/Prática -->
+                <div class="incor-modules-tabs" id="modules-toggle-tabs">
+                    <button class="incor-modules-tab incor-modules-tab--active" data-tab="teoria" id="tab-teoria">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; margin-right: 6px;">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                        </svg>
+                        Teoria
+                    </button>
+                    <button class="incor-modules-tab" data-tab="pratica" id="tab-pratica">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; margin-right: 6px;">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                        </svg>
+                        Prática
+                    </button>
+                </div>
             </header>
             <div class="incor-modules-content">
-                <div class="incor-modules-professional-grid" id="module-averages-chart">
-                    
-                    <!-- Theoretical Section -->
-                    <div class="incor-modules-section-container">
-                        <div class="incor-modules-section-header">
-                            <div class="incor-modules-section-icon incor-modules-section-icon--theoretical">
-                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-                                </svg>
+                <div id="module-averages-chart">
+                    <!-- Teoria Content -->
+                    <div id="modules-content-teoria" class="incor-modules-tab-content incor-modules-tab-content--active">
+                        <div class="incor-modules-stats-bar">
+                            <div class="incor-modules-stat">
+                                <span class="incor-modules-stat-value">4</span>
+                                <span class="incor-modules-stat-label">Módulos</span>
                             </div>
-                            <div>
-                                <h3 class="incor-modules-section-title">Notas Teóricas</h3>
-                                <p class="incor-modules-section-subtitle">4 módulos • Média geral: 8.2</p>
+                            <div class="incor-modules-stat incor-modules-stat--highlight">
+                                <span class="incor-modules-stat-value">8.2</span>
+                                <span class="incor-modules-stat-label">Média Geral</span>
                             </div>
                         </div>
-                        <div class="incor-modules-card-list">
-                            <!-- Card 1 - Firebase exact name -->
-                            <div class="incor-module-card incor-module-card--theoretical">
-                                <div class="incor-module-card__info">
-                                    <span class="incor-module-card__order">Teórica 1</span>
-                                    <span class="incor-module-card__name" title="MÉDIA FISIO1">MÉDIA FISIO1</span>
+                        <div class="incor-modules-card-grid">
+                            <!-- Card 1 -->
+                            <div class="incor-module-grid-card incor-module-grid-card--theoretical">
+                                <div class="incor-module-grid-card__header">
+                                    <span class="incor-module-grid-card__badge">Teórica 1</span>
+                                    <span class="incor-module-grid-card__count">25 alunos</span>
                                 </div>
-                                <div class="incor-module-card__meta">
-                                    <span class="incor-module-card__count">25 alunos</span>
-                                    <div class="incor-module-card__grade">
-                                        <span class="incor-module-card__value incor-module-card__value--theoretical">8.5</span>
-                                        <span class="incor-module-card__max">de 10,0</span>
-                                        <div class="incor-module-card__progress">
-                                            <div class="incor-module-card__progress-fill incor-module-card__progress-fill--theoretical" style="width: 85%;"></div>
-                                        </div>
-                                    </div>
+                                <h4 class="incor-module-grid-card__title">MÉDIA FISIO1</h4>
+                                <div class="incor-module-grid-card__grade incor-module-grid-card__grade--good">
+                                    <span class="incor-module-grid-card__value">8.5</span>
+                                    <span class="incor-module-grid-card__max">/10</span>
+                                </div>
+                                <div class="incor-module-grid-card__progress">
+                                    <div class="incor-module-grid-card__progress-fill incor-module-grid-card__progress-fill--theoretical" style="width: 85%;"></div>
                                 </div>
                             </div>
-                            
-                            <!-- Card 2 - Firebase exact name -->
-                            <div class="incor-module-card incor-module-card--theoretical">
-                                <div class="incor-module-card__info">
-                                    <span class="incor-module-card__order">Teórica 2</span>
-                                    <span class="incor-module-card__name" title="MÉDIA FISIO2">MÉDIA FISIO2</span>
+                            <!-- Card 2 -->
+                            <div class="incor-module-grid-card incor-module-grid-card--theoretical">
+                                <div class="incor-module-grid-card__header">
+                                    <span class="incor-module-grid-card__badge">Teórica 2</span>
+                                    <span class="incor-module-grid-card__count">24 alunos</span>
                                 </div>
-                                <div class="incor-module-card__meta">
-                                    <span class="incor-module-card__count">24 alunos</span>
-                                    <div class="incor-module-card__grade">
-                                        <span class="incor-module-card__value incor-module-card__value--theoretical">7.8</span>
-                                        <span class="incor-module-card__max">de 10,0</span>
-                                        <div class="incor-module-card__progress">
-                                            <div class="incor-module-card__progress-fill incor-module-card__progress-fill--theoretical" style="width: 78%;"></div>
-                                        </div>
-                                    </div>
+                                <h4 class="incor-module-grid-card__title">MÉDIA FISIO2</h4>
+                                <div class="incor-module-grid-card__grade incor-module-grid-card__grade--good">
+                                    <span class="incor-module-grid-card__value">7.8</span>
+                                    <span class="incor-module-grid-card__max">/10</span>
+                                </div>
+                                <div class="incor-module-grid-card__progress">
+                                    <div class="incor-module-grid-card__progress-fill incor-module-grid-card__progress-fill--theoretical" style="width: 78%;"></div>
                                 </div>
                             </div>
-                            
-                            <!-- Card 3 - Firebase exact name (longer) -->
-                            <div class="incor-module-card incor-module-card--theoretical">
-                                <div class="incor-module-card__info">
-                                    <span class="incor-module-card__order">Teórica 3</span>
-                                    <span class="incor-module-card__name" title="Anatomopatologia">Anatomopatologia</span>
+                            <!-- Card 3 -->
+                            <div class="incor-module-grid-card incor-module-grid-card--theoretical">
+                                <div class="incor-module-grid-card__header">
+                                    <span class="incor-module-grid-card__badge">Teórica 3</span>
+                                    <span class="incor-module-grid-card__count">23 alunos</span>
                                 </div>
-                                <div class="incor-module-card__meta">
-                                    <span class="incor-module-card__count">23 alunos</span>
-                                    <div class="incor-module-card__grade">
-                                        <span class="incor-module-card__value incor-module-card__value--theoretical">9.2</span>
-                                        <span class="incor-module-card__max">de 10,0</span>
-                                        <div class="incor-module-card__progress">
-                                            <div class="incor-module-card__progress-fill incor-module-card__progress-fill--theoretical" style="width: 92%;"></div>
-                                        </div>
-                                    </div>
+                                <h4 class="incor-module-grid-card__title">Anatomopatologia</h4>
+                                <div class="incor-module-grid-card__grade incor-module-grid-card__grade--good">
+                                    <span class="incor-module-grid-card__value">9.2</span>
+                                    <span class="incor-module-grid-card__max">/10</span>
+                                </div>
+                                <div class="incor-module-grid-card__progress">
+                                    <div class="incor-module-grid-card__progress-fill incor-module-grid-card__progress-fill--theoretical" style="width: 92%;"></div>
                                 </div>
                             </div>
-                            
-                            <!-- Card 4 - Firebase exact name (very long) -->
-                            <div class="incor-module-card incor-module-card--theoretical">
-                                <div class="incor-module-card__info">
-                                    <span class="incor-module-card__order">Teórica 4</span>
-                                    <span class="incor-module-card__name" title="Fisioterapia Cardiovascular e Respiratória Avançada">Fisioterapia Cardiovascular e Respiratória Avançada</span>
+                            <!-- Card 4 -->
+                            <div class="incor-module-grid-card incor-module-grid-card--theoretical">
+                                <div class="incor-module-grid-card__header">
+                                    <span class="incor-module-grid-card__badge">Teórica 4</span>
+                                    <span class="incor-module-grid-card__count">22 alunos</span>
                                 </div>
-                                <div class="incor-module-card__meta">
-                                    <span class="incor-module-card__count">22 alunos</span>
-                                    <div class="incor-module-card__grade">
-                                        <span class="incor-module-card__value incor-module-card__value--theoretical">7.3</span>
-                                        <span class="incor-module-card__max">de 10,0</span>
-                                        <div class="incor-module-card__progress">
-                                            <div class="incor-module-card__progress-fill incor-module-card__progress-fill--theoretical" style="width: 73%;"></div>
-                                        </div>
-                                    </div>
+                                <h4 class="incor-module-grid-card__title">Fisioterapia Cardiovascular e Respiratória</h4>
+                                <div class="incor-module-grid-card__grade incor-module-grid-card__grade--good">
+                                    <span class="incor-module-grid-card__value">7.3</span>
+                                    <span class="incor-module-grid-card__max">/10</span>
+                                </div>
+                                <div class="incor-module-grid-card__progress">
+                                    <div class="incor-module-grid-card__progress-fill incor-module-grid-card__progress-fill--theoretical" style="width: 73%;"></div>
                                 </div>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Practical Section -->
-                    <div class="incor-modules-section-container">
-                        <div class="incor-modules-section-header">
-                            <div class="incor-modules-section-icon incor-modules-section-icon--practical">
-                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
-                                </svg>
+                    <!-- Prática Content -->
+                    <div id="modules-content-pratica" class="incor-modules-tab-content">
+                        <div class="incor-modules-stats-bar">
+                            <div class="incor-modules-stat">
+                                <span class="incor-modules-stat-value">3</span>
+                                <span class="incor-modules-stat-label">Módulos</span>
                             </div>
-                            <div>
-                                <h3 class="incor-modules-section-title">Notas Práticas</h3>
-                                <p class="incor-modules-section-subtitle">3 módulos • Média geral: 8.7</p>
+                            <div class="incor-modules-stat incor-modules-stat--highlight">
+                                <span class="incor-modules-stat-value">8.7</span>
+                                <span class="incor-modules-stat-label">Média Geral</span>
                             </div>
                         </div>
-                        <div class="incor-modules-card-list">
-                            <!-- Card 1 - Firebase exact name -->
-                            <div class="incor-module-card incor-module-card--practical">
-                                <div class="incor-module-card__info">
-                                    <span class="incor-module-card__order">Prática 1</span>
-                                    <span class="incor-module-card__name" title="NP_MODULO1_UTI">NP_MODULO1_UTI</span>
+                        <div class="incor-modules-card-grid">
+                            <!-- Card 1 -->
+                            <div class="incor-module-grid-card incor-module-grid-card--practical">
+                                <div class="incor-module-grid-card__header">
+                                    <span class="incor-module-grid-card__badge incor-module-grid-card__badge--practical">Prática 1</span>
+                                    <span class="incor-module-grid-card__count">18 avaliações</span>
                                 </div>
-                                <div class="incor-module-card__meta">
-                                    <span class="incor-module-card__count">18 avaliações</span>
-                                    <div class="incor-module-card__grade">
-                                        <span class="incor-module-card__value incor-module-card__value--practical">9.1</span>
-                                        <span class="incor-module-card__max">de 10,0</span>
-                                        <div class="incor-module-card__progress">
-                                            <div class="incor-module-card__progress-fill incor-module-card__progress-fill--practical" style="width: 91%;"></div>
-                                        </div>
-                                    </div>
+                                <h4 class="incor-module-grid-card__title">NP_MODULO1_UTI</h4>
+                                <div class="incor-module-grid-card__grade incor-module-grid-card__grade--good">
+                                    <span class="incor-module-grid-card__value">9.1</span>
+                                    <span class="incor-module-grid-card__max">/10</span>
+                                </div>
+                                <div class="incor-module-grid-card__progress">
+                                    <div class="incor-module-grid-card__progress-fill incor-module-grid-card__progress-fill--practical" style="width: 91%;"></div>
                                 </div>
                             </div>
-                            
-                            <!-- Card 2 - Firebase exact name -->
-                            <div class="incor-module-card incor-module-card--practical">
-                                <div class="incor-module-card__info">
-                                    <span class="incor-module-card__order">Prática 2</span>
-                                    <span class="incor-module-card__name" title="NotasPraticas2">NotasPraticas2</span>
+                            <!-- Card 2 -->
+                            <div class="incor-module-grid-card incor-module-grid-card--practical">
+                                <div class="incor-module-grid-card__header">
+                                    <span class="incor-module-grid-card__badge incor-module-grid-card__badge--practical">Prática 2</span>
+                                    <span class="incor-module-grid-card__count">15 avaliações</span>
                                 </div>
-                                <div class="incor-module-card__meta">
-                                    <span class="incor-module-card__count">15 avaliações</span>
-                                    <div class="incor-module-card__grade">
-                                        <span class="incor-module-card__value incor-module-card__value--practical">8.4</span>
-                                        <span class="incor-module-card__max">de 10,0</span>
-                                        <div class="incor-module-card__progress">
-                                            <div class="incor-module-card__progress-fill incor-module-card__progress-fill--practical" style="width: 84%;"></div>
-                                        </div>
-                                    </div>
+                                <h4 class="incor-module-grid-card__title">NotasPraticas2</h4>
+                                <div class="incor-module-grid-card__grade incor-module-grid-card__grade--good">
+                                    <span class="incor-module-grid-card__value">8.4</span>
+                                    <span class="incor-module-grid-card__max">/10</span>
+                                </div>
+                                <div class="incor-module-grid-card__progress">
+                                    <div class="incor-module-grid-card__progress-fill incor-module-grid-card__progress-fill--practical" style="width: 84%;"></div>
                                 </div>
                             </div>
-                            
-                            <!-- Card 3 - Firebase exact name (long) -->
-                            <div class="incor-module-card incor-module-card--practical">
-                                <div class="incor-module-card__info">
-                                    <span class="incor-module-card__order">Prática 3</span>
-                                    <span class="incor-module-card__name" title="Avaliação Prática Ventilação Mecânica">Avaliação Prática Ventilação Mecânica</span>
+                            <!-- Card 3 -->
+                            <div class="incor-module-grid-card incor-module-grid-card--practical">
+                                <div class="incor-module-grid-card__header">
+                                    <span class="incor-module-grid-card__badge incor-module-grid-card__badge--practical">Prática 3</span>
+                                    <span class="incor-module-grid-card__count">12 avaliações</span>
                                 </div>
-                                <div class="incor-module-card__meta">
-                                    <span class="incor-module-card__count">12 avaliações</span>
-                                    <div class="incor-module-card__grade">
-                                        <span class="incor-module-card__value incor-module-card__value--practical">8.6</span>
-                                        <span class="incor-module-card__max">de 10,0</span>
-                                        <div class="incor-module-card__progress">
-                                            <div class="incor-module-card__progress-fill incor-module-card__progress-fill--practical" style="width: 86%;"></div>
-                                        </div>
-                                    </div>
+                                <h4 class="incor-module-grid-card__title">Avaliação Prática Ventilação Mecânica</h4>
+                                <div class="incor-module-grid-card__grade incor-module-grid-card__grade--good">
+                                    <span class="incor-module-grid-card__value">8.6</span>
+                                    <span class="incor-module-grid-card__max">/10</span>
+                                </div>
+                                <div class="incor-module-grid-card__progress">
+                                    <div class="incor-module-grid-card__progress-fill incor-module-grid-card__progress-fill--practical" style="width: 86%;"></div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
                 </div>
             </div>
         </section>
         
         <div style="margin-top: 2rem; padding: 1rem; background: #e8f5e9; border-radius: 8px; font-family: var(--font-main);">
-            <h3 style="color: #2e7d32; margin-bottom: 0.5rem;">✅ Changes Verified</h3>
+            <h3 style="color: #2e7d32; margin-bottom: 0.5rem;">✅ Melhorias Implementadas</h3>
             <ul style="color: #1b5e20; margin: 0; padding-left: 1.5rem;">
-                <li>Grade names now show <strong>exact Firebase field names</strong> (e.g., "MÉDIA FISIO1", "NP_MODULO1_UTI")</li>
-                <li>Layout is properly aligned with CSS Grid</li>
-                <li>Long names wrap correctly instead of being truncated</li>
-                <li>Progress bars and values are aligned to the right</li>
-                <li>Consistent spacing and visual hierarchy</li>
+                <li><strong>Botões de alternância "Teoria" e "Prática"</strong> no cabeçalho</li>
+                <li><strong>Layout em grade responsiva</strong> que aproveita todo o espaço disponível</li>
+                <li><strong>Cards maiores e mais legíveis</strong> com notas em destaque</li>
+                <li><strong>Barra de estatísticas</strong> com número de módulos e média geral</li>
+                <li><strong>Transição suave</strong> entre as abas</li>
+                <li><strong>Nomes exatos do Firebase</strong> mantidos para identificação</li>
             </ul>
         </div>
     </div>
+    
+    <script>
+        // Tab switching functionality
+        document.getElementById('tab-teoria').addEventListener('click', function() {
+            this.classList.add('incor-modules-tab--active');
+            document.getElementById('tab-pratica').classList.remove('incor-modules-tab--active');
+            document.getElementById('modules-content-teoria').classList.add('incor-modules-tab-content--active');
+            document.getElementById('modules-content-pratica').classList.remove('incor-modules-tab-content--active');
+        });
+        
+        document.getElementById('tab-pratica').addEventListener('click', function() {
+            this.classList.add('incor-modules-tab--active');
+            document.getElementById('tab-teoria').classList.remove('incor-modules-tab--active');
+            document.getElementById('modules-content-pratica').classList.add('incor-modules-tab-content--active');
+            document.getElementById('modules-content-teoria').classList.remove('incor-modules-tab-content--active');
+        });
+    </script>
 </body>
 </html>
