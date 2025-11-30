@@ -291,8 +291,8 @@
                                 const fallbackPath = 'exportAll/NotasTeoricas';
                                 console.log(`[setupDatabaseListeners] 🔄 Tentando caminho alternativo para NotasTeoricas: ${fallbackPath}`);
                                 const fallbackRef = window.firebase.ref(fbDB, fallbackPath);
-                                // Use onlyOnce: true to avoid memory leaks - this is a one-time fallback check
-                                window.firebase.onValue(fallbackRef, (fallbackSnapshot) => {
+                                // Use get() for one-time read to avoid memory leaks
+                                window.firebase.get(fallbackRef).then((fallbackSnapshot) => {
                                     const fallbackData = fallbackSnapshot.val();
                                     if (fallbackData) {
                                         console.log(`[setupDatabaseListeners] ✅ Dados encontrados no caminho alternativo: ${fallbackPath}`);
@@ -310,7 +310,9 @@
                                         triggerUIUpdates(stateKey);
                                         checkAndHideLoadingOverlay();
                                     }
-                                }, { onlyOnce: true });
+                                }).catch((error) => {
+                                    console.error(`[setupDatabaseListeners] ❌ Erro ao buscar caminho alternativo: ${error.message}`);
+                                });
                             }
                         }
                         
@@ -2365,11 +2367,12 @@ const pontoState = {
                     const student = activeStudentMap.get(rEmailNorm) || activeStudentMap.get(rNomeNorm);
 
                     if(student && student.Curso !== 'Residência - 2º ano' && student.Curso !== 'Residência  - 2º ano'){
+                        // Use Set for O(1) lookup
+                        const excludedFieldsSet = new Set(['SERIALNUMBER', 'NOMECOMPLETO', 'EMAILHC', 'CURSO', 'EMAIL', 'NOME']);
                         Object.keys(r).forEach(k => {
                             // Exclude known non-grade fields (case-insensitive)
                             const kUpper = k.toUpperCase();
-                            const excludedFields = ['SERIALNUMBER', 'NOMECOMPLETO', 'EMAILHC', 'CURSO', 'EMAIL', 'NOME'];
-                            if(!excludedFields.includes(kUpper) && k.trim() !== ''){
+                            if(!excludedFieldsSet.has(kUpper) && k.trim() !== ''){
                                 const n = parseNota(r[k]);
                                 if(n > 0){
                                     tSums[k] = (tSums[k] || 0) + n;
@@ -2748,8 +2751,8 @@ const pontoState = {
             console.log('[renderModuleAverages] tAvgs keys:', Object.keys(tAvgs));
             console.log('[renderModuleAverages] pAvgs keys:', Object.keys(pAvgs));
             
-            // Metadata/non-grade fields to exclude from counting
-            const EXCLUDED_FIELDS = new Set(['SerialNumber', 'NomeCompleto', 'EmailHC', 'Curso', 'serialnumber', 'nomecompleto', 'emailhc', 'curso', 'email', 'nome', 'Email', 'Nome']);
+            // Metadata/non-grade fields to exclude from counting (uppercase for O(1) lookup)
+            const EXCLUDED_FIELDS_UPPER = new Set(['SERIALNUMBER', 'NOMECOMPLETO', 'EMAILHC', 'CURSO', 'EMAIL', 'NOME']);
             
             // Get counts for each module to show student count
             const tCounts = {};
@@ -2765,8 +2768,8 @@ const pontoState = {
                 appState.notasTeoricas.registros.forEach(r => {
                     Object.keys(r).forEach(k => {
                         const kUpper = k.toUpperCase();
-                        const isExcluded = Array.from(EXCLUDED_FIELDS).some(f => kUpper === f.toUpperCase());
-                        if (!isExcluded && k.trim() !== '') {
+                        // Use O(1) Set lookup
+                        if (!EXCLUDED_FIELDS_UPPER.has(kUpper) && k.trim() !== '') {
                             const n = parseNota(r[k]);
                             if (n > 0) {
                                 tCounts[k] = (tCounts[k] || 0) + 1;
