@@ -833,64 +833,214 @@
                     
                     <!-- Escala -->
                     <div id="tab-escala" class="tab-content student-tab-panel">
-                        <div class="student-escala-wrapper">
-                            <div class="student-escala-switcher content-card">
-                                <div class="escala-switcher" id="escala-switcher-container">
-                                    <p class="text-sm text-slate-500">Carregando escalas...</p>
+                        <div class="escala-modern-wrapper">
+                            <!-- Hero Section -->
+                            <div class="escala-hero-section">
+                                <div class="escala-hero-content">
+                                    <h2 class="escala-hero-title">Escalas do Aluno</h2>
+                                    <p class="escala-hero-subtitle">Visualização completa das escalas práticas e teóricas do programa de aprimoramento</p>
                                 </div>
                             </div>
 
-                            <div class="escala-main-layout">
-                                <div class="escala-calendar-main content-card">
-                                    <h3 id="escala-periodo-label" class="student-escala-title">
-                                        Selecione uma escala
-                                    </h3>
-                                    
-                                    <div id="escala-heatmap-grid" class="compact-cal-grid">
-                                        <p class="text-sm text-slate-500 italic">Selecione uma escala para ver os dias.</p>
+                            <!-- KPI Dashboard -->
+                            <div class="escala-kpi-dashboard">
+                                <div class="escala-kpi-card escala-kpi-card--primary" id="escala-kpi-banco-horas">
+                                    <div class="escala-kpi-icon">
+                                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                    </div>
+                                    <div class="escala-kpi-content">
+                                        <span class="escala-kpi-label">Banco de Horas Total</span>
+                                        <div class="escala-kpi-value-row">
+                                            <span id="banco-horas-total-feitas" class="escala-kpi-value escala-kpi-value--success">-</span>
+                                            <span class="escala-kpi-separator">/</span>
+                                            <span id="banco-horas-total-deveria" class="escala-kpi-value">-</span>
+                                        </div>
+                                        <div class="escala-kpi-meta">
+                                            <span class="escala-kpi-meta-item escala-kpi-meta-item--success">Feitas</span>
+                                            <span class="escala-kpi-meta-item">Previstas</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="escala-kpi-card escala-kpi-card--secondary" id="escala-kpi-resumo-escala">
+                                    <div class="escala-kpi-icon">
+                                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                        </svg>
+                                    </div>
+                                    <div class="escala-kpi-content">
+                                        <span class="escala-kpi-label" id="escala-resumo-title">Resumo da Escala</span>
+                                        <div class="escala-kpi-value-row">
+                                            <span id="banco-horas-escala-feitas" class="escala-kpi-value escala-kpi-value--success">-</span>
+                                            <span class="escala-kpi-separator">/</span>
+                                            <span id="banco-horas-escala-deveria" class="escala-kpi-value">-</span>
+                                        </div>
+                                        <div class="escala-kpi-meta">
+                                            <span class="escala-kpi-meta-item escala-kpi-meta-item--success">Horas Feitas</span>
+                                            <span class="escala-kpi-meta-item">Horas Deveria</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="escala-kpi-card escala-kpi-card--stats" id="escala-kpi-stats">
+                                    <div class="escala-stats-grid" id="escala-resumo-grid">
+                                        <div class="escala-stat-item">
+                                            <div class="escala-stat-icon escala-stat-icon--presenca">
+                                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                                </svg>
+                                            </div>
+                                            <div class="escala-stat-info">
+                                                <span class="escala-stat-value" id="stat-presenca">0</span>
+                                                <span class="escala-stat-label">Presenças</span>
+                                            </div>
+                                        </div>
+                                        <div class="escala-stat-item">
+                                            <div class="escala-stat-icon escala-stat-icon--plantao">
+                                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                                                </svg>
+                                            </div>
+                                            <div class="escala-stat-info">
+                                                <span class="escala-stat-value" id="stat-plantao">0</span>
+                                                <span class="escala-stat-label">Plantões</span>
+                                            </div>
+                                        </div>
+                                        <div class="escala-stat-item">
+                                            <div class="escala-stat-icon escala-stat-icon--aula">
+                                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                                                </svg>
+                                            </div>
+                                            <div class="escala-stat-info">
+                                                <span class="escala-stat-value" id="stat-aula">0</span>
+                                                <span class="escala-stat-label">Aulas</span>
+                                            </div>
+                                        </div>
+                                        <div class="escala-stat-item">
+                                            <div class="escala-stat-icon escala-stat-icon--absent">
+                                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+                                                </svg>
+                                            </div>
+                                            <div class="escala-stat-info">
+                                                <span class="escala-stat-value" id="stat-absent">0</span>
+                                                <span class="escala-stat-label">Ausências</span>
+                                            </div>
+                                        </div>
+                                        <div class="escala-stat-item">
+                                            <div class="escala-stat-icon escala-stat-icon--makeup">
+                                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                                </svg>
+                                            </div>
+                                            <div class="escala-stat-info">
+                                                <span class="escala-stat-value" id="stat-makeup">0</span>
+                                                <span class="escala-stat-label">Reposições</span>
+                                            </div>
+                                        </div>
+                                        <div class="escala-stat-item">
+                                            <div class="escala-stat-icon escala-stat-icon--off">
+                                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                                                </svg>
+                                            </div>
+                                            <div class="escala-stat-info">
+                                                <span class="escala-stat-value" id="stat-off">0</span>
+                                                <span class="escala-stat-label">Folgas</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Scale Type Tabs -->
+                            <div class="escala-type-section">
+                                <div class="escala-type-tabs">
+                                    <button type="button" class="escala-type-tab escala-type-tab--active" data-type="pratica" id="escala-tab-pratica">
+                                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                                        </svg>
+                                        <span>Escalas Práticas</span>
+                                        <span class="escala-type-badge" id="escala-pratica-count">0</span>
+                                    </button>
+                                    <button type="button" class="escala-type-tab" data-type="teoria" id="escala-tab-teoria">
+                                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                                        </svg>
+                                        <span>Escalas Teóricas</span>
+                                        <span class="escala-type-badge" id="escala-teoria-count">0</span>
+                                    </button>
+                                </div>
+
+                                <!-- Scale Selector Pills -->
+                                <div class="escala-selector-wrapper">
+                                    <div class="escala-selector-header">
+                                        <h3 class="escala-selector-title">Selecione uma Escala</h3>
+                                    </div>
+                                    <div class="escala-switcher" id="escala-switcher-container">
+                                        <p class="escala-empty-message">Carregando escalas...</p>
                                     </div>
                                 </div>
 
-                                <aside class="escala-sidebar-summary">
-                                    <div id="escala-kpi-banco-horas" class="summary-kpi-card">
-                                        <h4 class="summary-title">Banco de Horas (Total)</h4>
-                                        <div class="kpi-hours-display">
-                                            <div id="banco-horas-total-feitas" class="value text-green-700">-</div>
-                                            <div class="separator">/</div>
-                                            <div id="banco-horas-total-deveria" class="value">-</div>
-                                        </div>
-                                        <div class="kpi-hours-label">
-                                            <span>Feitas</span>
-                                            <span>Deveria</span>
+                                <!-- Calendar Grid -->
+                                <div class="escala-calendar-section">
+                                    <div class="escala-calendar-header">
+                                        <h3 id="escala-periodo-label" class="escala-calendar-title">
+                                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                            </svg>
+                                            <span>Selecione uma escala</span>
+                                        </h3>
+                                    </div>
+                                    
+                                    <div id="escala-heatmap-grid" class="escala-days-grid">
+                                        <div class="escala-empty-state">
+                                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/>
+                                            </svg>
+                                            <p>Selecione uma escala acima para visualizar os dias</p>
                                         </div>
                                     </div>
+                                </div>
+                            </div>
 
-                                    <div id="escala-kpi-resumo-escala" class="summary-kpi-card">
-                                        <h4 class="summary-title">Resumo da Escala</h4>
-                                        <div class="kpi-hours-display is-small">
-                                            <div id="banco-horas-escala-feitas" class="value text-green-700">-</div>
-                                            <div class="separator">/</div>
-                                            <div id="banco-horas-escala-deveria" class="value">-</div>
-                                        </div>
-                                        <div class="kpi-hours-label is-small">
-                                            <span>Horas Feitas</span>
-                                            <span>Horas Deveria</span>
-                                        </div>
-                                        <div class="summary-grid" id="escala-resumo-grid"></div>
+                            <!-- Legend -->
+                            <div class="escala-legend-section">
+                                <div class="escala-legend-header">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    <span>Legenda</span>
+                                </div>
+                                <div class="escala-legend-grid">
+                                    <div class="escala-legend-item">
+                                        <span class="escala-legend-dot escala-legend-dot--presenca"></span>
+                                        <span>Presença</span>
                                     </div>
-
-                                    <div class="summary-kpi-card">
-                                        <h4 class="summary-title">Legenda</h4>
-                                        <div class="legend-grid">
-                                            <span class="legend-item"><span class="classification-pill" data-status="presenca"></span> Presença</span>
-                                            <span class="legend-item"><span class="classification-pill" data-status="plantao"></span> Plantão (12h)</span>
-                                            <span class="legend-item"><span class="classification-pill" data-status="aula"></span> Aula</span>
-                                            <span class="legend-item"><span class="classification-pill" data-status="absent"></span> Ausência</span>
-                                            <span class="legend-item"><span class="classification-pill" data-status="makeup"></span> Reposição</span>
-                                            <span class="legend-item"><span class="classification-pill" data-status="off"></span> Folga</span>
-                                        </div>
+                                    <div class="escala-legend-item">
+                                        <span class="escala-legend-dot escala-legend-dot--plantao"></span>
+                                        <span>Plantão (12h)</span>
                                     </div>
-                                </aside>
+                                    <div class="escala-legend-item">
+                                        <span class="escala-legend-dot escala-legend-dot--aula"></span>
+                                        <span>Aula</span>
+                                    </div>
+                                    <div class="escala-legend-item">
+                                        <span class="escala-legend-dot escala-legend-dot--absent"></span>
+                                        <span>Ausência</span>
+                                    </div>
+                                    <div class="escala-legend-item">
+                                        <span class="escala-legend-dot escala-legend-dot--makeup"></span>
+                                        <span>Reposição</span>
+                                    </div>
+                                    <div class="escala-legend-item">
+                                        <span class="escala-legend-dot escala-legend-dot--off"></span>
+                                        <span>Folga</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
