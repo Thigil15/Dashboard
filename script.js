@@ -4870,6 +4870,14 @@ function _esc_iso(d) {
     return `${y}-${m}-${day}`;
 }
 
+// Constants for the intelligent hours bank system
+const HOURS_BANK_CONSTANTS = {
+    PLANTAO_HOURS: 12,       // Plantão (12h shifts): +12 hours
+    NOTURNO_HOURS: 12,       // Noturno shifts: +12 hours
+    NORMAL_PRACTICE_HOURS: 5, // Normal practice (7-12h or 8-13h): +5 hours
+    AULA_HOURS: 5            // Aula Inicial or HCX classes: +5 hours
+};
+
 /**
  * [HELPER] Calcula a duração em horas de um texto (ex: "07h-19h").
  * Retorna um objeto com: { hours: number, standardHours: number, startTime: string, endTime: string, isPlantao: boolean, isNoturno: boolean, isAula: boolean }
@@ -4895,7 +4903,7 @@ function _esc_calculateHours(rawText) {
     if (!match) {
         // If it's an aula without time info, still count as 5 hours
         if (isAula) {
-            return { hours: 5, standardHours: 5, startTime: '', endTime: '', isPlantao: false, isNoturno: false, isAula: true };
+            return { hours: HOURS_BANK_CONSTANTS.AULA_HOURS, standardHours: HOURS_BANK_CONSTANTS.AULA_HOURS, startTime: '', endTime: '', isPlantao: false, isNoturno: false, isAula: true };
         }
         return { hours: 0, standardHours: 0, startTime: '', endTime: '', isPlantao: false, isNoturno: false, isAula: false }; 
     }
@@ -4907,7 +4915,7 @@ function _esc_calculateHours(rawText) {
 
     if (isNaN(h1) || isNaN(h2)) {
         if (isAula) {
-            return { hours: 5, standardHours: 5, startTime: '', endTime: '', isPlantao: false, isNoturno: false, isAula: true };
+            return { hours: HOURS_BANK_CONSTANTS.AULA_HOURS, standardHours: HOURS_BANK_CONSTANTS.AULA_HOURS, startTime: '', endTime: '', isPlantao: false, isNoturno: false, isAula: true };
         }
         return { hours: 0, standardHours: 0, startTime: '', endTime: '', isPlantao: false, isNoturno: false, isAula: false };
     }
@@ -4922,8 +4930,9 @@ function _esc_calculateHours(rawText) {
     const startTime = `${String(h1).padStart(2, '0')}:${String(m1).padStart(2, '0')}`;
     const endTime = `${String(h2).padStart(2, '0')}:${String(m2).padStart(2, '0')}`;
     
-    // Check if it's a noturno shift (starts at 19h or later, or ends at 7h or earlier)
-    const isNoturno = h1 >= 19 || h2 <= 7;
+    // Check if it's a noturno shift (night shift that crosses midnight: starts at 19h+ and ends before 8h)
+    // This is specifically for 19h-07h type shifts, not morning shifts like 5h-7h
+    const isNoturno = h1 >= 19 && h2 <= 8;
     
     // Check if it's a plantão (12 hour shift, typically 07h-19h or 08h-20h, or 19h-07h)
     const isPlantao = diff >= 11 && diff <= 13; // 11-13 hour shifts are considered plantão
@@ -4935,12 +4944,12 @@ function _esc_calculateHours(rawText) {
     let standardHours = diff; // default to actual hours
     
     if (isPlantao || isNoturno) {
-        standardHours = 12;
+        standardHours = HOURS_BANK_CONSTANTS.PLANTAO_HOURS;
     } else if (isAula) {
-        standardHours = 5;
+        standardHours = HOURS_BANK_CONSTANTS.AULA_HOURS;
     } else if (diff >= 4 && diff <= 6) {
         // Normal practice hours (7-12h or 8-13h range)
-        standardHours = 5;
+        standardHours = HOURS_BANK_CONSTANTS.NORMAL_PRACTICE_HOURS;
     }
     
     return { hours: diff, standardHours, startTime, endTime, isPlantao, isNoturno, isAula };
@@ -5211,10 +5220,21 @@ function renderTabEscala(escalas) {
         
         scalesArray.forEach((escala, idx) => {
             // Format scale name for display: extract number from "EscalaTeoria1", "EscalaPratica1", or "Escala1"
-            // Display the proper label based on scale type
+            // Display the proper label based on scale type with proper validation
             let nome = escala.nomeEscala || `Escala ${idx + 1}`;
             const scaleNum = nome.match(/\d+/)?.[0] || (idx + 1);
-            const tipoPretty = escala.tipo === 'teoria' ? 'Teórica' : 'Prática';
+            
+            // Validate scale type and provide proper label (default to the passed type parameter)
+            let tipoPretty;
+            const scaleTipo = (escala.tipo || '').toLowerCase();
+            if (scaleTipo === 'teoria') {
+                tipoPretty = 'Teórica';
+            } else if (scaleTipo === 'pratica') {
+                tipoPretty = 'Prática';
+            } else {
+                // Fallback to the type parameter passed to the function
+                tipoPretty = type === 'teoria' ? 'Teórica' : 'Prática';
+            }
             nome = `Escala ${tipoPretty} ${scaleNum}`;
             
             const btn = document.createElement('button');
