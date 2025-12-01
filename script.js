@@ -4794,6 +4794,21 @@ const pontoState = {
              const p=document.getElementById('tab-info');
              
              p.innerHTML=`
+                <!-- Curso Section - Destacado no topo -->
+                <div class="student-info-section student-info-section--course">
+                    <h3 class="student-info-section-title">
+                        <svg class="student-info-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                        </svg>
+                        Curso
+                    </h3>
+                    <div class="student-info-course-display">
+                        <span class="student-info-course-name">${info.Curso||'N/A'}</span>
+                    </div>
+                </div>
+
+                <!-- Dados Pessoais Section -->
                 <div class="student-info-section">
                     <h3 class="student-info-section-title">
                         <svg class="student-info-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -4802,9 +4817,9 @@ const pontoState = {
                         Dados Pessoais
                     </h3>
                     <dl class="student-info-grid">
-                        <div class="student-info-item">
+                        <div class="student-info-item student-info-item--email">
                             <dt class="student-info-label">Email Institucional</dt>
-                            <dd class="student-info-value">${info.EmailHC||'N/A'}</dd>
+                            <dd class="student-info-value student-info-value--email">${info.EmailHC||'N/A'}</dd>
                         </div>
                         <div class="student-info-item">
                             <dt class="student-info-label">Data de Nascimento</dt>
@@ -4821,10 +4836,6 @@ const pontoState = {
                         <div class="student-info-item">
                             <dt class="student-info-label">CREFITO</dt>
                             <dd class="student-info-value">${info.Crefito||'N/A'}</dd>
-                        </div>
-                        <div class="student-info-item">
-                            <dt class="student-info-label">Curso</dt>
-                            <dd class="student-info-value">${info.Curso||'N/A'}</dd>
                         </div>
                     </dl>
                 </div>
