@@ -4988,20 +4988,23 @@ function _esc_calculateTotalBank(escalas, absentDatesTotal, makeupDatesTotal) {
 }
 
 /**
- * [ORION] (Substituição) Renderiza a aba de escala (v32.7 - Grid Simples)
+ * [ORION] (Substituição) Renderiza a aba de escala (v33.0 - Modern Professional Design)
  * @param {Array} escalas - O array de escalas do aluno (de findDataByStudent).
  */
 function renderTabEscala(escalas) {
-    console.log("[ORION renderTabEscala v32.7] Renderizando. Escalas:", escalas);
+    console.log("[ORION renderTabEscala v33.0] Renderizando. Escalas:", escalas);
 
     const $switcher = document.getElementById('escala-switcher-container');
     const $periodLabel = document.getElementById('escala-periodo-label');
     const $grid = document.getElementById('escala-heatmap-grid');
-    const $sidebarKPIHoras = document.getElementById('escala-kpi-banco-horas');
-    const $sidebarKPIEscala = document.getElementById('escala-kpi-resumo-escala');
+    const $tabPratica = document.getElementById('escala-tab-pratica');
+    const $tabTeoria = document.getElementById('escala-tab-teoria');
+    const $praticaCount = document.getElementById('escala-pratica-count');
+    const $teoriaCount = document.getElementById('escala-teoria-count');
+    const $resumoTitle = document.getElementById('escala-resumo-title');
 
-    if (!$switcher || !$periodLabel || !$grid || !$sidebarKPIHoras || !$sidebarKPIEscala) {
-        console.error("ORION: Estrutura da #tab-escala (v32.7) não encontrada. Abortando.");
+    if (!$switcher || !$periodLabel || !$grid) {
+        console.error("ORION: Estrutura da #tab-escala (v33.0) não encontrada. Abortando.");
         return;
     }
 
@@ -5011,15 +5014,44 @@ function renderTabEscala(escalas) {
     const alunoNomeNorm = normalizeString(alunoNomeRaw);
     
     $switcher.innerHTML = '';
-    $periodLabel.textContent = 'Selecione uma escala';
-    $grid.innerHTML = '<p class="text-sm text-slate-500 italic p-4">Selecione uma escala para ver os dias.</p>';
+    $periodLabel.querySelector('span').textContent = 'Selecione uma escala';
+    $grid.innerHTML = `
+        <div class="escala-empty-state">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/>
+            </svg>
+            <p>Selecione uma escala acima para visualizar os dias</p>
+        </div>
+    `;
 
     if (!escalas || escalas.length === 0) {
-        $switcher.innerHTML = '<p class="text-sm text-slate-500 italic">Nenhuma escala encontrada para este aluno.</p>';
+        $switcher.innerHTML = '<p class="escala-empty-message">Nenhuma escala encontrada para este aluno.</p>';
+        if ($praticaCount) $praticaCount.textContent = '0';
+        if ($teoriaCount) $teoriaCount.textContent = '0';
         return;
     }
 
-    // 2. Calcula e exibe o BANCO DE HORAS TOTAL
+    // Separate scales into practical and theoretical
+    const escalasPraticas = [];
+    const escalasTeoricas = [];
+    
+    escalas.forEach((escala) => {
+        const tipo = escala.tipo || 'pratica';
+        if (tipo === 'teoria') {
+            escalasTeoricas.push(escala);
+        } else {
+            escalasPraticas.push(escala);
+        }
+    });
+    
+    // Update counts
+    if ($praticaCount) $praticaCount.textContent = escalasPraticas.length.toString();
+    if ($teoriaCount) $teoriaCount.textContent = escalasTeoricas.length.toString();
+    
+    // Current active type
+    let activeType = 'pratica';
+    
+    // Calculate absences for the student
     const absentDatesTotal = new Set();
     const makeupDatesTotal = new Set();
     appState.ausenciasReposicoes.forEach(f => {
@@ -5030,31 +5062,82 @@ function renderTabEscala(escalas) {
         }
     });
 
+    // Calculate and display total hours bank
     const { totalFeitas, totalDeveria } = _esc_calculateTotalBank(escalas, absentDatesTotal, makeupDatesTotal);
-    document.getElementById('banco-horas-total-feitas').textContent = `${totalFeitas.toFixed(0)}h`;
-    document.getElementById('banco-horas-total-deveria').textContent = `${totalDeveria.toFixed(0)}h`;
+    const $totalFeitas = document.getElementById('banco-horas-total-feitas');
+    const $totalDeveria = document.getElementById('banco-horas-total-deveria');
+    if ($totalFeitas) $totalFeitas.textContent = `${totalFeitas.toFixed(0)}h`;
+    if ($totalDeveria) $totalDeveria.textContent = `${totalDeveria.toFixed(0)}h`;
 
-    // 3. (Request 2) Cria os botões "Pill" para cada escala
-    escalas.forEach((escala, idx) => {
-        // Usa o nomeEscala corrigido ("Escala1")
-        const nome = escala.nomeEscala ? escala.nomeEscala.replace('Escala', 'Escala ') : `Escala ${idx + 1}`;
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'escala-pill';
-        btn.textContent = nome;
+    // Function to render scale pills
+    function renderScalePills(scalesArray, type) {
+        $switcher.innerHTML = '';
         
-        btn.addEventListener('click', () => {
-            $switcher.querySelectorAll('.escala-pill').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+        if (scalesArray.length === 0) {
+            const typeLabel = type === 'teoria' ? 'teóricas' : 'práticas';
+            $switcher.innerHTML = `<p class="escala-empty-message">Nenhuma escala ${typeLabel} encontrada.</p>`;
+            $grid.innerHTML = `
+                <div class="escala-empty-state">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/>
+                    </svg>
+                    <p>Não há escalas ${typeLabel} disponíveis</p>
+                </div>
+            `;
+            return;
+        }
+        
+        scalesArray.forEach((escala, idx) => {
+            const nome = escala.nomeEscala ? escala.nomeEscala.replace('Escala', 'Escala ').replace('Teoria', ' Teórica').replace('Pratica', ' Prática') : `Escala ${idx + 1}`;
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = `escala-pill escala-pill--${type}`;
+            btn.textContent = nome;
             
-            const escalaSummary = drawScaleGrid(escala, alunoEmailNorm, alunoNomeNorm, absentDatesTotal, makeupDatesTotal);
-            _esc_renderSidebarSummary(escalaSummary, nome);
+            btn.addEventListener('click', () => {
+                $switcher.querySelectorAll('.escala-pill').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                const escalaSummary = drawScaleGrid(escala, alunoEmailNorm, alunoNomeNorm, absentDatesTotal, makeupDatesTotal);
+                _esc_renderSidebarSummary(escalaSummary, nome);
+            });
+            
+            $switcher.appendChild(btn);
         });
         
-        $switcher.appendChild(btn);
-    });
+        // Auto-click first scale
+        const firstPill = $switcher.querySelector('.escala-pill');
+        if (firstPill) {
+            firstPill.click();
+        }
+    }
+    
+    // Tab switching functionality
+    function setupTabSwitching() {
+        if ($tabPratica) {
+            $tabPratica.addEventListener('click', () => {
+                if (activeType === 'pratica') return;
+                activeType = 'pratica';
+                $tabPratica.classList.add('escala-type-tab--active');
+                if ($tabTeoria) $tabTeoria.classList.remove('escala-type-tab--active');
+                renderScalePills(escalasPraticas, 'pratica');
+            });
+        }
+        
+        if ($tabTeoria) {
+            $tabTeoria.addEventListener('click', () => {
+                if (activeType === 'teoria') return;
+                activeType = 'teoria';
+                $tabTeoria.classList.add('escala-type-tab--active');
+                if ($tabPratica) $tabPratica.classList.remove('escala-type-tab--active');
+                renderScalePills(escalasTeoricas, 'teoria');
+            });
+        }
+    }
+    
+    setupTabSwitching();
 
-    // 4. (Request 1) Função para desenhar o grid APENAS COM OS DIAS DA ESCALA
+    // Function to draw the grid
     function drawScaleGrid(escala, emailNorm, nameNorm, absentDates, makeupDates) {
         
         const summary = {
@@ -5064,15 +5147,21 @@ function renderTabEscala(escalas) {
 
         const diasBrutos = escala.headersDay || [];
         if (diasBrutos.length === 0) {
-             $grid.innerHTML = '<p class="text-sm text-slate-500 italic p-4">Esta escala não contém dias (headersDay ausente).</p>';
+             $grid.innerHTML = `
+                <div class="escala-empty-state">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/>
+                    </svg>
+                    <p>Esta escala não contém dias (headersDay ausente)</p>
+                </div>
+             `;
              return summary;
         }
 
         const diasMap = new Map();
         diasBrutos.forEach(ddmm => {
-            // [CORREÇÃO v32.6] - Usa padStart para meses
             const ddmmCorrigido = ddmm.includes('/') ? ddmm.split('/')[0] + '/' + ddmm.split('/')[1].padStart(2, '0') : ddmm;
-            const dateObj = _esc_parseDMInferYear(ddmmCorrigido); // Lógica de ano v32.5
+            const dateObj = _esc_parseDMInferYear(ddmmCorrigido);
             
             if (dateObj) {
                 const rawText = escala[ddmm] || ''; 
@@ -5083,8 +5172,15 @@ function renderTabEscala(escalas) {
         });
 
         if (diasMap.size === 0) {
-            $periodLabel.textContent = escala.nomeEscala;
-            $grid.innerHTML = '<p class="text-sm text-slate-500 italic p-4">Nenhum dia válido encontrado nesta escala.</p>';
+            $periodLabel.querySelector('span').textContent = escala.nomeEscala || 'Escala';
+            $grid.innerHTML = `
+                <div class="escala-empty-state">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/>
+                    </svg>
+                    <p>Nenhum dia válido encontrado nesta escala</p>
+                </div>
+            `;
             return summary;
         }
         
@@ -5093,11 +5189,10 @@ function renderTabEscala(escalas) {
         const firstDayOfScale = sortedDias[0].dateObj;
         const lastDayOfScale = sortedDias[sortedDias.length - 1].dateObj;
 
-        $periodLabel.textContent = `Período: ${firstDayOfScale.toLocaleDateString('pt-BR')} a ${lastDayOfScale.toLocaleDateString('pt-BR')}`;
+        $periodLabel.querySelector('span').textContent = `Período: ${firstDayOfScale.toLocaleDateString('pt-BR')} a ${lastDayOfScale.toLocaleDateString('pt-BR')}`;
         $grid.innerHTML = '';
         const todayISO = new Date().toISOString().slice(0, 10);
         
-        // [NOVO v32.7] - Itera apenas pelos dias processados, sem placeholders
         sortedDias.forEach(day => {
             
             const iso = _esc_iso(day.dateObj);
@@ -5108,7 +5203,6 @@ function renderTabEscala(escalas) {
             let isAusente = false;
             let isReposto = false;
 
-            // Sobrepõe status
             if (makeupDates.has(iso)) {
                 statusKey = 'makeup';
                 isReposto = true;
@@ -5134,7 +5228,6 @@ function renderTabEscala(escalas) {
                 summary[statusKey]++;
             }
 
-            // Calcula horas
             if (hoursInfo.hours > 0) {
                 if (statusKey !== 'off' && statusKey !== 'none') {
                     summary.escalaDeveria += hoursInfo.hours;
@@ -5153,41 +5246,34 @@ function renderTabEscala(escalas) {
         return summary;
     }
 
-    // 5. Renderiza o "Resumo da Escala" na sidebar
+    // Render sidebar summary with stats
     function _esc_renderSidebarSummary(summary, nomeEscala) {
-        document.getElementById('escala-kpi-resumo-escala').querySelector('.summary-title').textContent = `Resumo (${nomeEscala})`;
-        document.getElementById('banco-horas-escala-feitas').textContent = `${summary.escalaFeitas.toFixed(0)}h`;
-        document.getElementById('banco-horas-escala-deveria').textContent = `${summary.escalaDeveria.toFixed(0)}h`;
+        if ($resumoTitle) {
+            $resumoTitle.textContent = `Resumo: ${nomeEscala}`;
+        }
         
-        document.getElementById('escala-resumo-grid').innerHTML = `
-            <div class="item">
-                <span class="label">Presença</span>
-                <span class="value" style="color: #166534;">${summary.presenca || 0}</span>
-            </div>
-            <div class="item">
-                <span class="label">Plantões</span>
-                <span class="value" style="color: #3730a3;">${summary.plantao || 0}</span>
-            </div>
-            <div class="item">
-                <span class="label">Aulas</span>
-                <span class="value" style="color: #1d4ed8;">${summary.aula || 0}</span>
-            </div>
-            <div class="item">
-                <span class="label">Ausências</span>
-                <span class="value" style="color: #b91c1c;">${summary.absent || 0}</span>
-            </div>
-            <div class="item">
-                <span class="label">Reposições</span>
-                <span class="value" style="color: #854d0e;">${summary.makeup || 0}</span>
-            </div>
-            <div class="item">
-                <span class="label">Folgas</span>
-                <span class="value">${summary.off || 0}</span>
-            </div>
-        `;
+        const $escalaFeitas = document.getElementById('banco-horas-escala-feitas');
+        const $escalaDeveria = document.getElementById('banco-horas-escala-deveria');
+        if ($escalaFeitas) $escalaFeitas.textContent = `${summary.escalaFeitas.toFixed(0)}h`;
+        if ($escalaDeveria) $escalaDeveria.textContent = `${summary.escalaDeveria.toFixed(0)}h`;
+        
+        // Update stats
+        const $statPresenca = document.getElementById('stat-presenca');
+        const $statPlantao = document.getElementById('stat-plantao');
+        const $statAula = document.getElementById('stat-aula');
+        const $statAbsent = document.getElementById('stat-absent');
+        const $statMakeup = document.getElementById('stat-makeup');
+        const $statOff = document.getElementById('stat-off');
+        
+        if ($statPresenca) $statPresenca.textContent = summary.presenca || 0;
+        if ($statPlantao) $statPlantao.textContent = summary.plantao || 0;
+        if ($statAula) $statAula.textContent = summary.aula || 0;
+        if ($statAbsent) $statAbsent.textContent = summary.absent || 0;
+        if ($statMakeup) $statMakeup.textContent = summary.makeup || 0;
+        if ($statOff) $statOff.textContent = summary.off || 0;
     }
 
-    // 6. Função para criar o HTML do "Tile" (com Header/Body/Footer)
+    // Function to create the tile HTML
     function createTile(dateObj, rawText, statusKey, hoursInfo) {
         const tile = document.createElement('div');
         tile.className = 'compact-tile';
@@ -5198,12 +5284,9 @@ function renderTabEscala(escalas) {
         
         const humanStatus = _esc_getHumanLabel(statusKey);
         
-        // Build the display text for the body
         let bodyText = '';
         if (hoursInfo && hoursInfo.startTime && hoursInfo.endTime) {
-            // Show the time range prominently
             bodyText = `${hoursInfo.startTime} - ${hoursInfo.endTime}`;
-            // Add duration if significant
             if (hoursInfo.hours >= 1) {
                 bodyText += `<br><span style="font-size: 0.75em; opacity: 0.8;">${hoursInfo.hours.toFixed(1)}h</span>`;
             }
@@ -5214,7 +5297,7 @@ function renderTabEscala(escalas) {
         }
         
         const tooltipText = rawText && rawText.trim() !== '' ? rawText.trim() : humanStatus;
-        tile.setAttribute('data-tip', tooltipText); // Tooltip
+        tile.setAttribute('data-tip', tooltipText);
 
         tile.innerHTML = `
             <div class="tile-header">
@@ -5231,11 +5314,14 @@ function renderTabEscala(escalas) {
         return tile;
     }
 
-    // 7. Clica automaticamente na primeira escala
-    if ($switcher.querySelector('.escala-pill')) {
-        $switcher.querySelector('.escala-pill').click();
-    } else {
-        _esc_renderSidebarSummary({}, "N/A"); // Limpa o resumo
+    // Initial render - start with practical scales (if any) or theoretical
+    if (escalasPraticas.length > 0) {
+        renderScalePills(escalasPraticas, 'pratica');
+    } else if (escalasTeoricas.length > 0) {
+        activeType = 'teoria';
+        if ($tabPratica) $tabPratica.classList.remove('escala-type-tab--active');
+        if ($tabTeoria) $tabTeoria.classList.add('escala-type-tab--active');
+        renderScalePills(escalasTeoricas, 'teoria');
     }
 }
 
