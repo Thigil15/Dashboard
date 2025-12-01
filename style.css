@@ -11631,6 +11631,32 @@
     border-color: rgba(226, 232, 240, 0.5);
 }
 
+/* === HOURS BANK SECTION === */
+.escala-hours-bank-section {
+    margin-top: 1.5rem;
+}
+
+.escala-hours-bank {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.escala-hours-bank--pratica .escala-kpi-card--pratica .escala-kpi-icon {
+    background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.escala-hours-bank--teoria .escala-kpi-card--teoria .escala-kpi-icon {
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+}
+
+@media (max-width: 768px) {
+    .escala-hours-bank {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* === LEGEND SECTION === */
 .escala-legend-section {
     background: white;

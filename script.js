@@ -1027,6 +1027,11 @@ const NAME_FIELD_VARIANTS = ['NomeCompleto', 'nomeCompleto', 'nomecompleto', 'NO
 // - Excluded fields are for FILTERING (e.g., don't calculate average of email field)
 const EXCLUDED_FIELDS_SET = new Set(['SERIALNUMBER', 'NOMECOMPLETO', 'EMAILHC', 'CURSO', 'EMAIL', 'NOME']);
 
+// Time format regex patterns for schedule parsing
+// Supports formats like: "18:00:00 às 21:00:00", "18:00 às 21:00", "7h às 12h"
+const TIME_FORMAT_FULL_REGEX = /(\d{1,2}):(\d{2})(?::\d{2})?\s*(?:às|as|a|-)\s*(\d{1,2}):(\d{2})(?::\d{2})?/i;
+const TIME_FORMAT_LEGACY_REGEX = /(\d{1,2})h\s*(?:às|as|a)?\s*(\d{1,2})h/i;
+
 // Helper function to get a value from an object using field name variants
 function getFieldValue(obj, fieldVariants) {
     if (!obj || !fieldVariants) return null;
@@ -1834,15 +1839,24 @@ const pontoState = {
 
         /**
          * Helper function to parse time information from schedule value
-         * Matches formats like: "7h às 12h", "08h as 13h", "8h a 14h - Escala 1"
-         * Format: {hours}h [às|as|a] {hours}h [optional text]
+         * Matches formats like: "7h às 12h", "08h as 13h", "8h a 14h - Escala 1", "18:00:00 às 21:00:00"
+         * Format: {hours}h [às|as|a] {hours}h [optional text] OR HH:MM:SS às HH:MM:SS
          * Returns: { horaEntrada: "08:00", horaSaida: "13:00" } or null
          */
         function parseTimeFromScheduleValue(dateValue) {
             if (!dateValue || typeof dateValue !== 'string') return null;
-            // Pattern: captures hour digits before and after separator (às/as/a)
-            // Examples: "7h às 12h", "08h as 13h", "8h a 14h - Escala 1"
-            const timeMatch = dateValue.match(/(\d{1,2})h\s*(?:às|as|a)?\s*(\d{1,2})h/i);
+            
+            // First try the new format: "HH:MM:SS às HH:MM:SS" (e.g., "18:00:00 às 21:00:00")
+            const fullTimeMatch = dateValue.match(TIME_FORMAT_FULL_REGEX);
+            if (fullTimeMatch) {
+                return {
+                    horaEntrada: `${fullTimeMatch[1].padStart(2, '0')}:${fullTimeMatch[2]}`,
+                    horaSaida: `${fullTimeMatch[3].padStart(2, '0')}:${fullTimeMatch[4]}`
+                };
+            }
+            
+            // Fallback to legacy format: "7h às 12h", "08h as 13h", "8h a 14h - Escala 1"
+            const timeMatch = dateValue.match(TIME_FORMAT_LEGACY_REGEX);
             if (timeMatch) {
                 return {
                     horaEntrada: `${timeMatch[1].padStart(2, '0')}:00`,
@@ -2267,7 +2281,7 @@ const pontoState = {
                     ((x.EmailHC && normalizeString(x.EmailHC) === emailNormalizado) || 
                      (x.NomeCompleto && normalizeString(x.NomeCompleto) === alunoNomeNormalizado))
                 );
-                return a ? { nomeEscala: e.nomeEscala, headersDay: e.headersDay, ...a } : null;
+                return a ? { nomeEscala: e.nomeEscala, headersDay: e.headersDay, tipo: e.tipo, numero: e.numero, ...a } : null;
             }).filter(Boolean); // Filtra nulos
 
             // Faltas
@@ -4896,9 +4910,17 @@ function _esc_calculateHours(rawText) {
     // Check if it's an "aula" type (Aula Inicial, HCX, or any class)
     const isAula = rawTextLower.includes('aula') || rawTextLower.includes('hcx') || rawTextLower.includes('inicial');
     
-    const s = rawText.replace(/(\d{1,2})h(\d{2})?/g, '$1:$2').replace(/h/g, ':00'); 
-    const regex = /(\d{1,2}):?(\d{0,2})\s*(-|às|as|a)\s*(\d{1,2}):?(\d{0,2})/i;
-    const match = s.match(regex);
+    // First, try to match the new format "HH:MM:SS às HH:MM:SS" (e.g., "18:00:00 às 21:00:00")
+    let match = rawText.match(TIME_FORMAT_FULL_REGEX);
+    let isFullTimeFormat = !!match;
+    
+    // If no match, try the legacy format with "h" notation (e.g., "7h às 12h", "08h as 13h")
+    if (!match) {
+        const s = rawText.replace(/(\d{1,2})h(\d{2})?/g, '$1:$2').replace(/h/g, ':00'); 
+        const regex = /(\d{1,2}):?(\d{0,2})\s*(-|às|as|a)\s*(\d{1,2}):?(\d{0,2})/i;
+        match = s.match(regex);
+        isFullTimeFormat = false;
+    }
 
     if (!match) {
         // If it's an aula without time info, still count as 5 hours
@@ -4908,10 +4930,25 @@ function _esc_calculateHours(rawText) {
         return { hours: 0, standardHours: 0, startTime: '', endTime: '', isPlantao: false, isNoturno: false, isAula: false }; 
     }
 
-    let h1 = parseInt(match[1], 10);
-    let m1 = parseInt(match[2] || '0', 10);
-    let h2 = parseInt(match[4], 10);
-    let m2 = parseInt(match[5] || '0', 10);
+    // Extract hours and minutes from match groups
+    // For TIME_FORMAT_FULL_REGEX: groups are (h1, m1, h2, m2) - indices 1,2,3,4
+    // For legacy regex: groups are (h1, m1, separator, h2, m2) - indices 1,2,4,5
+    let h1, m1, h2, m2;
+    
+    // Use the flag to determine which regex was used
+    if (isFullTimeFormat) {
+        // TIME_FORMAT_FULL_REGEX match - groups 1,2,3,4 are h1,m1,h2,m2
+        h1 = parseInt(match[1], 10);
+        m1 = parseInt(match[2] || '0', 10);
+        h2 = parseInt(match[3], 10);
+        m2 = parseInt(match[4] || '0', 10);
+    } else {
+        // legacy regex match - groups 1,2,4,5 are h1,m1,h2,m2 (group 3 is separator)
+        h1 = parseInt(match[1], 10);
+        m1 = parseInt(match[2] || '0', 10);
+        h2 = parseInt(match[4], 10);
+        m2 = parseInt(match[5] || '0', 10);
+    }
 
     if (isNaN(h1) || isNaN(h2)) {
         if (isAula) {
@@ -5262,12 +5299,18 @@ function renderTabEscala(escalas) {
     
     // Tab switching functionality
     function setupTabSwitching() {
+        const $hoursBankPratica = document.getElementById('escala-hours-bank-pratica');
+        const $hoursBankTeoria = document.getElementById('escala-hours-bank-teoria');
+        
         if ($tabPratica) {
             $tabPratica.addEventListener('click', () => {
                 if (activeType === 'pratica') return;
                 activeType = 'pratica';
                 $tabPratica.classList.add('escala-type-tab--active');
                 if ($tabTeoria) $tabTeoria.classList.remove('escala-type-tab--active');
+                // Toggle hours bank visibility
+                if ($hoursBankPratica) $hoursBankPratica.style.display = '';
+                if ($hoursBankTeoria) $hoursBankTeoria.style.display = 'none';
                 renderScalePills(escalasPraticas, 'pratica');
             });
         }
@@ -5278,6 +5321,9 @@ function renderTabEscala(escalas) {
                 activeType = 'teoria';
                 $tabTeoria.classList.add('escala-type-tab--active');
                 if ($tabPratica) $tabPratica.classList.remove('escala-type-tab--active');
+                // Toggle hours bank visibility
+                if ($hoursBankPratica) $hoursBankPratica.style.display = 'none';
+                if ($hoursBankTeoria) $hoursBankTeoria.style.display = '';
                 renderScalePills(escalasTeoricas, 'teoria');
             });
         }
