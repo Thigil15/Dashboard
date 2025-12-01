@@ -5099,12 +5099,11 @@ function renderTabEscala(escalas) {
         }
         
         scalesArray.forEach((escala, idx) => {
-            // Format scale name for display: "EscalaTeoria1" -> "Escala Teórica 1"
+            // Format scale name for display: extract number from "EscalaTeoria1", "EscalaPratica1", or "Escala1"
+            // Display only "Escala N" since the tab already indicates the type (Prática or Teórica)
             let nome = escala.nomeEscala || `Escala ${idx + 1}`;
             nome = nome
-                .replace(/^Escala(\d+)$/i, 'Escala $1')
-                .replace(/^EscalaTeoria(\d+)$/i, 'Escala Teórica $1')
-                .replace(/^EscalaPratica(\d+)$/i, 'Escala Prática $1');
+                .replace(/^Escala(Teoria|Pratica)?(\d+)$/i, 'Escala $2');
             
             const btn = document.createElement('button');
             btn.type = 'button';
