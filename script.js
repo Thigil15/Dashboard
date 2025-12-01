@@ -4872,22 +4872,45 @@ function _esc_iso(d) {
 
 /**
  * [HELPER] Calcula a duração em horas de um texto (ex: "07h-19h").
- * Retorna um objeto com: { hours: number, startTime: string, endTime: string, isPlantao: boolean }
+ * Retorna um objeto com: { hours: number, standardHours: number, startTime: string, endTime: string, isPlantao: boolean, isNoturno: boolean, isAula: boolean }
+ * 
+ * Sistema Inteligente de Banco de Horas:
+ * - Prática Normal (7-12h ou 8-13h): +5 horas
+ * - Plantão: +12 horas
+ * - Aula Inicial ou HCX (qualquer aula): +5 horas
+ * - Noturno (19h-07h): +12 horas
  */
 function _esc_calculateHours(rawText) {
-    if (!rawText) return { hours: 0, startTime: '', endTime: '', isPlantao: false };
+    if (!rawText) return { hours: 0, standardHours: 0, startTime: '', endTime: '', isPlantao: false, isNoturno: false, isAula: false };
+    
+    const rawTextLower = rawText.toLowerCase().trim();
+    
+    // Check if it's an "aula" type (Aula Inicial, HCX, or any class)
+    const isAula = rawTextLower.includes('aula') || rawTextLower.includes('hcx') || rawTextLower.includes('inicial');
+    
     const s = rawText.replace(/(\d{1,2})h(\d{2})?/g, '$1:$2').replace(/h/g, ':00'); 
     const regex = /(\d{1,2}):?(\d{0,2})\s*(-|às|as|a)\s*(\d{1,2}):?(\d{0,2})/i;
     const match = s.match(regex);
 
-    if (!match) return { hours: 0, startTime: '', endTime: '', isPlantao: false }; 
+    if (!match) {
+        // If it's an aula without time info, still count as 5 hours
+        if (isAula) {
+            return { hours: 5, standardHours: 5, startTime: '', endTime: '', isPlantao: false, isNoturno: false, isAula: true };
+        }
+        return { hours: 0, standardHours: 0, startTime: '', endTime: '', isPlantao: false, isNoturno: false, isAula: false }; 
+    }
 
     let h1 = parseInt(match[1], 10);
     let m1 = parseInt(match[2] || '0', 10);
     let h2 = parseInt(match[4], 10);
     let m2 = parseInt(match[5] || '0', 10);
 
-    if (isNaN(h1) || isNaN(h2)) return { hours: 0, startTime: '', endTime: '', isPlantao: false };
+    if (isNaN(h1) || isNaN(h2)) {
+        if (isAula) {
+            return { hours: 5, standardHours: 5, startTime: '', endTime: '', isPlantao: false, isNoturno: false, isAula: true };
+        }
+        return { hours: 0, standardHours: 0, startTime: '', endTime: '', isPlantao: false, isNoturno: false, isAula: false };
+    }
 
     const d1 = new Date(2000, 0, 1, h1, m1);
     const d2 = new Date(2000, 0, 1, h2, m2);
@@ -4899,15 +4922,33 @@ function _esc_calculateHours(rawText) {
     const startTime = `${String(h1).padStart(2, '0')}:${String(m1).padStart(2, '0')}`;
     const endTime = `${String(h2).padStart(2, '0')}:${String(m2).padStart(2, '0')}`;
     
+    // Check if it's a noturno shift (starts at 19h or later, or ends at 7h or earlier)
+    const isNoturno = h1 >= 19 || h2 <= 7;
+    
     // Check if it's a plantão (12 hour shift, typically 07h-19h or 08h-20h, or 19h-07h)
     const isPlantao = diff >= 11 && diff <= 13; // 11-13 hour shifts are considered plantão
     
-    return { hours: diff, startTime, endTime, isPlantao };
+    // Calculate standard hours based on the intelligent system rules:
+    // - Plantão or Noturno: 12 hours
+    // - Aula (any class): 5 hours
+    // - Normal practice (7-12h or 8-13h, roughly 4-6 hours): 5 hours
+    let standardHours = diff; // default to actual hours
+    
+    if (isPlantao || isNoturno) {
+        standardHours = 12;
+    } else if (isAula) {
+        standardHours = 5;
+    } else if (diff >= 4 && diff <= 6) {
+        // Normal practice hours (7-12h or 8-13h range)
+        standardHours = 5;
+    }
+    
+    return { hours: diff, standardHours, startTime, endTime, isPlantao, isNoturno, isAula };
 }
 
 /**
  * [HELPER] Classifica o texto bruto da escala em uma chave de status.
- * Agora usa a informação de horas para detectar plantões automaticamente
+ * Agora usa a informação de horas para detectar plantões e noturnos automaticamente
  */
 function _esc_normalizeStatusKey(raw, hoursInfo) {
     if (!raw || typeof raw !== 'string' || raw.trim() === '') return 'none';
@@ -4918,8 +4959,15 @@ function _esc_normalizeStatusKey(raw, hoursInfo) {
     if (s.includes('reposi') || s.includes('reposição')) return 'makeup';
     if (s.includes('folga') || s.includes('descanso')) return 'off';
     
-    // Check if explicitly marked as "aula"
-    if (s.includes('aula')) return 'aula'; // Azul
+    // Check if it's an aula (class) - including HCX, Aula Inicial
+    if (s.includes('aula') || s.includes('hcx') || s.includes('inicial') || (hoursInfo && hoursInfo.isAula)) {
+        return 'aula'; // Azul
+    }
+    
+    // Check if it's a noturno shift
+    if (hoursInfo && hoursInfo.isNoturno) {
+        return 'noturno'; // Purple (similar to plantão)
+    }
     
     // Check if it's a plantão based on hours (12h shifts)
     if (hoursInfo && hoursInfo.isPlantao) {
@@ -4942,6 +4990,7 @@ function _esc_getHumanLabel(key) {
     return {
         'presenca': 'Presença',
         'plantao': 'Plantão',
+        'noturno': 'Noturno',
         'aula': 'Aula',
         'absent': 'Ausência',
         'makeup': 'Reposição',
@@ -4952,12 +5001,34 @@ function _esc_getHumanLabel(key) {
 
 /**
  * [HELPER] Calcula o Banco de Horas Total (Feitas / Deveria)
+ * Sistema Inteligente de Banco de Horas:
+ * - Prática Normal (7-12h ou 8-13h): +5 horas
+ * - Plantão: +12 horas
+ * - Aula Inicial ou HCX: +5 horas
+ * - Noturno: +12 horas
+ * - Ausência em prática normal: -5 horas
+ * - Ausência em plantão ou noturno: -12 horas
+ * 
+ * @param {Array} escalas - Array of scale objects
+ * @param {Set} absentDatesTotal - Set of ISO dates with absences
+ * @param {Set} makeupDatesTotal - Set of ISO dates with makeups
+ * @param {string} scaleType - 'pratica' or 'teoria' to filter calculations
  */
-function _esc_calculateTotalBank(escalas, absentDatesTotal, makeupDatesTotal) {
+function _esc_calculateTotalBank(escalas, absentDatesTotal, makeupDatesTotal, scaleType = 'all') {
     let totalDeveria = 0;
     let totalFeitas = 0;
+    
+    // Separate totals for prática and teoria
+    let totalDeveriaPratica = 0;
+    let totalFeitasPratica = 0;
+    let totalDeveriaTeoria = 0;
+    let totalFeitasTeoria = 0;
 
     escalas.forEach(escala => {
+        // Filter by scale type if specified
+        const escalaTipo = escala.tipo || 'pratica';
+        if (scaleType !== 'all' && escalaTipo !== scaleType) return;
+        
         const diasBrutos = escala.headersDay || []; 
         diasBrutos.forEach(ddmm => {
             const dateObj = _esc_parseDMInferYear(ddmm);
@@ -4968,23 +5039,54 @@ function _esc_calculateTotalBank(escalas, absentDatesTotal, makeupDatesTotal) {
             const hoursInfo = _esc_calculateHours(rawText);
             const statusKey = _esc_normalizeStatusKey(rawText, hoursInfo);
 
-            if (hoursInfo.hours === 0) return;
+            // Use standardHours for the intelligent hours system
+            const standardHours = hoursInfo.standardHours || hoursInfo.hours;
+            if (standardHours === 0) return;
 
+            // Calculate what should have been worked
             if (statusKey !== 'off' && statusKey !== 'none') {
-                totalDeveria += hoursInfo.hours;
+                totalDeveria += standardHours;
+                if (escalaTipo === 'teoria') {
+                    totalDeveriaTeoria += standardHours;
+                } else {
+                    totalDeveriaPratica += standardHours;
+                }
             }
+            
+            // Calculate what was actually worked
             if (statusKey !== 'off' && statusKey !== 'none') {
                 const isAusente = absentDatesTotal.has(iso);
                 const isReposto = makeupDatesTotal.has(iso);
+                
                 if (!isAusente || isReposto) {
-                     totalFeitas += hoursInfo.hours;
+                    // Student was present or has made up the absence
+                    totalFeitas += standardHours;
+                    if (escalaTipo === 'teoria') {
+                        totalFeitasTeoria += standardHours;
+                    } else {
+                        totalFeitasPratica += standardHours;
+                    }
                 }
+                // If absent without makeup, hours are not counted (already at 0)
             } else if (statusKey === 'off' && makeupDatesTotal.has(iso)) {
-                totalFeitas += hoursInfo.hours;
+                // Makeup on a rest day - extra hours credited
+                totalFeitas += standardHours;
+                if (escalaTipo === 'teoria') {
+                    totalFeitasTeoria += standardHours;
+                } else {
+                    totalFeitasPratica += standardHours;
+                }
             }
         });
     });
-    return { totalFeitas, totalDeveria };
+    return { 
+        totalFeitas, 
+        totalDeveria,
+        totalFeitasPratica,
+        totalDeveriaPratica,
+        totalFeitasTeoria,
+        totalDeveriaTeoria
+    };
 }
 
 /**
@@ -5073,12 +5175,21 @@ function renderTabEscala(escalas) {
         }
     });
 
-    // Calculate and display total hours bank
-    const { totalFeitas, totalDeveria } = _esc_calculateTotalBank(escalas, absentDatesTotal, makeupDatesTotal);
+    // Calculate and display total hours bank (separated by type)
+    const hoursBank = _esc_calculateTotalBank(escalas, absentDatesTotal, makeupDatesTotal);
     const $totalFeitas = document.getElementById('banco-horas-total-feitas');
     const $totalDeveria = document.getElementById('banco-horas-total-deveria');
-    if ($totalFeitas) $totalFeitas.textContent = `${totalFeitas.toFixed(0)}h`;
-    if ($totalDeveria) $totalDeveria.textContent = `${totalDeveria.toFixed(0)}h`;
+    const $praticaFeitas = document.getElementById('banco-horas-pratica-feitas');
+    const $praticaDeveria = document.getElementById('banco-horas-pratica-deveria');
+    const $teoriaFeitas = document.getElementById('banco-horas-teoria-feitas');
+    const $teoriaDeveria = document.getElementById('banco-horas-teoria-deveria');
+    
+    if ($totalFeitas) $totalFeitas.textContent = `${hoursBank.totalFeitas.toFixed(0)}h`;
+    if ($totalDeveria) $totalDeveria.textContent = `${hoursBank.totalDeveria.toFixed(0)}h`;
+    if ($praticaFeitas) $praticaFeitas.textContent = `${hoursBank.totalFeitasPratica.toFixed(0)}h`;
+    if ($praticaDeveria) $praticaDeveria.textContent = `${hoursBank.totalDeveriaPratica.toFixed(0)}h`;
+    if ($teoriaFeitas) $teoriaFeitas.textContent = `${hoursBank.totalFeitasTeoria.toFixed(0)}h`;
+    if ($teoriaDeveria) $teoriaDeveria.textContent = `${hoursBank.totalDeveriaTeoria.toFixed(0)}h`;
 
     // Function to render scale pills
     function renderScalePills(scalesArray, type) {
@@ -5100,10 +5211,11 @@ function renderTabEscala(escalas) {
         
         scalesArray.forEach((escala, idx) => {
             // Format scale name for display: extract number from "EscalaTeoria1", "EscalaPratica1", or "Escala1"
-            // Display only "Escala N" since the tab already indicates the type (Prática or Teórica)
+            // Display the proper label based on scale type
             let nome = escala.nomeEscala || `Escala ${idx + 1}`;
-            nome = nome
-                .replace(/^Escala(Teoria|Pratica)?(\d+)$/i, 'Escala $2');
+            const scaleNum = nome.match(/\d+/)?.[0] || (idx + 1);
+            const tipoPretty = escala.tipo === 'teoria' ? 'Teórica' : 'Prática';
+            nome = `Escala ${tipoPretty} ${scaleNum}`;
             
             const btn = document.createElement('button');
             btn.type = 'button';
@@ -5157,7 +5269,7 @@ function renderTabEscala(escalas) {
     function drawScaleGrid(escala, emailNorm, nameNorm, absentDates, makeupDates) {
         
         const summary = {
-            presenca: 0, plantao: 0, aula: 0, absent: 0, makeup: 0, off: 0,
+            presenca: 0, plantao: 0, noturno: 0, aula: 0, absent: 0, makeup: 0, off: 0,
             escalaFeitas: 0, escalaDeveria: 0
         };
 
@@ -5234,7 +5346,7 @@ function renderTabEscala(escalas) {
                 });
                 if (pontoRecord) {
                     const pontoStatus = _esc_normalizeStatusKey(rawText, hoursInfo);
-                    statusKey = (pontoStatus === 'plantao' || pontoStatus === 'aula') ? pontoStatus : 'presenca';
+                    statusKey = (pontoStatus === 'plantao' || pontoStatus === 'aula' || pontoStatus === 'noturno') ? pontoStatus : 'presenca';
                     const horaEntradaPonto = pontoRecord.HoraEntrada || pontoRecord.horaEntrada || '';
                     rawText = horaEntradaPonto ? `Presente (${horaEntradaPonto})` : 'Presente';
                 }
@@ -5244,14 +5356,16 @@ function renderTabEscala(escalas) {
                 summary[statusKey]++;
             }
 
-            if (hoursInfo.hours > 0) {
+            // Use standardHours for the intelligent hours bank system
+            const standardHours = hoursInfo.standardHours || hoursInfo.hours;
+            if (standardHours > 0) {
                 if (statusKey !== 'off' && statusKey !== 'none') {
-                    summary.escalaDeveria += hoursInfo.hours;
+                    summary.escalaDeveria += standardHours;
                     if (!isAusente || isReposto) {
-                        summary.escalaFeitas += hoursInfo.hours;
+                        summary.escalaFeitas += standardHours;
                     }
                 } else if (statusKey === 'off' && isReposto) {
-                    summary.escalaFeitas += hoursInfo.hours;
+                    summary.escalaFeitas += standardHours;
                 }
             }
             
@@ -5276,6 +5390,7 @@ function renderTabEscala(escalas) {
         // Update stats
         const $statPresenca = document.getElementById('stat-presenca');
         const $statPlantao = document.getElementById('stat-plantao');
+        const $statNoturno = document.getElementById('stat-noturno');
         const $statAula = document.getElementById('stat-aula');
         const $statAbsent = document.getElementById('stat-absent');
         const $statMakeup = document.getElementById('stat-makeup');
@@ -5283,6 +5398,7 @@ function renderTabEscala(escalas) {
         
         if ($statPresenca) $statPresenca.textContent = summary.presenca || 0;
         if ($statPlantao) $statPlantao.textContent = summary.plantao || 0;
+        if ($statNoturno) $statNoturno.textContent = summary.noturno || 0;
         if ($statAula) $statAula.textContent = summary.aula || 0;
         if ($statAbsent) $statAbsent.textContent = summary.absent || 0;
         if ($statMakeup) $statMakeup.textContent = summary.makeup || 0;

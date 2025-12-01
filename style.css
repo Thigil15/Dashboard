@@ -3646,6 +3646,8 @@
 .compact-tile[data-status="aula"]    .classification-pill { background: rgba(59,130,246,0.06); color:#1d4ed8; border-color: rgba(59,130,246,0.12); } /* Azul */
 .classification-pill[data-status="plantao"],
 .compact-tile[data-status="plantao"] .classification-pill { background: rgba(99,102,241,0.06); color:#3730a3; border-color: rgba(99,102,241,0.12); } /* Roxo (Indigo) */
+.classification-pill[data-status="noturno"],
+.compact-tile[data-status="noturno"] .classification-pill { background: rgba(139,92,246,0.06); color:#5b21b6; border-color: rgba(139,92,246,0.12); } /* Roxo escuro (Violet) */
 .classification-pill[data-status="absent"],
 .compact-tile[data-status="absent"]  .classification-pill { background: rgba(239,68,68,0.06); color:#b91c1c; border-color: rgba(239,68,68,0.12); } /* Vermelho */
 .classification-pill[data-status="makeup"],
@@ -3659,10 +3661,12 @@
 .compact-tile[data-status="presenca"] .tile-body-text { color: #166534; }
 .compact-tile[data-status="aula"] .tile-body-text { color: #1d4ed8; }
 .compact-tile[data-status="plantao"] .tile-body-text { color: #3730a3; }
+.compact-tile[data-status="noturno"] .tile-body-text { color: #5b21b6; }
 .compact-tile[data-status="absent"] .tile-body-text { color: #b91c1c; }
 .compact-tile[data-status="makeup"] .tile-body-text { color: #854d0e; }
 .compact-tile[data-status="off"] .tile-body-text { color: #475569; }
 .compact-tile[data-status="none"] .tile-body-text { color: #9ca3af; }
+.compact-tile[data-status="noturno"] { --tile-accent-color: #8b5cf6; }
     
 
 /* --- Acessibilidade utilitária --- */
