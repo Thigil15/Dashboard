@@ -4988,7 +4988,8 @@ function _esc_calculateTotalBank(escalas, absentDatesTotal, makeupDatesTotal) {
 }
 
 /**
- * [ORION] (Substituição) Renderiza a aba de escala (v33.0 - Modern Professional Design)
+ * [ORION] Renderiza a aba de escala (v33.0 - Modern Professional Design)
+ * Redesign completo com layout moderno e profissional para visualização de escalas
  * @param {Array} escalas - O array de escalas do aluno (de findDataByStudent).
  */
 function renderTabEscala(escalas) {
@@ -5007,6 +5008,16 @@ function renderTabEscala(escalas) {
         console.error("ORION: Estrutura da #tab-escala (v33.0) não encontrada. Abortando.");
         return;
     }
+    
+    // Helper function to safely update period label text
+    function updatePeriodLabel(element, text) {
+        const span = element.querySelector('span');
+        if (span) {
+            span.textContent = text;
+        } else {
+            element.textContent = text;
+        }
+    }
 
     const alunoEmailRaw = document.querySelector('#tab-info dd')?.textContent || '';
     const alunoNomeRaw = document.querySelector('#student-header h2')?.textContent || '';
@@ -5014,7 +5025,7 @@ function renderTabEscala(escalas) {
     const alunoNomeNorm = normalizeString(alunoNomeRaw);
     
     $switcher.innerHTML = '';
-    $periodLabel.querySelector('span').textContent = 'Selecione uma escala';
+    updatePeriodLabel($periodLabel, 'Selecione uma escala');
     $grid.innerHTML = `
         <div class="escala-empty-state">
             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
@@ -5088,7 +5099,13 @@ function renderTabEscala(escalas) {
         }
         
         scalesArray.forEach((escala, idx) => {
-            const nome = escala.nomeEscala ? escala.nomeEscala.replace('Escala', 'Escala ').replace('Teoria', ' Teórica').replace('Pratica', ' Prática') : `Escala ${idx + 1}`;
+            // Format scale name for display: "EscalaTeoria1" -> "Escala Teórica 1"
+            let nome = escala.nomeEscala || `Escala ${idx + 1}`;
+            nome = nome
+                .replace(/^Escala(\d+)$/i, 'Escala $1')
+                .replace(/^EscalaTeoria(\d+)$/i, 'Escala Teórica $1')
+                .replace(/^EscalaPratica(\d+)$/i, 'Escala Prática $1');
+            
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = `escala-pill escala-pill--${type}`;
@@ -5172,7 +5189,7 @@ function renderTabEscala(escalas) {
         });
 
         if (diasMap.size === 0) {
-            $periodLabel.querySelector('span').textContent = escala.nomeEscala || 'Escala';
+            updatePeriodLabel($periodLabel, escala.nomeEscala || 'Escala');
             $grid.innerHTML = `
                 <div class="escala-empty-state">
                     <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
@@ -5189,7 +5206,7 @@ function renderTabEscala(escalas) {
         const firstDayOfScale = sortedDias[0].dateObj;
         const lastDayOfScale = sortedDias[sortedDias.length - 1].dateObj;
 
-        $periodLabel.querySelector('span').textContent = `Período: ${firstDayOfScale.toLocaleDateString('pt-BR')} a ${lastDayOfScale.toLocaleDateString('pt-BR')}`;
+        updatePeriodLabel($periodLabel, `Período: ${firstDayOfScale.toLocaleDateString('pt-BR')} a ${lastDayOfScale.toLocaleDateString('pt-BR')}`);
         $grid.innerHTML = '';
         const todayISO = new Date().toISOString().slice(0, 10);
         

@@ -11609,8 +11609,6 @@
 
 .escala-day-tile[data-status="off"] {
     --tile-accent-color: #94a3b8;
-}
-.escala-day-tile[data-status="off"] {
     opacity: 0.75;
 }
 .escala-day-tile[data-status="off"] .escala-day-status {
