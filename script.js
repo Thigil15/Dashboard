@@ -2276,7 +2276,7 @@ const pontoState = {
                     ((x.EmailHC && normalizeString(x.EmailHC) === emailNormalizado) || 
                      (x.NomeCompleto && normalizeString(x.NomeCompleto) === alunoNomeNormalizado))
                 );
-                return a ? { nomeEscala: e.nomeEscala, headersDay: e.headersDay, ...a } : null;
+                return a ? { nomeEscala: e.nomeEscala, headersDay: e.headersDay, tipo: e.tipo, numero: e.numero, ...a } : null;
             }).filter(Boolean); // Filtra nulos
 
             // Faltas
