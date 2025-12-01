@@ -1027,6 +1027,11 @@ const NAME_FIELD_VARIANTS = ['NomeCompleto', 'nomeCompleto', 'nomecompleto', 'NO
 // - Excluded fields are for FILTERING (e.g., don't calculate average of email field)
 const EXCLUDED_FIELDS_SET = new Set(['SERIALNUMBER', 'NOMECOMPLETO', 'EMAILHC', 'CURSO', 'EMAIL', 'NOME']);
 
+// Time format regex patterns for schedule parsing
+// Supports formats like: "18:00:00 às 21:00:00", "18:00 às 21:00", "7h às 12h"
+const TIME_FORMAT_FULL_REGEX = /(\d{1,2}):(\d{2})(?::\d{2})?\s*(?:às|as|a|-)\s*(\d{1,2}):(\d{2})(?::\d{2})?/i;
+const TIME_FORMAT_LEGACY_REGEX = /(\d{1,2})h\s*(?:às|as|a)?\s*(\d{1,2})h/i;
+
 // Helper function to get a value from an object using field name variants
 function getFieldValue(obj, fieldVariants) {
     if (!obj || !fieldVariants) return null;
@@ -1842,7 +1847,7 @@ const pontoState = {
             if (!dateValue || typeof dateValue !== 'string') return null;
             
             // First try the new format: "HH:MM:SS às HH:MM:SS" (e.g., "18:00:00 às 21:00:00")
-            const fullTimeMatch = dateValue.match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*(?:às|as|a|-)\s*(\d{1,2}):(\d{2})(?::\d{2})?/i);
+            const fullTimeMatch = dateValue.match(TIME_FORMAT_FULL_REGEX);
             if (fullTimeMatch) {
                 return {
                     horaEntrada: `${fullTimeMatch[1].padStart(2, '0')}:${fullTimeMatch[2]}`,
@@ -1851,7 +1856,7 @@ const pontoState = {
             }
             
             // Fallback to legacy format: "7h às 12h", "08h as 13h", "8h a 14h - Escala 1"
-            const timeMatch = dateValue.match(/(\d{1,2})h\s*(?:às|as|a)?\s*(\d{1,2})h/i);
+            const timeMatch = dateValue.match(TIME_FORMAT_LEGACY_REGEX);
             if (timeMatch) {
                 return {
                     horaEntrada: `${timeMatch[1].padStart(2, '0')}:00`,
@@ -4906,14 +4911,15 @@ function _esc_calculateHours(rawText) {
     const isAula = rawTextLower.includes('aula') || rawTextLower.includes('hcx') || rawTextLower.includes('inicial');
     
     // First, try to match the new format "HH:MM:SS às HH:MM:SS" (e.g., "18:00:00 às 21:00:00")
-    const fullTimeRegex = /(\d{1,2}):(\d{2})(?::\d{2})?\s*(?:às|as|a|-)\s*(\d{1,2}):(\d{2})(?::\d{2})?/i;
-    let match = rawText.match(fullTimeRegex);
+    let match = rawText.match(TIME_FORMAT_FULL_REGEX);
+    let isFullTimeFormat = !!match;
     
     // If no match, try the legacy format with "h" notation (e.g., "7h às 12h", "08h as 13h")
     if (!match) {
         const s = rawText.replace(/(\d{1,2})h(\d{2})?/g, '$1:$2').replace(/h/g, ':00'); 
         const regex = /(\d{1,2}):?(\d{0,2})\s*(-|às|as|a)\s*(\d{1,2}):?(\d{0,2})/i;
         match = s.match(regex);
+        isFullTimeFormat = false;
     }
 
     if (!match) {
@@ -4925,13 +4931,13 @@ function _esc_calculateHours(rawText) {
     }
 
     // Extract hours and minutes from match groups
-    // For fullTimeRegex: groups are (h1, m1, h2, m2) - indices 1,2,3,4
+    // For TIME_FORMAT_FULL_REGEX: groups are (h1, m1, h2, m2) - indices 1,2,3,4
     // For legacy regex: groups are (h1, m1, separator, h2, m2) - indices 1,2,4,5
     let h1, m1, h2, m2;
     
-    // Check if this is from the fullTimeRegex (has 4 capturing groups) or legacy (has 5)
-    if (match[3] && !isNaN(parseInt(match[3], 10)) && match[4] && !isNaN(parseInt(match[4], 10))) {
-        // fullTimeRegex match - groups 1,2,3,4 are h1,m1,h2,m2
+    // Use the flag to determine which regex was used
+    if (isFullTimeFormat) {
+        // TIME_FORMAT_FULL_REGEX match - groups 1,2,3,4 are h1,m1,h2,m2
         h1 = parseInt(match[1], 10);
         m1 = parseInt(match[2] || '0', 10);
         h2 = parseInt(match[3], 10);
