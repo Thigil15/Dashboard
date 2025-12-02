@@ -10062,83 +10062,110 @@
     position: sticky;
     top: 0;
     z-index: 100;
-    background: rgba(0, 36, 112, 0.85);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    background: linear-gradient(135deg, var(--incor-blue-800) 0%, var(--incor-blue-700) 50%, var(--incor-blue-600) 100%);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 20px rgba(0, 51, 160, 0.25), 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .student-profile-header-inner {
     max-width: 1400px;
     margin: 0 auto;
-    padding: 1rem 2rem;
+    padding: 0.875rem 2rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
 }
 
+/* Enhanced Back Button */
 .student-back-button {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1.5rem;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 50px;
+    gap: 0.875rem;
+    padding: 0.625rem 1.25rem 0.625rem 0.625rem;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
     color: white;
     font-family: var(--font-display);
-    font-weight: 600;
-    font-size: 0.9375rem;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.student-back-button svg {
-    width: 1.25rem;
-    height: 1.25rem;
-    transition: transform 0.3s ease;
-}
-
 .student-back-button:hover {
     background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.4);
+    border-color: rgba(255, 255, 255, 0.3);
     transform: translateX(-4px);
 }
 
-.student-back-button:hover svg {
-    transform: translateX(-4px);
-}
-
-.student-header-brand {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.student-header-brand-icon {
-    width: 36px;
-    height: 36px;
-    background: rgba(226, 30, 38, 0.9);
+.student-back-button-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.15);
     border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 12px rgba(226, 30, 38, 0.4);
+    transition: all 0.3s ease;
 }
 
-.student-header-brand-icon svg {
-    width: 20px;
-    height: 20px;
+.student-back-button:hover .student-back-button-icon {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.student-back-button-icon svg {
+    width: 1.25rem;
+    height: 1.25rem;
     color: white;
+    transition: transform 0.3s ease;
 }
 
-.student-header-brand-text {
+.student-back-button:hover .student-back-button-icon svg {
+    transform: translateX(-3px);
+}
+
+.student-back-button-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.student-back-button-label {
+    font-weight: 700;
+    font-size: 0.9375rem;
+    color: white;
+    line-height: 1.2;
+}
+
+.student-back-button-sublabel {
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.7);
+    letter-spacing: 0.02em;
+}
+
+/* Page Title Section */
+.student-header-title-section {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    text-align: right;
+}
+
+.student-header-page-title {
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: 1rem;
-    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.25rem;
+    color: white;
+    margin: 0;
+    line-height: 1.2;
     letter-spacing: -0.01em;
+}
+
+.student-header-breadcrumb {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.7);
+    letter-spacing: 0.02em;
 }
 
 /* === HERO PROFILE SECTION === */
@@ -10177,17 +10204,18 @@
 /* === PREMIUM PROFILE CARD === */
 .student-profile-card {
     background: rgba(255, 255, 255, 0.98);
-    border-radius: 16px;
-    padding: 1.5rem 2rem;
+    border-radius: 20px;
+    padding: 2rem 2.5rem;
     box-shadow: 
-        0 15px 40px rgba(0, 0, 0, 0.15),
-        0 8px 20px rgba(0, 51, 160, 0.08);
+        0 20px 50px rgba(0, 0, 0, 0.12),
+        0 10px 25px rgba(0, 51, 160, 0.08);
     display: flex;
     align-items: center;
-    gap: 1.5rem;
+    gap: 2rem;
     position: relative;
     overflow: hidden;
     animation: profile-card-enter 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 @keyframes profile-card-enter {
@@ -10216,13 +10244,13 @@
 
 /* Profile picture styles */
 .student-profile-card .student-profile-avatar {
-    width: 80px;
-    height: 80px;
-    border-radius: 16px;
+    width: 100px;
+    height: 100px;
+    border-radius: 20px;
     object-fit: cover;
-    border: 3px solid white;
+    border: 4px solid white;
     box-shadow: 
-        0 6px 20px rgba(0, 51, 160, 0.15),
+        0 8px 24px rgba(0, 51, 160, 0.18),
         0 0 0 2px var(--incor-blue-500);
     flex-shrink: 0;
     transition: all 0.3s ease;
@@ -10231,7 +10259,7 @@
 .student-profile-card:hover .student-profile-avatar {
     transform: scale(1.03);
     box-shadow: 
-        0 8px 25px rgba(0, 51, 160, 0.2),
+        0 10px 30px rgba(0, 51, 160, 0.22),
         0 0 0 3px var(--incor-blue-400);
 }
 
@@ -10242,36 +10270,41 @@
 
 .student-profile-name {
     font-family: var(--font-display);
-    font-size: clamp(1.25rem, 3vw, 1.75rem);
-    font-weight: 700;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 800;
     background: linear-gradient(135deg, var(--incor-blue-800) 0%, var(--incor-blue-600) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
     line-height: 1.2;
-    margin: 0 0 0.375rem 0;
+    margin: 0 0 0.5rem 0;
+    letter-spacing: -0.02em;
 }
 
 .student-profile-course {
-    font-size: 0.9375rem;
+    font-size: 1rem;
     color: var(--content-text-secondary);
-    font-weight: 500;
+    font-weight: 600;
     margin: 0;
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 0.375rem;
+    gap: 0.5rem;
+    padding: 0.375rem 0.875rem;
+    background: linear-gradient(135deg, var(--incor-blue-50), rgba(0, 84, 180, 0.06));
+    border-radius: 50px;
+    border: 1px solid rgba(0, 84, 180, 0.15);
 }
 
 .student-profile-course::before {
     content: '';
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
     background: linear-gradient(135deg, var(--incor-blue-500), var(--incor-blue-400));
     border-radius: 50%;
 }
 
 .student-profile-status {
-    margin-top: 0.75rem;
+    margin-top: 1rem;
 }
 
 .student-status-badge {
@@ -10692,6 +10725,538 @@
     background: white;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   FALTAS - MODERN DESIGN SYSTEM
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Empty State */
+.faltas-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    text-align: center;
+}
+
+.faltas-empty-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, rgba(5, 150, 105, 0.1), rgba(16, 185, 129, 0.05));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+
+.faltas-empty-icon svg {
+    width: 40px;
+    height: 40px;
+    color: #059669;
+}
+
+.faltas-empty-title {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--content-text-primary);
+    margin: 0 0 0.5rem 0;
+}
+
+.faltas-empty-text {
+    font-size: 0.9375rem;
+    color: var(--content-text-muted);
+    margin: 0;
+    max-width: 300px;
+}
+
+/* KPI Grid */
+.faltas-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+@media (max-width: 1024px) {
+    .faltas-kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .faltas-kpi-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.faltas-kpi-card {
+    position: relative;
+    background: white;
+    border-radius: 16px;
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(229, 233, 239, 0.8);
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.faltas-kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.faltas-kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    border-radius: 4px 0 0 4px;
+}
+
+.faltas-kpi-card--total::before {
+    background: linear-gradient(180deg, var(--incor-blue-600), var(--incor-blue-500));
+}
+
+.faltas-kpi-card--pending::before {
+    background: linear-gradient(180deg, #d97706, #f59e0b);
+}
+
+.faltas-kpi-card--completed::before {
+    background: linear-gradient(180deg, #059669, #10b981);
+}
+
+.faltas-kpi-card--rate::before {
+    background: linear-gradient(180deg, #7c3aed, #8b5cf6);
+}
+
+.faltas-kpi-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.faltas-kpi-card--total .faltas-kpi-icon {
+    background: linear-gradient(135deg, rgba(0, 84, 180, 0.1), rgba(30, 111, 217, 0.05));
+}
+
+.faltas-kpi-card--total .faltas-kpi-icon svg {
+    color: var(--incor-blue-600);
+}
+
+.faltas-kpi-card--pending .faltas-kpi-icon {
+    background: linear-gradient(135deg, rgba(217, 119, 6, 0.1), rgba(245, 158, 11, 0.05));
+}
+
+.faltas-kpi-card--pending .faltas-kpi-icon svg {
+    color: #d97706;
+}
+
+.faltas-kpi-card--completed .faltas-kpi-icon {
+    background: linear-gradient(135deg, rgba(5, 150, 105, 0.1), rgba(16, 185, 129, 0.05));
+}
+
+.faltas-kpi-card--completed .faltas-kpi-icon svg {
+    color: #059669;
+}
+
+.faltas-kpi-card--rate .faltas-kpi-icon {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(139, 92, 246, 0.05));
+}
+
+.faltas-kpi-card--rate .faltas-kpi-icon svg {
+    color: #7c3aed;
+}
+
+.faltas-kpi-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.faltas-kpi-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.faltas-kpi-value {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--content-text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.faltas-kpi-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--content-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.faltas-kpi-alert-dot {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 10px;
+    height: 10px;
+    background: #ef4444;
+    border-radius: 50%;
+    animation: faltas-pulse 2s ease-in-out infinite;
+}
+
+@keyframes faltas-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.2); }
+}
+
+.faltas-kpi-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: rgba(124, 58, 237, 0.1);
+}
+
+.faltas-kpi-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #7c3aed, #8b5cf6);
+    border-radius: 0 2px 2px 0;
+    transition: width 0.8s ease;
+}
+
+/* Timeline Section */
+.faltas-timeline-section {
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+    border-radius: 16px;
+    padding: 1.5rem;
+    border: 1px solid rgba(229, 233, 239, 0.8);
+}
+
+.faltas-timeline-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.faltas-timeline-title {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--incor-blue-700);
+    margin: 0;
+}
+
+.faltas-timeline-title svg {
+    width: 20px;
+    height: 20px;
+    color: var(--incor-blue-500);
+}
+
+.faltas-timeline-legend {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.faltas-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--content-text-muted);
+}
+
+.faltas-legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.faltas-legend-item--pending .faltas-legend-dot {
+    background: #d97706;
+}
+
+.faltas-legend-item--completed .faltas-legend-dot {
+    background: #059669;
+}
+
+/* Timeline Cards */
+.faltas-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.faltas-card {
+    display: flex;
+    gap: 1rem;
+    animation: faltas-card-enter 0.4s ease both;
+}
+
+@keyframes faltas-card-enter {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.faltas-card-timeline-marker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    width: 24px;
+}
+
+.faltas-card-timeline-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 3px solid white;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    flex-shrink: 0;
+    z-index: 1;
+}
+
+.faltas-card--pending .faltas-card-timeline-dot {
+    background: linear-gradient(135deg, #d97706, #f59e0b);
+}
+
+.faltas-card--completed .faltas-card-timeline-dot {
+    background: linear-gradient(135deg, #059669, #10b981);
+}
+
+.faltas-card-timeline-line {
+    width: 2px;
+    flex: 1;
+    background: linear-gradient(180deg, rgba(0, 51, 160, 0.2), rgba(0, 51, 160, 0.05));
+    margin-top: 4px;
+}
+
+.faltas-card-content {
+    flex: 1;
+    background: white;
+    border-radius: 14px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(229, 233, 239, 0.8);
+    transition: all 0.3s ease;
+}
+
+.faltas-card-content:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: rgba(0, 84, 180, 0.2);
+}
+
+.faltas-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.faltas-card-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.faltas-card-status-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.faltas-card--pending .faltas-card-status-icon {
+    background: linear-gradient(135deg, rgba(217, 119, 6, 0.15), rgba(245, 158, 11, 0.08));
+}
+
+.faltas-card--pending .faltas-card-status-icon svg {
+    width: 16px;
+    height: 16px;
+    color: #d97706;
+}
+
+.faltas-card--completed .faltas-card-status-icon {
+    background: linear-gradient(135deg, rgba(5, 150, 105, 0.15), rgba(16, 185, 129, 0.08));
+}
+
+.faltas-card--completed .faltas-card-status-icon svg {
+    width: 16px;
+    height: 16px;
+    color: #059669;
+}
+
+.faltas-card-status-text {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.faltas-card--pending .faltas-card-status-text {
+    color: #d97706;
+}
+
+.faltas-card--completed .faltas-card-status-text {
+    color: #059669;
+}
+
+.faltas-card-days {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    padding: 0.25rem 0.625rem;
+    border-radius: 50px;
+    background: rgba(0, 51, 160, 0.08);
+    color: var(--incor-blue-600);
+}
+
+.faltas-card-days--warning {
+    background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+}
+
+/* Dates Section */
+.faltas-card-dates {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+    border-radius: 12px;
+}
+
+@media (max-width: 640px) {
+    .faltas-card-dates {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .faltas-card-date-arrow {
+        transform: rotate(90deg);
+        align-self: center;
+    }
+}
+
+.faltas-card-date {
+    flex: 1;
+    min-width: 0;
+}
+
+.faltas-card-date-label {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--content-text-muted);
+    margin-bottom: 0.25rem;
+}
+
+.faltas-card-date-label svg {
+    width: 14px;
+    height: 14px;
+}
+
+.faltas-card-date--absence .faltas-card-date-label svg {
+    color: #dc2626;
+}
+
+.faltas-card-date--makeup .faltas-card-date-label svg {
+    color: #059669;
+}
+
+.faltas-card-date-value {
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: var(--content-text-primary);
+}
+
+.faltas-card-date--pending .faltas-card-date-value {
+    color: #d97706;
+    font-style: italic;
+    font-weight: 600;
+}
+
+.faltas-card-date-arrow {
+    color: var(--content-text-muted);
+    flex-shrink: 0;
+}
+
+.faltas-card-date-arrow svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Details Section */
+.faltas-card-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+}
+
+.faltas-card-detail {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    color: var(--content-text-secondary);
+}
+
+.faltas-card-detail svg {
+    width: 16px;
+    height: 16px;
+    color: var(--incor-blue-400);
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.faltas-card-detail span {
+    line-height: 1.4;
+}
+
+.faltas-card-detail--motivo {
+    padding: 0.625rem;
+    background: rgba(0, 51, 160, 0.03);
+    border-radius: 8px;
+    border-left: 3px solid var(--incor-blue-300);
+}
+
 /* === NOTAS WRAPPER === */
 .student-notas-wrapper {
     /* Styles handled by existing notas CSS */
@@ -10740,19 +11305,24 @@
 /* === RESPONSIVE ADJUSTMENTS === */
 @media (max-width: 768px) {
     .student-profile-header-inner {
-        padding: 0.875rem 1rem;
+        padding: 0.75rem 1rem;
     }
     
     .student-back-button {
-        padding: 0.625rem 1rem;
-        font-size: 0.875rem;
+        padding: 0.5rem 0.875rem 0.5rem 0.5rem;
+        gap: 0.625rem;
     }
     
-    .student-back-button span {
+    .student-back-button-icon {
+        width: 36px;
+        height: 36px;
+    }
+    
+    .student-back-button-sublabel {
         display: none;
     }
     
-    .student-header-brand {
+    .student-header-title-section {
         display: none;
     }
     
@@ -10822,16 +11392,126 @@
 /* === STUDENT INFO SECTION ENHANCEMENTS === */
 #tab-info.student-tab-panel {
     background: white;
-    border-radius: 12px;
-    padding: 1.5rem;
+    border-radius: 16px;
+    padding: 1.75rem;
     box-shadow: 
         0 4px 15px rgba(0, 51, 160, 0.06),
         0 2px 6px rgba(0, 51, 160, 0.03);
     border: 1px solid rgba(229, 233, 239, 0.8);
 }
 
+/* Info Hero Card - Premium Design */
+.info-hero-card {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1.25rem 1.5rem;
+    background: linear-gradient(135deg, var(--incor-blue-700) 0%, var(--incor-blue-600) 100%);
+    border-radius: 14px;
+    margin-bottom: 2rem;
+    box-shadow: 0 8px 20px rgba(0, 51, 160, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.info-hero-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 60%;
+    height: 200%;
+    background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.1) 0%, transparent 60%);
+    pointer-events: none;
+}
+
+.info-hero-icon {
+    width: 56px;
+    height: 56px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.info-hero-icon svg {
+    width: 28px;
+    height: 28px;
+    color: white;
+}
+
+.info-hero-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.info-hero-title {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: white;
+    margin: 0 0 0.25rem 0;
+    line-height: 1.2;
+}
+
+.info-hero-subtitle {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.85);
+    margin: 0;
+    font-weight: 500;
+}
+
+/* Info Status Badge */
+.info-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.875rem;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.info-status-badge--active {
+    background: linear-gradient(135deg, rgba(5, 150, 105, 0.15), rgba(16, 185, 129, 0.1));
+    color: #047857;
+    border: 1px solid rgba(5, 150, 105, 0.3);
+}
+
+.info-status-badge--active::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: #059669;
+    border-radius: 50%;
+    animation: status-pulse 2s ease-in-out infinite;
+}
+
+.info-status-badge--inactive {
+    background: linear-gradient(135deg, rgba(220, 38, 38, 0.15), rgba(239, 68, 68, 0.1));
+    color: #b91c1c;
+    border: 1px solid rgba(220, 38, 38, 0.3);
+}
+
+/* Highlight item */
+.student-info-item--highlight {
+    background: linear-gradient(135deg, rgba(0, 84, 180, 0.08), rgba(30, 111, 217, 0.04));
+    border-color: rgba(0, 84, 180, 0.2);
+}
+
+.student-info-item--highlight .student-info-value {
+    color: var(--incor-blue-700);
+    font-weight: 700;
+}
+
 .student-info-section {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.75rem;
     padding-bottom: 1.5rem;
     border-bottom: 1px solid rgba(229, 233, 239, 0.6);
 }
