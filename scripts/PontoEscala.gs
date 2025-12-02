@@ -688,6 +688,9 @@ function onOpen(){
     .addSeparator()
     .addItem('🔥 Enviar Todos os Dados para Firebase', 'enviarDadosParaFirebase')
     .addToUi();
+  
+  // Adiciona o menu de Ausências
+  adicionarMenuAusencias();
 }
 
 /**********************************************

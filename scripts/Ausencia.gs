@@ -19,14 +19,28 @@ var MAX_ESCALAS = 12;
 /**
  * Processa todas as escalas práticas e identifica ausências dos alunos.
  * Insere os registros de ausência na aba "AusenciasReposicoes".
+ * Somente processa alunos com status "Ativa" na aba "Alunos".
  */
 function processarAusencias() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var abaAusencias = ss.getSheetByName('AusenciasReposicoes');
   
   if (!abaAusencias) {
-    SpreadsheetApp.getUi().alert('❌ Erro', 'Aba "AusenciasReposicoes" não encontrada!', SpreadsheetApp.getUi().ButtonSet.OK);
+    // Tenta mostrar alerta se a UI estiver disponível, senão apenas loga
+    try {
+      SpreadsheetApp.getUi().alert('❌ Erro', 'Aba "AusenciasReposicoes" não encontrada!', SpreadsheetApp.getUi().ButtonSet.OK);
+    } catch (e) {
+      Logger.log('❌ Erro: Aba "AusenciasReposicoes" não encontrada!');
+    }
     return;
+  }
+  
+  // Obtém a lista de alunos ativos da aba "Alunos"
+  var alunosAtivos = obterAlunosAtivos(ss);
+  if (alunosAtivos !== null) {
+    console.log('👥 Alunos ativos encontrados: ' + alunosAtivos.size);
+  } else {
+    console.log('👥 Processando todos os alunos (sem filtro de status)');
   }
   
   var totalAusencias = 0;
@@ -41,7 +55,7 @@ function processarAusencias() {
       continue;
     }
     
-    var ausenciasEncontradas = identificarAusenciasNaEscala(ss, escalaSheet, escalaNum, abaAusencias);
+    var ausenciasEncontradas = identificarAusenciasNaEscala(ss, escalaSheet, escalaNum, abaAusencias, alunosAtivos);
     totalAusencias += ausenciasEncontradas;
     console.log('✅ ' + nomeAba + ': ' + ausenciasEncontradas + ' ausência(s) identificada(s)');
   }
@@ -56,14 +70,77 @@ function processarAusencias() {
 }
 
 /**
+ * Obtém a lista de alunos com status "Ativa" da aba "Alunos".
+ * @param {Spreadsheet} ss - A planilha ativa
+ * @returns {Set} Set de identificadores de alunos ativos (NomeCompleto e EmailHC em lowercase)
+ */
+function obterAlunosAtivos(ss) {
+  var abaAlunos = ss.getSheetByName('Alunos');
+  var alunosAtivos = new Set();
+  
+  if (!abaAlunos) {
+    console.warn('⚠️ Aba "Alunos" não encontrada. Processando todos os alunos.');
+    return null; // Retorna null para indicar que deve processar todos
+  }
+  
+  var lastRow = abaAlunos.getLastRow();
+  if (lastRow < 2) {
+    console.warn('⚠️ Aba "Alunos" está vazia.');
+    return null;
+  }
+  
+  var headers = abaAlunos.getRange(1, 1, 1, abaAlunos.getLastColumn()).getValues()[0];
+  var dados = abaAlunos.getRange(2, 1, lastRow - 1, abaAlunos.getLastColumn()).getValues();
+  
+  // Encontrar colunas relevantes
+  var colNome = -1, colEmail = -1, colStatus = -1;
+  for (var i = 0; i < headers.length; i++) {
+    var h = String(headers[i] || '').toLowerCase().trim();
+    if (h === 'nomecompleto' || h === 'nome completo' || h === 'nome') {
+      colNome = i;
+    } else if (h === 'emailhc' || h === 'email' || h === 'e-mail') {
+      colEmail = i;
+    } else if (h === 'status' || h === 'situacao' || h === 'situação') {
+      colStatus = i;
+    }
+  }
+  
+  if (colStatus < 0) {
+    console.warn('⚠️ Coluna de status não encontrada na aba "Alunos". Processando todos os alunos.');
+    return null;
+  }
+  
+  // Adiciona alunos com status "Ativa" ao conjunto
+  for (var j = 0; j < dados.length; j++) {
+    var linha = dados[j];
+    var status = String(linha[colStatus] || '').toLowerCase().trim();
+    
+    // Verifica se o status é "ativa" ou "ativo"
+    if (status === 'ativa' || status === 'ativo' || status === 'active') {
+      if (colNome >= 0) {
+        var nome = String(linha[colNome] || '').trim().toLowerCase();
+        if (nome) alunosAtivos.add(nome);
+      }
+      if (colEmail >= 0) {
+        var email = String(linha[colEmail] || '').trim().toLowerCase();
+        if (email) alunosAtivos.add(email);
+      }
+    }
+  }
+  
+  return alunosAtivos;
+}
+
+/**
  * Identifica ausências em uma escala prática específica.
  * @param {Spreadsheet} ss - A planilha ativa
  * @param {Sheet} escalaSheet - A aba da escala prática
  * @param {number} escalaNum - O número da escala (1-12)
  * @param {Sheet} abaAusencias - A aba de destino para registrar ausências
+ * @param {Set|null} alunosAtivos - Set de identificadores de alunos ativos (null = processar todos)
  * @returns {number} Número de ausências encontradas
  */
-function identificarAusenciasNaEscala(ss, escalaSheet, escalaNum, abaAusencias) {
+function identificarAusenciasNaEscala(ss, escalaSheet, escalaNum, abaAusencias, alunosAtivos) {
   var headers = escalaSheet.getRange(1, 1, 1, escalaSheet.getLastColumn()).getValues()[0];
   var lastRow = escalaSheet.getLastRow();
   
@@ -102,6 +179,17 @@ function identificarAusenciasNaEscala(ss, escalaSheet, escalaNum, abaAusencias) 
     
     // Ignorar linhas sem nome
     if (!nomeCompleto) continue;
+    
+    // Verificar se o aluno está ativo (se tivermos a lista de ativos)
+    if (alunosAtivos !== null) {
+      var nomeParaVerificar = nomeCompleto.toLowerCase();
+      var emailParaVerificar = emailHC.toLowerCase();
+      
+      // Se nem o nome nem o email estão na lista de ativos, pula este aluno
+      if (!alunosAtivos.has(nomeParaVerificar) && !alunosAtivos.has(emailParaVerificar)) {
+        continue;
+      }
+    }
     
     // Calcular horário mais frequente do aluno
     var horarioMaisFrequente = calcularHorarioMaisFrequente(aluno, colunasData);
@@ -411,6 +499,7 @@ function padZero(n) {
 /**
  * Processa ausências para uma escala específica.
  * Útil para testes ou processamento individual.
+ * Somente processa alunos com status "Ativa" na aba "Alunos".
  * @param {number} escalaNum - Número da escala (1-12)
  */
 function processarAusenciasEscala(escalaNum) {
@@ -430,7 +519,10 @@ function processarAusenciasEscala(escalaNum) {
     return;
   }
   
-  var ausencias = identificarAusenciasNaEscala(ss, escalaSheet, escalaNum, abaAusencias);
+  // Obtém a lista de alunos ativos da aba "Alunos"
+  var alunosAtivos = obterAlunosAtivos(ss);
+  
+  var ausencias = identificarAusenciasNaEscala(ss, escalaSheet, escalaNum, abaAusencias, alunosAtivos);
   console.log('✅ ' + ausencias + ' ausência(s) identificada(s) em ' + nomeAba);
 }
 
