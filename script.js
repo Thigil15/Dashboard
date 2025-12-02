@@ -923,6 +923,220 @@
             return result;
         }
 
+        /**
+         * Parses semicolon-separated dates in DD/MM format
+         * e.g., "06/08; 07/08; 09/08" -> ["06/08", "07/08", "09/08"]
+         * Also handles typos like "09;08" (should be "09/08")
+         * @param {string} dateString - The date string to parse
+         * @returns {Array<string>} - Array of normalized DD/MM dates
+         */
+        function parseSemicolonDates(dateString) {
+            if (!dateString || typeof dateString !== 'string') return [];
+            
+            // Split by semicolon
+            const parts = dateString.split(';').map(s => s.trim()).filter(Boolean);
+            const dates = [];
+            
+            for (let i = 0; i < parts.length; i++) {
+                const part = parts[i];
+                
+                // Check if it's a valid DD/MM format
+                const ddmmMatch = part.match(/^(\d{1,2})\/(\d{2})$/);
+                if (ddmmMatch) {
+                    const day = ddmmMatch[1].padStart(2, '0');
+                    const month = ddmmMatch[2].padStart(2, '0');
+                    dates.push(`${day}/${month}`);
+                    continue;
+                }
+                
+                // Check if it's just a day (e.g., "09" when previous was "06/08")
+                // This handles typos like "06/08; 07/08; 09;08" where "09;08" should be "09/08"
+                const dayOnlyMatch = part.match(/^(\d{1,2})$/);
+                if (dayOnlyMatch) {
+                    // Check if next part is a month (1-2 digits allowed for flexible parsing)
+                    if (i + 1 < parts.length) {
+                        const nextPart = parts[i + 1];
+                        const monthMatch = nextPart.match(/^(\d{1,2})$/);
+                        if (monthMatch) {
+                            const day = dayOnlyMatch[1].padStart(2, '0');
+                            const month = monthMatch[1].padStart(2, '0');
+                            dates.push(`${day}/${month}`);
+                            i++; // Skip the next part since we used it
+                            continue;
+                        }
+                    }
+                    // If we can't find a month, try to use the last known month
+                    if (dates.length > 0) {
+                        const lastDate = dates[dates.length - 1];
+                        const lastMonth = lastDate.split('/')[1];
+                        const day = dayOnlyMatch[1].padStart(2, '0');
+                        dates.push(`${day}/${lastMonth}`);
+                    }
+                }
+            }
+            
+            return dates;
+        }
+        
+        /**
+         * Converts a date string to normalized DD/MM format (with zero padding)
+         * Accepts: D/M, DD/M, D/MM, DD/MM, D_M, DD_MM formats
+         * @param {string} dateStr - The date string in DD/MM or D_M format
+         * @returns {string} - Normalized DD/MM date (e.g., "06/08")
+         */
+        function normalizeDDMM(dateStr) {
+            if (!dateStr) return '';
+            const match = String(dateStr).match(/^(\d{1,2})\/(\d{1,2})$/);
+            if (match) {
+                const day = match[1].padStart(2, '0');
+                const month = match[2].padStart(2, '0');
+                return `${day}/${month}`;
+            }
+            // Try underscore format (from Firebase keys like "06_08" or "6_8")
+            const underscoreMatch = String(dateStr).match(/^(\d{1,2})_(\d{1,2})$/);
+            if (underscoreMatch) {
+                const day = underscoreMatch[1].padStart(2, '0');
+                const month = underscoreMatch[2].padStart(2, '0');
+                return `${day}/${month}`;
+            }
+            return '';
+        }
+        
+        /**
+         * Converts ISO date (YYYY-MM-DD) to DD/MM format
+         * @param {string} isoDate - The ISO date string
+         * @returns {string} - Date in DD/MM format
+         */
+        function isoToDDMM(isoDate) {
+            if (!isoDate) return '';
+            const match = String(isoDate).match(/^(\d{4})-(\d{2})-(\d{2})/);
+            if (match) {
+                return `${match[3]}/${match[2]}`;
+            }
+            return '';
+        }
+        
+        /**
+         * Checks if a date (in ISO or DD/MM format) is in the student's EscalaPratica schedule
+         * @param {string} absenceDate - The absence date (ISO or DD/MM)
+         * @param {string} escalaName - The name of the scale (e.g., "EscalaPratica1")
+         * @param {string} studentEmail - Student's email
+         * @param {string} studentName - Student's name
+         * @returns {Object} - { isInSchedule: boolean, scheduleDates: string[], escalaInfo: Object }
+         */
+        function checkAbsenceAgainstEscala(absenceDate, escalaName, studentEmail, studentName) {
+            const result = {
+                isInSchedule: false,
+                scheduleDates: [],
+                escalaInfo: null,
+                studentEscalaDates: []
+            };
+            
+            if (!absenceDate || !escalaName) {
+                return result;
+            }
+            
+            // Convert absence date to DD/MM format for comparison
+            let absenceDDMM = '';
+            if (absenceDate.includes('-')) {
+                // ISO format
+                absenceDDMM = isoToDDMM(absenceDate);
+            } else {
+                absenceDDMM = normalizeDDMM(absenceDate);
+            }
+            
+            if (!absenceDDMM) {
+                return result;
+            }
+            
+            // Normalize the escala name to find it in appState.escalas
+            // The escala name might be "EscalaPratica1", "Escala Pratica 1", "1", etc.
+            let targetEscala = null;
+            const normalizedEscalaName = normalizeString(escalaName);
+            
+            // First try exact match
+            if (appState.escalas[escalaName]) {
+                targetEscala = appState.escalas[escalaName];
+            } else {
+                // Try to find by normalized name
+                for (const [key, escala] of Object.entries(appState.escalas)) {
+                    if (normalizeString(key) === normalizedEscalaName) {
+                        targetEscala = escala;
+                        break;
+                    }
+                    // Also try matching just the number
+                    const escalaNumMatch = escalaName.match(/\d+/);
+                    const keyNumMatch = key.match(/\d+/);
+                    if (escalaNumMatch && keyNumMatch && escalaNumMatch[0] === keyNumMatch[0]) {
+                        // Check if it's a practice scale (EscalaPratica)
+                        if (escala.tipo === 'pratica' || key.toLowerCase().includes('pratica')) {
+                            targetEscala = escala;
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            if (!targetEscala) {
+                console.log(`[checkAbsenceAgainstEscala] Escala "${escalaName}" não encontrada`);
+                return result;
+            }
+            
+            result.escalaInfo = targetEscala;
+            result.scheduleDates = targetEscala.headersDay || [];
+            
+            // Find the student in the escala
+            const normalizedEmail = studentEmail ? normalizeString(studentEmail) : '';
+            const normalizedName = studentName ? normalizeString(studentName) : '';
+            
+            const studentInEscala = (targetEscala.alunos || []).find(a => {
+                if (!a) return false;
+                const aEmail = a.EmailHC ? normalizeString(a.EmailHC) : '';
+                const aName = a.NomeCompleto ? normalizeString(a.NomeCompleto) : '';
+                return (normalizedEmail && aEmail === normalizedEmail) || 
+                       (normalizedName && aName === normalizedName);
+            });
+            
+            if (studentInEscala) {
+                // Get the student's specific schedule dates from the escala
+                // The student row in EscalaPratica has date keys like "06/08" with values (schedule info)
+                const studentDates = [];
+                
+                // Pre-normalize headersDay keys for efficient lookup
+                const normalizedHeadersMap = new Map();
+                (targetEscala.headersDay || []).forEach(dateKey => {
+                    normalizedHeadersMap.set(dateKey, normalizeDDMM(dateKey));
+                });
+                
+                // Check each date in headersDay to see if the student has that date
+                normalizedHeadersMap.forEach((normalizedDateKey, dateKey) => {
+                    // Check if student has this date with a non-empty value
+                    const dateValue = studentInEscala[dateKey] || studentInEscala[normalizedDateKey];
+                    if (dateValue && String(dateValue).trim() !== '' && String(dateValue).trim() !== '-') {
+                        // Parse the date value - it might contain multiple dates like "06/08; 07/08; 09/08"
+                        const parsedDates = parseSemicolonDates(String(dateValue));
+                        if (parsedDates.length > 0) {
+                            studentDates.push(...parsedDates);
+                        } else {
+                            // If no parsed dates, just use the key date if there's a schedule value
+                            if (normalizedDateKey) {
+                                studentDates.push(normalizedDateKey);
+                            }
+                        }
+                    }
+                });
+                
+                // Remove duplicates - dates are already normalized from parseSemicolonDates
+                result.studentEscalaDates = [...new Set(studentDates)];
+                
+                // Check if the absence date is in the student's schedule
+                // No need to normalize again since studentEscalaDates already contains normalized dates
+                result.isInSchedule = result.studentEscalaDates.includes(absenceDDMM);
+            }
+            
+            return result;
+        }
+
         function normalizeAusenciasReposicoes(records) {
             if (!records) return [];
             let list;
@@ -942,6 +1156,13 @@
                 const reposicaoISO = normalizeDateInput(reposicaoRaw);
                 if (ausenciaISO) copy.DataAusenciaISO = ausenciaISO;
                 if (reposicaoISO) copy.DataReposicaoISO = reposicaoISO;
+                
+                // Normalize Escala field
+                const escalaRaw = pickFirstValue(copy, ['Escala', 'escala', 'ESCALA', 'EscalaPratica', 'escalaPratica', 'escalaP', 'EscalaP']);
+                if (escalaRaw) {
+                    copy.Escala = String(escalaRaw).trim();
+                }
+                
                 return copy;
             });
         }
@@ -4818,19 +5039,6 @@ const pontoState = {
              };
              
              p.innerHTML=`
-                <!-- Hero Info Card -->
-                <div class="info-hero-card">
-                    <div class="info-hero-icon">
-                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                        </svg>
-                    </div>
-                    <div class="info-hero-content">
-                        <h3 class="info-hero-title">Dados Cadastrais Completos</h3>
-                        <p class="info-hero-subtitle">Informações acadêmicas e pessoais do aluno registradas no sistema</p>
-                    </div>
-                </div>
-
                 <!-- Personal Data Section -->
                 <div class="student-info-section">
                     <h3 class="student-info-section-title">
@@ -5606,6 +5814,7 @@ function renderTabEscala(escalas) {
 /**
  * [MASTERPIECE] Renderiza a aba de Faltas com design moderno e profissional
  * Sistema inteligente de visualização de ausências e reposições
+ * Inclui validação de datas contra a EscalaPratica do aluno
  */
 function renderTabFaltas(faltas) {
     const container = document.getElementById('faltas-content');
@@ -5632,15 +5841,43 @@ function renderTabFaltas(faltas) {
     }
 
     // ═══════════════════════════════════════════════════════════════════
+    // VALIDAÇÃO DE ESCALA - Verifica datas contra EscalaPratica
+    // ═══════════════════════════════════════════════════════════════════
+    // Process each absence to add escala validation info
+    const faltasComValidacao = faltas.map(f => {
+        const escalaName = f.Escala || f.escala || '';
+        const studentEmail = f.EmailHC || f.emailHC || '';
+        const studentName = f.NomeCompleto || f.nomeCompleto || '';
+        
+        // Validate against EscalaPratica
+        const validation = checkAbsenceAgainstEscala(
+            f.DataAusenciaISO,
+            escalaName,
+            studentEmail,
+            studentName
+        );
+        
+        return {
+            ...f,
+            _escalaValidation: validation,
+            _escalaName: escalaName
+        };
+    });
+
+    // ═══════════════════════════════════════════════════════════════════
     // CÁLCULO DE ESTATÍSTICAS
     // ═══════════════════════════════════════════════════════════════════
-    const totalFaltas = faltas.length;
-    const faltasPendentes = faltas.filter(f => !f.DataReposicaoISO).length;
-    const faltasRepostas = faltas.filter(f => f.DataReposicaoISO).length;
+    const totalFaltas = faltasComValidacao.length;
+    const faltasPendentes = faltasComValidacao.filter(f => !f.DataReposicaoISO).length;
+    const faltasRepostas = faltasComValidacao.filter(f => f.DataReposicaoISO).length;
     const taxaReposicao = totalFaltas > 0 ? Math.round((faltasRepostas / totalFaltas) * 100) : 0;
+    
+    // Count validated absences (dates that match the student's escala schedule)
+    const faltasValidadas = faltasComValidacao.filter(f => f._escalaValidation && f._escalaValidation.isInSchedule).length;
+    const faltasNaoValidadas = faltasComValidacao.filter(f => f._escalaValidation && !f._escalaValidation.isInSchedule && f._escalaName).length;
 
     // Ordenar faltas por data (mais recentes primeiro)
-    const faltasOrdenadas = [...faltas].sort((a, b) => {
+    const faltasOrdenadas = [...faltasComValidacao].sort((a, b) => {
         const dateA = a.DataAusenciaISO ? new Date(a.DataAusenciaISO) : new Date(0);
         const dateB = b.DataAusenciaISO ? new Date(b.DataAusenciaISO) : new Date(0);
         return dateB - dateA;
@@ -5759,6 +5996,46 @@ function renderTabFaltas(faltas) {
                     const motivo = f.Motivo || 'Motivo não informado';
                     const motivoTruncado = motivo.length > MOTIVO_MAX_LENGTH ? motivo.substring(0, MOTIVO_MAX_LENGTH) + '...' : motivo;
                     
+                    // Escala validation info
+                    const escalaName = f._escalaName || '';
+                    const escalaValidation = f._escalaValidation || {};
+                    const isInSchedule = escalaValidation.isInSchedule;
+                    const studentEscalaDates = escalaValidation.studentEscalaDates || [];
+                    
+                    // Build escala info HTML
+                    let escalaInfoHtml = '';
+                    if (escalaName) {
+                        const validationClass = isInSchedule ? 'faltas-escala-badge--valid' : 'faltas-escala-badge--invalid';
+                        const validationIcon = isInSchedule 
+                            ? '<path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />'
+                            : '<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />';
+                        const validationText = isInSchedule 
+                            ? 'Data confere com a escala' 
+                            : (studentEscalaDates.length > 0 
+                                ? 'Data não confere com a escala' 
+                                : 'Não foi possível validar');
+                        
+                        escalaInfoHtml = `
+                            <div class="faltas-card-escala">
+                                <div class="faltas-escala-badge ${validationClass}">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        ${validationIcon}
+                                    </svg>
+                                    <span class="faltas-escala-name">${escalaName}</span>
+                                </div>
+                                <span class="faltas-escala-validation">${validationText}</span>
+                                ${studentEscalaDates.length > 0 ? `
+                                    <details class="faltas-escala-details">
+                                        <summary>Ver datas da escala (${studentEscalaDates.length})</summary>
+                                        <div class="faltas-escala-dates-list">
+                                            ${studentEscalaDates.map(d => `<span class="faltas-escala-date">${d}</span>`).join('')}
+                                        </div>
+                                    </details>
+                                ` : ''}
+                            </div>
+                        `;
+                    }
+                    
                     // Calculate days between absence and makeup
                     let diasParaRepor = '';
                     if (f.DataAusenciaISO && f.DataReposicaoISO) {
@@ -5792,6 +6069,8 @@ function renderTabFaltas(faltas) {
                                     </div>
                                     ${diasParaRepor}
                                 </div>
+                                
+                                ${escalaInfoHtml}
                                 
                                 <div class="faltas-card-dates">
                                     <div class="faltas-card-date faltas-card-date--absence">

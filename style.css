@@ -10063,6 +10063,7 @@
     top: 0;
     z-index: 100;
     background: linear-gradient(135deg, var(--incor-blue-800) 0%, var(--incor-blue-700) 50%, var(--incor-blue-600) 100%);
+    background-color: #002470; /* Fallback color */
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 4px 20px rgba(0, 51, 160, 0.25), 0 2px 8px rgba(0, 0, 0, 0.1);
 }
@@ -10083,9 +10084,10 @@
     gap: 0.875rem;
     padding: 0.625rem 1.25rem 0.625rem 0.625rem;
     background: rgba(255, 255, 255, 0.12);
+    background-color: rgba(255, 255, 255, 0.12); /* Explicit fallback */
     border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 12px;
-    color: white;
+    color: #ffffff; /* Explicit white color */
     font-family: var(--font-display);
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -10115,7 +10117,8 @@
 .student-back-button-icon svg {
     width: 1.25rem;
     height: 1.25rem;
-    color: white;
+    color: #ffffff; /* Explicit white */
+    stroke: #ffffff; /* Explicit stroke color */
     transition: transform 0.3s ease;
 }
 
@@ -10132,7 +10135,7 @@
 .student-back-button-label {
     font-weight: 700;
     font-size: 0.9375rem;
-    color: white;
+    color: #ffffff; /* Explicit white */
     line-height: 1.2;
 }
 
@@ -11255,6 +11258,104 @@
     background: rgba(0, 51, 160, 0.03);
     border-radius: 8px;
     border-left: 3px solid var(--incor-blue-300);
+}
+
+/* === ESCALA VALIDATION STYLES === */
+.faltas-card-escala {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem 1rem;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(139, 92, 246, 0.03));
+    border-radius: 10px;
+    border: 1px solid rgba(99, 102, 241, 0.15);
+}
+
+.faltas-escala-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.faltas-escala-badge svg {
+    width: 14px;
+    height: 14px;
+}
+
+.faltas-escala-badge--valid {
+    background: rgba(16, 185, 129, 0.12);
+    color: #059669;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.faltas-escala-badge--valid svg {
+    color: #10b981;
+}
+
+.faltas-escala-badge--invalid {
+    background: rgba(245, 158, 11, 0.12);
+    color: #d97706;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.faltas-escala-badge--invalid svg {
+    color: #f59e0b;
+}
+
+.faltas-escala-name {
+    font-family: var(--font-display);
+    font-weight: 700;
+}
+
+.faltas-escala-validation {
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: var(--content-text-secondary);
+}
+
+.faltas-escala-details {
+    width: 100%;
+    margin-top: 0.5rem;
+}
+
+.faltas-escala-details summary {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--incor-blue-500);
+    cursor: pointer;
+    user-select: none;
+}
+
+.faltas-escala-details summary:hover {
+    color: var(--incor-blue-700);
+}
+
+.faltas-escala-dates-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 8px;
+}
+
+.faltas-escala-date {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    background: white;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 4px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    font-family: var(--font-mono);
+    color: var(--incor-blue-600);
 }
 
 /* === NOTAS WRAPPER === */
