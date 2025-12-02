@@ -4807,7 +4807,31 @@ const pontoState = {
         function renderTabInfo(info) {
              const p=document.getElementById('tab-info');
              
+             // Format phone if available
+             const formatPhone = (phone) => {
+                 if (!phone) return 'N/A';
+                 const cleaned = String(phone).replace(/\D/g, '');
+                 if (cleaned.length === 11) {
+                     return `(${cleaned.slice(0,2)}) ${cleaned.slice(2,7)}-${cleaned.slice(7)}`;
+                 }
+                 return phone;
+             };
+             
              p.innerHTML=`
+                <!-- Hero Info Card -->
+                <div class="info-hero-card">
+                    <div class="info-hero-icon">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                    </div>
+                    <div class="info-hero-content">
+                        <h3 class="info-hero-title">Dados Cadastrais Completos</h3>
+                        <p class="info-hero-subtitle">Informações acadêmicas e pessoais do aluno registradas no sistema</p>
+                    </div>
+                </div>
+
+                <!-- Personal Data Section -->
                 <div class="student-info-section">
                     <h3 class="student-info-section-title">
                         <svg class="student-info-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -4832,16 +4856,68 @@ const pontoState = {
                             <dt class="student-info-label">Estado Civil</dt>
                             <dd class="student-info-value">${info.EstadoCivil||'N/A'}</dd>
                         </div>
+                    </dl>
+                </div>
+                
+                <!-- Academic Data Section -->
+                <div class="student-info-section">
+                    <h3 class="student-info-section-title">
+                        <svg class="student-info-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
+                        Dados Acadêmicos
+                    </h3>
+                    <dl class="student-info-grid">
+                        <div class="student-info-item student-info-item--highlight">
+                            <dt class="student-info-label">Curso</dt>
+                            <dd class="student-info-value">${info.Curso||'N/A'}</dd>
+                        </div>
                         <div class="student-info-item">
                             <dt class="student-info-label">CREFITO</dt>
                             <dd class="student-info-value">${info.Crefito||'N/A'}</dd>
                         </div>
                         <div class="student-info-item">
-                            <dt class="student-info-label">Curso</dt>
-                            <dd class="student-info-value">${info.Curso||'N/A'}</dd>
+                            <dt class="student-info-label">Status</dt>
+                            <dd class="student-info-value">
+                                <span class="info-status-badge ${info.Status === 'Ativo' ? 'info-status-badge--active' : 'info-status-badge--inactive'}">
+                                    ${info.Status || 'Indefinido'}
+                                </span>
+                            </dd>
                         </div>
                     </dl>
                 </div>
+                
+                <!-- Contact Section (if available) -->
+                ${info.Telefone || info.Celular || info.EmailPessoal ? `
+                <div class="student-info-section">
+                    <h3 class="student-info-section-title">
+                        <svg class="student-info-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        Contato
+                    </h3>
+                    <dl class="student-info-grid">
+                        ${info.Telefone ? `
+                        <div class="student-info-item">
+                            <dt class="student-info-label">Telefone</dt>
+                            <dd class="student-info-value">${formatPhone(info.Telefone)}</dd>
+                        </div>
+                        ` : ''}
+                        ${info.Celular ? `
+                        <div class="student-info-item">
+                            <dt class="student-info-label">Celular</dt>
+                            <dd class="student-info-value">${formatPhone(info.Celular)}</dd>
+                        </div>
+                        ` : ''}
+                        ${info.EmailPessoal ? `
+                        <div class="student-info-item">
+                            <dt class="student-info-label">Email Pessoal</dt>
+                            <dd class="student-info-value">${info.EmailPessoal}</dd>
+                        </div>
+                        ` : ''}
+                    </dl>
+                </div>
+                ` : ''}
              `;
         }
         
