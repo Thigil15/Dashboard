@@ -953,10 +953,10 @@
                 // This handles typos like "06/08; 07/08; 09;08" where "09;08" should be "09/08"
                 const dayOnlyMatch = part.match(/^(\d{1,2})$/);
                 if (dayOnlyMatch) {
-                    // Check if next part is a month
+                    // Check if next part is a month (1-2 digits allowed for flexible parsing)
                     if (i + 1 < parts.length) {
                         const nextPart = parts[i + 1];
-                        const monthMatch = nextPart.match(/^(\d{2})$/);
+                        const monthMatch = nextPart.match(/^(\d{1,2})$/);
                         if (monthMatch) {
                             const day = dayOnlyMatch[1].padStart(2, '0');
                             const month = monthMatch[1].padStart(2, '0');
@@ -979,9 +979,10 @@
         }
         
         /**
-         * Converts a DD/MM date to DD/MM format normalized (with zero padding)
-         * @param {string} dateStr - The date string in DD/MM format
-         * @returns {string} - Normalized DD/MM date
+         * Converts a date string to normalized DD/MM format (with zero padding)
+         * Accepts: D/M, DD/M, D/MM, DD/MM, D_M, DD_MM formats
+         * @param {string} dateStr - The date string in DD/MM or D_M format
+         * @returns {string} - Normalized DD/MM date (e.g., "06/08")
          */
         function normalizeDDMM(dateStr) {
             if (!dateStr) return '';
@@ -991,7 +992,7 @@
                 const month = match[2].padStart(2, '0');
                 return `${day}/${month}`;
             }
-            // Try underscore format (from Firebase keys like "06_08")
+            // Try underscore format (from Firebase keys like "06_08" or "6_8")
             const underscoreMatch = String(dateStr).match(/^(\d{1,2})_(\d{1,2})$/);
             if (underscoreMatch) {
                 const day = underscoreMatch[1].padStart(2, '0');
@@ -1101,9 +1102,14 @@
                 // The student row in EscalaPratica has date keys like "06/08" with values (schedule info)
                 const studentDates = [];
                 
-                // Check each date in headersDay to see if the student has that date
+                // Pre-normalize headersDay keys for efficient lookup
+                const normalizedHeadersMap = new Map();
                 (targetEscala.headersDay || []).forEach(dateKey => {
-                    const normalizedDateKey = normalizeDDMM(dateKey);
+                    normalizedHeadersMap.set(dateKey, normalizeDDMM(dateKey));
+                });
+                
+                // Check each date in headersDay to see if the student has that date
+                normalizedHeadersMap.forEach((normalizedDateKey, dateKey) => {
                     // Check if student has this date with a non-empty value
                     const dateValue = studentInEscala[dateKey] || studentInEscala[normalizedDateKey];
                     if (dateValue && String(dateValue).trim() !== '' && String(dateValue).trim() !== '-') {
@@ -1113,18 +1119,19 @@
                             studentDates.push(...parsedDates);
                         } else {
                             // If no parsed dates, just use the key date if there's a schedule value
-                            studentDates.push(normalizedDateKey);
+                            if (normalizedDateKey) {
+                                studentDates.push(normalizedDateKey);
+                            }
                         }
                     }
                 });
                 
-                // Remove duplicates
+                // Remove duplicates - dates are already normalized from parseSemicolonDates
                 result.studentEscalaDates = [...new Set(studentDates)];
                 
                 // Check if the absence date is in the student's schedule
-                result.isInSchedule = result.studentEscalaDates.some(d => 
-                    normalizeDDMM(d) === absenceDDMM
-                );
+                // No need to normalize again since studentEscalaDates already contains normalized dates
+                result.isInSchedule = result.studentEscalaDates.includes(absenceDDMM);
             }
             
             return result;
