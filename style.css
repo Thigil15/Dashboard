@@ -10070,85 +10070,101 @@
 .student-profile-header-inner {
     max-width: 1400px;
     margin: 0 auto;
-    padding: 1rem 2rem;
+    padding: 0.875rem 2rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
 }
 
+/* Enhanced Back Button */
 .student-back-button {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1.5rem;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 50px;
+    gap: 0.875rem;
+    padding: 0.625rem 1.25rem 0.625rem 0.625rem;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
     color: white;
     font-family: var(--font-display);
-    font-weight: 600;
-    font-size: 0.9375rem;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.student-back-button svg {
-    width: 1.25rem;
-    height: 1.25rem;
-    transition: transform 0.3s ease;
-}
-
 .student-back-button:hover {
     background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.4);
+    border-color: rgba(255, 255, 255, 0.3);
     transform: translateX(-4px);
 }
 
-.student-back-button:hover svg {
-    transform: translateX(-4px);
-}
-
-.student-header-brand {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.student-header-brand-icon {
-    width: 36px;
-    height: 36px;
-    background: rgba(226, 30, 38, 0.9);
+.student-back-button-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.15);
     border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 12px rgba(226, 30, 38, 0.4);
+    transition: all 0.3s ease;
 }
 
-.student-header-brand-icon svg {
-    width: 20px;
-    height: 20px;
+.student-back-button:hover .student-back-button-icon {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.student-back-button-icon svg {
+    width: 1.25rem;
+    height: 1.25rem;
     color: white;
+    transition: transform 0.3s ease;
 }
 
-.student-header-brand-text {
+.student-back-button:hover .student-back-button-icon svg {
+    transform: translateX(-3px);
+}
+
+.student-back-button-text {
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
 }
 
-.student-header-title {
-    font-family: var(--font-display);
+.student-back-button-label {
     font-weight: 700;
-    font-size: 1.125rem;
+    font-size: 0.9375rem;
     color: white;
-    letter-spacing: -0.01em;
     line-height: 1.2;
 }
 
-.student-header-subtitle {
+.student-back-button-sublabel {
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.7);
+    letter-spacing: 0.02em;
+}
+
+/* Page Title Section */
+.student-header-title-section {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    text-align: right;
+}
+
+.student-header-page-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: white;
+    margin: 0;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+}
+
+.student-header-breadcrumb {
     font-size: 0.75rem;
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.75);
+    color: rgba(255, 255, 255, 0.7);
     letter-spacing: 0.02em;
 }
 
@@ -10757,19 +10773,24 @@
 /* === RESPONSIVE ADJUSTMENTS === */
 @media (max-width: 768px) {
     .student-profile-header-inner {
-        padding: 0.875rem 1rem;
+        padding: 0.75rem 1rem;
     }
     
     .student-back-button {
-        padding: 0.625rem 1rem;
-        font-size: 0.875rem;
+        padding: 0.5rem 0.875rem 0.5rem 0.5rem;
+        gap: 0.625rem;
     }
     
-    .student-back-button span {
+    .student-back-button-icon {
+        width: 36px;
+        height: 36px;
+    }
+    
+    .student-back-button-sublabel {
         display: none;
     }
     
-    .student-header-brand {
+    .student-header-title-section {
         display: none;
     }
     
