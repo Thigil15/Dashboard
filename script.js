@@ -5602,9 +5602,250 @@ function renderTabEscala(escalas) {
 /* =======================================================================
  * FIM DO BLOCO DE SUBSTITUIÇÃO DA ESCALA (v32.7)
  * ======================================================================= */
-        function renderTabFaltas(faltas) {
-             const c=document.getElementById('faltas-content'); if(!faltas||faltas.length===0){c.innerHTML='<p class="text-slate-500 p-6 text-sm italic">Nenhum registro de falta.</p>'; return;} const h=`<table class="min-w-full"><thead><tr><th class="text-left">Status</th><th class="text-left">Ausência</th><th class="text-left">Reposição</th><th class="text-left">Local</th><th class="text-left">Motivo</th></tr></thead><tbody class="bg-white">${faltas.map(f=>{const iP=!f.DataReposicaoISO; const sB=iP?'<span class="badge badge-yellow">Pendente</span>':'<span class="badge badge-green">Completa</span>'; const dA=f.DataAusenciaISO?new Date(f.DataAusenciaISO+'T00:00:00').toLocaleDateString('pt-BR', {timeZone: 'UTC'}):'-'; const dR=f.DataReposicaoISO?new Date(f.DataReposicaoISO+'T00:00:00').toLocaleDateString('pt-BR', {timeZone: 'UTC'}):'-'; const mS=f.Motivo?(f.Motivo.length>40?f.Motivo.substring(0,40)+'...':f.Motivo):'-'; return `<tr><td>${sB}</td><td>${dA}</td><td>${dR}</td><td>${f.Local||'-'}</td><td title="${f.Motivo||''}">${mS}</td></tr>`;}).join('')}</tbody></table>`; c.innerHTML = h;
-        }
+
+/**
+ * [MASTERPIECE] Renderiza a aba de Faltas com design moderno e profissional
+ * Sistema inteligente de visualização de ausências e reposições
+ */
+function renderTabFaltas(faltas) {
+    const container = document.getElementById('faltas-content');
+    
+    // Configuration constants
+    const MOTIVO_MAX_LENGTH = 100;
+    
+    // ═══════════════════════════════════════════════════════════════════
+    // EMPTY STATE - Design elegante para quando não há faltas
+    // ═══════════════════════════════════════════════════════════════════
+    if (!faltas || faltas.length === 0) {
+        container.innerHTML = `
+            <div class="faltas-empty-state">
+                <div class="faltas-empty-icon">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <h3 class="faltas-empty-title">Nenhuma Ausência Registrada</h3>
+                <p class="faltas-empty-text">Este aluno não possui faltas registradas no sistema. Continue assim! 🎉</p>
+            </div>
+        `;
+        return;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // CÁLCULO DE ESTATÍSTICAS
+    // ═══════════════════════════════════════════════════════════════════
+    const totalFaltas = faltas.length;
+    const faltasPendentes = faltas.filter(f => !f.DataReposicaoISO).length;
+    const faltasRepostas = faltas.filter(f => f.DataReposicaoISO).length;
+    const taxaReposicao = totalFaltas > 0 ? Math.round((faltasRepostas / totalFaltas) * 100) : 0;
+
+    // Ordenar faltas por data (mais recentes primeiro)
+    const faltasOrdenadas = [...faltas].sort((a, b) => {
+        const dateA = a.DataAusenciaISO ? new Date(a.DataAusenciaISO) : new Date(0);
+        const dateB = b.DataAusenciaISO ? new Date(b.DataAusenciaISO) : new Date(0);
+        return dateB - dateA;
+    });
+
+    // ═══════════════════════════════════════════════════════════════════
+    // GERAÇÃO DO HTML
+    // ═══════════════════════════════════════════════════════════════════
+    const html = `
+        <!-- KPI Summary Cards -->
+        <div class="faltas-kpi-grid">
+            <div class="faltas-kpi-card faltas-kpi-card--total">
+                <div class="faltas-kpi-icon">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                </div>
+                <div class="faltas-kpi-content">
+                    <span class="faltas-kpi-value">${totalFaltas}</span>
+                    <span class="faltas-kpi-label">Total de Ausências</span>
+                </div>
+            </div>
+            
+            <div class="faltas-kpi-card faltas-kpi-card--pending">
+                <div class="faltas-kpi-icon">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div class="faltas-kpi-content">
+                    <span class="faltas-kpi-value">${faltasPendentes}</span>
+                    <span class="faltas-kpi-label">Pendentes</span>
+                </div>
+                ${faltasPendentes > 0 ? '<div class="faltas-kpi-alert-dot"></div>' : ''}
+            </div>
+            
+            <div class="faltas-kpi-card faltas-kpi-card--completed">
+                <div class="faltas-kpi-icon">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div class="faltas-kpi-content">
+                    <span class="faltas-kpi-value">${faltasRepostas}</span>
+                    <span class="faltas-kpi-label">Repostas</span>
+                </div>
+            </div>
+            
+            <div class="faltas-kpi-card faltas-kpi-card--rate">
+                <div class="faltas-kpi-icon">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                </div>
+                <div class="faltas-kpi-content">
+                    <span class="faltas-kpi-value">${taxaReposicao}%</span>
+                    <span class="faltas-kpi-label">Taxa de Reposição</span>
+                </div>
+                <div class="faltas-kpi-progress">
+                    <div class="faltas-kpi-progress-bar" style="width: ${taxaReposicao}%"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Timeline Section -->
+        <div class="faltas-timeline-section">
+            <div class="faltas-timeline-header">
+                <h4 class="faltas-timeline-title">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Histórico de Ausências e Reposições
+                </h4>
+                <div class="faltas-timeline-legend">
+                    <span class="faltas-legend-item faltas-legend-item--pending">
+                        <span class="faltas-legend-dot"></span>
+                        Pendente
+                    </span>
+                    <span class="faltas-legend-item faltas-legend-item--completed">
+                        <span class="faltas-legend-dot"></span>
+                        Reposta
+                    </span>
+                </div>
+            </div>
+            
+            <div class="faltas-timeline">
+                ${faltasOrdenadas.map((f, index) => {
+                    const isPending = !f.DataReposicaoISO;
+                    const statusClass = isPending ? 'faltas-card--pending' : 'faltas-card--completed';
+                    const statusIcon = isPending ? 
+                        '<path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />' :
+                        '<path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />';
+                    const statusText = isPending ? 'Pendente' : 'Reposta';
+                    
+                    const dataAusencia = f.DataAusenciaISO 
+                        ? new Date(f.DataAusenciaISO + 'T00:00:00').toLocaleDateString('pt-BR', { 
+                            weekday: 'short', 
+                            day: '2-digit', 
+                            month: 'short',
+                            year: 'numeric',
+                            timeZone: 'UTC' 
+                        })
+                        : 'Data não informada';
+                    
+                    const dataReposicao = f.DataReposicaoISO 
+                        ? new Date(f.DataReposicaoISO + 'T00:00:00').toLocaleDateString('pt-BR', { 
+                            weekday: 'short', 
+                            day: '2-digit', 
+                            month: 'short',
+                            year: 'numeric',
+                            timeZone: 'UTC' 
+                        })
+                        : 'Aguardando reposição';
+                    
+                    const local = f.Local || 'Local não informado';
+                    const motivo = f.Motivo || 'Motivo não informado';
+                    const motivoTruncado = motivo.length > MOTIVO_MAX_LENGTH ? motivo.substring(0, MOTIVO_MAX_LENGTH) + '...' : motivo;
+                    
+                    // Calculate days between absence and makeup
+                    let diasParaRepor = '';
+                    if (f.DataAusenciaISO && f.DataReposicaoISO) {
+                        const ausDate = new Date(f.DataAusenciaISO);
+                        const repDate = new Date(f.DataReposicaoISO);
+                        const diffDays = Math.round((repDate - ausDate) / (1000 * 60 * 60 * 24));
+                        diasParaRepor = `<span class="faltas-card-days">Reposta em ${diffDays} dias</span>`;
+                    } else if (f.DataAusenciaISO && isPending) {
+                        const ausDate = new Date(f.DataAusenciaISO);
+                        const today = new Date();
+                        const diffDays = Math.round((today - ausDate) / (1000 * 60 * 60 * 24));
+                        diasParaRepor = `<span class="faltas-card-days faltas-card-days--warning">${diffDays} dias pendente</span>`;
+                    }
+
+                    return `
+                        <div class="faltas-card ${statusClass}" style="animation-delay: ${index * 0.05}s">
+                            <div class="faltas-card-timeline-marker">
+                                <div class="faltas-card-timeline-dot"></div>
+                                ${index < faltasOrdenadas.length - 1 ? '<div class="faltas-card-timeline-line"></div>' : ''}
+                            </div>
+                            
+                            <div class="faltas-card-content">
+                                <div class="faltas-card-header">
+                                    <div class="faltas-card-status">
+                                        <div class="faltas-card-status-icon">
+                                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                ${statusIcon}
+                                            </svg>
+                                        </div>
+                                        <span class="faltas-card-status-text">${statusText}</span>
+                                    </div>
+                                    ${diasParaRepor}
+                                </div>
+                                
+                                <div class="faltas-card-dates">
+                                    <div class="faltas-card-date faltas-card-date--absence">
+                                        <span class="faltas-card-date-label">
+                                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+                                            </svg>
+                                            Ausência
+                                        </span>
+                                        <span class="faltas-card-date-value">${dataAusencia}</span>
+                                    </div>
+                                    
+                                    <div class="faltas-card-date-arrow">
+                                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                                        </svg>
+                                    </div>
+                                    
+                                    <div class="faltas-card-date faltas-card-date--makeup ${isPending ? 'faltas-card-date--pending' : ''}">
+                                        <span class="faltas-card-date-label">
+                                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                            Reposição
+                                        </span>
+                                        <span class="faltas-card-date-value">${dataReposicao}</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="faltas-card-details">
+                                    <div class="faltas-card-detail">
+                                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        </svg>
+                                        <span>${local}</span>
+                                    </div>
+                                    <div class="faltas-card-detail faltas-card-detail--motivo" title="${motivo}">
+                                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                                        </svg>
+                                        <span>${motivoTruncado}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        </div>
+    `;
+
+    container.innerHTML = html;
+}
 
         /**
          * [MASTERPIECE] Renderiza a aba de Notas Teóricas com design revolucionário e artístico
