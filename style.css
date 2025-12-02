@@ -2139,7 +2139,7 @@
         /* Student detail header - Premium blue header design */
         #student-detail-view header.student-profile-header {
             background: linear-gradient(135deg, var(--incor-blue-800) 0%, var(--incor-blue-700) 50%, var(--incor-blue-600) 100%);
-            background-color: #002470;
+            background-color: var(--incor-blue-800);
             backdrop-filter: none;
             -webkit-backdrop-filter: none;
             box-shadow: 0 4px 20px rgba(0, 51, 160, 0.25), 0 2px 8px rgba(0, 0, 0, 0.1);
