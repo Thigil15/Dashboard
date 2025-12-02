@@ -381,13 +381,14 @@ function getUltimaSync() {
  * Cria gatilhos instaláveis para onEdit e onChange.
  * Gatilhos instaláveis são necessários porque gatilhos simples
  * não podem usar UrlFetchApp (requerido para chamadas ao Firebase).
+ * Também ativa o processamento automático de ausências.
  */
 function criarGatilhosAutomaticos() {
   // Remove gatilhos antigos para evitar duplicação
   const gatilhos = ScriptApp.getProjectTriggers();
   for (const t of gatilhos) {
     const funcao = t.getHandlerFunction();
-    if (funcao === "onEditFirebase" || funcao === "onChangeFirebase") {
+    if (funcao === "onEditFirebase" || funcao === "onChangeFirebase" || funcao === "processarAusenciasAutomatico") {
       ScriptApp.deleteTrigger(t);
     }
   }
@@ -404,19 +405,43 @@ function criarGatilhosAutomaticos() {
     .onChange()
     .create();
   
+  // Cria gatilho para processamento automático de ausências (executa diariamente às 22h)
+  ScriptApp.newTrigger("processarAusenciasAutomatico")
+    .timeBased()
+    .everyDays(1)
+    .atHour(22)
+    .create();
+  
   Logger.log("✅ Gatilhos automáticos criados!");
   Logger.log("📝 onEditFirebase: sincroniza ao editar células");
   Logger.log("📝 onChangeFirebase: sincroniza ao adicionar/remover abas ou linhas");
+  Logger.log("📋 processarAusenciasAutomatico: processa ausências diariamente às 22h");
   
   SpreadsheetApp.getActiveSpreadsheet().toast(
-    "Sincronização automática ATIVADA! 🚀\nAlterações serão enviadas automaticamente para o Firebase.",
+    "Sincronização automática ATIVADA! 🚀\nAlterações serão enviadas automaticamente para o Firebase.\n📋 Ausências serão processadas automaticamente às 22h.",
     "Firebase Auto Sync",
     10
   );
 }
 
 /**
+ * Função para processamento automático de ausências.
+ * Chamada pelo gatilho diário criado em criarGatilhosAutomaticos().
+ * Processa apenas alunos com status "Ativa" na aba "Alunos".
+ */
+function processarAusenciasAutomatico() {
+  try {
+    Logger.log("🕐 Iniciando processamento automático de ausências...");
+    processarAusencias();
+    Logger.log("✅ Processamento automático de ausências concluído!");
+  } catch (erro) {
+    Logger.log("❌ Erro no processamento automático de ausências: " + erro);
+  }
+}
+
+/**
  * Remove todos os gatilhos automáticos (caso queira desativar).
+ * Também remove o gatilho de processamento automático de ausências.
  */
 function removerGatilhosAutomaticos() {
   const gatilhos = ScriptApp.getProjectTriggers();
@@ -424,7 +449,7 @@ function removerGatilhosAutomaticos() {
   
   for (const t of gatilhos) {
     const funcao = t.getHandlerFunction();
-    if (funcao === "onEditFirebase" || funcao === "onChangeFirebase") {
+    if (funcao === "onEditFirebase" || funcao === "onChangeFirebase" || funcao === "processarAusenciasAutomatico") {
       ScriptApp.deleteTrigger(t);
       removidos++;
     }
@@ -432,7 +457,7 @@ function removerGatilhosAutomaticos() {
   
   Logger.log("🗑️ " + removidos + " gatilho(s) removido(s).");
   SpreadsheetApp.getActiveSpreadsheet().toast(
-    "Sincronização automática DESATIVADA. ⏸️",
+    "Sincronização automática DESATIVADA. ⏸️\n📋 Processamento automático de ausências também foi desativado.",
     "Firebase Auto Sync",
     5
   );
@@ -446,18 +471,21 @@ function verificarStatusGatilhos() {
   let onEditAtivo = false;
   let onChangeAtivo = false;
   let diarioAtivo = false;
+  let ausenciasAtivo = false;
   
   for (const t of gatilhos) {
     const funcao = t.getHandlerFunction();
     if (funcao === "onEditFirebase") onEditAtivo = true;
     if (funcao === "onChangeFirebase") onChangeAtivo = true;
     if (funcao === "enviarTodasAsAbasParaFirebase") diarioAtivo = true;
+    if (funcao === "processarAusenciasAutomatico") ausenciasAtivo = true;
   }
   
   Logger.log("📊 STATUS DOS GATILHOS:");
   Logger.log("  • onEdit (auto sync): " + (onEditAtivo ? "✅ ATIVO" : "❌ INATIVO"));
   Logger.log("  • onChange (auto sync): " + (onChangeAtivo ? "✅ ATIVO" : "❌ INATIVO"));
   Logger.log("  • Diário (21h): " + (diarioAtivo ? "✅ ATIVO" : "❌ INATIVO"));
+  Logger.log("  • Ausências (22h): " + (ausenciasAtivo ? "✅ ATIVO" : "❌ INATIVO"));
   
   const ultimaSync = getUltimaSync();
   let ultimaSyncStr = "Nunca sincronizado";
@@ -472,7 +500,8 @@ function verificarStatusGatilhos() {
     "📊 STATUS DOS GATILHOS\n\n" +
     "• Sincronização automática (onEdit): " + (onEditAtivo ? "✅ ATIVO" : "❌ INATIVO") + "\n" +
     "• Sincronização automática (onChange): " + (onChangeAtivo ? "✅ ATIVO" : "❌ INATIVO") + "\n" +
-    "• Envio diário às 21h: " + (diarioAtivo ? "✅ ATIVO" : "❌ INATIVO") + "\n\n" +
+    "• Envio diário às 21h: " + (diarioAtivo ? "✅ ATIVO" : "❌ INATIVO") + "\n" +
+    "• Processamento de ausências às 22h: " + (ausenciasAtivo ? "✅ ATIVO" : "❌ INATIVO") + "\n\n" +
     "📅 Última sincronização: " + ultimaSyncStr;
   
   SpreadsheetApp.getUi().alert("⚙️ Status dos Gatilhos", mensagem, SpreadsheetApp.getUi().ButtonSet.OK);
@@ -480,6 +509,7 @@ function verificarStatusGatilhos() {
   return {
     onEdit: onEditAtivo,
     onChange: onChangeAtivo,
-    diario: diarioAtivo
+    diario: diarioAtivo,
+    ausencias: ausenciasAtivo
   };
 }
