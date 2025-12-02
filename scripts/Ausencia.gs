@@ -10,6 +10,12 @@
  * NomeCompleto | EmailHC | Curso | Escala | DataAusencia | Unidade | Horario | Motivo | DataReposicao
  */
 
+// Indicadores de ausência configuráveis
+var INDICADORES_AUSENCIA = ['falta', 'ausente', 'f', '-'];
+
+// Número máximo de escalas práticas
+var MAX_ESCALAS = 12;
+
 /**
  * Processa todas as escalas práticas e identifica ausências dos alunos.
  * Insere os registros de ausência na aba "AusenciasReposicoes".
@@ -25,8 +31,8 @@ function processarAusencias() {
   
   var totalAusencias = 0;
   
-  // Processa EscalaPratica 1 a 12
-  for (var escalaNum = 1; escalaNum <= 12; escalaNum++) {
+  // Processa EscalaPratica 1 a MAX_ESCALAS
+  for (var escalaNum = 1; escalaNum <= MAX_ESCALAS; escalaNum++) {
     var nomeAba = 'EscalaPratica' + escalaNum;
     var escalaSheet = ss.getSheetByName(nomeAba);
     
@@ -190,6 +196,8 @@ function encontrarColunasData(headers) {
       if (match) {
         var dia = padZero(parseInt(match[1], 10));
         var mes = padZero(parseInt(match[2], 10));
+        // Anos de 2 dígitos são interpretados como 2000+ (ex: 25 = 2025)
+        // Isso é apropriado para escalas de estágio que são sempre do ano atual ou recente
         var ano = match[3] ? parseInt(match[3], 10) : anoAtual;
         if (ano < 100) ano += 2000;
         dataEncontrada = dia + '/' + mes + '/' + ano;
@@ -273,7 +281,8 @@ function extrairHorario(valor) {
 }
 
 /**
- * Verifica se um valor representa ausência (célula vazia ou específicos valores).
+ * Verifica se um valor representa ausência (célula vazia ou indicadores configurados).
+ * Os indicadores são definidos na constante INDICADORES_AUSENCIA.
  * @param {*} valor - Valor da célula
  * @returns {boolean} true se é ausência
  */
@@ -284,9 +293,11 @@ function ehAusencia(valor) {
   
   var s = String(valor).trim().toLowerCase();
   
-  // Valores que indicam ausência explícita
-  if (s === 'falta' || s === 'ausente' || s === 'f' || s === '-') {
-    return true;
+  // Verifica se o valor está na lista de indicadores de ausência
+  for (var i = 0; i < INDICADORES_AUSENCIA.length; i++) {
+    if (s === INDICADORES_AUSENCIA[i]) {
+      return true;
+    }
   }
   
   return false;
@@ -429,16 +440,30 @@ function processarAusenciasEscala(escalaNum) {
  */
 function adicionarMenuAusencias() {
   var ui = SpreadsheetApp.getUi();
+  
+  // Cria submenu para escalas individuais
+  var subMenu = ui.createMenu('📊 Escalas Individuais');
+  for (var i = 1; i <= MAX_ESCALAS; i++) {
+    subMenu.addItem('Escala ' + i, 'processarEscala' + i);
+  }
+  
   ui.createMenu('📋 Ausências')
     .addItem('🔍 Processar Todas as Ausências', 'processarAusencias')
     .addSeparator()
-    .addItem('📊 Processar Escala 1', 'processarEscala1')
-    .addItem('📊 Processar Escala 2', 'processarEscala2')
-    .addItem('📊 Processar Escala 3', 'processarEscala3')
+    .addSubMenu(subMenu)
     .addToUi();
 }
 
-// Funções auxiliares para menu
+// Funções auxiliares para menu - geradas dinamicamente para todas as escalas
 function processarEscala1() { processarAusenciasEscala(1); }
 function processarEscala2() { processarAusenciasEscala(2); }
 function processarEscala3() { processarAusenciasEscala(3); }
+function processarEscala4() { processarAusenciasEscala(4); }
+function processarEscala5() { processarAusenciasEscala(5); }
+function processarEscala6() { processarAusenciasEscala(6); }
+function processarEscala7() { processarAusenciasEscala(7); }
+function processarEscala8() { processarAusenciasEscala(8); }
+function processarEscala9() { processarAusenciasEscala(9); }
+function processarEscala10() { processarAusenciasEscala(10); }
+function processarEscala11() { processarAusenciasEscala(11); }
+function processarEscala12() { processarAusenciasEscala(12); }
