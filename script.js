@@ -712,6 +712,9 @@
             }
         }
         
+        // Constants for student detail refresh
+        const STUDENT_DETAIL_REFRESH_KEYS = ['escalas', 'ausenciasReposicoes', 'pontoStaticRows', 'pontoPraticaRows'];
+        
         /**
          * Trigger UI updates based on data changes
          */
@@ -725,15 +728,19 @@
             const isStudentDetailVisible = studentDetailView && studentDetailView.style.display !== 'none';
             
             // If student detail is visible, refresh it for relevant data changes
-            if (isStudentDetailVisible && (stateKey === 'escalas' || stateKey === 'ausenciasReposicoes' || stateKey === 'pontoStaticRows' || stateKey === 'pontoPraticaRows')) {
+            if (isStudentDetailVisible && STUDENT_DETAIL_REFRESH_KEYS.includes(stateKey)) {
                 console.log('[triggerUIUpdates] Dados relevantes atualizados, re-renderizando student detail view');
-                // Get current student email from the view
-                const emailElement = document.querySelector('#tab-info dd');
-                if (emailElement) {
-                    const currentEmail = emailElement.textContent.trim();
-                    if (currentEmail) {
-                        console.log('[triggerUIUpdates] Re-renderizando dados do aluno:', currentEmail);
-                        showStudentDetail(currentEmail);
+                // Get current student email from the header (more reliable than dd element)
+                const headerElement = document.querySelector('#student-header h2');
+                if (headerElement) {
+                    const currentStudentName = headerElement.textContent.trim();
+                    // Find the student by name in alunosMap to get email
+                    const currentStudent = Array.from(appState.alunosMap.values()).find(s => 
+                        s.NomeCompleto === currentStudentName
+                    );
+                    if (currentStudent && currentStudent.EmailHC) {
+                        console.log('[triggerUIUpdates] Re-renderizando dados do aluno:', currentStudent.EmailHC);
+                        showStudentDetail(currentStudent.EmailHC);
                     }
                 }
             }
