@@ -5436,6 +5436,15 @@ function _esc_getHumanLabel(key) {
  * @param {string} scaleType - 'pratica' or 'teoria' to filter calculations
  */
 function _esc_calculateTotalBank(escalas, emailNorm, nameNorm, absentDatesTotal, makeupDatesTotal, scaleType = 'all') {
+    console.log('[_esc_calculateTotalBank] Iniciando cálculo', {
+        numEscalas: escalas.length,
+        emailNorm,
+        nameNorm,
+        numAusencias: absentDatesTotal.size,
+        numReposicoes: makeupDatesTotal.size,
+        scaleType
+    });
+    
     let totalDeveria = 0;
     let totalFeitas = 0;
     
@@ -5518,6 +5527,8 @@ function _esc_calculateTotalBank(escalas, emailNorm, nameNorm, absentDatesTotal,
             const rawTextEscala = (escala && escala[ddmm]) || '';
             const statusKey = _esc_normalizeStatusKey_V2(rawTextEscala);
             
+            console.log(`[_esc_calculateTotalBank] Data: ${ddmm} (${iso}), rawText: "${rawTextEscala}", statusKey: ${statusKey}, scheduledHours: ${scheduledHours}`);
+            
             // Add to "deveria" (should have worked) if not folga
             if (statusKey !== 'off') {
                 totalDeveria += scheduledHours;
@@ -5532,6 +5543,8 @@ function _esc_calculateTotalBank(escalas, emailNorm, nameNorm, absentDatesTotal,
             const isAusente = statusKey === 'absent' || absentDatesTotal.has(iso);
             const isReposto = makeupDatesTotal.has(iso);
             const isFolga = statusKey === 'off';
+            
+            console.log(`[_esc_calculateTotalBank]   -> isAusente: ${isAusente}, isReposto: ${isReposto}, isFolga: ${isFolga}`);
             
             if (!isAusente || isReposto) {
                 // Student was present or made up the absence
@@ -5552,6 +5565,15 @@ function _esc_calculateTotalBank(escalas, emailNorm, nameNorm, absentDatesTotal,
             }
             // If absent without makeup: hours are not added to feitas (deducted)
         });
+    });
+    
+    console.log('[_esc_calculateTotalBank] Cálculo concluído:', {
+        totalFeitas,
+        totalDeveria,
+        totalFeitasPratica,
+        totalDeveriaPratica,
+        totalFeitasTeoria,
+        totalDeveriaTeoria
     });
     
     return { 
