@@ -5190,6 +5190,26 @@ function _esc_calculateHours(rawText) {
     if (!rawText) return { hours: 0, standardHours: 0, startTime: '', endTime: '', isPlantao: false, isNoturno: false, isAula: false };
     
     const rawTextLower = rawText.toLowerCase().trim();
+    const rawTextUpper = rawText.toUpperCase().trim();
+    
+    // Check for shorthand codes first (M, T, N, GPS, AB, etc.)
+    // M = Manhã (Morning) = 5 hours
+    // T = Tarde (Afternoon) = 5 hours  
+    // N = Noite (Night) = 12 hours
+    // GPS, AB, and other methods = 5 hours
+    if (rawTextUpper === 'M' || rawTextLower.includes('manhã') || rawTextLower.includes('manha')) {
+        return { hours: 5, standardHours: HOURS_BANK_CONSTANTS.NORMAL_PRACTICE_HOURS, startTime: '07:00', endTime: '12:00', isPlantao: false, isNoturno: false, isAula: false };
+    }
+    if (rawTextUpper === 'T' || rawTextLower.includes('tarde')) {
+        return { hours: 5, standardHours: HOURS_BANK_CONSTANTS.NORMAL_PRACTICE_HOURS, startTime: '13:00', endTime: '18:00', isPlantao: false, isNoturno: false, isAula: false };
+    }
+    if (rawTextUpper === 'N' || rawTextLower.includes('noite') || rawTextLower.includes('noturno')) {
+        return { hours: 12, standardHours: HOURS_BANK_CONSTANTS.NOTURNO_HOURS, startTime: '19:00', endTime: '07:00', isPlantao: false, isNoturno: true, isAula: false };
+    }
+    // GPS, AB and similar method codes = 5 hours
+    if (rawTextUpper.includes('GPS') || rawTextUpper.includes('AB') || rawTextLower.includes('metodo') || rawTextLower.includes('método')) {
+        return { hours: 5, standardHours: HOURS_BANK_CONSTANTS.NORMAL_PRACTICE_HOURS, startTime: '', endTime: '', isPlantao: false, isNoturno: false, isAula: false };
+    }
     
     // Check if it's an "aula" type (Aula Inicial, HCX, or any class)
     const isAula = rawTextLower.includes('aula') || rawTextLower.includes('hcx') || rawTextLower.includes('inicial');
