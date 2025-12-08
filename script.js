@@ -713,6 +713,10 @@
         }
         
         // Constants for student detail refresh
+        // These data types affect hours bank calculations and must trigger re-renders
+        // - escalas: Contains student schedules and attendance status
+        // - ausenciasReposicoes: Contains absence and makeup dates
+        // - pontoStaticRows/pontoPraticaRows: Contains daily attendance records
         const STUDENT_DETAIL_REFRESH_KEYS = ['escalas', 'ausenciasReposicoes', 'pontoStaticRows', 'pontoPraticaRows'];
         
         /**
