@@ -193,6 +193,23 @@
             return { hours: diff, standardHours, startTime, endTime, isPlantao, isNoturno, isAula };
         }
 
+        // Function to test _esc_normalizeStatusKey_V2
+        function _esc_normalizeStatusKey_V2(raw) {
+            if (!raw || typeof raw !== 'string' || raw.trim() === '') return 'absent';
+            const s = raw.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            
+            if (s.includes('ausencia') || s.includes('falta')) return 'absent';
+            if (s.includes('folga') || s.includes('descanso')) return 'off';
+            
+            const hasTimePattern = 
+                /\d{1,2}:\d{2}/.test(raw) ||
+                /\d{1,2}h/.test(raw.toLowerCase()) ||
+                /(as|às|a)\s*\d/.test(s);
+            
+            if (hasTimePattern) return 'present';
+            return 'present';
+        }
+
         function runTests() {
             const tests = [
                 // Shift codes
@@ -228,6 +245,19 @@
                 { input: '', expected: { hours: 0, standardHours: 0 }, desc: 'Célula vazia' },
                 { input: 'Falta', expected: { hours: 0, standardHours: 0 }, desc: 'Apenas Falta (sem turno)' },
                 { input: 'Folga', expected: { hours: 0, standardHours: 0 }, desc: 'Folga' }
+            ];
+
+            // Tests for status detection (new logic)
+            const statusTests = [
+                { input: '18:00:00 - 21:00:00', expected: 'present', desc: 'Horário completo com segundos = presente' },
+                { input: '07:00 - 12:00', expected: 'present', desc: 'Horário sem segundos = presente' },
+                { input: '7h às 12h', expected: 'present', desc: 'Horário com h = presente' },
+                { input: '', expected: 'absent', desc: 'Célula vazia = ausente' },
+                { input: 'ausencia', expected: 'absent', desc: 'Texto ausencia = ausente' },
+                { input: 'Falta', expected: 'absent', desc: 'Texto Falta = ausente' },
+                { input: 'Folga', expected: 'off', desc: 'Texto Folga = folga' },
+                { input: 'Presente', expected: 'present', desc: 'Texto Presente = presente' },
+                { input: 'Compareceu', expected: 'present', desc: 'Texto Compareceu = presente' }
             ];
 
             let passed = 0;
@@ -271,19 +301,50 @@
                 }
             });
 
+            // Run status detection tests
+            statusTests.forEach((test, index) => {
+                const result = _esc_normalizeStatusKey_V2(test.input);
+                const testNum = tests.length + index + 1;
+                
+                if (result === test.expected) {
+                    passed++;
+                    resultsHTML += `
+                        <div class="test-case pass">
+                            <strong>✅ Teste ${testNum}: ${test.desc}</strong>
+                            <br>Input: <code>${test.input || '(vazio)'}</code>
+                            <br>Status: ${result}
+                            <div class="test-result">PASSOU</div>
+                        </div>
+                    `;
+                } else {
+                    failed++;
+                    resultsHTML += `
+                        <div class="test-case fail">
+                            <strong>❌ Teste ${testNum}: ${test.desc}</strong>
+                            <br>Input: <code>${test.input || '(vazio)'}</code>
+                            <br>❌ Status: esperado ${test.expected}, obtido ${result}
+                            <div class="test-result">FALHOU</div>
+                        </div>
+                    `;
+                }
+            });
+
             const summaryEl = document.getElementById('summary');
             const resultsEl = document.getElementById('results');
             
+            const totalTests = tests.length + statusTests.length;
+            
             resultsEl.innerHTML = `
                 <div class="test-section">
-                    <h2>Resultados dos Testes</h2>
+                    <h2>Resultados dos Testes de Cálculo de Horas</h2>
                     ${resultsHTML}
                 </div>
             `;
 
             summaryEl.innerHTML = `
                 <strong>📊 Resumo:</strong> ${passed} passou${passed !== 1 ? 'ram' : 'u'}, ${failed} falhou${failed !== 1 ? 'ram' : ''}
-                <br>Taxa de sucesso: ${((passed / tests.length) * 100).toFixed(1)}%
+                <br>Taxa de sucesso: ${((passed / totalTests) * 100).toFixed(1)}%
+                <br>Total de testes: ${totalTests} (${tests.length} cálculo de horas + ${statusTests.length} detecção de status)
             `;
             summaryEl.style.display = 'block';
 

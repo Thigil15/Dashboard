@@ -5565,20 +5565,39 @@ function _esc_calculateTotalBank(escalas, emailNorm, nameNorm, absentDatesTotal,
 }
 
 /**
- * [HELPER] Classify status from Escala cell (v2 - simplified for new logic)
+ * [HELPER] Classify status from Escala cell (v2 - for new logic with EscalaAtual)
+ * The Escala cells contain the ATTENDANCE STATUS with time ranges when present
  * Returns: 'absent', 'off', or 'present'
+ * 
+ * Examples:
+ * - "18:00:00 - 21:00:00" → 'present' (student was there)
+ * - "07h às 12h" → 'present' (student was there)
+ * - "" (blank) → 'absent' (student was absent)
+ * - "ausencia" → 'absent' (student was absent)
+ * - "Falta" → 'absent' (student was absent)
+ * - "Folga" → 'off' (granted leave, don't deduct)
  */
 function _esc_normalizeStatusKey_V2(raw) {
     if (!raw || typeof raw !== 'string' || raw.trim() === '') return 'absent'; // Blank = absent
     const s = normalizeString(raw);
     
-    // Check for explicit absence markers
+    // Check for explicit absence markers first
     if (s.includes('ausencia') || s.includes('falta')) return 'absent';
     
     // Check for folga (granted leave)
     if (s.includes('folga') || s.includes('descanso')) return 'off';
     
-    // Anything else = present
+    // Check if contains time format patterns (indicates presence)
+    // Patterns: "HH:MM:SS - HH:MM:SS", "HH:MM - HH:MM", "Hh às Hh", etc.
+    const hasTimePattern = 
+        /\d{1,2}:\d{2}/.test(raw) ||           // HH:MM format
+        /\d{1,2}h/.test(raw.toLowerCase()) ||  // Hh format
+        /(as|às|a)\s*\d/.test(s);              // "às" or "as" followed by digit
+    
+    if (hasTimePattern) return 'present'; // Has time = present
+    
+    // Anything else that has text = assume present
+    // (could be notes like "Presente", "Compareceu", etc.)
     return 'present';
 }
 
