@@ -716,13 +716,32 @@
          * Trigger UI updates based on data changes
          */
         function triggerUIUpdates(stateKey) {
-            // Only update if we're on the dashboard view
+            console.log(`[triggerUIUpdates] Atualizando UI para: ${stateKey}`);
+            
+            // Check which view is currently visible
             const dashboardView = document.getElementById('dashboard-view');
-            if (!dashboardView || dashboardView.style.display === 'none') {
-                return;
+            const studentDetailView = document.getElementById('student-detail-view');
+            const isDashboardVisible = dashboardView && dashboardView.style.display !== 'none';
+            const isStudentDetailVisible = studentDetailView && studentDetailView.style.display !== 'none';
+            
+            // If student detail is visible, refresh it for relevant data changes
+            if (isStudentDetailVisible && (stateKey === 'escalas' || stateKey === 'ausenciasReposicoes' || stateKey === 'pontoStaticRows' || stateKey === 'pontoPraticaRows')) {
+                console.log('[triggerUIUpdates] Dados relevantes atualizados, re-renderizando student detail view');
+                // Get current student email from the view
+                const emailElement = document.querySelector('#tab-info dd');
+                if (emailElement) {
+                    const currentEmail = emailElement.textContent.trim();
+                    if (currentEmail) {
+                        console.log('[triggerUIUpdates] Re-renderizando dados do aluno:', currentEmail);
+                        showStudentDetail(currentEmail);
+                    }
+                }
             }
             
-            console.log(`[triggerUIUpdates] Atualizando UI para: ${stateKey}`);
+            // Only update dashboard if it's visible
+            if (!isDashboardVisible) {
+                return;
+            }
             
             switch (stateKey) {
                 case 'alunos':
