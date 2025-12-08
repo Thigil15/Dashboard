@@ -712,17 +712,47 @@
             }
         }
         
+        // Constants for student detail refresh
+        // These data types affect hours bank calculations and must trigger re-renders
+        // - escalas: Contains student schedules and attendance status
+        // - ausenciasReposicoes: Contains absence and makeup dates
+        // - pontoStaticRows/pontoPraticaRows: Contains daily attendance records
+        const STUDENT_DETAIL_REFRESH_KEYS = ['escalas', 'ausenciasReposicoes', 'pontoStaticRows', 'pontoPraticaRows'];
+        
         /**
          * Trigger UI updates based on data changes
          */
         function triggerUIUpdates(stateKey) {
-            // Only update if we're on the dashboard view
+            console.log(`[triggerUIUpdates] Atualizando UI para: ${stateKey}`);
+            
+            // Check which view is currently visible
             const dashboardView = document.getElementById('dashboard-view');
-            if (!dashboardView || dashboardView.style.display === 'none') {
-                return;
+            const studentDetailView = document.getElementById('student-detail-view');
+            const isDashboardVisible = dashboardView && dashboardView.style.display !== 'none';
+            const isStudentDetailVisible = studentDetailView && studentDetailView.style.display !== 'none';
+            
+            // If student detail is visible, refresh it for relevant data changes
+            if (isStudentDetailVisible && STUDENT_DETAIL_REFRESH_KEYS.includes(stateKey)) {
+                console.log('[triggerUIUpdates] Dados relevantes atualizados, re-renderizando student detail view');
+                // Get current student email from the header (more reliable than dd element)
+                const headerElement = document.querySelector('#student-header h2');
+                if (headerElement) {
+                    const currentStudentName = headerElement.textContent.trim();
+                    // Find the student by name in alunosMap to get email
+                    const currentStudent = Array.from(appState.alunosMap.values()).find(s => 
+                        s.NomeCompleto === currentStudentName
+                    );
+                    if (currentStudent && currentStudent.EmailHC) {
+                        console.log('[triggerUIUpdates] Re-renderizando dados do aluno:', currentStudent.EmailHC);
+                        showStudentDetail(currentStudent.EmailHC);
+                    }
+                }
             }
             
-            console.log(`[triggerUIUpdates] Atualizando UI para: ${stateKey}`);
+            // Only update dashboard if it's visible
+            if (!isDashboardVisible) {
+                return;
+            }
             
             switch (stateKey) {
                 case 'alunos':
@@ -5436,6 +5466,15 @@ function _esc_getHumanLabel(key) {
  * @param {string} scaleType - 'pratica' or 'teoria' to filter calculations
  */
 function _esc_calculateTotalBank(escalas, emailNorm, nameNorm, absentDatesTotal, makeupDatesTotal, scaleType = 'all') {
+    console.log('[_esc_calculateTotalBank] Iniciando cálculo', {
+        numEscalas: escalas.length,
+        emailNorm,
+        nameNorm,
+        numAusencias: absentDatesTotal.size,
+        numReposicoes: makeupDatesTotal.size,
+        scaleType
+    });
+    
     let totalDeveria = 0;
     let totalFeitas = 0;
     
@@ -5518,6 +5557,8 @@ function _esc_calculateTotalBank(escalas, emailNorm, nameNorm, absentDatesTotal,
             const rawTextEscala = (escala && escala[ddmm]) || '';
             const statusKey = _esc_normalizeStatusKey_V2(rawTextEscala);
             
+            console.log(`[_esc_calculateTotalBank] Data: ${ddmm} (${iso}), rawText: "${rawTextEscala}", statusKey: ${statusKey}, scheduledHours: ${scheduledHours}`);
+            
             // Add to "deveria" (should have worked) if not folga
             if (statusKey !== 'off') {
                 totalDeveria += scheduledHours;
@@ -5532,6 +5573,8 @@ function _esc_calculateTotalBank(escalas, emailNorm, nameNorm, absentDatesTotal,
             const isAusente = statusKey === 'absent' || absentDatesTotal.has(iso);
             const isReposto = makeupDatesTotal.has(iso);
             const isFolga = statusKey === 'off';
+            
+            console.log(`[_esc_calculateTotalBank]   -> isAusente: ${isAusente}, isReposto: ${isReposto}, isFolga: ${isFolga}`);
             
             if (!isAusente || isReposto) {
                 // Student was present or made up the absence
@@ -5552,6 +5595,15 @@ function _esc_calculateTotalBank(escalas, emailNorm, nameNorm, absentDatesTotal,
             }
             // If absent without makeup: hours are not added to feitas (deducted)
         });
+    });
+    
+    console.log('[_esc_calculateTotalBank] Cálculo concluído:', {
+        totalFeitas,
+        totalDeveria,
+        totalFeitasPratica,
+        totalDeveriaPratica,
+        totalFeitasTeoria,
+        totalDeveriaTeoria
     });
     
     return { 
