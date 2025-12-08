@@ -270,56 +270,68 @@
                     
                     return Object.keys(escalasData).length > 0 ? escalasData : appState.escalas;
                 }},
-                // EscalaAtual - Reference schedule with M, T, N codes
-                { path: 'exportAll/EscalaAtual/dados', stateKey: 'escalaAtual', processor: (data) => {
-                    if (!data || !Array.isArray(data)) {
-                        console.warn('[setupDatabaseListeners] ⚠️ EscalaAtual não encontrada ou formato inválido');
-                        return [];
-                    }
-                    
-                    console.log(`[setupDatabaseListeners] ✅ EscalaAtual carregada: ${data.length} registros`);
-                    
-                    // Process similar to escalas - extract day headers
-                    const headersDay = [];
-                    const dayKeyRegex = /^(\d{1,2})_(\d{2})$/;
-                    
-                    if (data.length > 0 && data[0]) {
-                        const firstRow = data[0];
-                        const dayKeyMap = new Map();
-                        
-                        Object.keys(firstRow).forEach((rowKey) => {
-                            const match = rowKey.match(dayKeyRegex);
-                            if (match) {
-                                const day = match[1].padStart(2, '0');
-                                const month = match[2].padStart(2, '0');
-                                const pretty = `${day}/${month}`;
-                                if (!dayKeyMap.has(rowKey)) {
-                                    dayKeyMap.set(rowKey, pretty);
-                                }
-                            }
-                        });
-                        
-                        const uniqueDates = Array.from(new Set(dayKeyMap.values()));
-                        headersDay.push(...uniqueDates);
-                        
-                        // Add pretty-formatted keys to each row
-                        data.forEach((row) => {
-                            if (row && typeof row === 'object') {
-                                dayKeyMap.forEach((pretty, normalizedKey) => {
-                                    if (typeof row[pretty] === 'undefined') {
-                                        row[pretty] = row[normalizedKey];
-                                    }
-                                });
-                            }
-                        });
-                    }
-                    
-                    return {
-                        alunos: data,
-                        headersDay: headersDay
-                    };
+                // EscalaAtual - Reference schedules with M, T, N codes (3 sectors)
+                { path: 'exportAll/EscalaAtualCardiopediatria/dados', stateKey: 'escalaAtualCardiopediatria', processor: (data) => {
+                    return processEscalaAtualData(data, 'Cardiopediatria');
+                }},
+                { path: 'exportAll/EscalaAtualUTI/dados', stateKey: 'escalaAtualUTI', processor: (data) => {
+                    return processEscalaAtualData(data, 'UTI');
+                }},
+                { path: 'exportAll/EscalaAtualEnfermaria/dados', stateKey: 'escalaAtualEnfermaria', processor: (data) => {
+                    return processEscalaAtualData(data, 'Enfermaria');
                 }}
             ];
+            
+            // Helper function to process EscalaAtual data
+            function processEscalaAtualData(data, sectorName) {
+                if (!data || !Array.isArray(data)) {
+                    console.warn(`[setupDatabaseListeners] ⚠️ EscalaAtual${sectorName} não encontrada ou formato inválido`);
+                    return { alunos: [], headersDay: [], setor: sectorName };
+                }
+                
+                console.log(`[setupDatabaseListeners] ✅ EscalaAtual${sectorName} carregada: ${data.length} registros`);
+                
+                // Process similar to escalas - extract day headers
+                const headersDay = [];
+                const dayKeyRegex = /^(\d{1,2})_(\d{2})$/;
+                
+                if (data.length > 0 && data[0]) {
+                    const firstRow = data[0];
+                    const dayKeyMap = new Map();
+                    
+                    Object.keys(firstRow).forEach((rowKey) => {
+                        const match = rowKey.match(dayKeyRegex);
+                        if (match) {
+                            const day = match[1].padStart(2, '0');
+                            const month = match[2].padStart(2, '0');
+                            const pretty = `${day}/${month}`;
+                            if (!dayKeyMap.has(rowKey)) {
+                                dayKeyMap.set(rowKey, pretty);
+                            }
+                        }
+                    });
+                    
+                    const uniqueDates = Array.from(new Set(dayKeyMap.values()));
+                    headersDay.push(...uniqueDates);
+                    
+                    // Add pretty-formatted keys to each row
+                    data.forEach((row) => {
+                        if (row && typeof row === 'object') {
+                            dayKeyMap.forEach((pretty, normalizedKey) => {
+                                if (typeof row[pretty] === 'undefined') {
+                                    row[pretty] = row[normalizedKey];
+                                }
+                            });
+                        }
+                    });
+                }
+                
+                return {
+                    alunos: data,
+                    headersDay: headersDay,
+                    setor: sectorName
+                };
+            }
             
             // Setup listener for each path
             pathMappings.forEach(({ path, stateKey, processor }) => {
@@ -1349,7 +1361,9 @@ const appState = {
     pontoHojeMap: new Map(),
     pontoHojeAliases: new Map(),
     escalas: {},
-    escalaAtual: { alunos: [], headersDay: [] }, // Reference schedule with M, T, N codes
+    escalaAtualCardiopediatria: { alunos: [], headersDay: [], setor: 'Cardiopediatria' },
+    escalaAtualUTI: { alunos: [], headersDay: [], setor: 'UTI' },
+    escalaAtualEnfermaria: { alunos: [], headersDay: [], setor: 'Enfermaria' },
     ausenciasReposicoes: [],
     notasTeoricas: {},
     notasPraticas: {},
@@ -5431,26 +5445,46 @@ function _esc_calculateTotalBank(escalas, emailNorm, nameNorm, absentDatesTotal,
     let totalDeveriaTeoria = 0;
     let totalFeitasTeoria = 0;
 
-    // Get EscalaAtual data for this student
-    const escalaAtualAluno = appState.escalaAtual.alunos.find(a => 
-        (a.EmailHC && normalizeString(a.EmailHC) === emailNorm) ||
-        (a.NomeCompleto && normalizeString(a.NomeCompleto) === nameNorm)
-    );
+    // Get EscalaAtual data for this student - check all 3 sectors
+    let escalaAtualAluno = null;
+    let escalaAtualData = null;
     
-    if (!escalaAtualAluno) {
-        console.warn('[_esc_calculateTotalBank] ⚠️ Aluno não encontrado na EscalaAtual, usando lógica antiga');
+    // Try to find student in each sector's EscalaAtual
+    const sectorsToCheck = [
+        { data: appState.escalaAtualCardiopediatria, name: 'Cardiopediatria' },
+        { data: appState.escalaAtualUTI, name: 'UTI' },
+        { data: appState.escalaAtualEnfermaria, name: 'Enfermaria' }
+    ];
+    
+    for (const sector of sectorsToCheck) {
+        if (sector.data && sector.data.alunos) {
+            const found = sector.data.alunos.find(a => 
+                (a.EmailHC && normalizeString(a.EmailHC) === emailNorm) ||
+                (a.NomeCompleto && normalizeString(a.NomeCompleto) === nameNorm)
+            );
+            if (found) {
+                escalaAtualAluno = found;
+                escalaAtualData = sector.data;
+                console.log(`[_esc_calculateTotalBank] ✅ Aluno encontrado em EscalaAtual${sector.name}`);
+                break;
+            }
+        }
+    }
+    
+    if (!escalaAtualAluno || !escalaAtualData) {
+        console.warn('[_esc_calculateTotalBank] ⚠️ Aluno não encontrado em nenhuma EscalaAtual, usando lógica antiga');
         // Fallback to old logic if EscalaAtual doesn't have this student
         return _esc_calculateTotalBank_Legacy(escalas, absentDatesTotal, makeupDatesTotal, scaleType);
     }
 
     // Create a map of dates to scheduled shift info from EscalaAtual
     const scheduledShifts = new Map(); // ISO date -> { hours, type, rawText }
-    appState.escalaAtual.headersDay.forEach(ddmm => {
+    escalaAtualData.headersDay.forEach(ddmm => {
         const dateObj = _esc_parseDMInferYear(ddmm);
         if (!dateObj) return;
         
         const iso = _esc_iso(dateObj);
-        const rawTextAtual = escalaAtualAluno[ddmm] || '';
+        const rawTextAtual = (escalaAtualAluno && escalaAtualAluno[ddmm]) || '';
         const hoursInfo = _esc_calculateHours(rawTextAtual);
         
         if (hoursInfo.standardHours > 0) {
@@ -5481,7 +5515,7 @@ function _esc_calculateTotalBank(escalas, emailNorm, nameNorm, absentDatesTotal,
             const scheduledHours = scheduledShift.hours;
             
             // Get the actual status from Escala (present, absent, folga)
-            const rawTextEscala = escala[ddmm] || '';
+            const rawTextEscala = (escala && escala[ddmm]) || '';
             const statusKey = _esc_normalizeStatusKey_V2(rawTextEscala);
             
             // Add to "deveria" (should have worked) if not folga

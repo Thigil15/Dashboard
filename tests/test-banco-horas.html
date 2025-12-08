@@ -102,7 +102,7 @@
             AULA_HOURS: 5
         };
 
-        const TIME_FORMAT_FULL_REGEX = /(\d{1,2}):(\d{2}):(\d{2})\s*às\s*(\d{1,2}):(\d{2}):(\d{2})/i;
+        const TIME_FORMAT_FULL_REGEX = /(\d{1,2}):(\d{2})(?::\d{2})?\s*(?:às|as|a|-)\s*(\d{1,2}):(\d{2})(?::\d{2})?/i;
 
         // Simplified version of _esc_calculateHours for testing
         function _esc_calculateHours(rawText) {
