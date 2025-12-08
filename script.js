@@ -269,6 +269,55 @@
                     }
                     
                     return Object.keys(escalasData).length > 0 ? escalasData : appState.escalas;
+                }},
+                // EscalaAtual - Reference schedule with M, T, N codes
+                { path: 'exportAll/EscalaAtual/dados', stateKey: 'escalaAtual', processor: (data) => {
+                    if (!data || !Array.isArray(data)) {
+                        console.warn('[setupDatabaseListeners] ⚠️ EscalaAtual não encontrada ou formato inválido');
+                        return [];
+                    }
+                    
+                    console.log(`[setupDatabaseListeners] ✅ EscalaAtual carregada: ${data.length} registros`);
+                    
+                    // Process similar to escalas - extract day headers
+                    const headersDay = [];
+                    const dayKeyRegex = /^(\d{1,2})_(\d{2})$/;
+                    
+                    if (data.length > 0 && data[0]) {
+                        const firstRow = data[0];
+                        const dayKeyMap = new Map();
+                        
+                        Object.keys(firstRow).forEach((rowKey) => {
+                            const match = rowKey.match(dayKeyRegex);
+                            if (match) {
+                                const day = match[1].padStart(2, '0');
+                                const month = match[2].padStart(2, '0');
+                                const pretty = `${day}/${month}`;
+                                if (!dayKeyMap.has(rowKey)) {
+                                    dayKeyMap.set(rowKey, pretty);
+                                }
+                            }
+                        });
+                        
+                        const uniqueDates = Array.from(new Set(dayKeyMap.values()));
+                        headersDay.push(...uniqueDates);
+                        
+                        // Add pretty-formatted keys to each row
+                        data.forEach((row) => {
+                            if (row && typeof row === 'object') {
+                                dayKeyMap.forEach((pretty, normalizedKey) => {
+                                    if (typeof row[pretty] === 'undefined') {
+                                        row[pretty] = row[normalizedKey];
+                                    }
+                                });
+                            }
+                        });
+                    }
+                    
+                    return {
+                        alunos: data,
+                        headersDay: headersDay
+                    };
                 }}
             ];
             
@@ -1300,6 +1349,7 @@ const appState = {
     pontoHojeMap: new Map(),
     pontoHojeAliases: new Map(),
     escalas: {},
+    escalaAtual: { alunos: [], headersDay: [] }, // Reference schedule with M, T, N codes
     ausenciasReposicoes: [],
     notasTeoricas: {},
     notasPraticas: {},
@@ -5359,20 +5409,149 @@ function _esc_getHumanLabel(key) {
 
 /**
  * [HELPER] Calcula o Banco de Horas Total (Feitas / Deveria)
- * Sistema Inteligente de Banco de Horas:
- * - Prática Normal (7-12h ou 8-13h): +5 horas
- * - Plantão: +12 horas
- * - Aula Inicial ou HCX: +5 horas
- * - Noturno: +12 horas
- * - Ausência em prática normal: -5 horas
- * - Ausência em plantão ou noturno: -12 horas
+ * Nova Lógica (v2):
+ * 1. Consulta EscalaAtual para obter a programação (M, T, N = horas esperadas)
+ * 2. Verifica o status na Escala1/2/etc (presente, ausente, folga)
+ * 3. Se ausente (branco/ausencia/falta) sem ser folga: desconta as horas
  * 
- * @param {Array} escalas - Array of scale objects
- * @param {Set} absentDatesTotal - Set of ISO dates with absences
+ * @param {Array} escalas - Array of scale objects for the student
+ * @param {string} emailNorm - Normalized email of student
+ * @param {string} nameNorm - Normalized name of student
+ * @param {Set} absentDatesTotal - Set of ISO dates with absences from AusenciasReposicoes
  * @param {Set} makeupDatesTotal - Set of ISO dates with makeups
  * @param {string} scaleType - 'pratica' or 'teoria' to filter calculations
  */
-function _esc_calculateTotalBank(escalas, absentDatesTotal, makeupDatesTotal, scaleType = 'all') {
+function _esc_calculateTotalBank(escalas, emailNorm, nameNorm, absentDatesTotal, makeupDatesTotal, scaleType = 'all') {
+    let totalDeveria = 0;
+    let totalFeitas = 0;
+    
+    // Separate totals for prática and teoria
+    let totalDeveriaPratica = 0;
+    let totalFeitasPratica = 0;
+    let totalDeveriaTeoria = 0;
+    let totalFeitasTeoria = 0;
+
+    // Get EscalaAtual data for this student
+    const escalaAtualAluno = appState.escalaAtual.alunos.find(a => 
+        (a.EmailHC && normalizeString(a.EmailHC) === emailNorm) ||
+        (a.NomeCompleto && normalizeString(a.NomeCompleto) === nameNorm)
+    );
+    
+    if (!escalaAtualAluno) {
+        console.warn('[_esc_calculateTotalBank] ⚠️ Aluno não encontrado na EscalaAtual, usando lógica antiga');
+        // Fallback to old logic if EscalaAtual doesn't have this student
+        return _esc_calculateTotalBank_Legacy(escalas, absentDatesTotal, makeupDatesTotal, scaleType);
+    }
+
+    // Create a map of dates to scheduled shift info from EscalaAtual
+    const scheduledShifts = new Map(); // ISO date -> { hours, type, rawText }
+    appState.escalaAtual.headersDay.forEach(ddmm => {
+        const dateObj = _esc_parseDMInferYear(ddmm);
+        if (!dateObj) return;
+        
+        const iso = _esc_iso(dateObj);
+        const rawTextAtual = escalaAtualAluno[ddmm] || '';
+        const hoursInfo = _esc_calculateHours(rawTextAtual);
+        
+        if (hoursInfo.standardHours > 0) {
+            scheduledShifts.set(iso, {
+                hours: hoursInfo.standardHours,
+                type: hoursInfo.isNoturno ? 'noturno' : (hoursInfo.isPlantao ? 'plantao' : 'normal'),
+                rawText: rawTextAtual
+            });
+        }
+    });
+
+    // Now iterate through the student's actual escalas (Escala1, Escala2, etc.)
+    escalas.forEach(escala => {
+        const escalaTipo = escala.tipo || 'pratica';
+        if (scaleType !== 'all' && escalaTipo !== scaleType) return;
+        
+        const diasBrutos = escala.headersDay || [];
+        diasBrutos.forEach(ddmm => {
+            const dateObj = _esc_parseDMInferYear(ddmm);
+            if (!dateObj) return;
+            
+            const iso = _esc_iso(dateObj);
+            
+            // Check if this date has a scheduled shift in EscalaAtual
+            const scheduledShift = scheduledShifts.get(iso);
+            if (!scheduledShift) return; // No shift scheduled for this day
+            
+            const scheduledHours = scheduledShift.hours;
+            
+            // Get the actual status from Escala (present, absent, folga)
+            const rawTextEscala = escala[ddmm] || '';
+            const statusKey = _esc_normalizeStatusKey_V2(rawTextEscala);
+            
+            // Add to "deveria" (should have worked) if not folga
+            if (statusKey !== 'off') {
+                totalDeveria += scheduledHours;
+                if (escalaTipo === 'teoria') {
+                    totalDeveriaTeoria += scheduledHours;
+                } else {
+                    totalDeveriaPratica += scheduledHours;
+                }
+            }
+            
+            // Add to "feitas" (actually worked) if present
+            const isAusente = statusKey === 'absent' || absentDatesTotal.has(iso);
+            const isReposto = makeupDatesTotal.has(iso);
+            const isFolga = statusKey === 'off';
+            
+            if (!isAusente || isReposto) {
+                // Student was present or made up the absence
+                totalFeitas += scheduledHours;
+                if (escalaTipo === 'teoria') {
+                    totalFeitasTeoria += scheduledHours;
+                } else {
+                    totalFeitasPratica += scheduledHours;
+                }
+            } else if (isFolga && isReposto) {
+                // Makeup on a rest day - extra hours credited
+                totalFeitas += scheduledHours;
+                if (escalaTipo === 'teoria') {
+                    totalFeitasTeoria += scheduledHours;
+                } else {
+                    totalFeitasPratica += scheduledHours;
+                }
+            }
+            // If absent without makeup: hours are not added to feitas (deducted)
+        });
+    });
+    
+    return { 
+        totalFeitas, 
+        totalDeveria,
+        totalFeitasPratica,
+        totalDeveriaPratica,
+        totalFeitasTeoria,
+        totalDeveriaTeoria
+    };
+}
+
+/**
+ * [HELPER] Classify status from Escala cell (v2 - simplified for new logic)
+ * Returns: 'absent', 'off', or 'present'
+ */
+function _esc_normalizeStatusKey_V2(raw) {
+    if (!raw || typeof raw !== 'string' || raw.trim() === '') return 'absent'; // Blank = absent
+    const s = normalizeString(raw);
+    
+    // Check for explicit absence markers
+    if (s.includes('ausencia') || s.includes('falta')) return 'absent';
+    
+    // Check for folga (granted leave)
+    if (s.includes('folga') || s.includes('descanso')) return 'off';
+    
+    // Anything else = present
+    return 'present';
+}
+
+/**
+ * [HELPER] Legacy calculation function (fallback when EscalaAtual is not available)
+ */
+function _esc_calculateTotalBank_Legacy(escalas, absentDatesTotal, makeupDatesTotal, scaleType = 'all') {
     let totalDeveria = 0;
     let totalFeitas = 0;
     
@@ -5534,7 +5713,7 @@ function renderTabEscala(escalas) {
     });
 
     // Calculate and display total hours bank (separated by type)
-    const hoursBank = _esc_calculateTotalBank(escalas, absentDatesTotal, makeupDatesTotal);
+    const hoursBank = _esc_calculateTotalBank(escalas, alunoEmailNorm, alunoNomeNorm, absentDatesTotal, makeupDatesTotal);
     const $totalFeitas = document.getElementById('banco-horas-total-feitas');
     const $totalDeveria = document.getElementById('banco-horas-total-deveria');
     const $praticaFeitas = document.getElementById('banco-horas-pratica-feitas');
