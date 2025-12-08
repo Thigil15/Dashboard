@@ -5197,13 +5197,21 @@ function _esc_calculateHours(rawText) {
     // T = Tarde (Afternoon) = 5 hours  
     // N = Noite (Night) = 12 hours
     // GPS, AB, and other methods = 5 hours
-    if (rawTextUpper === 'M' || rawTextLower.includes('manhã') || rawTextLower.includes('manha')) {
+    // Also handles combinations like "M - Falta", "T Ausencia", etc.
+    
+    // Check for M (Morning shift) - must be at start or be the only letter
+    if (rawTextUpper === 'M' || rawTextUpper.startsWith('M ') || rawTextUpper.startsWith('M-') || 
+        rawTextLower.includes('manhã') || rawTextLower.includes('manha')) {
         return { hours: 5, standardHours: HOURS_BANK_CONSTANTS.NORMAL_PRACTICE_HOURS, startTime: '07:00', endTime: '12:00', isPlantao: false, isNoturno: false, isAula: false };
     }
-    if (rawTextUpper === 'T' || rawTextLower.includes('tarde')) {
+    // Check for T (Afternoon shift) - must be at start or be the only letter
+    if (rawTextUpper === 'T' || rawTextUpper.startsWith('T ') || rawTextUpper.startsWith('T-') || 
+        rawTextLower.includes('tarde')) {
         return { hours: 5, standardHours: HOURS_BANK_CONSTANTS.NORMAL_PRACTICE_HOURS, startTime: '13:00', endTime: '18:00', isPlantao: false, isNoturno: false, isAula: false };
     }
-    if (rawTextUpper === 'N' || rawTextLower.includes('noite') || rawTextLower.includes('noturno')) {
+    // Check for N (Night shift) - must be at start or be the only letter  
+    if (rawTextUpper === 'N' || rawTextUpper.startsWith('N ') || rawTextUpper.startsWith('N-') || 
+        rawTextLower.includes('noite') || rawTextLower.includes('noturno')) {
         return { hours: 12, standardHours: HOURS_BANK_CONSTANTS.NOTURNO_HOURS, startTime: '19:00', endTime: '07:00', isPlantao: false, isNoturno: true, isAula: false };
     }
     // GPS, AB and similar method codes = 5 hours
