@@ -2916,7 +2916,8 @@ const pontoState = {
                         } else if (shiftValue === 'AB' || shiftValue === 'AMBULATORIO' || shiftValue === 'AMBULATÓRIO') {
                             badgeClass = 'shift-AB';
                             displayValue = 'AB';
-                        } else if (shiftValue === 'AULA' || shiftValue.includes('AULA') || shiftValue.includes('HCX')) {
+                        } else if (shiftValue === 'AULA' || shiftValue.startsWith('AULA') || shiftValue === 'HCX' || shiftValue.startsWith('HCX ')) {
+                            // Match AULA, AULA HCX, HCX, etc. but avoid false positives
                             badgeClass = 'shift-AULA';
                             displayValue = 'AULA';
                         } else if (shiftValue === '-' || shiftValue === '') {
