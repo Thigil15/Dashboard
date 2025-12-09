@@ -12436,32 +12436,6 @@
     border-color: rgba(226, 232, 240, 0.5);
 }
 
-/* === HOURS BANK SECTION === */
-.escala-hours-bank-section {
-    margin-top: 1.5rem;
-}
-
-.escala-hours-bank {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1rem;
-    margin-bottom: 1rem;
-}
-
-.escala-hours-bank--pratica .escala-kpi-card--pratica .escala-kpi-icon {
-    background: linear-gradient(135deg, #10b981, #059669);
-}
-
-.escala-hours-bank--teoria .escala-kpi-card--teoria .escala-kpi-icon {
-    background: linear-gradient(135deg, #6366f1, #4f46e5);
-}
-
-@media (max-width: 768px) {
-    .escala-hours-bank {
-        grid-template-columns: 1fr;
-    }
-}
-
 /* === LEGEND SECTION === */
 .escala-legend-section {
     background: white;
@@ -12701,4 +12675,412 @@
     background: rgba(226, 232, 240, 0.3);
     color: #94a3b8;
     border-color: rgba(226, 232, 240, 0.5);
+}
+
+/* =============================================================================
+   BANCO DE HORAS - InCor Professional Design
+   ============================================================================= */
+
+.banco-horas-section {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+    border: 1px solid rgba(0, 84, 180, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 84, 180, 0.08);
+}
+
+.banco-horas-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid rgba(0, 84, 180, 0.1);
+}
+
+.banco-horas-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.banco-horas-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #0054B4 0%, #003d8f 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 84, 180, 0.3);
+}
+
+.banco-horas-icon svg {
+    width: 24px;
+    height: 24px;
+    color: white;
+}
+
+.banco-horas-title-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.banco-horas-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #0054B4;
+    margin: 0;
+    letter-spacing: -0.025em;
+}
+
+.banco-horas-subtitle {
+    font-size: 0.875rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.banco-horas-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(34, 197, 94, 0.1);
+    border-radius: 9999px;
+    border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.banco-horas-badge--warning {
+    background: rgba(245, 158, 11, 0.1);
+    border-color: rgba(245, 158, 11, 0.2);
+}
+
+.banco-horas-badge--warning .banco-horas-badge-dot {
+    background: #f59e0b;
+}
+
+.banco-horas-badge--warning .banco-horas-badge-text {
+    color: #b45309;
+}
+
+.banco-horas-badge--danger {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.2);
+}
+
+.banco-horas-badge--danger .banco-horas-badge-dot {
+    background: #ef4444;
+}
+
+.banco-horas-badge--danger .banco-horas-badge-text {
+    color: #b91c1c;
+}
+
+.banco-horas-badge-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #22c55e;
+    animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.2); }
+}
+
+.banco-horas-badge-text {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #15803d;
+}
+
+/* KPI Grid */
+.banco-horas-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 1200px) {
+    .banco-horas-kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .banco-horas-kpi-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.banco-horas-kpi-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.25rem;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.banco-horas-kpi-card:hover {
+    box-shadow: 0 8px 24px rgba(0, 84, 180, 0.12);
+    border-color: rgba(0, 84, 180, 0.2);
+    transform: translateY(-2px);
+}
+
+.banco-horas-kpi-card--primary {
+    background: linear-gradient(135deg, #0054B4 0%, #003d8f 100%);
+    border: none;
+    grid-column: span 1;
+}
+
+.banco-horas-kpi-card--primary .banco-horas-kpi-label,
+.banco-horas-kpi-card--primary .banco-horas-kpi-value,
+.banco-horas-kpi-card--primary .banco-horas-kpi-progress-text {
+    color: white;
+}
+
+.banco-horas-kpi-icon-wrapper {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.banco-horas-kpi-icon-wrapper svg {
+    width: 22px;
+    height: 22px;
+}
+
+.banco-horas-kpi-icon--total {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.banco-horas-kpi-icon--feitas {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+}
+
+.banco-horas-kpi-icon--previstas {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+}
+
+.banco-horas-kpi-icon--pendentes {
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+}
+
+.banco-horas-kpi-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.banco-horas-kpi-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.banco-horas-kpi-value-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.banco-horas-kpi-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1;
+}
+
+.banco-horas-kpi-value--success {
+    color: #22c55e;
+}
+
+.banco-horas-kpi-value--warning {
+    color: #f59e0b;
+}
+
+.banco-horas-kpi-value--danger {
+    color: #ef4444;
+}
+
+.banco-horas-kpi-indicator {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+}
+
+.banco-horas-kpi-indicator--warning {
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+}
+
+.banco-horas-kpi-indicator--danger {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.banco-horas-kpi-indicator svg {
+    width: 14px;
+    height: 14px;
+}
+
+.banco-horas-kpi-progress-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.banco-horas-kpi-progress {
+    flex: 1;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.banco-horas-kpi-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #22c55e, #16a34a);
+    border-radius: 3px;
+    transition: width 0.5s ease;
+}
+
+.banco-horas-kpi-progress-bar--warning {
+    background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.banco-horas-kpi-progress-bar--danger {
+    background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+.banco-horas-kpi-progress-text {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+    min-width: 40px;
+    text-align: right;
+}
+
+.banco-horas-kpi-detail {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin-top: 0.25rem;
+}
+
+/* Breakdown Section */
+.banco-horas-breakdown {
+    background: rgba(0, 84, 180, 0.03);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    border: 1px solid rgba(0, 84, 180, 0.08);
+}
+
+.banco-horas-breakdown-header {
+    margin-bottom: 1rem;
+}
+
+.banco-horas-breakdown-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #475569;
+}
+
+.banco-horas-breakdown-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+@media (max-width: 640px) {
+    .banco-horas-breakdown-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.banco-horas-breakdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: white;
+    border-radius: 10px;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    transition: all 0.2s ease;
+}
+
+.banco-horas-breakdown-item:hover {
+    border-color: rgba(0, 84, 180, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 84, 180, 0.08);
+}
+
+.banco-horas-breakdown-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.banco-horas-breakdown-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.banco-horas-breakdown-item--manha .banco-horas-breakdown-icon {
+    background: rgba(251, 191, 36, 0.15);
+    color: #f59e0b;
+}
+
+.banco-horas-breakdown-item--tarde .banco-horas-breakdown-icon {
+    background: rgba(249, 115, 22, 0.15);
+    color: #f97316;
+}
+
+.banco-horas-breakdown-item--noturno .banco-horas-breakdown-icon {
+    background: rgba(99, 102, 241, 0.15);
+    color: #6366f1;
+}
+
+.banco-horas-breakdown-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.banco-horas-breakdown-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #64748b;
+}
+
+.banco-horas-breakdown-value {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
 }

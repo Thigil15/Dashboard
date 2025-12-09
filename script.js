@@ -5262,149 +5262,16 @@ function _esc_iso(d) {
     return `${y}-${m}-${day}`;
 }
 
-// Constants for the intelligent hours bank system
-const HOURS_BANK_CONSTANTS = {
-    PLANTAO_HOURS: 12,       // Plantão (12h shifts): +12 hours
-    NOTURNO_HOURS: 12,       // Noturno shifts: +12 hours
-    NORMAL_PRACTICE_HOURS: 5, // Normal practice (7-12h or 8-13h): +5 hours
-    AULA_HOURS: 5            // Aula Inicial or HCX classes: +5 hours
-};
-
-/**
- * [HELPER] Calcula a duração em horas de um texto (ex: "07h-19h").
- * Retorna um objeto com: { hours: number, standardHours: number, startTime: string, endTime: string, isPlantao: boolean, isNoturno: boolean, isAula: boolean }
- * 
- * Sistema Inteligente de Banco de Horas:
- * - Prática Normal (7-12h ou 8-13h): +5 horas
- * - Plantão: +12 horas
- * - Aula Inicial ou HCX (qualquer aula): +5 horas
- * - Noturno (19h-07h): +12 horas
- */
-function _esc_calculateHours(rawText) {
-    if (!rawText) return { hours: 0, standardHours: 0, startTime: '', endTime: '', isPlantao: false, isNoturno: false, isAula: false };
-    
-    const rawTextLower = rawText.toLowerCase().trim();
-    const rawTextUpper = rawText.toUpperCase().trim();
-    
-    // Check for shorthand codes first (M, T, N, GPS, AB, etc.)
-    // M = Manhã (Morning) = 5 hours
-    // T = Tarde (Afternoon) = 5 hours  
-    // N = Noite (Night) = 12 hours
-    // GPS, AB, and other methods = 5 hours
-    // Also handles combinations like "M - Falta", "T Ausencia", etc.
-    
-    // Check for M (Morning shift) - must be at start or be the only letter
-    if (rawTextUpper === 'M' || rawTextUpper.startsWith('M ') || rawTextUpper.startsWith('M-') || 
-        rawTextLower.includes('manhã') || rawTextLower.includes('manha')) {
-        return { hours: 5, standardHours: HOURS_BANK_CONSTANTS.NORMAL_PRACTICE_HOURS, startTime: '07:00', endTime: '12:00', isPlantao: false, isNoturno: false, isAula: false };
-    }
-    // Check for T (Afternoon shift) - must be at start or be the only letter
-    if (rawTextUpper === 'T' || rawTextUpper.startsWith('T ') || rawTextUpper.startsWith('T-') || 
-        rawTextLower.includes('tarde')) {
-        return { hours: 5, standardHours: HOURS_BANK_CONSTANTS.NORMAL_PRACTICE_HOURS, startTime: '13:00', endTime: '18:00', isPlantao: false, isNoturno: false, isAula: false };
-    }
-    // Check for N (Night shift) - must be at start or be the only letter  
-    if (rawTextUpper === 'N' || rawTextUpper.startsWith('N ') || rawTextUpper.startsWith('N-') || 
-        rawTextLower.includes('noite') || rawTextLower.includes('noturno')) {
-        return { hours: 12, standardHours: HOURS_BANK_CONSTANTS.NOTURNO_HOURS, startTime: '19:00', endTime: '07:00', isPlantao: false, isNoturno: true, isAula: false };
-    }
-    // GPS, AB and similar method codes = 5 hours
-    if (rawTextUpper.includes('GPS') || rawTextUpper.includes('AB') || rawTextLower.includes('metodo') || rawTextLower.includes('método')) {
-        return { hours: 5, standardHours: HOURS_BANK_CONSTANTS.NORMAL_PRACTICE_HOURS, startTime: '', endTime: '', isPlantao: false, isNoturno: false, isAula: false };
-    }
-    
-    // Check if it's an "aula" type (Aula Inicial, HCX, or any class)
-    const isAula = rawTextLower.includes('aula') || rawTextLower.includes('hcx') || rawTextLower.includes('inicial');
-    
-    // First, try to match the new format "HH:MM:SS às HH:MM:SS" (e.g., "18:00:00 às 21:00:00")
-    let match = rawText.match(TIME_FORMAT_FULL_REGEX);
-    let isFullTimeFormat = !!match;
-    
-    // If no match, try the legacy format with "h" notation (e.g., "7h às 12h", "08h as 13h")
-    if (!match) {
-        const s = rawText.replace(/(\d{1,2})h(\d{2})?/g, '$1:$2').replace(/h/g, ':00'); 
-        const regex = /(\d{1,2}):?(\d{0,2})\s*(-|às|as|a)\s*(\d{1,2}):?(\d{0,2})/i;
-        match = s.match(regex);
-        isFullTimeFormat = false;
-    }
-
-    if (!match) {
-        // If it's an aula without time info, still count as 5 hours
-        if (isAula) {
-            return { hours: HOURS_BANK_CONSTANTS.AULA_HOURS, standardHours: HOURS_BANK_CONSTANTS.AULA_HOURS, startTime: '', endTime: '', isPlantao: false, isNoturno: false, isAula: true };
-        }
-        return { hours: 0, standardHours: 0, startTime: '', endTime: '', isPlantao: false, isNoturno: false, isAula: false }; 
-    }
-
-    // Extract hours and minutes from match groups
-    // For TIME_FORMAT_FULL_REGEX: groups are (h1, m1, h2, m2) - indices 1,2,3,4
-    // For legacy regex: groups are (h1, m1, separator, h2, m2) - indices 1,2,4,5
-    let h1, m1, h2, m2;
-    
-    // Use the flag to determine which regex was used
-    if (isFullTimeFormat) {
-        // TIME_FORMAT_FULL_REGEX match - groups 1,2,3,4 are h1,m1,h2,m2
-        h1 = parseInt(match[1], 10);
-        m1 = parseInt(match[2] || '0', 10);
-        h2 = parseInt(match[3], 10);
-        m2 = parseInt(match[4] || '0', 10);
-    } else {
-        // legacy regex match - groups 1,2,4,5 are h1,m1,h2,m2 (group 3 is separator)
-        h1 = parseInt(match[1], 10);
-        m1 = parseInt(match[2] || '0', 10);
-        h2 = parseInt(match[4], 10);
-        m2 = parseInt(match[5] || '0', 10);
-    }
-
-    if (isNaN(h1) || isNaN(h2)) {
-        if (isAula) {
-            return { hours: HOURS_BANK_CONSTANTS.AULA_HOURS, standardHours: HOURS_BANK_CONSTANTS.AULA_HOURS, startTime: '', endTime: '', isPlantao: false, isNoturno: false, isAula: true };
-        }
-        return { hours: 0, standardHours: 0, startTime: '', endTime: '', isPlantao: false, isNoturno: false, isAula: false };
-    }
-
-    const d1 = new Date(2000, 0, 1, h1, m1);
-    const d2 = new Date(2000, 0, 1, h2, m2);
-    let diff = (d2.getTime() - d1.getTime()) / (1000 * 60 * 60);
-
-    if (diff < 0) { diff += 24; }
-    
-    // Format times
-    const startTime = `${String(h1).padStart(2, '0')}:${String(m1).padStart(2, '0')}`;
-    const endTime = `${String(h2).padStart(2, '0')}:${String(m2).padStart(2, '0')}`;
-    
-    // Check if it's a noturno shift (night shift that crosses midnight: starts at 19h+ and ends before 8h)
-    // This is specifically for 19h-07h type shifts, not morning shifts like 5h-7h
-    const isNoturno = h1 >= 19 && h2 <= 8;
-    
-    // Check if it's a plantão (12 hour shift, typically 07h-19h or 08h-20h, or 19h-07h)
-    const isPlantao = diff >= 11 && diff <= 13; // 11-13 hour shifts are considered plantão
-    
-    // Calculate standard hours based on the intelligent system rules:
-    // - Plantão or Noturno: 12 hours
-    // - Aula (any class): 5 hours
-    // - Normal practice (7-12h or 8-13h, roughly 4-6 hours): 5 hours
-    let standardHours = diff; // default to actual hours
-    
-    if (isPlantao || isNoturno) {
-        standardHours = HOURS_BANK_CONSTANTS.PLANTAO_HOURS;
-    } else if (isAula) {
-        standardHours = HOURS_BANK_CONSTANTS.AULA_HOURS;
-    } else if (diff >= 4 && diff <= 6) {
-        // Normal practice hours (7-12h or 8-13h range)
-        standardHours = HOURS_BANK_CONSTANTS.NORMAL_PRACTICE_HOURS;
-    }
-    
-    return { hours: diff, standardHours, startTime, endTime, isPlantao, isNoturno, isAula };
-}
-
 /**
  * [HELPER] Classifica o texto bruto da escala em uma chave de status.
- * Agora usa a informação de horas para detectar plantões e noturnos automaticamente
  */
-function _esc_normalizeStatusKey(raw, hoursInfo) {
+function _esc_normalizeStatusKey(raw) {
     if (!raw || typeof raw !== 'string' || raw.trim() === '') return 'none';
+    
+    const rawTrimmed = raw.trim();
     const s = normalizeString(raw);
+    const rawLower = rawTrimmed.toLowerCase();
+    const rawUpper = rawTrimmed.toUpperCase();
     
     // Priority checks first
     if (s.includes('ausencia') || s.includes('falta')) return 'absent';
@@ -5412,25 +5279,41 @@ function _esc_normalizeStatusKey(raw, hoursInfo) {
     if (s.includes('folga') || s.includes('descanso')) return 'off';
     
     // Check if it's an aula (class) - including HCX, Aula Inicial
-    if (s.includes('aula') || s.includes('hcx') || s.includes('inicial') || (hoursInfo && hoursInfo.isAula)) {
+    if (s.includes('aula') || s.includes('hcx') || s.includes('inicial')) {
         return 'aula'; // Azul
     }
     
-    // Check if it's a noturno shift
-    if (hoursInfo && hoursInfo.isNoturno) {
-        return 'noturno'; // Purple (similar to plantão)
+    // Check for N (Night shift) - noturno
+    if (rawUpper === 'N' || rawUpper.startsWith('N ') || rawUpper.startsWith('N-') || 
+        rawLower.includes('noite') || rawLower.includes('noturno')) {
+        return 'noturno'; // Purple
     }
     
-    // Check if it's a plantão based on hours (12h shifts)
-    if (hoursInfo && hoursInfo.isPlantao) {
+    // Check for plantão (by text or long shifts 19h-7h type patterns)
+    if (rawLower.includes('plantao') || rawLower.includes('plantão')) {
         return 'plantao'; // Roxo
     }
     
-    // If has hours but not a plantão and not explicitly "aula", it's regular presence
-    if (hoursInfo && hoursInfo.hours > 0) return 'presenca'; // Verde
+    // Check for M (Morning shift) or T (Afternoon shift) - regular presence
+    if (rawUpper === 'M' || rawUpper.startsWith('M ') || rawUpper.startsWith('M-') || 
+        rawLower.includes('manhã') || rawLower.includes('manha') ||
+        rawUpper === 'T' || rawUpper.startsWith('T ') || rawUpper.startsWith('T-') || 
+        rawLower.includes('tarde')) {
+        return 'presenca'; // Verde
+    }
+    
+    // Check if has time format (indicates presence) - combined regex for efficiency
+    if (/\d{1,2}(:\d{2}|h)|(as|às|a)\s*\d/.test(rawLower)) {
+        return 'presenca'; // Verde
+    }
+    
+    // GPS, AB and similar method codes = presence
+    if (rawUpper.includes('GPS') || rawUpper.includes('AB') || rawLower.includes('metodo') || rawLower.includes('método')) {
+        return 'presenca'; // Verde
+    }
     
     // Fallback: if has any text, assume presence
-    if (s.trim().length > 0) return 'presenca'; // Verde
+    if (s.length > 0) return 'presenca'; // Verde
     
     return 'none';
 }
@@ -5452,283 +5335,406 @@ function _esc_getHumanLabel(key) {
 }
 
 /**
- * [HELPER] Calcula o Banco de Horas Total (Feitas / Deveria)
- * Nova Lógica (v2):
- * 1. Consulta EscalaAtual para obter a programação (M, T, N = horas esperadas)
- * 2. Verifica o status na Escala1/2/etc (presente, ausente, folga)
- * 3. Se ausente (branco/ausencia/falta) sem ser folga: desconta as horas
- * 
- * @param {Array} escalas - Array of scale objects for the student
- * @param {string} emailNorm - Normalized email of student
- * @param {string} nameNorm - Normalized name of student
- * @param {Set} absentDatesTotal - Set of ISO dates with absences from AusenciasReposicoes
- * @param {Set} makeupDatesTotal - Set of ISO dates with makeups
- * @param {string} scaleType - 'pratica' or 'teoria' to filter calculations
+ * [BANCO DE HORAS] Constantes de horas por turno
  */
-function _esc_calculateTotalBank(escalas, emailNorm, nameNorm, absentDatesTotal, makeupDatesTotal, scaleType = 'all') {
-    console.log('[_esc_calculateTotalBank] Iniciando cálculo', {
-        numEscalas: escalas.length,
-        emailNorm,
-        nameNorm,
-        numAusencias: absentDatesTotal.size,
-        numReposicoes: makeupDatesTotal.size,
-        scaleType
-    });
-    
-    let totalDeveria = 0;
-    let totalFeitas = 0;
-    
-    // Separate totals for prática and teoria
-    let totalDeveriaPratica = 0;
-    let totalFeitasPratica = 0;
-    let totalDeveriaTeoria = 0;
-    let totalFeitasTeoria = 0;
+const TURNO_HORAS = {
+    M: 5,      // Manhã: 5 horas
+    T: 5,      // Tarde: 5 horas
+    N: 12,     // Noturno: 12 horas
+    PLANTAO: 12 // Plantão: 12 horas
+};
 
-    // Get EscalaAtual data for this student - check all 3 sectors
+/**
+ * [BANCO DE HORAS] Detecta o turno a partir do código da EscalaAtual
+ * @param {string} codigo - Código do turno (M, T, N, ou horário tipo "7/19")
+ * @returns {object} { turno: string, horas: number }
+ */
+function _bh_detectarTurno(codigo) {
+    if (!codigo || typeof codigo !== 'string') return { turno: null, horas: 0 };
+    
+    const codigoTrimmed = codigo.trim().toUpperCase();
+    
+    // Códigos simples
+    if (codigoTrimmed === 'M' || codigoTrimmed.startsWith('M ') || codigoTrimmed.startsWith('M-')) {
+        return { turno: 'M', horas: TURNO_HORAS.M };
+    }
+    if (codigoTrimmed === 'T' || codigoTrimmed.startsWith('T ') || codigoTrimmed.startsWith('T-')) {
+        return { turno: 'T', horas: TURNO_HORAS.T };
+    }
+    if (codigoTrimmed === 'N' || codigoTrimmed.startsWith('N ') || codigoTrimmed.startsWith('N-')) {
+        return { turno: 'N', horas: TURNO_HORAS.N };
+    }
+    
+    // Detectar plantão pelo padrão de horário (7/19, 19/7, 07/19, etc)
+    const plantaoMatch = codigoTrimmed.match(/(\d{1,2})\s*[\/\-]\s*(\d{1,2})/);
+    if (plantaoMatch) {
+        const h1 = parseInt(plantaoMatch[1], 10);
+        const h2 = parseInt(plantaoMatch[2], 10);
+        let diff = Math.abs(h2 - h1);
+        if (diff === 0) diff = 24;
+        
+        // Se a diferença for >= 10 horas, é plantão
+        if (diff >= 10) {
+            return { turno: 'PLANTAO', horas: TURNO_HORAS.PLANTAO };
+        }
+    }
+    
+    // Detectar pelo texto
+    const codigoLower = codigo.toLowerCase();
+    if (codigoLower.includes('manhã') || codigoLower.includes('manha')) {
+        return { turno: 'M', horas: TURNO_HORAS.M };
+    }
+    if (codigoLower.includes('tarde')) {
+        return { turno: 'T', horas: TURNO_HORAS.T };
+    }
+    if (codigoLower.includes('noturno') || codigoLower.includes('noite')) {
+        return { turno: 'N', horas: TURNO_HORAS.N };
+    }
+    if (codigoLower.includes('plantão') || codigoLower.includes('plantao')) {
+        return { turno: 'PLANTAO', horas: TURNO_HORAS.PLANTAO };
+    }
+    
+    // Folga ou vazio
+    if (codigoLower.includes('folga') || codigoLower.includes('descanso') || codigoTrimmed === '' || codigoTrimmed === '-') {
+        return { turno: 'FOLGA', horas: 0 };
+    }
+    
+    return { turno: null, horas: 0 };
+}
+
+/**
+ * [BANCO DE HORAS] Verifica se o aluno compareceu baseado no registro da Escala
+ * @param {string} registro - Texto do registro na Escala (ex: "07:00:00 às 12:00:00", "", "Falta")
+ * @returns {boolean} true se compareceu, false se faltou
+ */
+function _bh_alunoCompareceu(registro) {
+    if (!registro || typeof registro !== 'string') return false;
+    
+    const registroTrimmed = registro.trim();
+    if (registroTrimmed === '') return false;
+    
+    const registroLower = registroTrimmed.toLowerCase();
+    
+    // Verificar se é ausência/falta
+    if (registroLower.includes('ausencia') || registroLower.includes('ausência') || 
+        registroLower.includes('falta') || registroLower === 'f') {
+        return false;
+    }
+    
+    // Se tem formato de horário completo (ex: "07:00:00 às 12:00:00"), compareceu
+    if (/\d{1,2}:\d{2}(:\d{2})?\s*(-|às|as|a)\s*\d{1,2}:\d{2}/.test(registroTrimmed)) {
+        return true;
+    }
+    
+    // Se tem formato de horário simples (ex: "7h às 12h"), compareceu
+    if (/\d{1,2}h\s*(-|às|as|a)\s*\d{1,2}h/.test(registroLower)) {
+        return true;
+    }
+    
+    // Se tem "presente" ou similar, compareceu
+    if (registroLower.includes('presente') || registroLower.includes('compareceu')) {
+        return true;
+    }
+    
+    // Reposição também conta como compareceu
+    if (registroLower.includes('reposi')) {
+        return true;
+    }
+    
+    // Códigos de turno M, T, N são previsão, não comparecimento
+    // Só considerar como comparecido se tiver horário específico
+    
+    return false;
+}
+
+/**
+ * [BANCO DE HORAS] Calcula o banco de horas do aluno
+ * @param {string} emailNorm - Email normalizado do aluno
+ * @param {string} nomeNorm - Nome normalizado do aluno
+ * @param {Array} escalas - Array de escalas do aluno
+ * @returns {object} Dados do banco de horas
+ */
+function calcularBancoHoras(emailNorm, nomeNorm, escalas) {
+    console.log('[calcularBancoHoras] Iniciando cálculo para:', { emailNorm, nomeNorm });
+    
+    const resultado = {
+        setor: null,
+        horasFeitas: 0,
+        horasPrevistas: 0,
+        horasPendentes: 0,
+        saldo: 0,
+        diasCompareceu: 0,
+        diasDeveria: 0,
+        diasFaltou: 0,
+        turnos: {
+            M: { feitos: 0, previstos: 0 },
+            T: { feitos: 0, previstos: 0 },
+            N: { feitos: 0, previstos: 0 }
+        },
+        detalhes: []
+    };
+    
+    // Buscar aluno na EscalaAtual (Enfermaria, UTI, ou Cardiopediatria)
     let escalaAtualAluno = null;
     let escalaAtualData = null;
     
-    // Try to find student in each sector's EscalaAtual
-    const sectorsToCheck = [
-        { data: appState.escalaAtualCardiopediatria, name: 'Cardiopediatria' },
-        { data: appState.escalaAtualUTI, name: 'UTI' },
-        { data: appState.escalaAtualEnfermaria, name: 'Enfermaria' }
+    const setores = [
+        { data: appState.escalaAtualEnfermaria, nome: 'Enfermaria' },
+        { data: appState.escalaAtualUTI, nome: 'UTI' },
+        { data: appState.escalaAtualCardiopediatria, nome: 'Cardiopediatria' }
     ];
     
-    for (const sector of sectorsToCheck) {
-        if (sector.data && sector.data.alunos) {
-            const found = sector.data.alunos.find(a => 
-                (a.EmailHC && normalizeString(a.EmailHC) === emailNorm) ||
-                (a.NomeCompleto && normalizeString(a.NomeCompleto) === nameNorm)
-            );
-            if (found) {
-                escalaAtualAluno = found;
-                escalaAtualData = sector.data;
-                console.log(`[_esc_calculateTotalBank] ✅ Aluno encontrado em EscalaAtual${sector.name}`);
+    for (const setor of setores) {
+        if (setor.data && setor.data.alunos && setor.data.alunos.length > 0) {
+            const aluno = setor.data.alunos.find(a => {
+                const aEmailNorm = normalizeString(a.EmailHC || '');
+                const aNomeNorm = normalizeString(a.NomeCompleto || '');
+                return (aEmailNorm && aEmailNorm === emailNorm) || 
+                       (aNomeNorm && aNomeNorm === nomeNorm);
+            });
+            
+            if (aluno) {
+                escalaAtualAluno = aluno;
+                escalaAtualData = setor.data;
+                resultado.setor = setor.nome;
+                console.log(`[calcularBancoHoras] ✅ Aluno encontrado em EscalaAtual${setor.nome}`);
                 break;
             }
         }
     }
     
     if (!escalaAtualAluno || !escalaAtualData) {
-        console.warn('[_esc_calculateTotalBank] ⚠️ Aluno não encontrado em nenhuma EscalaAtual, usando lógica antiga');
-        // Fallback to old logic if EscalaAtual doesn't have this student
-        return _esc_calculateTotalBank_Legacy(escalas, absentDatesTotal, makeupDatesTotal, scaleType);
+        console.warn('[calcularBancoHoras] ⚠️ Aluno não encontrado em nenhuma EscalaAtual');
+        return resultado;
     }
-
-    // Create a map of dates to scheduled shift info from EscalaAtual
-    const scheduledShifts = new Map(); // ISO date -> { hours, type, rawText }
-    escalaAtualData.headersDay.forEach(ddmm => {
+    
+    // Mapear os dias da EscalaAtual para saber o que o aluno deveria fazer
+    const diasPrevistos = new Map(); // ISO date -> { turno, horas, codigo }
+    
+    const headersDay = escalaAtualData.headersDay || [];
+    headersDay.forEach(ddmm => {
         const dateObj = _esc_parseDMInferYear(ddmm);
         if (!dateObj) return;
         
         const iso = _esc_iso(dateObj);
-        const rawTextAtual = (escalaAtualAluno && escalaAtualAluno[ddmm]) || '';
-        const hoursInfo = _esc_calculateHours(rawTextAtual);
+        const codigoTurno = escalaAtualAluno[ddmm] || '';
+        const turnoInfo = _bh_detectarTurno(codigoTurno);
         
-        if (hoursInfo.standardHours > 0) {
-            scheduledShifts.set(iso, {
-                hours: hoursInfo.standardHours,
-                type: hoursInfo.isNoturno ? 'noturno' : (hoursInfo.isPlantao ? 'plantao' : 'normal'),
-                rawText: rawTextAtual
+        if (turnoInfo.horas > 0) {
+            diasPrevistos.set(iso, {
+                turno: turnoInfo.turno,
+                horas: turnoInfo.horas,
+                codigo: codigoTurno,
+                ddmm: ddmm
             });
         }
     });
-
-    // Now iterate through the student's actual escalas (Escala1, Escala2, etc.)
+    
+    console.log(`[calcularBancoHoras] Dias previstos na EscalaAtual: ${diasPrevistos.size}`);
+    
+    // Agora verificar nas Escalas (Escala1, Escala2, etc) se o aluno compareceu
+    const diasVerificados = new Set();
+    
     escalas.forEach(escala => {
-        const escalaTipo = escala.tipo || 'pratica';
-        if (scaleType !== 'all' && escalaTipo !== scaleType) return;
+        const escalaDias = escala.headersDay || [];
         
-        const diasBrutos = escala.headersDay || [];
-        diasBrutos.forEach(ddmm => {
+        escalaDias.forEach(ddmm => {
             const dateObj = _esc_parseDMInferYear(ddmm);
             if (!dateObj) return;
             
             const iso = _esc_iso(dateObj);
             
-            // Check if this date has a scheduled shift in EscalaAtual
-            const scheduledShift = scheduledShifts.get(iso);
-            if (!scheduledShift) return; // No shift scheduled for this day
+            // Já verificamos esse dia?
+            if (diasVerificados.has(iso)) return;
             
-            const scheduledHours = scheduledShift.hours;
+            // Esse dia tem previsão na EscalaAtual?
+            const previsao = diasPrevistos.get(iso);
+            if (!previsao) return;
             
-            // Get the actual status from Escala (present, absent, folga)
-            const rawTextEscala = (escala && escala[ddmm]) || '';
-            const statusKey = _esc_normalizeStatusKey_V2(rawTextEscala);
+            diasVerificados.add(iso);
             
-            console.log(`[_esc_calculateTotalBank] Data: ${ddmm} (${iso}), rawText: "${rawTextEscala}", statusKey: ${statusKey}, scheduledHours: ${scheduledHours}`);
+            // Verificar o registro do aluno na Escala
+            const registro = escala[ddmm] || '';
+            const compareceu = _bh_alunoCompareceu(registro);
             
-            // Add to "deveria" (should have worked) if not folga
-            if (statusKey !== 'off') {
-                totalDeveria += scheduledHours;
-                if (escalaTipo === 'teoria') {
-                    totalDeveriaTeoria += scheduledHours;
-                } else {
-                    totalDeveriaPratica += scheduledHours;
-                }
+            // Atualizar totais
+            resultado.horasPrevistas += previsao.horas;
+            resultado.diasDeveria++;
+            
+            // Atualizar por turno
+            if (previsao.turno === 'M' || previsao.turno === 'T' || previsao.turno === 'N') {
+                resultado.turnos[previsao.turno].previstos++;
             }
             
-            // Add to "feitas" (actually worked) if present
-            const isAusente = statusKey === 'absent' || absentDatesTotal.has(iso);
-            const isReposto = makeupDatesTotal.has(iso);
-            const isFolga = statusKey === 'off';
-            
-            console.log(`[_esc_calculateTotalBank]   -> isAusente: ${isAusente}, isReposto: ${isReposto}, isFolga: ${isFolga}`);
-            
-            if (!isAusente || isReposto) {
-                // Student was present or made up the absence
-                totalFeitas += scheduledHours;
-                if (escalaTipo === 'teoria') {
-                    totalFeitasTeoria += scheduledHours;
-                } else {
-                    totalFeitasPratica += scheduledHours;
-                }
-            } else if (isFolga && isReposto) {
-                // Makeup on a rest day - extra hours credited
-                totalFeitas += scheduledHours;
-                if (escalaTipo === 'teoria') {
-                    totalFeitasTeoria += scheduledHours;
-                } else {
-                    totalFeitasPratica += scheduledHours;
-                }
-            }
-            // If absent without makeup: hours are not added to feitas (deducted)
-        });
-    });
-    
-    console.log('[_esc_calculateTotalBank] Cálculo concluído:', {
-        totalFeitas,
-        totalDeveria,
-        totalFeitasPratica,
-        totalDeveriaPratica,
-        totalFeitasTeoria,
-        totalDeveriaTeoria
-    });
-    
-    return { 
-        totalFeitas, 
-        totalDeveria,
-        totalFeitasPratica,
-        totalDeveriaPratica,
-        totalFeitasTeoria,
-        totalDeveriaTeoria
-    };
-}
-
-/**
- * [HELPER] Classify status from Escala cell (v2 - for new logic with EscalaAtual)
- * The Escala cells contain the ATTENDANCE STATUS with time ranges when present
- * Returns: 'absent', 'off', or 'present'
- * 
- * Examples:
- * - "18:00:00 - 21:00:00" → 'present' (student was there)
- * - "07h às 12h" → 'present' (student was there)
- * - "" (blank) → 'absent' (student was absent)
- * - "ausencia" → 'absent' (student was absent)
- * - "Falta" → 'absent' (student was absent)
- * - "Folga" → 'off' (granted leave, don't deduct)
- */
-function _esc_normalizeStatusKey_V2(raw) {
-    if (!raw || typeof raw !== 'string' || raw.trim() === '') return 'absent'; // Blank = absent
-    const s = normalizeString(raw);
-    
-    // Check for explicit absence markers first
-    if (s.includes('ausencia') || s.includes('falta')) return 'absent';
-    
-    // Check for folga (granted leave)
-    if (s.includes('folga') || s.includes('descanso')) return 'off';
-    
-    // Check if contains time format patterns (indicates presence)
-    // Patterns: "HH:MM:SS - HH:MM:SS", "HH:MM - HH:MM", "Hh às Hh", etc.
-    const hasTimePattern = 
-        /\d{1,2}:\d{2}/.test(raw) ||           // HH:MM format
-        /\d{1,2}h/.test(raw.toLowerCase()) ||  // Hh format
-        /(as|às|a)\s*\d/.test(s);              // "às" or "as" followed by digit
-    
-    if (hasTimePattern) return 'present'; // Has time = present
-    
-    // Anything else that has text = assume present
-    // (could be notes like "Presente", "Compareceu", etc.)
-    return 'present';
-}
-
-/**
- * [HELPER] Legacy calculation function (fallback when EscalaAtual is not available)
- */
-function _esc_calculateTotalBank_Legacy(escalas, absentDatesTotal, makeupDatesTotal, scaleType = 'all') {
-    let totalDeveria = 0;
-    let totalFeitas = 0;
-    
-    // Separate totals for prática and teoria
-    let totalDeveriaPratica = 0;
-    let totalFeitasPratica = 0;
-    let totalDeveriaTeoria = 0;
-    let totalFeitasTeoria = 0;
-
-    escalas.forEach(escala => {
-        // Filter by scale type if specified
-        const escalaTipo = escala.tipo || 'pratica';
-        if (scaleType !== 'all' && escalaTipo !== scaleType) return;
-        
-        const diasBrutos = escala.headersDay || []; 
-        diasBrutos.forEach(ddmm => {
-            const dateObj = _esc_parseDMInferYear(ddmm);
-            if (!dateObj) return;
-            
-            const iso = _esc_iso(dateObj);
-            const rawText = escala[ddmm] || ''; 
-            const hoursInfo = _esc_calculateHours(rawText);
-            const statusKey = _esc_normalizeStatusKey(rawText, hoursInfo);
-
-            // Use standardHours for the intelligent hours system
-            const standardHours = hoursInfo.standardHours || hoursInfo.hours;
-            if (standardHours === 0) return;
-
-            // Calculate what should have been worked
-            if (statusKey !== 'off' && statusKey !== 'none') {
-                totalDeveria += standardHours;
-                if (escalaTipo === 'teoria') {
-                    totalDeveriaTeoria += standardHours;
-                } else {
-                    totalDeveriaPratica += standardHours;
-                }
-            }
-            
-            // Calculate what was actually worked
-            if (statusKey !== 'off' && statusKey !== 'none') {
-                const isAusente = absentDatesTotal.has(iso);
-                const isReposto = makeupDatesTotal.has(iso);
+            if (compareceu) {
+                resultado.horasFeitas += previsao.horas;
+                resultado.diasCompareceu++;
                 
-                if (!isAusente || isReposto) {
-                    // Student was present or has made up the absence
-                    totalFeitas += standardHours;
-                    if (escalaTipo === 'teoria') {
-                        totalFeitasTeoria += standardHours;
-                    } else {
-                        totalFeitasPratica += standardHours;
-                    }
+                if (previsao.turno === 'M' || previsao.turno === 'T' || previsao.turno === 'N') {
+                    resultado.turnos[previsao.turno].feitos++;
                 }
-                // If absent without makeup, hours are not counted (already at 0)
-            } else if (statusKey === 'off' && makeupDatesTotal.has(iso)) {
-                // Makeup on a rest day - extra hours credited
-                totalFeitas += standardHours;
-                if (escalaTipo === 'teoria') {
-                    totalFeitasTeoria += standardHours;
-                } else {
-                    totalFeitasPratica += standardHours;
-                }
+                
+                resultado.detalhes.push({
+                    data: iso,
+                    ddmm: ddmm,
+                    turno: previsao.turno,
+                    horas: previsao.horas,
+                    status: 'presente',
+                    registro: registro
+                });
+            } else {
+                resultado.horasPendentes += previsao.horas;
+                resultado.diasFaltou++;
+                
+                resultado.detalhes.push({
+                    data: iso,
+                    ddmm: ddmm,
+                    turno: previsao.turno,
+                    horas: previsao.horas,
+                    status: 'ausente',
+                    registro: registro
+                });
             }
         });
     });
-    return { 
-        totalFeitas, 
-        totalDeveria,
-        totalFeitasPratica,
-        totalDeveriaPratica,
-        totalFeitasTeoria,
-        totalDeveriaTeoria
-    };
+    
+    // Calcular saldo (positivo = em dia, negativo = deve horas)
+    resultado.saldo = resultado.horasFeitas - resultado.horasPendentes;
+    
+    console.log('[calcularBancoHoras] Resultado final:', resultado);
+    
+    return resultado;
+}
+
+/**
+ * [BANCO DE HORAS] Atualiza a interface do banco de horas
+ * @param {object} bancoHoras - Dados do banco de horas
+ */
+function renderizarBancoHoras(bancoHoras) {
+    console.log('[renderizarBancoHoras] Renderizando:', bancoHoras);
+    
+    // Elementos do DOM
+    const $setor = document.getElementById('banco-horas-setor');
+    const $statusBadge = document.getElementById('banco-horas-status-badge');
+    const $saldoTotal = document.getElementById('banco-horas-saldo-total');
+    const $saldoIndicator = document.getElementById('banco-horas-saldo-indicator');
+    const $progressBar = document.getElementById('banco-horas-progress-bar');
+    const $progressText = document.getElementById('banco-horas-progress-text');
+    const $horasFeitas = document.getElementById('banco-horas-feitas');
+    const $horasFeitasDetail = document.getElementById('banco-horas-feitas-detail');
+    const $horasPrevistas = document.getElementById('banco-horas-previstas');
+    const $horasPrevistasDetail = document.getElementById('banco-horas-previstas-detail');
+    const $horasPendentes = document.getElementById('banco-horas-pendentes');
+    const $horasPendentesDetail = document.getElementById('banco-horas-pendentes-detail');
+    const $manha = document.getElementById('banco-horas-manha');
+    const $tarde = document.getElementById('banco-horas-tarde');
+    const $noturno = document.getElementById('banco-horas-noturno');
+    
+    // Setor
+    if ($setor) {
+        $setor.textContent = bancoHoras.setor ? `Setor: ${bancoHoras.setor}` : 'Setor: --';
+    }
+    
+    // Status badge
+    if ($statusBadge) {
+        $statusBadge.classList.remove('banco-horas-badge--warning', 'banco-horas-badge--danger');
+        const badgeText = $statusBadge.querySelector('.banco-horas-badge-text');
+        
+        if (bancoHoras.horasPendentes === 0) {
+            if (badgeText) badgeText.textContent = 'Em dia';
+        } else if (bancoHoras.horasPendentes <= 10) {
+            $statusBadge.classList.add('banco-horas-badge--warning');
+            if (badgeText) badgeText.textContent = 'Atenção';
+        } else {
+            $statusBadge.classList.add('banco-horas-badge--danger');
+            if (badgeText) badgeText.textContent = 'Pendências';
+        }
+    }
+    
+    // Saldo total
+    if ($saldoTotal) {
+        const saldoFormatted = bancoHoras.saldo >= 0 ? `+${bancoHoras.saldo}h` : `${bancoHoras.saldo}h`;
+        $saldoTotal.textContent = saldoFormatted;
+    }
+    
+    // Indicador de saldo
+    if ($saldoIndicator) {
+        $saldoIndicator.classList.remove('banco-horas-kpi-indicator--warning', 'banco-horas-kpi-indicator--danger');
+        
+        if (bancoHoras.saldo >= 0) {
+            $saldoIndicator.innerHTML = `<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>`;
+        } else if (bancoHoras.saldo >= -10) {
+            $saldoIndicator.classList.add('banco-horas-kpi-indicator--warning');
+            $saldoIndicator.innerHTML = `<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>`;
+        } else {
+            $saldoIndicator.classList.add('banco-horas-kpi-indicator--danger');
+            $saldoIndicator.innerHTML = `<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>`;
+        }
+    }
+    
+    // Progress bar
+    if ($progressBar && $progressText) {
+        const percentualRaw = bancoHoras.horasPrevistas > 0 
+            ? Math.round((bancoHoras.horasFeitas / bancoHoras.horasPrevistas) * 100)
+            : 0;
+        const percentual = Math.min(percentualRaw, 100); // Cap at 100% for display
+        
+        $progressBar.style.width = `${percentual}%`;
+        $progressText.textContent = percentualRaw > 100 ? `${percentualRaw}%` : `${percentual}%`;
+        
+        $progressBar.classList.remove('banco-horas-kpi-progress-bar--warning', 'banco-horas-kpi-progress-bar--danger');
+        
+        if (percentualRaw < 50) {
+            $progressBar.classList.add('banco-horas-kpi-progress-bar--danger');
+        } else if (percentualRaw < 80) {
+            $progressBar.classList.add('banco-horas-kpi-progress-bar--warning');
+        }
+    }
+    
+    // Horas feitas
+    if ($horasFeitas) {
+        $horasFeitas.textContent = `${bancoHoras.horasFeitas}h`;
+    }
+    if ($horasFeitasDetail) {
+        $horasFeitasDetail.textContent = `Compareceu em ${bancoHoras.diasCompareceu} dia${bancoHoras.diasCompareceu !== 1 ? 's' : ''}`;
+    }
+    
+    // Horas previstas
+    if ($horasPrevistas) {
+        $horasPrevistas.textContent = `${bancoHoras.horasPrevistas}h`;
+    }
+    if ($horasPrevistasDetail) {
+        $horasPrevistasDetail.textContent = `Deveria comparecer em ${bancoHoras.diasDeveria} dia${bancoHoras.diasDeveria !== 1 ? 's' : ''}`;
+    }
+    
+    // Horas pendentes
+    if ($horasPendentes) {
+        $horasPendentes.textContent = `${bancoHoras.horasPendentes}h`;
+        
+        $horasPendentes.classList.remove('banco-horas-kpi-value--success', 'banco-horas-kpi-value--warning', 'banco-horas-kpi-value--danger');
+        
+        if (bancoHoras.horasPendentes === 0) {
+            $horasPendentes.classList.add('banco-horas-kpi-value--success');
+        } else if (bancoHoras.horasPendentes <= 10) {
+            $horasPendentes.classList.add('banco-horas-kpi-value--warning');
+        } else {
+            $horasPendentes.classList.add('banco-horas-kpi-value--danger');
+        }
+    }
+    if ($horasPendentesDetail) {
+        $horasPendentesDetail.textContent = `Faltou em ${bancoHoras.diasFaltou} dia${bancoHoras.diasFaltou !== 1 ? 's' : ''}`;
+    }
+    
+    // Distribuição por turno
+    if ($manha) {
+        $manha.textContent = `${bancoHoras.turnos.M.feitos}/${bancoHoras.turnos.M.previstos}`;
+    }
+    if ($tarde) {
+        $tarde.textContent = `${bancoHoras.turnos.T.feitos}/${bancoHoras.turnos.T.previstos}`;
+    }
+    if ($noturno) {
+        $noturno.textContent = `${bancoHoras.turnos.N.feitos}/${bancoHoras.turnos.N.previstos}`;
+    }
 }
 
 /**
@@ -5817,21 +5823,13 @@ function renderTabEscala(escalas) {
         }
     });
 
-    // Calculate and display total hours bank (separated by type)
-    const hoursBank = _esc_calculateTotalBank(escalas, alunoEmailNorm, alunoNomeNorm, absentDatesTotal, makeupDatesTotal);
-    const $totalFeitas = document.getElementById('banco-horas-total-feitas');
-    const $totalDeveria = document.getElementById('banco-horas-total-deveria');
-    const $praticaFeitas = document.getElementById('banco-horas-pratica-feitas');
-    const $praticaDeveria = document.getElementById('banco-horas-pratica-deveria');
-    const $teoriaFeitas = document.getElementById('banco-horas-teoria-feitas');
-    const $teoriaDeveria = document.getElementById('banco-horas-teoria-deveria');
-    
-    if ($totalFeitas) $totalFeitas.textContent = `${hoursBank.totalFeitas.toFixed(0)}h`;
-    if ($totalDeveria) $totalDeveria.textContent = `${hoursBank.totalDeveria.toFixed(0)}h`;
-    if ($praticaFeitas) $praticaFeitas.textContent = `${hoursBank.totalFeitasPratica.toFixed(0)}h`;
-    if ($praticaDeveria) $praticaDeveria.textContent = `${hoursBank.totalDeveriaPratica.toFixed(0)}h`;
-    if ($teoriaFeitas) $teoriaFeitas.textContent = `${hoursBank.totalFeitasTeoria.toFixed(0)}h`;
-    if ($teoriaDeveria) $teoriaDeveria.textContent = `${hoursBank.totalDeveriaTeoria.toFixed(0)}h`;
+    // [NOVO] Calcular e renderizar o Banco de Horas
+    try {
+        const bancoHoras = calcularBancoHoras(alunoEmailNorm, alunoNomeNorm, escalas);
+        renderizarBancoHoras(bancoHoras);
+    } catch (error) {
+        console.error('[renderTabEscala] Erro ao calcular banco de horas:', error);
+    }
 
     // Function to render scale pills
     function renderScalePills(scalesArray, type) {
@@ -5895,18 +5893,12 @@ function renderTabEscala(escalas) {
     
     // Tab switching functionality
     function setupTabSwitching() {
-        const $hoursBankPratica = document.getElementById('escala-hours-bank-pratica');
-        const $hoursBankTeoria = document.getElementById('escala-hours-bank-teoria');
-        
         if ($tabPratica) {
             $tabPratica.addEventListener('click', () => {
                 if (activeType === 'pratica') return;
                 activeType = 'pratica';
                 $tabPratica.classList.add('escala-type-tab--active');
                 if ($tabTeoria) $tabTeoria.classList.remove('escala-type-tab--active');
-                // Toggle hours bank visibility
-                if ($hoursBankPratica) $hoursBankPratica.style.display = '';
-                if ($hoursBankTeoria) $hoursBankTeoria.style.display = 'none';
                 renderScalePills(escalasPraticas, 'pratica');
             });
         }
@@ -5917,9 +5909,6 @@ function renderTabEscala(escalas) {
                 activeType = 'teoria';
                 $tabTeoria.classList.add('escala-type-tab--active');
                 if ($tabPratica) $tabPratica.classList.remove('escala-type-tab--active');
-                // Toggle hours bank visibility
-                if ($hoursBankPratica) $hoursBankPratica.style.display = 'none';
-                if ($hoursBankTeoria) $hoursBankTeoria.style.display = '';
                 renderScalePills(escalasTeoricas, 'teoria');
             });
         }
@@ -5931,8 +5920,7 @@ function renderTabEscala(escalas) {
     function drawScaleGrid(escala, emailNorm, nameNorm, absentDates, makeupDates) {
         
         const summary = {
-            presenca: 0, plantao: 0, noturno: 0, aula: 0, absent: 0, makeup: 0, off: 0,
-            escalaFeitas: 0, escalaDeveria: 0
+            presenca: 0, plantao: 0, noturno: 0, aula: 0, absent: 0, makeup: 0, off: 0
         };
 
         const diasBrutos = escala.headersDay || [];
@@ -5987,19 +5975,13 @@ function renderTabEscala(escalas) {
             
             const iso = _esc_iso(day.dateObj);
             let rawText = day.rawText;
-            const hoursInfo = _esc_calculateHours(rawText);
-            let statusKey = _esc_normalizeStatusKey(rawText, hoursInfo);
-            
-            let isAusente = false;
-            let isReposto = false;
+            let statusKey = _esc_normalizeStatusKey(rawText);
 
             if (makeupDates.has(iso)) {
                 statusKey = 'makeup';
-                isReposto = true;
             }
             else if (absentDates.has(iso)) {
                 statusKey = 'absent';
-                isAusente = true;
             }
             else if (iso === todayISO) {
                 const pontoRecord = resolvePontoHojeRecordFromIdentity({
@@ -6007,7 +5989,7 @@ function renderTabEscala(escalas) {
                     normName: nameNorm
                 });
                 if (pontoRecord) {
-                    const pontoStatus = _esc_normalizeStatusKey(rawText, hoursInfo);
+                    const pontoStatus = _esc_normalizeStatusKey(rawText);
                     statusKey = (pontoStatus === 'plantao' || pontoStatus === 'aula' || pontoStatus === 'noturno') ? pontoStatus : 'presenca';
                     const horaEntradaPonto = pontoRecord.HoraEntrada || pontoRecord.horaEntrada || '';
                     rawText = horaEntradaPonto ? `Presente (${horaEntradaPonto})` : 'Presente';
@@ -6017,21 +5999,8 @@ function renderTabEscala(escalas) {
             if (summary[statusKey] !== undefined) {
                 summary[statusKey]++;
             }
-
-            // Use standardHours for the intelligent hours bank system
-            const standardHours = hoursInfo.standardHours || hoursInfo.hours;
-            if (standardHours > 0) {
-                if (statusKey !== 'off' && statusKey !== 'none') {
-                    summary.escalaDeveria += standardHours;
-                    if (!isAusente || isReposto) {
-                        summary.escalaFeitas += standardHours;
-                    }
-                } else if (statusKey === 'off' && isReposto) {
-                    summary.escalaFeitas += standardHours;
-                }
-            }
             
-            const tile = createTile(day.dateObj, rawText, statusKey, hoursInfo);
+            const tile = createTile(day.dateObj, rawText, statusKey);
             $grid.appendChild(tile);
         });
 
@@ -6043,11 +6012,6 @@ function renderTabEscala(escalas) {
         if ($resumoTitle) {
             $resumoTitle.textContent = `Resumo: ${nomeEscala}`;
         }
-        
-        const $escalaFeitas = document.getElementById('banco-horas-escala-feitas');
-        const $escalaDeveria = document.getElementById('banco-horas-escala-deveria');
-        if ($escalaFeitas) $escalaFeitas.textContent = `${summary.escalaFeitas.toFixed(0)}h`;
-        if ($escalaDeveria) $escalaDeveria.textContent = `${summary.escalaDeveria.toFixed(0)}h`;
         
         // Update stats
         const $statPresenca = document.getElementById('stat-presenca');
@@ -6068,7 +6032,7 @@ function renderTabEscala(escalas) {
     }
 
     // Function to create the tile HTML
-    function createTile(dateObj, rawText, statusKey, hoursInfo) {
+    function createTile(dateObj, rawText, statusKey) {
         const tile = document.createElement('div');
         tile.className = 'compact-tile';
         tile.setAttribute('data-status', statusKey);
@@ -6079,12 +6043,7 @@ function renderTabEscala(escalas) {
         const humanStatus = _esc_getHumanLabel(statusKey);
         
         let bodyText = '';
-        if (hoursInfo && hoursInfo.startTime && hoursInfo.endTime) {
-            bodyText = `${hoursInfo.startTime} - ${hoursInfo.endTime}`;
-            if (hoursInfo.hours >= 1) {
-                bodyText += `<br><span style="font-size: 0.75em; opacity: 0.8;">${hoursInfo.hours.toFixed(1)}h</span>`;
-            }
-        } else if (rawText && rawText.trim() !== '') {
+        if (rawText && rawText.trim() !== '') {
             bodyText = rawText.trim();
         } else {
             bodyText = humanStatus;
