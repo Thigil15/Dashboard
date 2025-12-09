@@ -5267,9 +5267,11 @@ function _esc_iso(d) {
  */
 function _esc_normalizeStatusKey(raw) {
     if (!raw || typeof raw !== 'string' || raw.trim() === '') return 'none';
+    
+    const rawTrimmed = raw.trim();
     const s = normalizeString(raw);
-    const rawLower = raw.toLowerCase().trim();
-    const rawUpper = raw.toUpperCase().trim();
+    const rawLower = rawTrimmed.toLowerCase();
+    const rawUpper = rawTrimmed.toUpperCase();
     
     // Priority checks first
     if (s.includes('ausencia') || s.includes('falta')) return 'absent';
@@ -5300,13 +5302,10 @@ function _esc_normalizeStatusKey(raw) {
         return 'presenca'; // Verde
     }
     
-    // Check if has time format (indicates presence)
-    const hasTimePattern = 
-        /\d{1,2}:\d{2}/.test(raw) ||           // HH:MM format
-        /\d{1,2}h/.test(rawLower) ||           // Hh format
-        /(as|às|a)\s*\d/.test(s);              // "às" or "as" followed by digit
-    
-    if (hasTimePattern) return 'presenca'; // Verde
+    // Check if has time format (indicates presence) - combined regex for efficiency
+    if (/\d{1,2}(:\d{2}|h)|(as|às|a)\s*\d/.test(rawLower)) {
+        return 'presenca'; // Verde
+    }
     
     // GPS, AB and similar method codes = presence
     if (rawUpper.includes('GPS') || rawUpper.includes('AB') || rawLower.includes('metodo') || rawLower.includes('método')) {
@@ -5314,7 +5313,7 @@ function _esc_normalizeStatusKey(raw) {
     }
     
     // Fallback: if has any text, assume presence
-    if (s.trim().length > 0) return 'presenca'; // Verde
+    if (s.length > 0) return 'presenca'; // Verde
     
     return 'none';
 }
