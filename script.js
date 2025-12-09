@@ -6924,8 +6924,8 @@ function renderTabFaltas(faltas) {
 
                 // Processa as disciplinas do módulo
                 let disciplinasHtml = '';
-                let hasDetails = false;
-                let disciplineCount = 0;
+                const disciplineCount = materias.length;
+                const hasDetails = disciplineCount > 0;
                 
                 materias.forEach(materia => {
                     const val = getNotaValue(materia);
@@ -6946,8 +6946,6 @@ function renderTabFaltas(faltas) {
                             </div>
                         </div>
                     `;
-                    hasDetails = true;
-                    disciplineCount++;
                 });
 
                 // Se tem média ou disciplinas, mostra o card
