@@ -6657,6 +6657,18 @@ function renderTabFaltas(faltas) {
         function renderTabNotasTeoricas(notas) {
             console.log('[renderTabNotasTeoricas v36 - InCor Professional] Dados recebidos:', notas);
             
+            // Constants for grade validation
+            const MIN_GRADE = 0;
+            const MAX_GRADE = 10;
+            const MIN_FIELDS_FOR_TABLE = 5;
+            
+            // Helper function to check if a value is a valid grade
+            const isValidGrade = (value) => {
+                if (value === undefined || value === null) return false;
+                const numValue = parseNota(value);
+                return numValue >= MIN_GRADE && numValue <= MAX_GRADE && String(value).match(/^[\d,\.]+$/);
+            };
+            
             // Helper function to get value from notas object with accent-insensitive key matching
             const getNotaValue = (materia) => {
                 if (!notas) return undefined;
@@ -6996,7 +7008,7 @@ function renderTabFaltas(faltas) {
                        String(notas[k]).trim() !== '';
             });
 
-            if (gradeKeys.length > 5) {
+            if (gradeKeys.length > MIN_FIELDS_FOR_TABLE) {
                 allGradesHtml = `
                     <div class="nt-all-grades">
                         <div class="nt-all-grades-header">
@@ -7015,12 +7027,11 @@ function renderTabFaltas(faltas) {
                             <tbody>
                                 ${gradeKeys.map(key => {
                                     const value = notas[key];
-                                    const numValue = parseNota(value);
-                                    const isGrade = numValue >= 0 && numValue <= 10 && String(value).match(/^[\d,\.]+$/);
+                                    const gradeValid = isValidGrade(value);
                                     return `
                                         <tr>
                                             <td>${key}</td>
-                                            <td style="text-align: right;" class="${isGrade ? 'grade-cell' : ''}">${isGrade ? formatarNota(numValue) : value}</td>
+                                            <td style="text-align: right;" class="${gradeValid ? 'grade-cell' : ''}">${gradeValid ? formatarNota(parseNota(value)) : value}</td>
                                         </tr>
                                     `;
                                 }).join('')}
