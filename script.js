@@ -5335,6 +5335,409 @@ function _esc_getHumanLabel(key) {
 }
 
 /**
+ * [BANCO DE HORAS] Constantes de horas por turno
+ */
+const TURNO_HORAS = {
+    M: 5,      // Manhã: 5 horas
+    T: 5,      // Tarde: 5 horas
+    N: 12,     // Noturno: 12 horas
+    PLANTAO: 12 // Plantão: 12 horas
+};
+
+/**
+ * [BANCO DE HORAS] Detecta o turno a partir do código da EscalaAtual
+ * @param {string} codigo - Código do turno (M, T, N, ou horário tipo "7/19")
+ * @returns {object} { turno: string, horas: number }
+ */
+function _bh_detectarTurno(codigo) {
+    if (!codigo || typeof codigo !== 'string') return { turno: null, horas: 0 };
+    
+    const codigoTrimmed = codigo.trim().toUpperCase();
+    
+    // Códigos simples
+    if (codigoTrimmed === 'M' || codigoTrimmed.startsWith('M ') || codigoTrimmed.startsWith('M-')) {
+        return { turno: 'M', horas: TURNO_HORAS.M };
+    }
+    if (codigoTrimmed === 'T' || codigoTrimmed.startsWith('T ') || codigoTrimmed.startsWith('T-')) {
+        return { turno: 'T', horas: TURNO_HORAS.T };
+    }
+    if (codigoTrimmed === 'N' || codigoTrimmed.startsWith('N ') || codigoTrimmed.startsWith('N-')) {
+        return { turno: 'N', horas: TURNO_HORAS.N };
+    }
+    
+    // Detectar plantão pelo padrão de horário (7/19, 19/7, 07/19, etc)
+    const plantaoMatch = codigoTrimmed.match(/(\d{1,2})\s*[\/\-]\s*(\d{1,2})/);
+    if (plantaoMatch) {
+        const h1 = parseInt(plantaoMatch[1], 10);
+        const h2 = parseInt(plantaoMatch[2], 10);
+        let diff = Math.abs(h2 - h1);
+        if (diff === 0) diff = 24;
+        
+        // Se a diferença for >= 10 horas, é plantão
+        if (diff >= 10) {
+            return { turno: 'PLANTAO', horas: TURNO_HORAS.PLANTAO };
+        }
+    }
+    
+    // Detectar pelo texto
+    const codigoLower = codigo.toLowerCase();
+    if (codigoLower.includes('manhã') || codigoLower.includes('manha')) {
+        return { turno: 'M', horas: TURNO_HORAS.M };
+    }
+    if (codigoLower.includes('tarde')) {
+        return { turno: 'T', horas: TURNO_HORAS.T };
+    }
+    if (codigoLower.includes('noturno') || codigoLower.includes('noite')) {
+        return { turno: 'N', horas: TURNO_HORAS.N };
+    }
+    if (codigoLower.includes('plantão') || codigoLower.includes('plantao')) {
+        return { turno: 'PLANTAO', horas: TURNO_HORAS.PLANTAO };
+    }
+    
+    // Folga ou vazio
+    if (codigoLower.includes('folga') || codigoLower.includes('descanso') || codigoTrimmed === '' || codigoTrimmed === '-') {
+        return { turno: 'FOLGA', horas: 0 };
+    }
+    
+    return { turno: null, horas: 0 };
+}
+
+/**
+ * [BANCO DE HORAS] Verifica se o aluno compareceu baseado no registro da Escala
+ * @param {string} registro - Texto do registro na Escala (ex: "07:00:00 às 12:00:00", "", "Falta")
+ * @returns {boolean} true se compareceu, false se faltou
+ */
+function _bh_alunoCompareceu(registro) {
+    if (!registro || typeof registro !== 'string') return false;
+    
+    const registroTrimmed = registro.trim();
+    if (registroTrimmed === '') return false;
+    
+    const registroLower = registroTrimmed.toLowerCase();
+    
+    // Verificar se é ausência/falta
+    if (registroLower.includes('ausencia') || registroLower.includes('ausência') || 
+        registroLower.includes('falta') || registroLower === 'f') {
+        return false;
+    }
+    
+    // Se tem formato de horário completo (ex: "07:00:00 às 12:00:00"), compareceu
+    if (/\d{1,2}:\d{2}(:\d{2})?\s*(-|às|as|a)\s*\d{1,2}:\d{2}/.test(registroTrimmed)) {
+        return true;
+    }
+    
+    // Se tem formato de horário simples (ex: "7h às 12h"), compareceu
+    if (/\d{1,2}h\s*(-|às|as|a)\s*\d{1,2}h/.test(registroLower)) {
+        return true;
+    }
+    
+    // Se tem "presente" ou similar, compareceu
+    if (registroLower.includes('presente') || registroLower.includes('compareceu')) {
+        return true;
+    }
+    
+    // Reposição também conta como compareceu
+    if (registroLower.includes('reposi')) {
+        return true;
+    }
+    
+    // Códigos de turno M, T, N são previsão, não comparecimento
+    // Só considerar como comparecido se tiver horário específico
+    
+    return false;
+}
+
+/**
+ * [BANCO DE HORAS] Calcula o banco de horas do aluno
+ * @param {string} emailNorm - Email normalizado do aluno
+ * @param {string} nomeNorm - Nome normalizado do aluno
+ * @param {Array} escalas - Array de escalas do aluno
+ * @returns {object} Dados do banco de horas
+ */
+function calcularBancoHoras(emailNorm, nomeNorm, escalas) {
+    console.log('[calcularBancoHoras] Iniciando cálculo para:', { emailNorm, nomeNorm });
+    
+    const resultado = {
+        setor: null,
+        horasFeitas: 0,
+        horasPrevistas: 0,
+        horasPendentes: 0,
+        saldo: 0,
+        diasCompareceu: 0,
+        diasDeveria: 0,
+        diasFaltou: 0,
+        turnos: {
+            M: { feitos: 0, previstos: 0 },
+            T: { feitos: 0, previstos: 0 },
+            N: { feitos: 0, previstos: 0 }
+        },
+        detalhes: []
+    };
+    
+    // Buscar aluno na EscalaAtual (Enfermaria, UTI, ou Cardiopediatria)
+    let escalaAtualAluno = null;
+    let escalaAtualData = null;
+    
+    const setores = [
+        { data: appState.escalaAtualEnfermaria, nome: 'Enfermaria' },
+        { data: appState.escalaAtualUTI, nome: 'UTI' },
+        { data: appState.escalaAtualCardiopediatria, nome: 'Cardiopediatria' }
+    ];
+    
+    for (const setor of setores) {
+        if (setor.data && setor.data.alunos && setor.data.alunos.length > 0) {
+            const aluno = setor.data.alunos.find(a => {
+                const aEmailNorm = normalizeString(a.EmailHC || '');
+                const aNomeNorm = normalizeString(a.NomeCompleto || '');
+                return (aEmailNorm && aEmailNorm === emailNorm) || 
+                       (aNomeNorm && aNomeNorm === nomeNorm);
+            });
+            
+            if (aluno) {
+                escalaAtualAluno = aluno;
+                escalaAtualData = setor.data;
+                resultado.setor = setor.nome;
+                console.log(`[calcularBancoHoras] ✅ Aluno encontrado em EscalaAtual${setor.nome}`);
+                break;
+            }
+        }
+    }
+    
+    if (!escalaAtualAluno || !escalaAtualData) {
+        console.warn('[calcularBancoHoras] ⚠️ Aluno não encontrado em nenhuma EscalaAtual');
+        return resultado;
+    }
+    
+    // Mapear os dias da EscalaAtual para saber o que o aluno deveria fazer
+    const diasPrevistos = new Map(); // ISO date -> { turno, horas, codigo }
+    
+    const headersDay = escalaAtualData.headersDay || [];
+    headersDay.forEach(ddmm => {
+        const dateObj = _esc_parseDMInferYear(ddmm);
+        if (!dateObj) return;
+        
+        const iso = _esc_iso(dateObj);
+        const codigoTurno = escalaAtualAluno[ddmm] || '';
+        const turnoInfo = _bh_detectarTurno(codigoTurno);
+        
+        if (turnoInfo.horas > 0) {
+            diasPrevistos.set(iso, {
+                turno: turnoInfo.turno,
+                horas: turnoInfo.horas,
+                codigo: codigoTurno,
+                ddmm: ddmm
+            });
+        }
+    });
+    
+    console.log(`[calcularBancoHoras] Dias previstos na EscalaAtual: ${diasPrevistos.size}`);
+    
+    // Agora verificar nas Escalas (Escala1, Escala2, etc) se o aluno compareceu
+    const diasVerificados = new Set();
+    
+    escalas.forEach(escala => {
+        const escalaDias = escala.headersDay || [];
+        
+        escalaDias.forEach(ddmm => {
+            const dateObj = _esc_parseDMInferYear(ddmm);
+            if (!dateObj) return;
+            
+            const iso = _esc_iso(dateObj);
+            
+            // Já verificamos esse dia?
+            if (diasVerificados.has(iso)) return;
+            
+            // Esse dia tem previsão na EscalaAtual?
+            const previsao = diasPrevistos.get(iso);
+            if (!previsao) return;
+            
+            diasVerificados.add(iso);
+            
+            // Verificar o registro do aluno na Escala
+            const registro = escala[ddmm] || '';
+            const compareceu = _bh_alunoCompareceu(registro);
+            
+            // Atualizar totais
+            resultado.horasPrevistas += previsao.horas;
+            resultado.diasDeveria++;
+            
+            // Atualizar por turno
+            if (previsao.turno === 'M' || previsao.turno === 'T' || previsao.turno === 'N') {
+                resultado.turnos[previsao.turno].previstos++;
+            }
+            
+            if (compareceu) {
+                resultado.horasFeitas += previsao.horas;
+                resultado.diasCompareceu++;
+                
+                if (previsao.turno === 'M' || previsao.turno === 'T' || previsao.turno === 'N') {
+                    resultado.turnos[previsao.turno].feitos++;
+                }
+                
+                resultado.detalhes.push({
+                    data: iso,
+                    ddmm: ddmm,
+                    turno: previsao.turno,
+                    horas: previsao.horas,
+                    status: 'presente',
+                    registro: registro
+                });
+            } else {
+                resultado.horasPendentes += previsao.horas;
+                resultado.diasFaltou++;
+                
+                resultado.detalhes.push({
+                    data: iso,
+                    ddmm: ddmm,
+                    turno: previsao.turno,
+                    horas: previsao.horas,
+                    status: 'ausente',
+                    registro: registro
+                });
+            }
+        });
+    });
+    
+    // Calcular saldo (positivo = em dia, negativo = deve horas)
+    resultado.saldo = resultado.horasFeitas - resultado.horasPendentes;
+    
+    console.log('[calcularBancoHoras] Resultado final:', resultado);
+    
+    return resultado;
+}
+
+/**
+ * [BANCO DE HORAS] Atualiza a interface do banco de horas
+ * @param {object} bancoHoras - Dados do banco de horas
+ */
+function renderizarBancoHoras(bancoHoras) {
+    console.log('[renderizarBancoHoras] Renderizando:', bancoHoras);
+    
+    // Elementos do DOM
+    const $setor = document.getElementById('banco-horas-setor');
+    const $statusBadge = document.getElementById('banco-horas-status-badge');
+    const $saldoTotal = document.getElementById('banco-horas-saldo-total');
+    const $saldoIndicator = document.getElementById('banco-horas-saldo-indicator');
+    const $progressBar = document.getElementById('banco-horas-progress-bar');
+    const $progressText = document.getElementById('banco-horas-progress-text');
+    const $horasFeitas = document.getElementById('banco-horas-feitas');
+    const $horasFeitasDetail = document.getElementById('banco-horas-feitas-detail');
+    const $horasPrevistas = document.getElementById('banco-horas-previstas');
+    const $horasPrevistasDetail = document.getElementById('banco-horas-previstas-detail');
+    const $horasPendentes = document.getElementById('banco-horas-pendentes');
+    const $horasPendentesDetail = document.getElementById('banco-horas-pendentes-detail');
+    const $manha = document.getElementById('banco-horas-manha');
+    const $tarde = document.getElementById('banco-horas-tarde');
+    const $noturno = document.getElementById('banco-horas-noturno');
+    
+    // Setor
+    if ($setor) {
+        $setor.textContent = bancoHoras.setor ? `Setor: ${bancoHoras.setor}` : 'Setor: --';
+    }
+    
+    // Status badge
+    if ($statusBadge) {
+        $statusBadge.classList.remove('banco-horas-badge--warning', 'banco-horas-badge--danger');
+        const badgeText = $statusBadge.querySelector('.banco-horas-badge-text');
+        
+        if (bancoHoras.horasPendentes === 0) {
+            if (badgeText) badgeText.textContent = 'Em dia';
+        } else if (bancoHoras.horasPendentes <= 10) {
+            $statusBadge.classList.add('banco-horas-badge--warning');
+            if (badgeText) badgeText.textContent = 'Atenção';
+        } else {
+            $statusBadge.classList.add('banco-horas-badge--danger');
+            if (badgeText) badgeText.textContent = 'Pendências';
+        }
+    }
+    
+    // Saldo total
+    if ($saldoTotal) {
+        const saldoFormatted = bancoHoras.saldo >= 0 ? `+${bancoHoras.saldo}h` : `${bancoHoras.saldo}h`;
+        $saldoTotal.textContent = saldoFormatted;
+    }
+    
+    // Indicador de saldo
+    if ($saldoIndicator) {
+        $saldoIndicator.classList.remove('banco-horas-kpi-indicator--warning', 'banco-horas-kpi-indicator--danger');
+        
+        if (bancoHoras.saldo >= 0) {
+            $saldoIndicator.innerHTML = `<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>`;
+        } else if (bancoHoras.saldo >= -10) {
+            $saldoIndicator.classList.add('banco-horas-kpi-indicator--warning');
+            $saldoIndicator.innerHTML = `<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>`;
+        } else {
+            $saldoIndicator.classList.add('banco-horas-kpi-indicator--danger');
+            $saldoIndicator.innerHTML = `<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>`;
+        }
+    }
+    
+    // Progress bar
+    if ($progressBar && $progressText) {
+        const percentualRaw = bancoHoras.horasPrevistas > 0 
+            ? Math.round((bancoHoras.horasFeitas / bancoHoras.horasPrevistas) * 100)
+            : 0;
+        const percentual = Math.min(percentualRaw, 100); // Cap at 100% for display
+        
+        $progressBar.style.width = `${percentual}%`;
+        $progressText.textContent = percentualRaw > 100 ? `${percentualRaw}%` : `${percentual}%`;
+        
+        $progressBar.classList.remove('banco-horas-kpi-progress-bar--warning', 'banco-horas-kpi-progress-bar--danger');
+        
+        if (percentualRaw < 50) {
+            $progressBar.classList.add('banco-horas-kpi-progress-bar--danger');
+        } else if (percentualRaw < 80) {
+            $progressBar.classList.add('banco-horas-kpi-progress-bar--warning');
+        }
+    }
+    
+    // Horas feitas
+    if ($horasFeitas) {
+        $horasFeitas.textContent = `${bancoHoras.horasFeitas}h`;
+    }
+    if ($horasFeitasDetail) {
+        $horasFeitasDetail.textContent = `Compareceu em ${bancoHoras.diasCompareceu} dia${bancoHoras.diasCompareceu !== 1 ? 's' : ''}`;
+    }
+    
+    // Horas previstas
+    if ($horasPrevistas) {
+        $horasPrevistas.textContent = `${bancoHoras.horasPrevistas}h`;
+    }
+    if ($horasPrevistasDetail) {
+        $horasPrevistasDetail.textContent = `Deveria comparecer em ${bancoHoras.diasDeveria} dia${bancoHoras.diasDeveria !== 1 ? 's' : ''}`;
+    }
+    
+    // Horas pendentes
+    if ($horasPendentes) {
+        $horasPendentes.textContent = `${bancoHoras.horasPendentes}h`;
+        
+        $horasPendentes.classList.remove('banco-horas-kpi-value--success', 'banco-horas-kpi-value--warning', 'banco-horas-kpi-value--danger');
+        
+        if (bancoHoras.horasPendentes === 0) {
+            $horasPendentes.classList.add('banco-horas-kpi-value--success');
+        } else if (bancoHoras.horasPendentes <= 10) {
+            $horasPendentes.classList.add('banco-horas-kpi-value--warning');
+        } else {
+            $horasPendentes.classList.add('banco-horas-kpi-value--danger');
+        }
+    }
+    if ($horasPendentesDetail) {
+        $horasPendentesDetail.textContent = `Faltou em ${bancoHoras.diasFaltou} dia${bancoHoras.diasFaltou !== 1 ? 's' : ''}`;
+    }
+    
+    // Distribuição por turno
+    if ($manha) {
+        $manha.textContent = `${bancoHoras.turnos.M.feitos}/${bancoHoras.turnos.M.previstos}`;
+    }
+    if ($tarde) {
+        $tarde.textContent = `${bancoHoras.turnos.T.feitos}/${bancoHoras.turnos.T.previstos}`;
+    }
+    if ($noturno) {
+        $noturno.textContent = `${bancoHoras.turnos.N.feitos}/${bancoHoras.turnos.N.previstos}`;
+    }
+}
+
+/**
  * [ORION] Renderiza a aba de escala (v33.0 - Modern Professional Design)
  * Redesign completo com layout moderno e profissional para visualização de escalas
  * @param {Array} escalas - O array de escalas do aluno (de findDataByStudent).
@@ -5419,6 +5822,14 @@ function renderTabEscala(escalas) {
             if (f.DataReposicaoISO) makeupDatesTotal.add(f.DataReposicaoISO);
         }
     });
+
+    // [NOVO] Calcular e renderizar o Banco de Horas
+    try {
+        const bancoHoras = calcularBancoHoras(alunoEmailNorm, alunoNomeNorm, escalas);
+        renderizarBancoHoras(bancoHoras);
+    } catch (error) {
+        console.error('[renderTabEscala] Erro ao calcular banco de horas:', error);
+    }
 
     // Function to render scale pills
     function renderScalePills(scalesArray, type) {
