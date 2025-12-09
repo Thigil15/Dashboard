@@ -13084,3 +13084,95 @@
     font-weight: 700;
     color: #1e293b;
 }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   MINI PANEL - Resumo de Frequência (Aulas, Presenças, Ausências, Atrasos)
+   ════════════════════════════════════════════════════════════════════════════ */
+
+.banco-horas-breakdown-grid--4cols {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+@media (max-width: 900px) {
+    .banco-horas-breakdown-grid--4cols {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .banco-horas-breakdown-grid--4cols {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Aulas icon */
+.banco-horas-breakdown-item--aulas .banco-horas-breakdown-icon {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+}
+
+/* Presenças icon */
+.banco-horas-breakdown-item--presencas .banco-horas-breakdown-icon {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+}
+
+/* Ausências icon */
+.banco-horas-breakdown-item--ausencias .banco-horas-breakdown-icon {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+/* Atrasos icon */
+.banco-horas-breakdown-item--atrasos .banco-horas-breakdown-icon {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   LEGEND - Inline inside scale section
+   ════════════════════════════════════════════════════════════════════════════ */
+
+.escala-legend-section--inline {
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(229, 233, 239, 0.6);
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+    border: none;
+}
+
+.escala-legend-section--inline .escala-legend-header {
+    padding-bottom: 0.5rem;
+    border-bottom: none;
+    margin-bottom: 0.75rem;
+}
+
+/* Atraso legend dot (yellow/orange) */
+.escala-legend-dot--atraso {
+    background: rgba(245, 158, 11, 0.25);
+    border-color: rgba(245, 158, 11, 0.4);
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   ATRASO status for day tiles
+   ════════════════════════════════════════════════════════════════════════════ */
+
+.escala-day-tile[data-status="atraso"] {
+    --tile-accent-color: #f59e0b;
+}
+.escala-day-tile[data-status="atraso"] .escala-day-status {
+    background: rgba(245, 158, 11, 0.1);
+    color: #b45309;
+    border-color: rgba(245, 158, 11, 0.2);
+}
+
+.compact-tile[data-status="atraso"] { --tile-accent-color: #f59e0b; }
+
+.classification-pill[data-status="atraso"],
+.compact-tile[data-status="atraso"] .classification-pill {
+    background: rgba(245, 158, 11, 0.1);
+    color: #b45309;
+    border-color: rgba(245, 158, 11, 0.2);
+}

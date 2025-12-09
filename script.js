@@ -5330,7 +5330,8 @@ function _esc_getHumanLabel(key) {
         'absent': 'Ausência',
         'makeup': 'Reposição',
         'off': 'Folga',
-        'none': 'Sem Dado'
+        'none': 'Sem Dado',
+        'atraso': 'Atraso'
     }[key] || 'Sem Dado';
 }
 
@@ -5489,8 +5490,10 @@ function _bh_calcularHorasDoValor(valor) {
  * @returns {object} Dados do banco de horas
  */
 function calcularBancoHoras(emailNorm, nomeNorm, escalas) {
-    console.log('[calcularBancoHoras v2] Iniciando cálculo para:', { emailNorm, nomeNorm });
-    console.log('[calcularBancoHoras v2] Escalas recebidas:', escalas?.length || 0);
+    console.log('[calcularBancoHoras v3] Iniciando cálculo para:', { emailNorm, nomeNorm });
+    console.log('[calcularBancoHoras v3] Escalas recebidas:', escalas?.length || 0);
+    
+    const TOLERANCIA_ATRASO_MINUTOS = 10; // 10 minutos de tolerância
     
     const resultado = {
         setor: null,
@@ -5503,43 +5506,92 @@ function calcularBancoHoras(emailNorm, nomeNorm, escalas) {
         diasCompareceu: 0,
         diasDeveria: 0,
         diasFaltou: 0,
-        turnos: {
-            M: { feitos: 0, previstos: 0 },
-            T: { feitos: 0, previstos: 0 },
-            N: { feitos: 0, previstos: 0 }
-        },
+        // Novo: Mini Panel - Resumo de Frequência
+        aulas: 0,
+        presencas: 0,
+        ausencias: 0,
+        atrasos: 0,
         detalhes: []
     };
     
-    // Buscar informações do setor/supervisor na EscalaAtual (apenas para exibição, não para cálculo)
-    const setores = [
-        { data: appState.escalaAtualEnfermaria, nome: 'Enfermaria' },
-        { data: appState.escalaAtualUTI, nome: 'UTI' },
-        { data: appState.escalaAtualCardiopediatria, nome: 'Cardiopediatria' }
-    ];
-    
-    for (const setor of setores) {
-        if (setor.data && setor.data.alunos && setor.data.alunos.length > 0) {
-            const aluno = setor.data.alunos.find(a => {
-                const aEmailNorm = normalizeString(a.EmailHC || '');
-                const aNomeNorm = normalizeString(a.NomeCompleto || '');
-                return (aEmailNorm && aEmailNorm === emailNorm) || 
-                       (aNomeNorm && aNomeNorm === nomeNorm);
-            });
+    // [NOVO] Buscar setor/supervisor das NotasPraticas (NotasPraticas1 = Escala1)
+    // Primeiro, descobrir qual é a escala atual do aluno
+    if (escalas && escalas.length > 0) {
+        const escalaAtual = escalas[escalas.length - 1]; // Pega a última (mais recente)
+        const nomeEscalaAtual = escalaAtual.nomeEscala || '';
+        
+        // Extrair o número da escala (ex: Escala1 -> 1, EscalaPratica2 -> 2)
+        const escalaNumMatch = nomeEscalaAtual.match(/(\d+)$/);
+        const escalaNum = escalaNumMatch ? escalaNumMatch[1] : null;
+        
+        if (escalaNum && appState.notasPraticas) {
+            // Procurar NotasPraticas correspondente (NotasPraticas1 = Escala1)
+            const possibleNpNames = [
+                `NotasPraticas${escalaNum}`,
+                `np${escalaNum}`,
+                `NP${escalaNum}`,
+                `Notas Praticas ${escalaNum}`,
+                `Notas Práticas ${escalaNum}`
+            ];
             
-            if (aluno) {
-                resultado.setor = setor.nome;
-                resultado.supervisor = aluno.Supervisor || aluno.supervisor || null;
-                resultado.unidade = aluno.Unidade || aluno.unidade || setor.nome;
-                console.log(`[calcularBancoHoras v2] ✅ Setor do aluno: ${setor.nome}`);
-                break;
+            for (const npName of possibleNpNames) {
+                const notasPratica = appState.notasPraticas[npName];
+                if (notasPratica && notasPratica.registros) {
+                    // Buscar o registro do aluno nesta NotasPraticas
+                    const registroAluno = notasPratica.registros.find(r => {
+                        const rEmailNorm = normalizeString(r.EmailHC || r.emailHC || '');
+                        const rNomeNorm = normalizeString(r.NomeCompleto || r.nomeCompleto || '');
+                        return (rEmailNorm && rEmailNorm === emailNorm) ||
+                               (rNomeNorm && rNomeNorm === nomeNorm);
+                    });
+                    
+                    if (registroAluno) {
+                        resultado.setor = registroAluno.Setor || registroAluno.setor || 
+                                          registroAluno.Unidade || registroAluno.unidade || null;
+                        resultado.supervisor = registroAluno.Supervisor || registroAluno.supervisor || null;
+                        resultado.unidade = registroAluno.Unidade || registroAluno.unidade || resultado.setor;
+                        console.log(`[calcularBancoHoras v3] ✅ Setor/Supervisor encontrado em ${npName}:`, {
+                            setor: resultado.setor,
+                            supervisor: resultado.supervisor
+                        });
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    
+    // Fallback: Buscar informações do setor/supervisor na EscalaAtual (se NotasPraticas não encontrou)
+    if (!resultado.setor) {
+        const setores = [
+            { data: appState.escalaAtualEnfermaria, nome: 'Enfermaria' },
+            { data: appState.escalaAtualUTI, nome: 'UTI' },
+            { data: appState.escalaAtualCardiopediatria, nome: 'Cardiopediatria' }
+        ];
+        
+        for (const setor of setores) {
+            if (setor.data && setor.data.alunos && setor.data.alunos.length > 0) {
+                const aluno = setor.data.alunos.find(a => {
+                    const aEmailNorm = normalizeString(a.EmailHC || '');
+                    const aNomeNorm = normalizeString(a.NomeCompleto || '');
+                    return (aEmailNorm && aEmailNorm === emailNorm) || 
+                           (aNomeNorm && aNomeNorm === nomeNorm);
+                });
+                
+                if (aluno) {
+                    resultado.setor = setor.nome;
+                    resultado.supervisor = aluno.Supervisor || aluno.supervisor || null;
+                    resultado.unidade = aluno.Unidade || aluno.unidade || setor.nome;
+                    console.log(`[calcularBancoHoras v3] ✅ Setor do aluno (fallback EscalaAtual): ${setor.nome}`);
+                    break;
+                }
             }
         }
     }
     
     // Se não há escalas, retornar resultado vazio
     if (!escalas || escalas.length === 0) {
-        console.warn('[calcularBancoHoras v2] ⚠️ Nenhuma escala encontrada para o aluno');
+        console.warn('[calcularBancoHoras v3] ⚠️ Nenhuma escala encontrada para o aluno');
         return resultado;
     }
     
@@ -5552,10 +5604,14 @@ function calcularBancoHoras(emailNorm, nomeNorm, escalas) {
         const nomeEscala = escala.nomeEscala || `Escala${escalaIdx + 1}`;
         const tipoEscala = escala.tipo || 'pratica';
         
-        console.log(`[calcularBancoHoras v2] Processando ${nomeEscala}:`, {
+        console.log(`[calcularBancoHoras v3] Processando ${nomeEscala}:`, {
             tipo: tipoEscala,
             diasDisponiveis: headersDay.length
         });
+        
+        // [NOVO] Extrair horário agendado da escala para detecção de atraso
+        // O horário agendado geralmente está no formato "07:00:00 às 12:00:00"
+        // Precisamos do horário de entrada previsto
         
         headersDay.forEach(ddmm => {
             const dateObj = _esc_parseDMInferYear(ddmm);
@@ -5588,7 +5644,7 @@ function calcularBancoHoras(emailNorm, nomeNorm, escalas) {
             
             // Log para debug
             if (valor) {
-                console.log(`[calcularBancoHoras v2] ${ddmm} (${nomeEscala}): "${valor}" => ${horasCalc.horas}h, tipo: ${horasCalc.tipo}, compareceu: ${horasCalc.compareceu}`);
+                console.log(`[calcularBancoHoras v3] ${ddmm} (${nomeEscala}): "${valor}" => ${horasCalc.horas}h, tipo: ${horasCalc.tipo}, compareceu: ${horasCalc.compareceu}`);
             }
             
             diasProcessados.set(iso, {
@@ -5602,7 +5658,7 @@ function calcularBancoHoras(emailNorm, nomeNorm, escalas) {
         });
     });
     
-    console.log(`[calcularBancoHoras v2] Total de dias processados: ${diasProcessados.size}`);
+    console.log(`[calcularBancoHoras v3] Total de dias processados: ${diasProcessados.size}`);
     
     // Calcular totais a partir dos dias processados
     diasProcessados.forEach((dia, iso) => {
@@ -5617,15 +5673,7 @@ function calcularBancoHoras(emailNorm, nomeNorm, escalas) {
             resultado.diasDeveria++;
             resultado.horasPendentes += dia.horas;
             resultado.diasFaltou++;
-            
-            // Rastrear por turno
-            if (dia.tipo === 'turno_M') {
-                resultado.turnos.M.previstos++;
-            } else if (dia.tipo === 'turno_T') {
-                resultado.turnos.T.previstos++;
-            } else if (dia.tipo === 'turno_N') {
-                resultado.turnos.N.previstos++;
-            }
+            resultado.ausencias++; // [NOVO] Contar ausências
             
             resultado.detalhes.push({
                 data: iso,
@@ -5646,51 +5694,72 @@ function calcularBancoHoras(emailNorm, nomeNorm, escalas) {
             resultado.diasDeveria++;
             resultado.diasCompareceu++;
             
-            // Determinar turno pelo horário ou tipo
-            let turno = null;
-            if (dia.tipo === 'turno_M' || dia.tipo === 'aula') {
-                turno = 'M';
-            } else if (dia.tipo === 'turno_T') {
-                turno = 'T';
-            } else if (dia.tipo === 'turno_N') {
-                turno = 'N';
-            } else if (dia.tipo === 'horario') {
-                // Determinar turno pelo horário de entrada usando as constantes
-                const entradaMatch = dia.valor.match(/(\d{1,2})[:h]/);
-                if (entradaMatch) {
-                    const horaEntrada = parseInt(entradaMatch[1], 10);
-                    if (horaEntrada >= TURNO_LIMITS.MANHA_INICIO && horaEntrada < TURNO_LIMITS.TARDE_INICIO) {
-                        turno = 'M';
-                    } else if (horaEntrada >= TURNO_LIMITS.TARDE_INICIO && horaEntrada < TURNO_LIMITS.NOITE_INICIO) {
-                        turno = 'T';
-                    } else {
-                        turno = 'N';
-                    }
-                }
+            // [NOVO] Determinar se é aula ou presença regular
+            if (dia.tipo === 'aula') {
+                resultado.aulas++;
+            } else {
+                resultado.presencas++;
             }
             
-            if (turno) {
-                resultado.turnos[turno].previstos++;
-                resultado.turnos[turno].feitos++;
+            // [NOVO] Verificar atraso - se há horário agendado e horário real de entrada
+            // O formato esperado é "07:00:00 às 12:00:00" ou "7h às 12h"
+            let isAtraso = false;
+            if (dia.tipo === 'horario' && dia.valor) {
+                // Extrair horário agendado (primeiro horário no valor)
+                const horarioAgendadoMatch = dia.valor.match(/^(\d{1,2}):?(\d{2})?/);
+                if (horarioAgendadoMatch) {
+                    const horaAgendada = parseInt(horarioAgendadoMatch[1], 10);
+                    const minAgendado = horarioAgendadoMatch[2] ? parseInt(horarioAgendadoMatch[2], 10) : 0;
+                    const minutosAgendados = horaAgendada * 60 + minAgendado;
+                    
+                    // Buscar registro de ponto real do aluno para este dia
+                    // O ponto real está em pontoStaticRows ou pontoPraticaRows
+                    const pontoHoje = pontoState.byDate.get(iso);
+                    if (pontoHoje) {
+                        // Encontrar o registro do aluno
+                        const registroAluno = pontoHoje.find(p => {
+                            const pEmail = normalizeString(p.EmailHC || p.emailHC || '');
+                            const pNome = normalizeString(p.NomeCompleto || p.nomeCompleto || '');
+                            return (pEmail && pEmail === emailNorm) || (pNome && pNome === nomeNorm);
+                        });
+                        
+                        if (registroAluno) {
+                            const horaEntradaReal = registroAluno.HoraEntrada || registroAluno.horaEntrada || '';
+                            const entradaRealMatch = horaEntradaReal.match(/(\d{1,2}):?(\d{2})?/);
+                            
+                            if (entradaRealMatch) {
+                                const horaReal = parseInt(entradaRealMatch[1], 10);
+                                const minReal = entradaRealMatch[2] ? parseInt(entradaRealMatch[2], 10) : 0;
+                                const minutosReais = horaReal * 60 + minReal;
+                                
+                                // Verificar se chegou atrasado (com tolerância de 10 minutos)
+                                if (minutosReais > minutosAgendados + TOLERANCIA_ATRASO_MINUTOS) {
+                                    isAtraso = true;
+                                    resultado.atrasos++;
+                                    console.log(`[calcularBancoHoras v3] ⚠️ ATRASO detectado em ${dia.ddmm}: agendado ${horaAgendada}:${String(minAgendado).padStart(2, '0')}, chegou ${horaReal}:${String(minReal).padStart(2, '0')}`);
+                                }
+                            }
+                        }
+                    }
+                }
             }
             
             resultado.detalhes.push({
                 data: iso,
                 ddmm: dia.ddmm,
                 tipo: dia.tipo,
-                turno: turno,
                 horas: dia.horas,
-                status: 'presente',
+                status: isAtraso ? 'atraso' : 'presente',
                 valor: dia.valor,
                 escala: dia.escala
             });
         } else if (dia.tipo === 'ausencia') {
             // Ausência registrada - usar horas padrão já que não temos o horário original agendado
-            // Em uma versão futura, podemos buscar o horário agendado da EscalaAtual se disponível
             resultado.horasPrevistas += HORAS_PADRAO;
             resultado.horasPendentes += HORAS_PADRAO;
             resultado.diasDeveria++;
             resultado.diasFaltou++;
+            resultado.ausencias++; // [NOVO] Contar ausências
             
             resultado.detalhes.push({
                 data: iso,
@@ -5707,7 +5776,7 @@ function calcularBancoHoras(emailNorm, nomeNorm, escalas) {
     // Calcular saldo (positivo = em dia, negativo = deve horas)
     resultado.saldo = resultado.horasFeitas - resultado.horasPendentes;
     
-    console.log('[calcularBancoHoras v2] Resultado final:', resultado);
+    console.log('[calcularBancoHoras v3] Resultado final:', resultado);
     
     return resultado;
 }
@@ -5843,15 +5912,23 @@ function renderizarBancoHoras(bancoHoras) {
         $horasPendentesDetail.textContent = `Faltou em ${bancoHoras.diasFaltou} dia${bancoHoras.diasFaltou !== 1 ? 's' : ''}`;
     }
     
-    // Distribuição por turno
-    if ($manha) {
-        $manha.textContent = `${bancoHoras.turnos.M.feitos}/${bancoHoras.turnos.M.previstos}`;
+    // [NOVO] Mini Panel - Resumo de Frequência (Aulas, Presenças, Ausências, Atrasos)
+    const $aulas = document.getElementById('banco-horas-aulas');
+    const $presencas = document.getElementById('banco-horas-presencas');
+    const $ausencias = document.getElementById('banco-horas-ausencias');
+    const $atrasos = document.getElementById('banco-horas-atrasos');
+    
+    if ($aulas) {
+        $aulas.textContent = bancoHoras.aulas || 0;
     }
-    if ($tarde) {
-        $tarde.textContent = `${bancoHoras.turnos.T.feitos}/${bancoHoras.turnos.T.previstos}`;
+    if ($presencas) {
+        $presencas.textContent = bancoHoras.presencas || 0;
     }
-    if ($noturno) {
-        $noturno.textContent = `${bancoHoras.turnos.N.feitos}/${bancoHoras.turnos.N.previstos}`;
+    if ($ausencias) {
+        $ausencias.textContent = bancoHoras.ausencias || 0;
+    }
+    if ($atrasos) {
+        $atrasos.textContent = bancoHoras.atrasos || 0;
     }
 }
 
@@ -6037,8 +6114,10 @@ function renderTabEscala(escalas) {
     // Function to draw the grid
     function drawScaleGrid(escala, emailNorm, nameNorm, absentDates, makeupDates) {
         
+        const TOLERANCIA_ATRASO_MINUTOS = 10; // 10 minutos de tolerância
+        
         const summary = {
-            presenca: 0, plantao: 0, noturno: 0, aula: 0, absent: 0, makeup: 0, off: 0
+            presenca: 0, plantao: 0, noturno: 0, aula: 0, absent: 0, makeup: 0, off: 0, atraso: 0
         };
 
         const diasBrutos = escala.headersDay || [];
@@ -6101,16 +6180,58 @@ function renderTabEscala(escalas) {
             else if (absentDates.has(iso)) {
                 statusKey = 'absent';
             }
-            else if (iso === todayISO) {
-                const pontoRecord = resolvePontoHojeRecordFromIdentity({
-                    normEmail: emailNorm,
-                    normName: nameNorm
-                });
+            else {
+                // Check ponto data for both today and historical days
+                let pontoRecord = null;
+                
+                if (iso === todayISO) {
+                    pontoRecord = resolvePontoHojeRecordFromIdentity({
+                        normEmail: emailNorm,
+                        normName: nameNorm
+                    });
+                } else {
+                    // Check historical ponto data
+                    const pontoData = pontoState.byDate.get(iso);
+                    if (pontoData) {
+                        pontoRecord = pontoData.find(p => {
+                            const pEmail = normalizeString(p.EmailHC || p.emailHC || '');
+                            const pNome = normalizeString(p.NomeCompleto || p.nomeCompleto || '');
+                            return (pEmail && pEmail === emailNorm) || (pNome && pNome === nameNorm);
+                        });
+                    }
+                }
+                
                 if (pontoRecord) {
                     const pontoStatus = _esc_normalizeStatusKey(rawText);
                     statusKey = (pontoStatus === 'plantao' || pontoStatus === 'aula' || pontoStatus === 'noturno') ? pontoStatus : 'presenca';
                     const horaEntradaPonto = pontoRecord.HoraEntrada || pontoRecord.horaEntrada || '';
-                    rawText = horaEntradaPonto ? `Presente (${horaEntradaPonto})` : 'Presente';
+                    
+                    // [NOVO] Verificar atraso - comparar com horário agendado
+                    if (horaEntradaPonto && day.rawText) {
+                        const horarioAgendadoMatch = day.rawText.match(/^(\d{1,2}):?(\d{2})?/);
+                        const horaEntradaMatch = horaEntradaPonto.match(/(\d{1,2}):?(\d{2})?/);
+                        
+                        if (horarioAgendadoMatch && horaEntradaMatch) {
+                            const horaAgendada = parseInt(horarioAgendadoMatch[1], 10);
+                            const minAgendado = horarioAgendadoMatch[2] ? parseInt(horarioAgendadoMatch[2], 10) : 0;
+                            const horaReal = parseInt(horaEntradaMatch[1], 10);
+                            const minReal = horaEntradaMatch[2] ? parseInt(horaEntradaMatch[2], 10) : 0;
+                            
+                            const minutosAgendados = horaAgendada * 60 + minAgendado;
+                            const minutosReais = horaReal * 60 + minReal;
+                            
+                            if (minutosReais > minutosAgendados + TOLERANCIA_ATRASO_MINUTOS) {
+                                statusKey = 'atraso';
+                                rawText = `Atraso (${horaEntradaPonto})`;
+                            } else {
+                                rawText = horaEntradaPonto ? `Presente (${horaEntradaPonto})` : 'Presente';
+                            }
+                        } else {
+                            rawText = horaEntradaPonto ? `Presente (${horaEntradaPonto})` : 'Presente';
+                        }
+                    } else {
+                        rawText = horaEntradaPonto ? `Presente (${horaEntradaPonto})` : 'Presente';
+                    }
                 }
             }
 
