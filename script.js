@@ -5342,6 +5342,7 @@ const HORAS_AULA = 5; // Aulas iniciais ou qualquer tipo de aula = 5 horas
 const HORAS_PADRAO = 5; // Horas padrão quando não há informação de horário específico
 const HORAS_MAX_VALIDAS = 24; // Máximo de horas válidas por dia
 const HORAS_MIN_VALIDAS = 1; // Mínimo de horas válidas por turno
+const TOLERANCIA_ATRASO_MINUTOS = 10; // 10 minutos de tolerância para atraso
 
 // Limites de turnos para classificação
 const TURNO_LIMITS = {
@@ -5349,6 +5350,33 @@ const TURNO_LIMITS = {
     TARDE_INICIO: 12,  // 12h é o início típico da tarde
     NOITE_INICIO: 18   // 18h é o início típico da noite
 };
+
+/**
+ * [BANCO DE HORAS] Converte uma string de horário para minutos totais
+ * @param {string} timeString - Horário no formato "HH:MM", "H:MM", "HH", ou "Hh"
+ * @returns {number|null} Minutos totais desde meia-noite, ou null se inválido
+ */
+function _bh_parseTimeToMinutes(timeString) {
+    if (!timeString || typeof timeString !== 'string') {
+        return null;
+    }
+    
+    // Match formats: "07:30", "7:30", "07:30:00", "7h", "07h"
+    const match = timeString.match(/(\d{1,2}):?(\d{2})?/);
+    if (!match) {
+        return null;
+    }
+    
+    const hours = parseInt(match[1], 10);
+    const minutes = match[2] ? parseInt(match[2], 10) : 0;
+    
+    // Validate ranges
+    if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+        return null;
+    }
+    
+    return hours * 60 + minutes;
+}
 
 /**
  * [BANCO DE HORAS] Calcula horas a partir de um intervalo de horários
@@ -5492,8 +5520,6 @@ function _bh_calcularHorasDoValor(valor) {
 function calcularBancoHoras(emailNorm, nomeNorm, escalas) {
     console.log('[calcularBancoHoras v3] Iniciando cálculo para:', { emailNorm, nomeNorm });
     console.log('[calcularBancoHoras v3] Escalas recebidas:', escalas?.length || 0);
-    
-    const TOLERANCIA_ATRASO_MINUTOS = 10; // 10 minutos de tolerância
     
     const resultado = {
         setor: null,
@@ -5706,12 +5732,9 @@ function calcularBancoHoras(emailNorm, nomeNorm, escalas) {
             let isAtraso = false;
             if (dia.tipo === 'horario' && dia.valor) {
                 // Extrair horário agendado (primeiro horário no valor)
-                const horarioAgendadoMatch = dia.valor.match(/^(\d{1,2}):?(\d{2})?/);
-                if (horarioAgendadoMatch) {
-                    const horaAgendada = parseInt(horarioAgendadoMatch[1], 10);
-                    const minAgendado = horarioAgendadoMatch[2] ? parseInt(horarioAgendadoMatch[2], 10) : 0;
-                    const minutosAgendados = horaAgendada * 60 + minAgendado;
-                    
+                const minutosAgendados = _bh_parseTimeToMinutes(dia.valor);
+                
+                if (minutosAgendados !== null) {
                     // Buscar registro de ponto real do aluno para este dia
                     // O ponto real está em pontoStaticRows ou pontoPraticaRows
                     const pontoHoje = pontoState.byDate.get(iso);
@@ -5725,17 +5748,17 @@ function calcularBancoHoras(emailNorm, nomeNorm, escalas) {
                         
                         if (registroAluno) {
                             const horaEntradaReal = registroAluno.HoraEntrada || registroAluno.horaEntrada || '';
-                            const entradaRealMatch = horaEntradaReal.match(/(\d{1,2}):?(\d{2})?/);
+                            const minutosReais = _bh_parseTimeToMinutes(horaEntradaReal);
                             
-                            if (entradaRealMatch) {
-                                const horaReal = parseInt(entradaRealMatch[1], 10);
-                                const minReal = entradaRealMatch[2] ? parseInt(entradaRealMatch[2], 10) : 0;
-                                const minutosReais = horaReal * 60 + minReal;
-                                
-                                // Verificar se chegou atrasado (com tolerância de 10 minutos)
+                            if (minutosReais !== null) {
+                                // Verificar se chegou atrasado (com tolerância)
                                 if (minutosReais > minutosAgendados + TOLERANCIA_ATRASO_MINUTOS) {
                                     isAtraso = true;
                                     resultado.atrasos++;
+                                    const horaAgendada = Math.floor(minutosAgendados / 60);
+                                    const minAgendado = minutosAgendados % 60;
+                                    const horaReal = Math.floor(minutosReais / 60);
+                                    const minReal = minutosReais % 60;
                                     console.log(`[calcularBancoHoras v3] ⚠️ ATRASO detectado em ${dia.ddmm}: agendado ${horaAgendada}:${String(minAgendado).padStart(2, '0')}, chegou ${horaReal}:${String(minReal).padStart(2, '0')}`);
                                 }
                             }
@@ -6114,8 +6137,6 @@ function renderTabEscala(escalas) {
     // Function to draw the grid
     function drawScaleGrid(escala, emailNorm, nameNorm, absentDates, makeupDates) {
         
-        const TOLERANCIA_ATRASO_MINUTOS = 10; // 10 minutos de tolerância
-        
         const summary = {
             presenca: 0, plantao: 0, noturno: 0, aula: 0, absent: 0, makeup: 0, off: 0, atraso: 0
         };
@@ -6208,18 +6229,10 @@ function renderTabEscala(escalas) {
                     
                     // [NOVO] Verificar atraso - comparar com horário agendado
                     if (horaEntradaPonto && day.rawText) {
-                        const horarioAgendadoMatch = day.rawText.match(/^(\d{1,2}):?(\d{2})?/);
-                        const horaEntradaMatch = horaEntradaPonto.match(/(\d{1,2}):?(\d{2})?/);
+                        const minutosAgendados = _bh_parseTimeToMinutes(day.rawText);
+                        const minutosReais = _bh_parseTimeToMinutes(horaEntradaPonto);
                         
-                        if (horarioAgendadoMatch && horaEntradaMatch) {
-                            const horaAgendada = parseInt(horarioAgendadoMatch[1], 10);
-                            const minAgendado = horarioAgendadoMatch[2] ? parseInt(horarioAgendadoMatch[2], 10) : 0;
-                            const horaReal = parseInt(horaEntradaMatch[1], 10);
-                            const minReal = horaEntradaMatch[2] ? parseInt(horaEntradaMatch[2], 10) : 0;
-                            
-                            const minutosAgendados = horaAgendada * 60 + minAgendado;
-                            const minutosReais = horaReal * 60 + minReal;
-                            
+                        if (minutosAgendados !== null && minutosReais !== null) {
                             if (minutosReais > minutosAgendados + TOLERANCIA_ATRASO_MINUTOS) {
                                 statusKey = 'atraso';
                                 rawText = `Atraso (${horaEntradaPonto})`;
