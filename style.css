@@ -13334,6 +13334,7 @@
     color: white;
     border: 1px solid rgba(255, 255, 255, 0.3);
     backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 .np-validation-badge-pro svg {
