@@ -305,7 +305,8 @@
                 
                 // Process similar to escalas - extract day headers
                 const headersDay = [];
-                // Updated regex to match formats like 1_12, 2_12, 01_12, 31_12, 1_01, etc.
+                // Regex to match date formats: d_mm, dd_mm, d_m, dd_m (day_month)
+                // Examples: 1_12, 01_12, 31_12, 1_01, 15_1, etc.
                 const dayKeyRegex = /^(\d{1,2})_(\d{1,2})$/;
                 
                 if (data.length > 0 && data[0]) {
@@ -2670,7 +2671,8 @@ const pontoState = {
             let categoria = aluno.Categoria || aluno.categoria || '';
             
             // If no curso info in aluno object, try to find in main alunos list
-            if (!curso && appState.alunosMap && alunoEmail) {
+            // Check if appState and alunosMap exist before accessing
+            if (!curso && typeof appState !== 'undefined' && appState.alunosMap && alunoEmail) {
                 const mainAluno = appState.alunosMap.get(alunoEmail);
                 if (mainAluno) {
                     curso = mainAluno.Curso || '';
@@ -2689,30 +2691,37 @@ const pontoState = {
             const searchText = `${curso} ${tipo} ${categoria} ${modalidade}`;
             
             // Check for Residentes (Green) - highest priority
-            if (searchText.includes('resid') || 
-                searchText.includes('resident') ||
-                curso.includes('residência') ||
-                curso.includes('residencia') ||
-                curso.includes('r1') ||
-                curso.includes('r2') ||
-                curso.includes('r3')) {
+            // Use word boundary patterns to avoid false positives
+            const isResidente = 
+                /\bresid[eê]ncia\b/i.test(curso) ||
+                /\bresidente\b/i.test(tipo) ||
+                /\bresidente\b/i.test(categoria) ||
+                // Match "Residência - 1º ano", "Residência - 2º ano", etc.
+                /residência.*\d.*ano/i.test(curso) ||
+                /residencia.*\d.*ano/i.test(curso);
+            
+            if (isResidente) {
                 return 'student-type-residente';
             }
             
             // Check for Bolsistas (Blue)
-            if (searchText.includes('bolsa') || 
-                searchText.includes('bolsista') ||
-                tipo === 'bolsista' ||
-                categoria === 'bolsista') {
+            const isBolsista = 
+                /\bbolsa\b/i.test(searchText) ||
+                /\bbolsista\b/i.test(tipo) ||
+                /\bbolsista\b/i.test(categoria);
+            
+            if (isBolsista) {
                 return 'student-type-bolsista';
             }
             
             // Check for Pagantes (Red) - includes Aprimoramento students who pay
-            if (searchText.includes('pag') || 
-                searchText.includes('pagante') ||
-                tipo === 'pagante' ||
-                categoria === 'pagante' ||
-                searchText.includes('aprimoramento')) {
+            const isPagante = 
+                /\bpagante\b/i.test(tipo) ||
+                /\bpagante\b/i.test(categoria) ||
+                /\bpag\b/i.test(tipo) ||
+                /\baprimoramento\b/i.test(curso);
+            
+            if (isPagante) {
                 return 'student-type-pagante';
             }
             

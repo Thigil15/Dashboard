@@ -14834,15 +14834,15 @@ tr.student-type-pagante:hover {
     background-color: rgba(226, 30, 38, 0.1);
 }
 
-/* Residentes (Residents) - Green */
+/* Residentes (Residents) - Green (using --success-green: #059669) */
 .student-type-residente .escala-atual-student-avatar,
 .escala-atual-student-avatar.student-type-residente {
-    background: linear-gradient(135deg, #059669, #10b981);
+    background: linear-gradient(135deg, var(--success-green), #10b981);
     box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);
 }
 
 .student-type-residente .escala-atual-student-name {
-    color: #059669;
+    color: var(--success-green);
 }
 
 tr.student-type-residente {
@@ -14877,7 +14877,7 @@ tr.student-type-residente:hover {
 }
 
 .escala-atual-student-type-badge.student-type-residente {
-    background: linear-gradient(135deg, #059669, #10b981);
+    background: linear-gradient(135deg, var(--success-green), #10b981);
 }
 
 .student-type-legend {
