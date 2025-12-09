@@ -2952,10 +2952,13 @@ const pontoState = {
             // === TABLE BODY ===
             html += '<tbody>';
             
+            // Number of fixed columns (Name, ID, Unidade) for colspan calculation
+            const FIXED_COLUMNS_COUNT = 3;
+            
             // Add sector separator row
             html += `
                 <tr class="escala-mensal-sector-row">
-                    <td class="col-nome" colspan="${3 + sortedHeaders.length}">
+                    <td class="col-nome" colspan="${FIXED_COLUMNS_COUNT + sortedHeaders.length}">
                         <span class="escala-mensal-sector-title">${sectorLabel}</span>
                     </td>
                 </tr>

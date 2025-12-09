@@ -15636,7 +15636,16 @@ tr.student-type-residente:hover {
     
     .escala-mensal-table thead th.col-id,
     .escala-mensal-table tbody td.col-id {
-        display: none;
+        /* Visually hide but keep accessible to screen readers */
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
     }
     
     .escala-mensal-table thead th.col-unidade,
