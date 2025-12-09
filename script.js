@@ -6718,32 +6718,92 @@ function renderTabFaltas(faltas) {
             }
 
             // === DEFINIÇÃO DOS GRUPOS DE MÓDULOS - INCOR === //
+            // Disciplinas com seus pares substitutivos (Sub/) - a nota Sub substitui a original APENAS se for maior
             const mediaGroups = {
                 'Fisioterapia I': {
-                    materias: ['Anatomopatologia', 'Sub/Anatomopatologia', 'Bases', 'Sub/Bases', 'Doenças Pulmonares', 'Doenças Cardíacas', 'Proc. Cirurgico', 'Avaliação', 'Sub/Avaliacao', 'VM', 'Sub/VM'],
+                    // Formato: { nome, subKey } onde subKey é a chave da nota substitutiva
+                    materias: [
+                        { nome: 'Anatomopatologia', subKey: 'Sub/Anatomopatologia' },
+                        { nome: 'Bases', subKey: 'Sub/Bases' },
+                        { nome: 'Doenças Pulmonares', subKey: null },
+                        { nome: 'Doenças Cardíacas', subKey: null },
+                        { nome: 'Proc. Cirurgico', subKey: null },
+                        { nome: 'Avaliação', subKey: 'Sub/Avaliacao' },
+                        { nome: 'VM', subKey: 'Sub/VM' }
+                    ],
                     icon: 'M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25',
                     color: '#0054B4' // InCor Blue
                 },
                 'Fisioterapia II': {
-                    materias: ['Técnicas e Recursos', 'Diag. Imagem'],
+                    materias: [
+                        { nome: 'Técnicas e Recursos', subKey: null },
+                        { nome: 'Diag. Imagem', subKey: null }
+                    ],
                     icon: 'M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
                     color: '#0891B2' // Cyan
                 },
                 'Fisioterapia III': {
-                    materias: ['Fisio aplicada', 'UTI'],
+                    materias: [
+                        { nome: 'Fisio aplicada', subKey: null },
+                        { nome: 'UTI', subKey: null }
+                    ],
                     icon: 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z',
                     color: '#E21E26' // InCor Red
                 },
                 'Fisioterapia IV': {
-                    materias: ['Pediatria', 'Mobilização', 'Reab. Pulmonar'],
+                    materias: [
+                        { nome: 'Pediatria', subKey: null },
+                        { nome: 'Mobilização', subKey: null },
+                        { nome: 'Reab. Pulmonar', subKey: null }
+                    ],
                     icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
                     color: '#059669' // Green
                 },
                 'Disciplinas Complementares': {
-                    materias: ['M. Cientifica', 'Saúde e politicas', 'Farmacoterapia', 'Bioética'],
+                    materias: [
+                        { nome: 'M. Cientifica', subKey: null },
+                        { nome: 'Saúde e politicas', subKey: null },
+                        { nome: 'Farmacoterapia', subKey: null },
+                        { nome: 'Bioética', subKey: null }
+                    ],
                     icon: 'M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z',
                     color: '#6366F1' // Indigo
                 }
+            };
+            
+            // Helper function to get the effective grade considering substitutive grades
+            // Substitutive grade replaces original ONLY if it's higher (always upward, never downward)
+            const getEffectiveGrade = (materiaObj) => {
+                const { nome, subKey } = materiaObj;
+                const notaOriginal = parseNota(getNotaValue(nome));
+                
+                if (subKey) {
+                    const notaSub = parseNota(getNotaValue(subKey));
+                    // Use substitutive grade only if it exists (> 0) and is higher than original
+                    if (notaSub > 0 && notaSub > notaOriginal) {
+                        return { 
+                            nota: notaSub, 
+                            wasSubstituted: true, 
+                            originalNota: notaOriginal,
+                            subNota: notaSub 
+                        };
+                    }
+                }
+                
+                return { 
+                    nota: notaOriginal, 
+                    wasSubstituted: false, 
+                    originalNota: notaOriginal,
+                    subNota: subKey ? parseNota(getNotaValue(subKey)) : 0
+                };
+            };
+            
+            // Helper function to determine grade color
+            // Blue/Green for >= 7 (approved), Red/Warning for < 7
+            const getGradeColor = (nota, defaultColor) => {
+                if (nota <= 0) return defaultColor; // No grade
+                if (nota >= 7) return '#10b981'; // Green - approved
+                return '#ef4444'; // Red - needs improvement
             };
 
             // === CALCULAR MÉTRICAS GLOBAIS === //
@@ -6770,11 +6830,11 @@ function renderTabFaltas(faltas) {
                 }
             });
 
-            // Verifica se há alguma nota individual nos grupos
+            // Verifica se há alguma nota individual nos grupos (using new structure with effective grades)
             const hasIndividualGrades = Object.entries(mediaGroups).some(([groupName, group]) => 
-                group.materias.some(m => {
-                    const val = getNotaValue(m);
-                    return val && parseNota(val) > 0;
+                group.materias.some(materiaObj => {
+                    const gradeInfo = getEffectiveGrade(materiaObj);
+                    return gradeInfo.nota > 0;
                 })
             );
 
@@ -6894,88 +6954,84 @@ function renderTabFaltas(faltas) {
             Object.entries(mediaGroups).forEach(([groupName, groupData]) => {
                 const { materias, icon, color } = groupData;
                 
-                // Encontra a média do grupo
-                let mediaValue = 0;
-                
-                if (groupName === 'Disciplinas Complementares') {
-                    let sum = 0;
-                    let count = 0;
-                    materias.forEach(materia => {
-                        const val = getNotaValue(materia);
-                        const nota = parseNota(val);
-                        if (nota > 0) {
-                            sum += nota;
-                            count++;
-                        }
-                    });
-                    mediaValue = count > 0 ? sum / count : 0;
-                } else {
-                    const fisioNumber = groupName.match(/I{1,4}$/)?.[0];
-                    if (fisioNumber) {
-                        const mediaKey = Object.keys(notas).find(k => {
-                            const kNormalized = k.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
-                            return kNormalized.includes('MEDIA') && kNormalized.includes(`FISIO${fisioNumber.length}`);
-                        });
-                        if (mediaKey) {
-                            mediaValue = parseNota(notas[mediaKey]);
-                        }
+                // Calculate group average using effective grades (with substitution logic)
+                // Only count disciplines with valid numeric grades (exclude blanks)
+                let sum = 0;
+                let count = 0;
+                materias.forEach(materiaObj => {
+                    const gradeInfo = getEffectiveGrade(materiaObj);
+                    if (gradeInfo.nota > 0) {
+                        sum += gradeInfo.nota;
+                        count++;
                     }
-                }
+                });
+                const mediaValue = count > 0 ? sum / count : 0;
 
-                // Processa as disciplinas do módulo
+                // Process disciplines with substitution logic
                 let disciplinasHtml = '';
                 const disciplineCount = materias.length;
                 const hasDetails = disciplineCount > 0;
                 
-                materias.forEach(materia => {
-                    const val = getNotaValue(materia);
-                    const hasValue = val !== null && val !== undefined && String(val).trim() !== '';
-                    const notaMateria = hasValue ? parseNota(val) : 0;
-                    const isValidNota = hasValue && notaMateria > 0;
+                materias.forEach(materiaObj => {
+                    const gradeInfo = getEffectiveGrade(materiaObj);
+                    const notaMateria = gradeInfo.nota;
+                    const isValidNota = notaMateria > 0;
                     const percentage = isValidNota ? (notaMateria / 10) * 100 : 0;
                     const displayValue = isValidNota ? formatarNota(notaMateria) : '-';
                     
+                    // Determine color based on grade (>= 7 is blue/green, < 7 is red/warning)
+                    const gradeColor = getGradeColor(notaMateria, color);
+                    
+                    // Build substitution indicator if applicable
+                    let subIndicator = '';
+                    if (gradeInfo.wasSubstituted) {
+                        subIndicator = ` <span class="nt-sub-indicator" title="Nota substituída de ${formatarNota(gradeInfo.originalNota)} para ${formatarNota(gradeInfo.subNota)}">↑ Sub</span>`;
+                    } else if (materiaObj.subKey && gradeInfo.subNota > 0 && gradeInfo.subNota <= gradeInfo.originalNota) {
+                        // Has Sub grade but it wasn't used (original was higher or equal)
+                        subIndicator = ` <span class="nt-sub-indicator nt-sub-kept-original" title="Nota Sub (${formatarNota(gradeInfo.subNota)}) não aplicada pois original é maior ou igual">✓ Original</span>`;
+                    }
+                    
                     disciplinasHtml += `
-                        <div class="nt-discipline-item" style="--nt-discipline-color: ${color};">
+                        <div class="nt-discipline-item" style="--nt-discipline-color: ${gradeColor};">
                             <div class="nt-discipline-header">
-                                <span class="nt-discipline-name">${materia}</span>
-                                <span class="nt-discipline-value">${displayValue}</span>
+                                <span class="nt-discipline-name">${materiaObj.nome}${subIndicator}</span>
+                                <span class="nt-discipline-value" style="color: ${gradeColor};">${displayValue}</span>
                             </div>
                             <div class="nt-discipline-progress">
-                                <div class="nt-discipline-fill" style="width: ${percentage}%;"></div>
+                                <div class="nt-discipline-fill" style="width: ${percentage}%; background: ${gradeColor};"></div>
                             </div>
                         </div>
                     `;
                 });
 
-                // Se tem média ou disciplinas, mostra o card
-                if (mediaValue > 0 || hasDetails) {
-                    const percentage = (mediaValue / 10) * 100;
-                    
-                    modulesHtml += `
-                        <div class="nt-module-card" style="--nt-module-color: ${color};">
-                            <div class="nt-module-header">
-                                <div class="nt-module-icon" style="background: linear-gradient(135deg, ${color}, ${color}cc);">
-                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="${icon}" />
+                // Always show the card (show all disciplines even if average is 0)
+                const percentage = (mediaValue / 10) * 100;
+                const mediaColor = getGradeColor(mediaValue, color);
+                
+                modulesHtml += `
+                    <div class="nt-module-card" style="--nt-module-color: ${color};">
+                        <div class="nt-module-header">
+                            <div class="nt-module-icon" style="background: linear-gradient(135deg, ${color}, ${color}cc);">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="${icon}" />
                                     </svg>
                                 </div>
                                 <div class="nt-module-title-group">
                                     <h4 class="nt-module-title">${groupName}</h4>
-                                    <p class="nt-module-subtitle">${disciplineCount > 0 ? `${disciplineCount} disciplina${disciplineCount > 1 ? 's' : ''}` : `${materias.length} disciplinas`}</p>
+                                    <p class="nt-module-subtitle">${disciplineCount} disciplina${disciplineCount > 1 ? 's' : ''}</p>
                                 </div>
                                 <div class="nt-module-grade">
-                                    <div class="nt-grade-value">${mediaValue > 0 ? formatarNota(mediaValue) : '-'}</div>
+                                    <div class="nt-grade-value" style="color: ${mediaColor};">${mediaValue > 0 ? formatarNota(mediaValue) : '-'}</div>
                                     <div class="nt-grade-label">Média</div>
                                 </div>
                             </div>
                             
                             ${hasDetails ? `
                                 <div class="nt-module-progress-bar">
-                                    <div class="nt-module-progress-fill" style="width: ${percentage}%;"></div>
+                                    <div class="nt-module-progress-fill" style="width: ${percentage}%; background: ${mediaColor};"></div>
                                 </div>
                                 
-                                <details class="nt-module-details">
+                                <details class="nt-module-details" open>
                                     <summary class="nt-details-toggle">
                                         <span>Ver disciplinas</span>
                                         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
@@ -6989,7 +7045,6 @@ function renderTabFaltas(faltas) {
                             ` : ''}
                         </div>
                     `;
-                }
             });
 
             modulesHtml += '</div>';

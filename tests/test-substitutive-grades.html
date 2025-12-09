@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Substitutive Grades</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .test-case { background: white; padding: 20px; margin: 10px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .pass { border-left: 4px solid #10b981; }
+        .fail { border-left: 4px solid #ef4444; }
+        h2 { margin-top: 0; }
+        .result { font-weight: bold; }
+        pre { background: #f0f0f0; padding: 10px; border-radius: 4px; overflow: auto; }
+    </style>
+</head>
+<body>
+    <h1>Test: Substitutive Grades Logic</h1>
+    <div id="results"></div>
+    
+    <script>
+        // Mock functions
+        function parseNota(notaStr) {
+            if (notaStr === null || notaStr === undefined) return 0;
+            const str = String(notaStr).trim();
+            if (str === '') return 0;
+            const n = parseFloat(str.replace('R$', '').replace(/\s/g, '').replace(',', '.'));
+            return isNaN(n) ? 0 : n;
+        }
+        
+        function formatarNota(value, decimals = 1) {
+            if (value == null || isNaN(value)) return 'N/A';
+            return value.toLocaleString('pt-BR', { 
+                minimumFractionDigits: decimals, 
+                maximumFractionDigits: decimals 
+            });
+        }
+        
+        // Mock data storage
+        let mockNotas = {};
+        
+        function getNotaValue(materia) {
+            return mockNotas[materia];
+        }
+        
+        // The actual function from script.js
+        function getEffectiveGrade(materiaObj) {
+            const { nome, subKey } = materiaObj;
+            const notaOriginal = parseNota(getNotaValue(nome));
+            
+            if (subKey) {
+                const notaSub = parseNota(getNotaValue(subKey));
+                // Use substitutive grade only if it exists (> 0) and is higher than original
+                if (notaSub > 0 && notaSub > notaOriginal) {
+                    return { 
+                        nota: notaSub, 
+                        wasSubstituted: true, 
+                        originalNota: notaOriginal,
+                        subNota: notaSub 
+                    };
+                }
+            }
+            
+            return { 
+                nota: notaOriginal, 
+                wasSubstituted: false, 
+                originalNota: notaOriginal,
+                subNota: subKey ? parseNota(getNotaValue(subKey)) : 0
+            };
+        }
+        
+        function getGradeColor(nota, defaultColor) {
+            if (nota <= 0) return defaultColor; // No grade
+            if (nota >= 7) return '#10b981'; // Green - approved
+            return '#ef4444'; // Red - needs improvement
+        }
+        
+        // Test cases
+        const tests = [
+            {
+                name: "Sub grade higher than original - should substitute",
+                setup: () => { mockNotas = { 'Anatomopatologia': 6, 'Sub/Anatomopatologia': 7 }; },
+                materia: { nome: 'Anatomopatologia', subKey: 'Sub/Anatomopatologia' },
+                expected: { nota: 7, wasSubstituted: true }
+            },
+            {
+                name: "Sub grade lower than original - should NOT substitute",
+                setup: () => { mockNotas = { 'Anatomopatologia': 8, 'Sub/Anatomopatologia': 6 }; },
+                materia: { nome: 'Anatomopatologia', subKey: 'Sub/Anatomopatologia' },
+                expected: { nota: 8, wasSubstituted: false }
+            },
+            {
+                name: "Sub grade equal to original - should NOT substitute",
+                setup: () => { mockNotas = { 'Bases': 7, 'Sub/Bases': 7 }; },
+                materia: { nome: 'Bases', subKey: 'Sub/Bases' },
+                expected: { nota: 7, wasSubstituted: false }
+            },
+            {
+                name: "No sub grade (empty) - use original",
+                setup: () => { mockNotas = { 'VM': 5, 'Sub/VM': '' }; },
+                materia: { nome: 'VM', subKey: 'Sub/VM' },
+                expected: { nota: 5, wasSubstituted: false }
+            },
+            {
+                name: "No sub key defined - use original",
+                setup: () => { mockNotas = { 'Doenças Pulmonares': 9 }; },
+                materia: { nome: 'Doenças Pulmonares', subKey: null },
+                expected: { nota: 9, wasSubstituted: false }
+            },
+            {
+                name: "Both grades blank - return 0",
+                setup: () => { mockNotas = { 'Avaliação': '', 'Sub/Avaliacao': '' }; },
+                materia: { nome: 'Avaliação', subKey: 'Sub/Avaliacao' },
+                expected: { nota: 0, wasSubstituted: false }
+            },
+            {
+                name: "Grade >= 7 should be green",
+                setup: () => { mockNotas = { 'Test': 7 }; },
+                materia: { nome: 'Test', subKey: null },
+                colorCheck: true,
+                expectedColor: '#10b981'
+            },
+            {
+                name: "Grade < 7 should be red",
+                setup: () => { mockNotas = { 'Test': 6.5 }; },
+                materia: { nome: 'Test', subKey: null },
+                colorCheck: true,
+                expectedColor: '#ef4444'
+            }
+        ];
+        
+        // Run tests
+        let results = '';
+        let passCount = 0;
+        let failCount = 0;
+        
+        tests.forEach((test, index) => {
+            test.setup();
+            const result = getEffectiveGrade(test.materia);
+            
+            let passed = false;
+            let details = '';
+            
+            if (test.colorCheck) {
+                const color = getGradeColor(result.nota, '#0054B4');
+                passed = color === test.expectedColor;
+                details = `Expected color: ${test.expectedColor}, Got: ${color}`;
+            } else {
+                passed = result.nota === test.expected.nota && 
+                         result.wasSubstituted === test.expected.wasSubstituted;
+                details = `Expected: nota=${test.expected.nota}, wasSubstituted=${test.expected.wasSubstituted}\nGot: nota=${result.nota}, wasSubstituted=${result.wasSubstituted}`;
+            }
+            
+            if (passed) passCount++; else failCount++;
+            
+            results += `
+                <div class="test-case ${passed ? 'pass' : 'fail'}">
+                    <h2>Test ${index + 1}: ${test.name}</h2>
+                    <p class="result">${passed ? '✅ PASSED' : '❌ FAILED'}</p>
+                    <pre>${details}</pre>
+                    <pre>Full result: ${JSON.stringify(result, null, 2)}</pre>
+                </div>
+            `;
+        });
+        
+        document.getElementById('results').innerHTML = `
+            <h2>Summary: ${passCount} passed, ${failCount} failed</h2>
+            ${results}
+        `;
+    </script>
+</body>
+</html>
