@@ -291,9 +291,23 @@
                 
                 console.log(`[setupDatabaseListeners] ✅ EscalaAtual${sectorName} carregada: ${data.length} registros`);
                 
+                // Log sample row fields for debugging
+                if (data.length > 0 && data[0]) {
+                    console.log(`[setupDatabaseListeners] EscalaAtual${sectorName} - Campos disponíveis:`, Object.keys(data[0]).join(', '));
+                    console.log(`[setupDatabaseListeners] EscalaAtual${sectorName} - Amostra de dados:`, {
+                        Aluno: data[0].Aluno,
+                        Supervisor: data[0].Supervisor,
+                        IDAluno: data[0].IDAluno,
+                        Unidade: data[0].Unidade,
+                        Horario: data[0].Horario || data[0]['Horário']
+                    });
+                }
+                
                 // Process similar to escalas - extract day headers
                 const headersDay = [];
-                const dayKeyRegex = /^(\d{1,2})_(\d{2})$/;
+                // Regex to match date formats: d_mm, dd_mm, d_m, dd_m (day_month)
+                // Examples: 1_12, 01_12, 31_12, 1_01, 15_1, etc.
+                const dayKeyRegex = /^(\d{1,2})_(\d{1,2})$/;
                 
                 if (data.length > 0 && data[0]) {
                     const firstRow = data[0];
@@ -314,12 +328,14 @@
                     const uniqueDates = Array.from(new Set(dayKeyMap.values()));
                     headersDay.push(...uniqueDates);
                     
-                    // Add pretty-formatted keys to each row
+                    console.log(`[setupDatabaseListeners] EscalaAtual${sectorName} - ${headersDay.length} dias encontrados:`, headersDay.slice(0, 10).join(', ') + (headersDay.length > 10 ? '...' : ''));
+                    
+                    // Add pretty-formatted keys to each row for easier access
                     data.forEach((row) => {
                         if (row && typeof row === 'object') {
-                            dayKeyMap.forEach((pretty, normalizedKey) => {
+                            dayKeyMap.forEach((pretty, originalKey) => {
                                 if (typeof row[pretty] === 'undefined') {
-                                    row[pretty] = row[normalizedKey];
+                                    row[pretty] = row[originalKey];
                                 }
                             });
                         }
@@ -2634,6 +2650,86 @@ const pontoState = {
         }
         
         /**
+         * Determines the student type class for color-coding
+         * Based on user requirements:
+         * - Bolsistas (scholarship students) = Blue
+         * - Pagantes (paying students) = Red  
+         * - Residentes (resident students) = Green
+         * @param {object} aluno - Student data object from EscalaAtual
+         * @returns {string} CSS class for the student type
+         */
+        function getStudentTypeClass(aluno) {
+            if (!aluno) return '';
+            
+            // First try to get the student's info from the main alunos list (richer data)
+            const alunoNome = aluno.Aluno || aluno.NomeCompleto || aluno.Nome || '';
+            const alunoEmail = aluno.EmailHC || aluno.Email || aluno.email || '';
+            
+            // Try to find the student in the main list to get Curso information
+            let curso = aluno.Curso || aluno.curso || '';
+            let tipo = aluno.Tipo || aluno.tipo || aluno.TipoAluno || aluno.tipoAluno || '';
+            let categoria = aluno.Categoria || aluno.categoria || '';
+            
+            // If no curso info in aluno object, try to find in main alunos list
+            // Check if appState and alunosMap exist before accessing
+            if (!curso && typeof appState !== 'undefined' && appState.alunosMap && alunoEmail) {
+                const mainAluno = appState.alunosMap.get(alunoEmail);
+                if (mainAluno) {
+                    curso = mainAluno.Curso || '';
+                    tipo = mainAluno.Tipo || tipo;
+                    categoria = mainAluno.Categoria || categoria;
+                }
+            }
+            
+            // Normalize strings for comparison
+            curso = curso.toLowerCase().trim();
+            tipo = tipo.toLowerCase().trim();
+            categoria = categoria.toLowerCase().trim();
+            const modalidade = (aluno.Modalidade || aluno.modalidade || '').toLowerCase().trim();
+            
+            // Combined search text
+            const searchText = `${curso} ${tipo} ${categoria} ${modalidade}`;
+            
+            // Check for Residentes (Green) - highest priority
+            // Use word boundary patterns to avoid false positives
+            const isResidente = 
+                /\bresid[eê]ncia\b/i.test(curso) ||
+                /\bresidente\b/i.test(tipo) ||
+                /\bresidente\b/i.test(categoria) ||
+                // Match "Residência - 1º ano", "Residência - 2º ano", etc.
+                /residência.*\d.*ano/i.test(curso) ||
+                /residencia.*\d.*ano/i.test(curso);
+            
+            if (isResidente) {
+                return 'student-type-residente';
+            }
+            
+            // Check for Bolsistas (Blue)
+            const isBolsista = 
+                /\bbolsa\b/i.test(searchText) ||
+                /\bbolsista\b/i.test(tipo) ||
+                /\bbolsista\b/i.test(categoria);
+            
+            if (isBolsista) {
+                return 'student-type-bolsista';
+            }
+            
+            // Check for Pagantes (Red) - includes Aprimoramento students who pay
+            const isPagante = 
+                /\bpagante\b/i.test(tipo) ||
+                /\bpagante\b/i.test(categoria) ||
+                /\bpag\b/i.test(tipo) ||
+                /\baprimoramento\b/i.test(curso);
+            
+            if (isPagante) {
+                return 'student-type-pagante';
+            }
+            
+            // Default - no special coloring (use default blue)
+            return '';
+        }
+        
+        /**
          * Render the escala table for a specific sector
          * @param {string} sector - 'enfermaria', 'uti', or 'cardiopediatria'
          */
@@ -2688,11 +2784,27 @@ const pontoState = {
                 return dayA - dayB;
             });
             
+            // Log first student's fields for debugging
+            if (alunos.length > 0) {
+                console.log('[renderEscalaAtualTable] Sample student fields:', Object.keys(alunos[0]).slice(0, 15));
+                console.log('[renderEscalaAtualTable] Sample student data:', {
+                    Aluno: alunos[0].Aluno,
+                    NomeCompleto: alunos[0].NomeCompleto,
+                    Nome: alunos[0].Nome,
+                    Supervisor: alunos[0].Supervisor,
+                    Unidade: alunos[0].Unidade,
+                    Horario: alunos[0].Horario || alunos[0]['Horário']
+                });
+            }
+            
             let tableHtml = '<table class="escala-atual-table">';
             
-            // Table header
+            // Table header - include additional columns if available
             tableHtml += '<thead><tr>';
             tableHtml += '<th>Profissional</th>';
+            tableHtml += '<th>Supervisor</th>';
+            tableHtml += '<th>Unidade</th>';
+            tableHtml += '<th>Horário</th>';
             sortedHeaders.forEach(day => {
                 const isToday = day === todayBR;
                 tableHtml += `<th class="${isToday ? 'today-col' : ''}">${day}</th>`;
@@ -2704,8 +2816,20 @@ const pontoState = {
             alunos.forEach(aluno => {
                 if (!aluno) return;
                 
-                const nome = aluno.NomeCompleto || aluno.Nome || aluno.nomeCompleto || 'Sem Nome';
-                const email = aluno.EmailHC || aluno.Email || aluno.emailHC || '';
+                // Get student name - check multiple possible field names including "Aluno"
+                const nome = aluno.Aluno || aluno.NomeCompleto || aluno.Nome || aluno.nomeCompleto || aluno.nome || 'Sem Nome';
+                const supervisor = aluno.Supervisor || aluno.supervisor || '-';
+                const unidade = aluno.Unidade || aluno.unidade || aluno.Setor || aluno.setor || '-';
+                const horario = aluno.Horario || aluno['Horário'] || aluno.horario || '-';
+                const idAluno = aluno.IDAluno || aluno.idAluno || aluno.ID || '';
+                
+                // Skip if no name (likely empty row)
+                if (nome === 'Sem Nome' || !nome || nome.trim() === '') {
+                    return;
+                }
+                
+                // Get student type class for color-coding
+                const studentTypeClass = getStudentTypeClass(aluno);
                 
                 // Get initials for avatar
                 const nameParts = nome.trim().split(/\s+/);
@@ -2713,22 +2837,31 @@ const pontoState = {
                     ? (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase()
                     : nome.substring(0, 2).toUpperCase();
                 
-                tableHtml += '<tr>';
+                tableHtml += `<tr class="${studentTypeClass}">`;
                 
-                // Student name cell
+                // Student name cell with color-coded avatar
                 tableHtml += `
                     <td>
                         <div class="escala-atual-student">
-                            <div class="escala-atual-student-avatar">
+                            <div class="escala-atual-student-avatar ${studentTypeClass}">
                                 <span>${initials}</span>
                             </div>
                             <div class="escala-atual-student-info">
-                                <span class="escala-atual-student-name">${nome}</span>
-                                ${email ? `<span class="escala-atual-student-email">${email}</span>` : ''}
+                                <span class="escala-atual-student-name">${escapeHtml(nome)}</span>
+                                ${idAluno ? `<span class="escala-atual-student-email">ID: ${escapeHtml(idAluno)}</span>` : ''}
                             </div>
                         </div>
                     </td>
                 `;
+                
+                // Supervisor cell
+                tableHtml += `<td>${escapeHtml(supervisor)}</td>`;
+                
+                // Unidade cell
+                tableHtml += `<td>${escapeHtml(unidade)}</td>`;
+                
+                // Horário cell
+                tableHtml += `<td>${escapeHtml(horario)}</td>`;
                 
                 // Day cells
                 sortedHeaders.forEach(day => {
@@ -2785,7 +2918,7 @@ const pontoState = {
                     
                     tableHtml += `
                         <td class="${isToday ? 'today-col' : ''}">
-                            <span class="escala-atual-cell-badge ${badgeClass}">${displayValue}</span>
+                            <span class="escala-atual-cell-badge ${badgeClass}">${escapeHtml(displayValue)}</span>
                         </td>
                     `;
                 });
