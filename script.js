@@ -2733,8 +2733,92 @@ const pontoState = {
          * Render the escala table for a specific sector
          * @param {string} sector - 'enfermaria', 'uti', or 'cardiopediatria'
          */
+        /**
+         * Get day of week abbreviation in Portuguese (D, S, T, Q, Q, S, S)
+         * @param {number} dayOfWeek - 0 (Sunday) to 6 (Saturday)
+         * @returns {string} Abbreviated day name
+         */
+        function getDayOfWeekAbbr(dayOfWeek) {
+            const days = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
+            return days[dayOfWeek] || '';
+        }
+        
+        /**
+         * Check if a day is weekend (Saturday=6 or Sunday=0)
+         * @param {number} dayOfWeek - 0 (Sunday) to 6 (Saturday)
+         * @returns {boolean}
+         */
+        function isWeekend(dayOfWeek) {
+            return dayOfWeek === 0 || dayOfWeek === 6;
+        }
+        
+        /**
+         * Parse DD/MM date string and calculate day of week for current year
+         * @param {string} ddmm - Date in DD/MM format
+         * @returns {object} { day, month, dayOfWeek, isWeekend }
+         */
+        function parseDayMonth(ddmm) {
+            const [day, month] = ddmm.split('/').map(Number);
+            const year = new Date().getFullYear();
+            const date = new Date(year, month - 1, day);
+            const dayOfWeek = date.getDay();
+            return {
+                day,
+                month,
+                dayOfWeek,
+                isWeekend: isWeekend(dayOfWeek),
+                dayAbbr: getDayOfWeekAbbr(dayOfWeek)
+            };
+        }
+        
+        /**
+         * Get the shift badge class for compact monthly table
+         * @param {string} shiftValue - The shift value (M, T, N, MT, etc.)
+         * @returns {object} { badgeClass, displayValue }
+         */
+        function getCompactShiftBadge(shiftValue) {
+            const normalized = String(shiftValue || '').trim().toUpperCase();
+            
+            if (!normalized || normalized === '-') {
+                return { badgeClass: 'shift-empty', displayValue: '' };
+            }
+            
+            if (normalized === 'M') {
+                return { badgeClass: 'shift-m', displayValue: 'M' };
+            }
+            if (normalized === 'T') {
+                return { badgeClass: 'shift-t', displayValue: 'T' };
+            }
+            if (normalized === 'N') {
+                return { badgeClass: 'shift-n', displayValue: 'N' };
+            }
+            if (normalized === 'MT' || normalized === 'TM') {
+                return { badgeClass: 'shift-mt', displayValue: 'MT' };
+            }
+            if (normalized === 'FC') {
+                return { badgeClass: 'shift-fc', displayValue: 'FC' };
+            }
+            if (normalized === 'F' || normalized === 'FOLGA') {
+                return { badgeClass: 'shift-f', displayValue: 'F' };
+            }
+            if (normalized === 'AB' || normalized === 'AMBULATORIO' || normalized === 'AMBULATÓRIO') {
+                return { badgeClass: 'shift-ab', displayValue: 'AB' };
+            }
+            if (normalized === 'AULA' || normalized.startsWith('AULA') || normalized === 'HCX' || normalized.startsWith('HCX ')) {
+                return { badgeClass: 'shift-aula', displayValue: 'AULA' };
+            }
+            
+            // Other values - show as-is with empty styling
+            return { badgeClass: 'shift-empty', displayValue: normalized };
+        }
+        
+        /**
+         * Render Escala Atual Table - Compact Monthly Layout
+         * Redesigned for hospital-style compact schedule view similar to InCor Excel spreadsheets
+         * @param {string} sector - The sector to render (enfermaria, uti, cardiopediatria)
+         */
         function renderEscalaAtualTable(sector) {
-            console.log(`[renderEscalaAtualTable] Rendering ${sector}...`);
+            console.log(`[renderEscalaAtualTable] Rendering ${sector} (compact monthly layout)...`);
             
             const loadingEl = document.getElementById('escala-atual-loading');
             const emptyEl = document.getElementById('escala-atual-empty');
@@ -2747,12 +2831,16 @@ const pontoState = {
             
             // Get sector data from appState
             let sectorData = null;
+            let sectorLabel = '';
             if (sector === 'enfermaria') {
                 sectorData = appState.escalaAtualEnfermaria;
+                sectorLabel = 'ENFERMARIAS';
             } else if (sector === 'uti') {
                 sectorData = appState.escalaAtualUTI;
+                sectorLabel = 'UTI';
             } else if (sector === 'cardiopediatria') {
                 sectorData = appState.escalaAtualCardiopediatria;
+                sectorLabel = 'CARDIOPEDIATRIA';
             }
             
             // Check if data is available
@@ -2784,6 +2872,21 @@ const pontoState = {
                 return dayA - dayB;
             });
             
+            // Calculate date range for header
+            let periodoText = '';
+            if (sortedHeaders.length > 0) {
+                const firstDay = sortedHeaders[0];
+                const lastDay = sortedHeaders[sortedHeaders.length - 1];
+                const year = new Date().getFullYear();
+                periodoText = `${firstDay}/${year} à ${lastDay}/${year}`;
+            }
+            
+            // Parse day info for each header (for weekday abbreviations and weekend highlighting)
+            const dayInfo = sortedHeaders.map(day => ({
+                date: day,
+                ...parseDayMonth(day)
+            }));
+            
             // Log first student's fields for debugging
             if (alunos.length > 0) {
                 console.log('[renderEscalaAtualTable] Sample student fields:', Object.keys(alunos[0]).slice(0, 15));
@@ -2792,85 +2895,126 @@ const pontoState = {
                     NomeCompleto: alunos[0].NomeCompleto,
                     Nome: alunos[0].Nome,
                     Supervisor: alunos[0].Supervisor,
-                    Unidade: alunos[0].Unidade,
-                    Horario: alunos[0].Horario || alunos[0]['Horário']
+                    IDAluno: alunos[0].IDAluno,
+                    Unidade: alunos[0].Unidade
                 });
             }
             
-            let tableHtml = '<table class="escala-atual-table">';
+            // Build compact monthly table HTML
+            let html = '';
             
-            // Table header - include additional columns if available
-            tableHtml += '<thead><tr>';
-            tableHtml += '<th>Profissional</th>';
-            tableHtml += '<th>Supervisor</th>';
-            tableHtml += '<th>Unidade</th>';
-            tableHtml += '<th>Horário</th>';
-            sortedHeaders.forEach(day => {
-                const isToday = day === todayBR;
-                tableHtml += `<th class="${isToday ? 'today-col' : ''}">${day}</th>`;
+            // Header section with InCor branding
+            html += `
+                <div class="escala-mensal-header">
+                    <div class="escala-mensal-header-title">
+                        <h3 class="escala-mensal-header-main">SERVIÇO DE FISIOTERAPIA - InCor</h3>
+                        <p class="escala-mensal-header-sub">ESCALA MENSAL - PRÁTICA SUPERVISIONADA</p>
+                    </div>
+                    ${periodoText ? `<span class="escala-mensal-header-periodo">${periodoText}</span>` : ''}
+                </div>
+            `;
+            
+            // Table wrapper for horizontal scroll
+            html += '<div class="escala-mensal-table-wrapper">';
+            html += '<table class="escala-mensal-table">';
+            
+            // === TABLE HEADER ===
+            html += '<thead>';
+            
+            // Row 1: Day numbers
+            html += '<tr>';
+            html += '<th class="col-nome">Aluno</th>';
+            html += '<th class="col-id">ID</th>';
+            html += '<th class="col-unidade">Unidade</th>';
+            dayInfo.forEach(info => {
+                const isToday = info.date === todayBR;
+                const weekendClass = info.isWeekend ? 'weekend' : '';
+                const todayClass = isToday ? 'today-col' : '';
+                html += `<th class="${weekendClass} ${todayClass}">${info.day}</th>`;
             });
-            tableHtml += '</tr></thead>';
+            html += '</tr>';
             
-            // Table body
-            tableHtml += '<tbody>';
+            // Row 2: Day of week abbreviations (S, T, Q, Q, S, S, D)
+            html += '<tr>';
+            html += '<th class="col-nome"></th>';
+            html += '<th class="col-id"></th>';
+            html += '<th class="col-unidade"></th>';
+            dayInfo.forEach(info => {
+                const isToday = info.date === todayBR;
+                const weekendClass = info.isWeekend ? 'weekend' : '';
+                const todayClass = isToday ? 'today-col' : '';
+                html += `<th class="${weekendClass} ${todayClass}">${info.dayAbbr}</th>`;
+            });
+            html += '</tr>';
+            
+            html += '</thead>';
+            
+            // === TABLE BODY ===
+            html += '<tbody>';
+            
+            // Add sector separator row
+            html += `
+                <tr class="escala-mensal-sector-row">
+                    <td class="col-nome" colspan="${3 + sortedHeaders.length}">
+                        <span class="escala-mensal-sector-title">${sectorLabel}</span>
+                    </td>
+                </tr>
+            `;
+            
+            // Render each student
             alunos.forEach(aluno => {
                 if (!aluno) return;
                 
-                // Get student name - check multiple possible field names including "Aluno"
-                const nome = aluno.Aluno || aluno.NomeCompleto || aluno.Nome || aluno.nomeCompleto || aluno.nome || 'Sem Nome';
-                const supervisor = aluno.Supervisor || aluno.supervisor || '-';
-                const unidade = aluno.Unidade || aluno.unidade || aluno.Setor || aluno.setor || '-';
-                const horario = aluno.Horario || aluno['Horário'] || aluno.horario || '-';
+                // Get student data
+                const nome = aluno.Aluno || aluno.NomeCompleto || aluno.Nome || aluno.nomeCompleto || aluno.nome || '';
+                const supervisor = aluno.Supervisor || aluno.supervisor || '';
                 const idAluno = aluno.IDAluno || aluno.idAluno || aluno.ID || '';
+                const unidade = aluno.Unidade || aluno.unidade || aluno.Setor || aluno.setor || '';
                 
                 // Skip if no name (likely empty row)
-                if (nome === 'Sem Nome' || !nome || nome.trim() === '') {
+                if (!nome || nome.trim() === '') {
                     return;
                 }
                 
-                // Get student type class for color-coding
+                // Determine student type for color-coding
                 const studentTypeClass = getStudentTypeClass(aluno);
+                let nameTypeClass = '';
+                if (studentTypeClass.includes('pagante')) {
+                    nameTypeClass = 'tipo-pagante';
+                } else if (studentTypeClass.includes('bolsista')) {
+                    nameTypeClass = 'tipo-bolsista';
+                } else if (studentTypeClass.includes('residente')) {
+                    nameTypeClass = 'tipo-residente';
+                }
                 
-                // Get initials for avatar
-                const nameParts = nome.trim().split(/\s+/);
-                const initials = nameParts.length >= 2 
-                    ? (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase()
-                    : nome.substring(0, 2).toUpperCase();
+                html += '<tr>';
                 
-                tableHtml += `<tr class="${studentTypeClass}">`;
-                
-                // Student name cell with color-coded avatar
-                tableHtml += `
-                    <td>
-                        <div class="escala-atual-student">
-                            <div class="escala-atual-student-avatar ${studentTypeClass}">
-                                <span>${initials}</span>
-                            </div>
-                            <div class="escala-atual-student-info">
-                                <span class="escala-atual-student-name">${escapeHtml(nome)}</span>
-                                ${idAluno ? `<span class="escala-atual-student-email">ID: ${escapeHtml(idAluno)}</span>` : ''}
-                            </div>
+                // Name cell (with supervisor in parentheses if available)
+                html += `
+                    <td class="col-nome">
+                        <div class="escala-mensal-nome">
+                            <span class="escala-mensal-nome-aluno ${nameTypeClass}">${escapeHtml(nome)}</span>
+                            ${supervisor ? `<span class="escala-mensal-nome-supervisor">(${escapeHtml(supervisor)})</span>` : ''}
                         </div>
                     </td>
                 `;
                 
-                // Supervisor cell
-                tableHtml += `<td>${escapeHtml(supervisor)}</td>`;
+                // ID cell
+                html += `<td class="col-id">${escapeHtml(idAluno)}</td>`;
                 
                 // Unidade cell
-                tableHtml += `<td>${escapeHtml(unidade)}</td>`;
-                
-                // Horário cell
-                tableHtml += `<td>${escapeHtml(horario)}</td>`;
+                html += `<td class="col-unidade">${escapeHtml(unidade)}</td>`;
                 
                 // Day cells
-                sortedHeaders.forEach(day => {
-                    const isToday = day === todayBR;
+                dayInfo.forEach(info => {
+                    const isToday = info.date === todayBR;
+                    const weekendClass = info.isWeekend ? 'weekend' : '';
+                    const todayClass = isToday ? 'today-col' : '';
                     
                     // Try multiple key formats to find the value
                     let value = '';
-                    const dayKey = day.replace('/', '_'); // Convert DD/MM to DD_MM format
-                    const dayKeyAlt = day; // DD/MM format
+                    const dayKey = info.date.replace('/', '_'); // Convert DD/MM to DD_MM format
+                    const dayKeyAlt = info.date; // DD/MM format
                     
                     // Check various key patterns
                     if (aluno[dayKeyAlt] !== undefined) {
@@ -2879,70 +3023,32 @@ const pontoState = {
                         value = aluno[dayKey];
                     } else {
                         // Try to find the key with different formatting
-                        const dayParts = day.split('/');
-                        if (dayParts.length === 2) {
-                            const altKey1 = `${parseInt(dayParts[0])}_${dayParts[1]}`; // D_MM
-                            const altKey2 = `${dayParts[0]}_${parseInt(dayParts[1])}`; // DD_M
-                            const altKey3 = `${parseInt(dayParts[0])}_${parseInt(dayParts[1])}`; // D_M
-                            
-                            value = aluno[altKey1] || aluno[altKey2] || aluno[altKey3] || '';
-                        }
+                        const altKey1 = `${info.day}_${String(info.month).padStart(2, '0')}`; // D_MM
+                        const altKey2 = `${String(info.day).padStart(2, '0')}_${info.month}`; // DD_M
+                        const altKey3 = `${info.day}_${info.month}`; // D_M
+                        
+                        value = aluno[altKey1] || aluno[altKey2] || aluno[altKey3] || '';
                     }
                     
-                    // Normalize the value
-                    const shiftValue = String(value || '').trim().toUpperCase();
+                    // Get badge styling
+                    const { badgeClass, displayValue } = getCompactShiftBadge(value);
                     
-                    // Determine badge class based on shift type
-                    let badgeClass = 'shift-empty';
-                    let displayValue = '-';
-                    
-                    if (shiftValue) {
-                        displayValue = shiftValue;
-                        if (shiftValue === 'M') {
-                            badgeClass = 'shift-M';
-                        } else if (shiftValue === 'T') {
-                            badgeClass = 'shift-T';
-                        } else if (shiftValue === 'N') {
-                            badgeClass = 'shift-N';
-                        } else if (shiftValue === 'MT' || shiftValue === 'TM') {
-                            badgeClass = 'shift-MT';
-                            displayValue = 'MT';
-                        } else if (shiftValue === 'FC') {
-                            badgeClass = 'shift-FC';
-                            displayValue = 'FC';
-                        } else if (shiftValue === 'F' || shiftValue === 'FOLGA') {
-                            badgeClass = 'shift-F';
-                            displayValue = 'F';
-                        } else if (shiftValue === 'AB' || shiftValue === 'AMBULATORIO' || shiftValue === 'AMBULATÓRIO') {
-                            badgeClass = 'shift-AB';
-                            displayValue = 'AB';
-                        } else if (shiftValue === 'AULA' || shiftValue.startsWith('AULA') || shiftValue === 'HCX' || shiftValue.startsWith('HCX ')) {
-                            // Match AULA, AULA HCX, HCX, etc. but avoid false positives
-                            badgeClass = 'shift-AULA';
-                            displayValue = 'AULA';
-                        } else if (shiftValue === '-' || shiftValue === '') {
-                            badgeClass = 'shift-empty';
-                            displayValue = '-';
-                        } else if (shiftValue.length > 0 && shiftValue !== '-') {
-                            // Any other value - display it with a neutral badge
-                            badgeClass = 'shift-empty';
-                        }
-                    }
-                    
-                    tableHtml += `
-                        <td class="${isToday ? 'today-col' : ''}">
-                            <span class="escala-atual-cell-badge ${badgeClass}">${escapeHtml(displayValue)}</span>
+                    html += `
+                        <td class="${weekendClass} ${todayClass}">
+                            <span class="escala-mensal-shift ${badgeClass}">${escapeHtml(displayValue)}</span>
                         </td>
                     `;
                 });
                 
-                tableHtml += '</tr>';
+                html += '</tr>';
             });
-            tableHtml += '</tbody></table>';
             
-            contentEl.innerHTML = tableHtml;
+            html += '</tbody></table>';
+            html += '</div>'; // Close table wrapper
             
-            console.log(`[renderEscalaAtualTable] Rendered ${alunos.length} students with ${sortedHeaders.length} days`);
+            contentEl.innerHTML = html;
+            
+            console.log(`[renderEscalaAtualTable] Rendered ${alunos.length} students with ${sortedHeaders.length} days (compact monthly layout)`);
         }
 
         // --- CÁLCULOS AUXILIARES ---
