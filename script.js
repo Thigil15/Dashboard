@@ -6655,17 +6655,11 @@ function renderTabFaltas(faltas) {
          * Design glorioso digno do Portal de Ensino da USP
          */
         function renderTabNotasTeoricas(notas) {
-            console.log('[renderTabNotasTeoricas v35 - Theoretical Excellence] Dados recebidos:', notas);
-            console.log('[renderTabNotasTeoricas] Tipo:', typeof notas);
-            console.log('[renderTabNotasTeoricas] É null?', notas === null);
-            console.log('[renderTabNotasTeoricas] É undefined?', notas === undefined);
-            console.log('[renderTabNotasTeoricas] Número de chaves:', notas ? Object.keys(notas).length : 0);
-            if (notas) {
-                console.log('[renderTabNotasTeoricas] Chaves disponíveis:', Object.keys(notas).slice(0, 10));
-            }
+            console.log('[renderTabNotasTeoricas v36 - InCor Professional] Dados recebidos:', notas);
             
             // Helper function to get value from notas object with accent-insensitive key matching
             const getNotaValue = (materia) => {
+                if (!notas) return undefined;
                 // Try exact match first
                 if (notas[materia] !== undefined && notas[materia] !== null) {
                     return notas[materia];
@@ -6678,22 +6672,17 @@ function renderTabFaltas(faltas) {
                     return kNormalized.toUpperCase() === materiaNormalized.toUpperCase();
                 });
                 
-                if (matchingKey) {
-                    console.log(`[renderTabNotasTeoricas] Encontrada correspondência: "${materia}" -> "${matchingKey}"`);
-                    return notas[matchingKey];
-                }
-                
-                return undefined;
+                return matchingKey ? notas[matchingKey] : undefined;
             };
             
             const tabContainer = document.getElementById('notas-t-content-wrapper');
+            if (!tabContainer) {
+                console.error('[renderTabNotasTeoricas] Container não encontrado');
+                return;
+            }
 
-            // === EMPTY STATE ARTÍSTICO === //
+            // === EMPTY STATE - INCOR PROFESSIONAL === //
             if (!notas || typeof notas !== 'object' || Object.keys(notas).length === 0) {
-                console.log('[renderTabNotasTeoricas] EMPTY STATE - Motivo:', 
-                    !notas ? 'notas é falsy' : 
-                    typeof notas !== 'object' ? 'notas não é objeto' : 
-                    'notas não tem chaves');
                 tabContainer.innerHTML = `
                     <div class="nt-empty-state">
                         <svg class="nt-empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
@@ -6702,13 +6691,13 @@ function renderTabFaltas(faltas) {
                         <div>
                             <h3 class="nt-empty-title">Nenhuma Avaliação Teórica Registrada</h3>
                             <p class="nt-empty-description">
-                                As notas teóricas aparecem aqui quando as avaliações dos módulos são concluídas e processadas.
+                                As notas teóricas serão exibidas quando as avaliações dos módulos forem concluídas.
                             </p>
                             <div class="nt-empty-badge">
                                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5" />
                                 </svg>
-                                Sistema Acadêmico Integrado
+                                Sistema Acadêmico InCor
                             </div>
                         </div>
                     </div>
@@ -6716,37 +6705,32 @@ function renderTabFaltas(faltas) {
                 return;
             }
 
-            // === DEFINIÇÃO DOS GRUPOS DE MÓDULOS === //
+            // === DEFINIÇÃO DOS GRUPOS DE MÓDULOS - INCOR === //
             const mediaGroups = {
                 'Fisioterapia I': {
                     materias: ['Anatomopatologia', 'Sub/Anatomopatologia', 'Bases', 'Sub/Bases', 'Doenças Pulmonares', 'Doenças Cardíacas', 'Proc. Cirurgico', 'Avaliação', 'Sub/Avaliacao', 'VM', 'Sub/VM'],
-                    icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253',
-                    gradient: 'from-purple-500 to-indigo-600',
-                    color: '#8b5cf6'
+                    icon: 'M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25',
+                    color: '#0054B4' // InCor Blue
                 },
                 'Fisioterapia II': {
                     materias: ['Técnicas e Recursos', 'Diag. Imagem'],
                     icon: 'M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
-                    gradient: 'from-blue-500 to-cyan-600',
-                    color: '#3b82f6'
+                    color: '#0891B2' // Cyan
                 },
                 'Fisioterapia III': {
                     materias: ['Fisio aplicada', 'UTI'],
                     icon: 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z',
-                    gradient: 'from-rose-500 to-pink-600',
-                    color: '#f43f5e'
+                    color: '#E21E26' // InCor Red
                 },
                 'Fisioterapia IV': {
                     materias: ['Pediatria', 'Mobilização', 'Reab. Pulmonar'],
                     icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
-                    gradient: 'from-green-500 to-emerald-600',
-                    color: '#10b981'
+                    color: '#059669' // Green
                 },
                 'Disciplinas Complementares': {
                     materias: ['M. Cientifica', 'Saúde e politicas', 'Farmacoterapia', 'Bioética'],
                     icon: 'M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z',
-                    gradient: 'from-amber-500 to-orange-600',
-                    color: '#f59e0b'
+                    color: '#6366F1' // Indigo
                 }
             };
 
@@ -6755,48 +6739,15 @@ function renderTabFaltas(faltas) {
             let totalCount = 0;
             let highestGrade = 0;
             let lowestGrade = 10;
-            const moduleGrades = [];
 
-            // Processa todas as médias (chaves que contêm "MÉDIA" ou "MEDIA" - normalizado sem acento)
+            // Processa todas as médias (chaves que contêm "MÉDIA" ou "MEDIA")
             const mediaKeys = Object.keys(notas).filter(k => {
                 const keyUpper = k.toUpperCase();
                 const keyNormalized = k.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
                 return keyUpper.includes('MÉDIA') || keyNormalized.includes('MEDIA');
             });
-            console.log('[renderTabNotasTeoricas] Chaves de médias encontradas:', mediaKeys);
-            console.log('[renderTabNotasTeoricas] Todas as chaves disponíveis:', Object.keys(notas));
-            
-            // Adiciona "Outras" se houver disciplinas complementares
-            if (mediaGroups['Disciplinas Complementares'].materias.some(m => {
-                const val = getNotaValue(m);
-                return val && parseNota(val) > 0;
-            })) {
-                console.log('[renderTabNotasTeoricas] Encontradas disciplinas complementares');
-                // Verifica se não existe uma chave de média para disciplinas complementares
-                if (!mediaKeys.some(k => k.toUpperCase().includes('OUTRAS') || k.toUpperCase().includes('COMPLEMENTARES'))) {
-                    mediaKeys.push('Outras');
-                }
-            }
 
-            // Verifica se há alguma nota individual (mesmo sem médias)
-            const hasIndividualGrades = Object.entries(mediaGroups).some(([groupName, group]) => 
-                group.materias.some(m => {
-                    const val = getNotaValue(m);
-                    return val && parseNota(val) > 0;
-                })
-            );
-            
-            console.log('[renderTabNotasTeoricas] Tem médias?', mediaKeys.length > 0);
-            console.log('[renderTabNotasTeoricas] Tem notas individuais?', hasIndividualGrades);
-
-            // Se não há médias NEM notas individuais, mostra mensagem
-            if (mediaKeys.length === 0 && !hasIndividualGrades) {
-                console.log('[renderTabNotasTeoricas] Nenhuma média ou nota encontrada, mostrando mensagem de vazio');
-                tabContainer.innerHTML = '<div class="content-card p-6"><p class="text-slate-500 text-sm italic">Nenhuma nota ou média encontrada neste registro.</p></div>';
-                return;
-            }
-
-            // Processa cada grupo de módulo
+            // Processa cada média encontrada
             mediaKeys.forEach(key => {
                 const mediaValue = parseNota(notas[key]);
                 if (mediaValue > 0) {
@@ -6804,43 +6755,61 @@ function renderTabFaltas(faltas) {
                     totalCount++;
                     highestGrade = Math.max(highestGrade, mediaValue);
                     lowestGrade = Math.min(lowestGrade, mediaValue);
-                    moduleGrades.push({ name: key, value: mediaValue });
                 }
             });
+
+            // Verifica se há alguma nota individual nos grupos
+            const hasIndividualGrades = Object.entries(mediaGroups).some(([groupName, group]) => 
+                group.materias.some(m => {
+                    const val = getNotaValue(m);
+                    return val && parseNota(val) > 0;
+                })
+            );
+
+            // Se não há médias NEM notas individuais, mostra mensagem
+            if (mediaKeys.length === 0 && !hasIndividualGrades) {
+                tabContainer.innerHTML = `
+                    <div class="nt-empty-state">
+                        <svg class="nt-empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <div>
+                            <h3 class="nt-empty-title">Dados em Processamento</h3>
+                            <p class="nt-empty-description">
+                                Nenhuma nota ou média encontrada neste registro. Os dados podem estar sendo processados.
+                            </p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
 
             const overallAvg = totalCount > 0 ? totalSum / totalCount : 0;
             const progressPercent = overallAvg * 10;
 
             // Determina a mensagem de performance
-            let performanceMessage = '⚠ Precisa de atenção';
-            let performanceColor = '#f59e0b';
+            let performanceMessage = 'Precisa de atenção';
             if (overallAvg >= 9.0) {
-                performanceMessage = '🌟 Excelência Acadêmica';
-                performanceColor = '#10b981';
-            } else if (overallAvg >= 8.5) {
-                performanceMessage = '⭐ Desempenho Excepcional';
-                performanceColor = '#10b981';
+                performanceMessage = 'Excelência Acadêmica';
             } else if (overallAvg >= 8.0) {
-                performanceMessage = '✓ Muito Bom';
-                performanceColor = '#3b82f6';
+                performanceMessage = 'Muito Bom';
             } else if (overallAvg >= 7.0) {
-                performanceMessage = '✓ Bom Desempenho';
-                performanceColor = '#3b82f6';
+                performanceMessage = 'Bom Desempenho';
             }
 
-            // === HERO SECTION === //
+            // === HERO SECTION - INCOR BLUE === //
             let heroHtml = `
                 <div class="nt-hero-section">
                     <div class="nt-hero-content">
                         <h1 class="nt-hero-title">Avaliações Teóricas</h1>
                         <p class="nt-hero-subtitle">
-                            Análise completa do desempenho nos módulos teóricos do programa de Fisioterapia
+                            Desempenho nos módulos teóricos do Programa de Fisioterapia
                         </p>
                         <div class="nt-validation-badge">
-                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5" />
                             </svg>
-                            ${totalCount} Módulo${totalCount > 1 ? 's' : ''} Avaliado${totalCount > 1 ? 's' : ''}
+                            ${totalCount > 0 ? `${totalCount} Módulo${totalCount > 1 ? 's' : ''} Avaliado${totalCount > 1 ? 's' : ''}` : 'Dados Disponíveis'}
                         </div>
                     </div>
                 </div>
@@ -6849,7 +6818,6 @@ function renderTabFaltas(faltas) {
             // === DASHBOARD PRINCIPAL === //
             let dashboardHtml = `
                 <div class="nt-dashboard-grid">
-                    <!-- Anel de Progresso Masterpiece -->
                     <div class="nt-progress-masterpiece">
                         <div class="nt-progress-content">
                             <div class="nt-ring-container">
@@ -6859,32 +6827,29 @@ function renderTabFaltas(faltas) {
                                 </div>
                             </div>
                             <div class="nt-progress-text">
-                                <h2 class="nt-progress-title">Média Geral Teórica</h2>
-                                <p class="nt-progress-description" style="color: ${performanceColor};">
-                                    ${performanceMessage}
-                                </p>
+                                <h2 class="nt-progress-title">Média Geral</h2>
+                                <p class="nt-progress-description">${performanceMessage}</p>
                                 <div class="nt-progress-meta">
                                     <svg class="nt-progress-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                                     </svg>
                                     <span class="nt-progress-stats">
-                                        Baseado em <strong>${totalCount}</strong> módulo${totalCount > 1 ? 's' : ''}
+                                        ${totalCount > 0 ? `Baseado em <strong>${totalCount}</strong> módulo${totalCount > 1 ? 's' : ''}` : 'Calculando...'}
                                     </span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Stats Cards -->
                     <div class="nt-stats-grid">
                         <div class="nt-stat-card">
-                            <div class="nt-stat-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+                            <div class="nt-stat-icon" style="background: linear-gradient(135deg, #059669, #10b981);">
                                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                                 </svg>
                             </div>
                             <div>
-                                <div class="nt-stat-value">${formatarNota(highestGrade)}</div>
+                                <div class="nt-stat-value">${highestGrade > 0 ? formatarNota(highestGrade) : '-'}</div>
                                 <div class="nt-stat-label">Maior Nota</div>
                             </div>
                         </div>
@@ -6895,7 +6860,7 @@ function renderTabFaltas(faltas) {
                                 </svg>
                             </div>
                             <div>
-                                <div class="nt-stat-value">${lowestGrade < 10 ? formatarNota(lowestGrade) : '-'}</div>
+                                <div class="nt-stat-value">${lowestGrade < 10 && lowestGrade > 0 ? formatarNota(lowestGrade) : '-'}</div>
                                 <div class="nt-stat-label">Menor Nota</div>
                             </div>
                         </div>
@@ -6903,29 +6868,24 @@ function renderTabFaltas(faltas) {
                 </div>
             `;
 
-            // === DIVIDER === //
-            let dividerHtml = '<div class="nt-section-divider"></div>';
-
-            // === MÓDULOS TEÓRICOS DETALHADOS === //
-            let modulesHtml = `
-                <div style="margin: 2.5rem 0 1.5rem;">
-                    <h3 style="font-family: var(--font-display); font-size: 1.75rem; font-weight: 800; color: var(--content-text-primary); margin-bottom: 0.75rem;">Módulos Teóricos Detalhados</h3>
-                    <p style="font-size: 1rem; color: var(--content-text-secondary);">Desempenho completo por módulo e disciplina</p>
+            // === SECTION HEADER === //
+            let sectionHeaderHtml = `
+                <div class="nt-section-header">
+                    <h3>Módulos Teóricos</h3>
+                    <p>Desempenho por módulo e disciplina</p>
                 </div>
-                <div class="nt-modules-grid">
             `;
 
-            // Para cada grupo de módulo, cria um card
+            // === MÓDULOS TEÓRICOS === //
+            let modulesHtml = '<div class="nt-modules-grid">';
+
             Object.entries(mediaGroups).forEach(([groupName, groupData]) => {
-                const { materias, icon, gradient, color } = groupData;
+                const { materias, icon, color } = groupData;
                 
-                // Encontra a média do grupo (procura pela chave que corresponde)
-                let mediaKey = null;
+                // Encontra a média do grupo
                 let mediaValue = 0;
                 
-                // Tenta encontrar a média correspondente
                 if (groupName === 'Disciplinas Complementares') {
-                    // Para disciplinas complementares, calcula a média das matérias
                     let sum = 0;
                     let count = 0;
                     materias.forEach(materia => {
@@ -6938,14 +6898,11 @@ function renderTabFaltas(faltas) {
                     });
                     mediaValue = count > 0 ? sum / count : 0;
                 } else {
-                    // Para os outros módulos, procura pela chave de média
                     const fisioNumber = groupName.match(/I{1,4}$/)?.[0];
                     if (fisioNumber) {
-                        mediaKey = Object.keys(notas).find(k => {
-                            const kUpper = k.toUpperCase();
+                        const mediaKey = Object.keys(notas).find(k => {
                             const kNormalized = k.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
-                            return (kUpper.includes('MÉDIA') || kNormalized.includes('MEDIA')) && 
-                                   (kUpper.includes(`FISIO${fisioNumber.length}`) || kNormalized.includes(`FISIO${fisioNumber.length}`));
+                            return kNormalized.includes('MEDIA') && kNormalized.includes(`FISIO${fisioNumber.length}`);
                         });
                         if (mediaKey) {
                             mediaValue = parseNota(notas[mediaKey]);
@@ -6956,6 +6913,7 @@ function renderTabFaltas(faltas) {
                 // Processa as disciplinas do módulo
                 let disciplinasHtml = '';
                 let hasDetails = false;
+                let disciplineCount = 0;
                 
                 materias.forEach(materia => {
                     const val = getNotaValue(materia);
@@ -6963,10 +6921,8 @@ function renderTabFaltas(faltas) {
                         const notaMateria = parseNota(val);
                         if (notaMateria > 0) {
                             const percentage = (notaMateria / 10) * 100;
-                            let barColor = color;
-                            
                             disciplinasHtml += `
-                                <div class="nt-discipline-item" style="--nt-discipline-color: ${barColor};">
+                                <div class="nt-discipline-item" style="--nt-discipline-color: ${color};">
                                     <div class="nt-discipline-header">
                                         <span class="nt-discipline-name">${materia}</span>
                                         <span class="nt-discipline-value">${formatarNota(notaMateria)}</span>
@@ -6977,6 +6933,7 @@ function renderTabFaltas(faltas) {
                                 </div>
                             `;
                             hasDetails = true;
+                            disciplineCount++;
                         }
                     }
                 });
@@ -6988,17 +6945,17 @@ function renderTabFaltas(faltas) {
                     modulesHtml += `
                         <div class="nt-module-card" style="--nt-module-color: ${color};">
                             <div class="nt-module-header">
-                                <div class="nt-module-icon bg-gradient-to-br ${gradient}">
+                                <div class="nt-module-icon" style="background: linear-gradient(135deg, ${color}, ${color}cc);">
                                     <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="${icon}" />
                                     </svg>
                                 </div>
                                 <div class="nt-module-title-group">
                                     <h4 class="nt-module-title">${groupName}</h4>
-                                    <p class="nt-module-subtitle">${materias.length} disciplina${materias.length > 1 ? 's' : ''}</p>
+                                    <p class="nt-module-subtitle">${disciplineCount > 0 ? `${disciplineCount} disciplina${disciplineCount > 1 ? 's' : ''}` : `${materias.length} disciplinas`}</p>
                                 </div>
                                 <div class="nt-module-grade">
-                                    <div class="nt-grade-value">${formatarNota(mediaValue)}</div>
+                                    <div class="nt-grade-value">${mediaValue > 0 ? formatarNota(mediaValue) : '-'}</div>
                                     <div class="nt-grade-label">Média</div>
                                 </div>
                             </div>
@@ -7010,7 +6967,7 @@ function renderTabFaltas(faltas) {
                                 
                                 <details class="nt-module-details">
                                     <summary class="nt-details-toggle">
-                                        <span>Ver disciplinas do módulo</span>
+                                        <span>Ver disciplinas</span>
                                         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                                         </svg>
@@ -7027,8 +6984,54 @@ function renderTabFaltas(faltas) {
 
             modulesHtml += '</div>';
 
+            // === ALL GRADES TABLE (if available) === //
+            let allGradesHtml = '';
+            const gradeKeys = Object.keys(notas).filter(k => {
+                const keyNormalized = k.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+                return !keyNormalized.includes('EMAILHC') && 
+                       !keyNormalized.includes('NOMECOMPLETO') && 
+                       !keyNormalized.includes('CURSO') &&
+                       notas[k] !== null && 
+                       notas[k] !== undefined && 
+                       String(notas[k]).trim() !== '';
+            });
+
+            if (gradeKeys.length > 5) {
+                allGradesHtml = `
+                    <div class="nt-all-grades">
+                        <div class="nt-all-grades-header">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                            <span>Todas as Notas</span>
+                        </div>
+                        <table class="nt-grades-table">
+                            <thead>
+                                <tr>
+                                    <th>Disciplina / Campo</th>
+                                    <th style="text-align: right;">Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${gradeKeys.map(key => {
+                                    const value = notas[key];
+                                    const numValue = parseNota(value);
+                                    const isGrade = numValue >= 0 && numValue <= 10 && String(value).match(/^[\d,\.]+$/);
+                                    return `
+                                        <tr>
+                                            <td>${key}</td>
+                                            <td style="text-align: right;" class="${isGrade ? 'grade-cell' : ''}">${isGrade ? formatarNota(numValue) : value}</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+
             // === MONTAGEM FINAL === //
-            tabContainer.innerHTML = heroHtml + dashboardHtml + dividerHtml + modulesHtml;
+            tabContainer.innerHTML = heroHtml + dashboardHtml + sectionHeaderHtml + modulesHtml + allGradesHtml;
         }
 
         function calculatePracticeSummary(notasP) {
