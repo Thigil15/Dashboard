@@ -14715,6 +14715,20 @@
     border-right: 1px solid rgba(229, 233, 239, 0.6);
 }
 
+/* Additional columns (Supervisor, Unidade, Horário) styling */
+.escala-atual-table th:nth-child(2),
+.escala-atual-table th:nth-child(3),
+.escala-atual-table th:nth-child(4),
+.escala-atual-table td:nth-child(2),
+.escala-atual-table td:nth-child(3),
+.escala-atual-table td:nth-child(4) {
+    min-width: 100px;
+    white-space: nowrap;
+    text-align: left;
+    font-size: 0.8125rem;
+    color: var(--content-text-secondary);
+}
+
 .escala-atual-table tbody tr:hover td:first-child {
     background: rgba(0, 84, 180, 0.03);
 }
@@ -14779,6 +14793,97 @@
 .escala-atual-student-email {
     font-size: 0.75rem;
     color: var(--content-text-muted);
+}
+
+/* === STUDENT TYPE COLOR-CODING === */
+/* Bolsistas (Scholarship) - Blue */
+.student-type-bolsista .escala-atual-student-avatar,
+.escala-atual-student-avatar.student-type-bolsista {
+    background: linear-gradient(135deg, var(--incor-blue-500), var(--incor-blue-600));
+    box-shadow: 0 2px 8px rgba(0, 84, 180, 0.3);
+}
+
+.student-type-bolsista .escala-atual-student-name {
+    color: var(--incor-blue-700);
+}
+
+tr.student-type-bolsista {
+    background-color: rgba(30, 111, 217, 0.05);
+}
+
+tr.student-type-bolsista:hover {
+    background-color: rgba(30, 111, 217, 0.1);
+}
+
+/* Pagantes (Paying) - Red */
+.student-type-pagante .escala-atual-student-avatar,
+.escala-atual-student-avatar.student-type-pagante {
+    background: linear-gradient(135deg, var(--incor-red-500), var(--incor-red-600));
+    box-shadow: 0 2px 8px rgba(226, 30, 38, 0.3);
+}
+
+.student-type-pagante .escala-atual-student-name {
+    color: var(--incor-red-600);
+}
+
+tr.student-type-pagante {
+    background-color: rgba(226, 30, 38, 0.05);
+}
+
+tr.student-type-pagante:hover {
+    background-color: rgba(226, 30, 38, 0.1);
+}
+
+/* Residentes (Residents) - Green */
+.student-type-residente .escala-atual-student-avatar,
+.escala-atual-student-avatar.student-type-residente {
+    background: linear-gradient(135deg, #059669, #10b981);
+    box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);
+}
+
+.student-type-residente .escala-atual-student-name {
+    color: #059669;
+}
+
+tr.student-type-residente {
+    background-color: rgba(5, 150, 105, 0.05);
+}
+
+tr.student-type-residente:hover {
+    background-color: rgba(5, 150, 105, 0.1);
+}
+
+/* === STUDENT TYPE LEGEND BADGE === */
+.escala-atual-student-type-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: white;
+    text-transform: uppercase;
+}
+
+.escala-atual-student-type-badge.student-type-bolsista {
+    background: linear-gradient(135deg, var(--incor-blue-500), var(--incor-blue-600));
+}
+
+.escala-atual-student-type-badge.student-type-pagante {
+    background: linear-gradient(135deg, var(--incor-red-500), var(--incor-red-600));
+}
+
+.escala-atual-student-type-badge.student-type-residente {
+    background: linear-gradient(135deg, #059669, #10b981);
+}
+
+.student-type-legend {
+    margin-top: 0.75rem;
+    border-top: 1px solid rgba(0, 84, 180, 0.1);
+    padding-top: 1rem;
 }
 
 /* === SHIFT CELL BADGE === */
