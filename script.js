@@ -797,6 +797,24 @@
                     }
                     break;
                     
+                case 'escalaAtualEnfermaria':
+                case 'escalaAtualUTI':
+                case 'escalaAtualCardiopediatria':
+                    // EscalaAtual data updated - refresh escala atual view if on escala tab
+                    console.log(`[triggerUIUpdates] Dados de ${stateKey} atualizados`);
+                    
+                    const escalaContent = document.getElementById('content-escala');
+                    if (escalaContent && escalaContent.style.display !== 'none') {
+                        console.log('[triggerUIUpdates] Atualizando painel de Escala Atual (tab ativa)');
+                        updateEscalaAtualTabCounts();
+                        // Only re-render if the current sector matches
+                        const sectorFromKey = stateKey.replace('escalaAtual', '').toLowerCase();
+                        if (escalaAtualState.currentSector === sectorFromKey) {
+                            renderEscalaAtualTable(escalaAtualState.currentSector);
+                        }
+                    }
+                    break;
+                    
                 default:
                     // General update
                     if (typeof renderAtAGlance === 'function') {
@@ -2526,7 +2544,259 @@ const pontoState = {
                 }
             }
             
+            // Initialize escala atual panel when switching to escala tab
+            if (tabName === 'escala') {
+                console.log('[switchMainTab] Inicializando painel de Escala Atual...');
+                initializeEscalaAtualPanel();
+            }
+            
             window.scrollTo(0, 0);
+        }
+        
+        // ====================================================================
+        // ESCALA ATUAL - PROFESSIONAL INCOR DESIGN
+        // Renders the current schedule for 3 sectors (Enfermaria, UTI, Cardiopediatria)
+        // ====================================================================
+        
+        let escalaAtualState = {
+            currentSector: 'enfermaria',
+            initialized: false
+        };
+        
+        /**
+         * Initialize the Escala Atual panel
+         */
+        function initializeEscalaAtualPanel() {
+            console.log('[initializeEscalaAtualPanel] Initializing...');
+            
+            // Update today's date in the hero section
+            const todayDateEl = document.getElementById('escala-atual-today-date');
+            if (todayDateEl) {
+                const today = new Date();
+                todayDateEl.textContent = today.toLocaleDateString('pt-BR', {
+                    weekday: 'long',
+                    day: '2-digit',
+                    month: 'long',
+                    year: 'numeric'
+                });
+            }
+            
+            // Setup tab event listeners (only once)
+            if (!escalaAtualState.initialized) {
+                setupEscalaAtualTabs();
+                escalaAtualState.initialized = true;
+            }
+            
+            // Update tab counts
+            updateEscalaAtualTabCounts();
+            
+            // Render the current sector
+            renderEscalaAtualTable(escalaAtualState.currentSector);
+        }
+        
+        /**
+         * Setup event listeners for sector tabs
+         */
+        function setupEscalaAtualTabs() {
+            const tabs = document.querySelectorAll('#escala-atual-tabs .escala-atual-tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const sector = tab.getAttribute('data-sector');
+                    if (sector && sector !== escalaAtualState.currentSector) {
+                        // Update active state
+                        tabs.forEach(t => t.classList.remove('active'));
+                        tab.classList.add('active');
+                        
+                        // Update state and render
+                        escalaAtualState.currentSector = sector;
+                        renderEscalaAtualTable(sector);
+                    }
+                });
+            });
+        }
+        
+        /**
+         * Update tab counts based on data
+         */
+        function updateEscalaAtualTabCounts() {
+            const sectorData = {
+                enfermaria: appState.escalaAtualEnfermaria,
+                uti: appState.escalaAtualUTI,
+                cardiopediatria: appState.escalaAtualCardiopediatria
+            };
+            
+            Object.entries(sectorData).forEach(([sector, data]) => {
+                const countEl = document.getElementById(`escala-tab-${sector}-count`);
+                if (countEl && data && data.alunos) {
+                    countEl.textContent = data.alunos.length;
+                }
+            });
+        }
+        
+        /**
+         * Render the escala table for a specific sector
+         * @param {string} sector - 'enfermaria', 'uti', or 'cardiopediatria'
+         */
+        function renderEscalaAtualTable(sector) {
+            console.log(`[renderEscalaAtualTable] Rendering ${sector}...`);
+            
+            const loadingEl = document.getElementById('escala-atual-loading');
+            const emptyEl = document.getElementById('escala-atual-empty');
+            const contentEl = document.getElementById('escala-atual-content');
+            
+            if (!loadingEl || !emptyEl || !contentEl) {
+                console.error('[renderEscalaAtualTable] Container elements not found');
+                return;
+            }
+            
+            // Get sector data from appState
+            let sectorData = null;
+            if (sector === 'enfermaria') {
+                sectorData = appState.escalaAtualEnfermaria;
+            } else if (sector === 'uti') {
+                sectorData = appState.escalaAtualUTI;
+            } else if (sector === 'cardiopediatria') {
+                sectorData = appState.escalaAtualCardiopediatria;
+            }
+            
+            // Check if data is available
+            if (!sectorData || !sectorData.alunos || sectorData.alunos.length === 0) {
+                console.log(`[renderEscalaAtualTable] No data for sector ${sector}`);
+                loadingEl.style.display = 'none';
+                emptyEl.style.display = 'flex';
+                contentEl.style.display = 'none';
+                return;
+            }
+            
+            // Hide loading, show content
+            loadingEl.style.display = 'none';
+            emptyEl.style.display = 'none';
+            contentEl.style.display = 'block';
+            
+            // Get today's date in DD/MM format for highlighting
+            const todayBR = appState.todayBR || new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+            
+            // Build the table HTML
+            const alunos = sectorData.alunos;
+            const headersDay = sectorData.headersDay || [];
+            
+            // Sort headers chronologically
+            const sortedHeaders = [...headersDay].sort((a, b) => {
+                const [dayA, monthA] = a.split('/').map(Number);
+                const [dayB, monthB] = b.split('/').map(Number);
+                if (monthA !== monthB) return monthA - monthB;
+                return dayA - dayB;
+            });
+            
+            let tableHtml = '<table class="escala-atual-table">';
+            
+            // Table header
+            tableHtml += '<thead><tr>';
+            tableHtml += '<th>Profissional</th>';
+            sortedHeaders.forEach(day => {
+                const isToday = day === todayBR;
+                tableHtml += `<th class="${isToday ? 'today-col' : ''}">${day}</th>`;
+            });
+            tableHtml += '</tr></thead>';
+            
+            // Table body
+            tableHtml += '<tbody>';
+            alunos.forEach(aluno => {
+                if (!aluno) return;
+                
+                const nome = aluno.NomeCompleto || aluno.Nome || aluno.nomeCompleto || 'Sem Nome';
+                const email = aluno.EmailHC || aluno.Email || aluno.emailHC || '';
+                
+                // Get initials for avatar
+                const nameParts = nome.trim().split(/\s+/);
+                const initials = nameParts.length >= 2 
+                    ? (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase()
+                    : nome.substring(0, 2).toUpperCase();
+                
+                tableHtml += '<tr>';
+                
+                // Student name cell
+                tableHtml += `
+                    <td>
+                        <div class="escala-atual-student">
+                            <div class="escala-atual-student-avatar">
+                                <span>${initials}</span>
+                            </div>
+                            <div class="escala-atual-student-info">
+                                <span class="escala-atual-student-name">${nome}</span>
+                                ${email ? `<span class="escala-atual-student-email">${email}</span>` : ''}
+                            </div>
+                        </div>
+                    </td>
+                `;
+                
+                // Day cells
+                sortedHeaders.forEach(day => {
+                    const isToday = day === todayBR;
+                    
+                    // Try multiple key formats to find the value
+                    let value = '';
+                    const dayKey = day.replace('/', '_'); // Convert DD/MM to DD_MM format
+                    const dayKeyAlt = day; // DD/MM format
+                    
+                    // Check various key patterns
+                    if (aluno[dayKeyAlt] !== undefined) {
+                        value = aluno[dayKeyAlt];
+                    } else if (aluno[dayKey] !== undefined) {
+                        value = aluno[dayKey];
+                    } else {
+                        // Try to find the key with different formatting
+                        const dayParts = day.split('/');
+                        if (dayParts.length === 2) {
+                            const altKey1 = `${parseInt(dayParts[0])}_${dayParts[1]}`; // D_MM
+                            const altKey2 = `${dayParts[0]}_${parseInt(dayParts[1])}`; // DD_M
+                            const altKey3 = `${parseInt(dayParts[0])}_${parseInt(dayParts[1])}`; // D_M
+                            
+                            value = aluno[altKey1] || aluno[altKey2] || aluno[altKey3] || '';
+                        }
+                    }
+                    
+                    // Normalize the value
+                    const shiftValue = String(value || '').trim().toUpperCase();
+                    
+                    // Determine badge class based on shift type
+                    let badgeClass = 'shift-empty';
+                    let displayValue = '-';
+                    
+                    if (shiftValue) {
+                        displayValue = shiftValue;
+                        if (shiftValue === 'M') {
+                            badgeClass = 'shift-M';
+                        } else if (shiftValue === 'T') {
+                            badgeClass = 'shift-T';
+                        } else if (shiftValue === 'N') {
+                            badgeClass = 'shift-N';
+                        } else if (shiftValue === 'MT' || shiftValue === 'TM') {
+                            badgeClass = 'shift-MT';
+                            displayValue = 'MT';
+                        } else if (shiftValue === 'F' || shiftValue === 'FOLGA' || shiftValue === '-') {
+                            badgeClass = 'shift-F';
+                            displayValue = 'F';
+                        } else if (shiftValue.length > 0 && shiftValue !== '-') {
+                            // Any other value - display it with a neutral badge
+                            badgeClass = 'shift-empty';
+                        }
+                    }
+                    
+                    tableHtml += `
+                        <td class="${isToday ? 'today-col' : ''}">
+                            <span class="escala-atual-cell-badge ${badgeClass}">${displayValue}</span>
+                        </td>
+                    `;
+                });
+                
+                tableHtml += '</tr>';
+            });
+            tableHtml += '</tbody></table>';
+            
+            contentEl.innerHTML = tableHtml;
+            
+            console.log(`[renderEscalaAtualTable] Rendered ${alunos.length} students with ${sortedHeaders.length} days`);
         }
 
         // --- CÁLCULOS AUXILIARES ---
