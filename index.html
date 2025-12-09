@@ -572,59 +572,117 @@
 
                 </div>
 
-                <!-- View: Escala Atual -->
+                <!-- View: Escala Atual - Professional InCor Design -->
                 <div id="content-escala" class="view-container">
                     <h1>Escala Atual</h1>
 
-                    <div id="escala-sheet-card" class="content-card p-6 lg:p-8 escala-sheet-card escala-preview-card">
-                        <div class="escala-sheet-header">
-                            <div>
-                                <h2 id="escala-sheet-title" class="content-card-header mb-2 border-b-0">Visualizador de Escala</h2>
-                                <p class="escala-sheet-subtitle">Visualize a escala oficial diretamente pelo PDF ou abra a planilha original para realizar ajustes imediatos.</p>
-                            </div>
-                            <div class="escala-sheet-actions">
-                                <button id="escala-open-sheet" class="escala-sheet-button" type="button" disabled>Abrir planilha</button>
-                                <button id="escala-open-pdf" class="escala-sheet-button" type="button" disabled>Ver PDF</button>
-                            </div>
-                        </div>
-
-                        <div class="escala-sheet-meta">
-                            <span id="escala-sheet-period" class="escala-sheet-period">--</span>
-                            <span id="escala-sheet-count" class="escala-sheet-count">Escalados: 0</span>
-                        </div>
-
-                        <div class="escala-preview-meta">
-                            <span class="escala-preview-meta-label">Data selecionada</span>
-                            <span id="escala-preview-date" class="escala-preview-date">--</span>
-                        </div>
-
-                        <div class="escala-overview-stats">
-                            <div class="escala-stat-card">
-                                <span class="label">Escalados</span>
-                                <span id="escala-preview-total" class="value">0</span>
-                            </div>
-                            <div class="escala-stat-card is-green">
-                                <span class="label">Presentes</span>
-                                <span id="escala-preview-present" class="value">0</span>
-                            </div>
-                            <div class="escala-stat-card is-amber">
-                                <span class="label">Atrasos</span>
-                                <span id="escala-preview-late" class="value">0</span>
-                            </div>
-                            <div class="escala-stat-card is-red">
-                                <span class="label">Faltas</span>
-                                <span id="escala-preview-absent" class="value">0</span>
-                            </div>
-                        </div>
-
-                        <div class="escala-preview-viewer">
-                            <iframe id="escala-pdf-frame" title="Pré-visualização da escala" loading="lazy" hidden></iframe>
-                            <div id="escala-pdf-empty" class="escala-empty-state">
-                                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12M8 12h12M8 17h6M5 7h.01M5 12h.01M5 17h.01" />
+                    <!-- Hero Section -->
+                    <div class="escala-atual-hero">
+                        <div class="escala-atual-hero-content">
+                            <div class="escala-atual-hero-icon">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
-                                <p>Informe um link de planilha ou um PDF na planilha de dados para visualizar a escala aqui.</p>
                             </div>
+                            <div class="escala-atual-hero-text">
+                                <h2 class="escala-atual-hero-title">Escalas dos Setores</h2>
+                                <p class="escala-atual-hero-subtitle">Visualize a escala de trabalho atual dos três setores do programa de fisioterapia</p>
+                            </div>
+                        </div>
+                        <div class="escala-atual-hero-meta">
+                            <div class="escala-atual-date-badge">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span id="escala-atual-today-date">--</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sector Tabs -->
+                    <div class="escala-atual-tabs-wrapper">
+                        <nav class="escala-atual-tabs" id="escala-atual-tabs">
+                            <button class="escala-atual-tab active" data-sector="enfermaria" type="button">
+                                <div class="escala-atual-tab-icon" style="background: linear-gradient(135deg, #0891B2, #06b6d4);">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                    </svg>
+                                </div>
+                                <span class="escala-atual-tab-label">Enfermaria</span>
+                                <span class="escala-atual-tab-count" id="escala-tab-enfermaria-count">0</span>
+                            </button>
+                            <button class="escala-atual-tab" data-sector="uti" type="button">
+                                <div class="escala-atual-tab-icon" style="background: linear-gradient(135deg, #DC2626, #EF4444);">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                    </svg>
+                                </div>
+                                <span class="escala-atual-tab-label">UTI</span>
+                                <span class="escala-atual-tab-count" id="escala-tab-uti-count">0</span>
+                            </button>
+                            <button class="escala-atual-tab" data-sector="cardiopediatria" type="button">
+                                <div class="escala-atual-tab-icon" style="background: linear-gradient(135deg, #7C3AED, #8B5CF6);">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                    </svg>
+                                </div>
+                                <span class="escala-atual-tab-label">Cardiopediatria</span>
+                                <span class="escala-atual-tab-count" id="escala-tab-cardiopediatria-count">0</span>
+                            </button>
+                        </nav>
+                    </div>
+
+                    <!-- Legend -->
+                    <div class="escala-atual-legend">
+                        <div class="escala-atual-legend-header">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>Legenda dos Turnos</span>
+                        </div>
+                        <div class="escala-atual-legend-items">
+                            <div class="escala-atual-legend-item">
+                                <span class="escala-atual-shift-badge shift-M">M</span>
+                                <span>Manhã</span>
+                            </div>
+                            <div class="escala-atual-legend-item">
+                                <span class="escala-atual-shift-badge shift-T">T</span>
+                                <span>Tarde</span>
+                            </div>
+                            <div class="escala-atual-legend-item">
+                                <span class="escala-atual-shift-badge shift-N">N</span>
+                                <span>Noite</span>
+                            </div>
+                            <div class="escala-atual-legend-item">
+                                <span class="escala-atual-shift-badge shift-MT">MT</span>
+                                <span>Manhã/Tarde</span>
+                            </div>
+                            <div class="escala-atual-legend-item">
+                                <span class="escala-atual-shift-badge shift-F">F</span>
+                                <span>Folga</span>
+                            </div>
+                            <div class="escala-atual-legend-item">
+                                <span class="escala-atual-shift-badge shift-empty">-</span>
+                                <span>Não escalado</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Escala Table Container -->
+                    <div class="escala-atual-table-container">
+                        <div id="escala-atual-loading" class="escala-atual-loading">
+                            <div class="escala-atual-loading-spinner"></div>
+                            <p>Carregando escala...</p>
+                        </div>
+                        <div id="escala-atual-empty" class="escala-atual-empty" style="display: none;">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                            </svg>
+                            <p>Nenhuma escala disponível para este setor.</p>
+                            <span class="escala-atual-empty-hint">Os dados serão carregados automaticamente do Firebase.</span>
+                        </div>
+                        <div id="escala-atual-content" class="escala-atual-content" style="display: none;">
+                            <!-- Table will be rendered by JavaScript -->
                         </div>
                     </div>
                 </div>
