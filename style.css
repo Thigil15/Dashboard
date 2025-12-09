@@ -15393,20 +15393,36 @@ tr.student-type-residente:hover {
     border-bottom: 2px solid rgba(0, 84, 180, 0.15);
 }
 
-/* Weekend column highlighting */
+/* Weekend column highlighting - GREEN for Saturdays and Sundays */
 .escala-mensal-table th.weekend,
 .escala-mensal-table td.weekend {
-    background-color: rgba(254, 215, 170, 0.4) !important;
+    background-color: rgba(16, 185, 129, 0.15) !important;
 }
 
 .escala-mensal-table thead th.weekend {
-    background: linear-gradient(135deg, rgba(254, 215, 170, 0.6), rgba(251, 191, 36, 0.3)) !important;
-    color: #92400e;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.35), rgba(5, 150, 105, 0.25)) !important;
+    color: #065f46;
 }
 
 .escala-mensal-table thead tr:nth-child(2) th.weekend {
-    background: linear-gradient(135deg, rgba(254, 215, 170, 0.7), rgba(251, 191, 36, 0.4)) !important;
-    color: #92400e;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.4), rgba(5, 150, 105, 0.3)) !important;
+    color: #065f46;
+}
+
+/* Holiday column highlighting - GREEN (same as weekends) */
+.escala-mensal-table th.holiday,
+.escala-mensal-table td.holiday {
+    background-color: rgba(16, 185, 129, 0.15) !important;
+}
+
+.escala-mensal-table thead th.holiday {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.35), rgba(5, 150, 105, 0.25)) !important;
+    color: #065f46;
+}
+
+.escala-mensal-table thead tr:nth-child(2) th.holiday {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.4), rgba(5, 150, 105, 0.3)) !important;
+    color: #065f46;
 }
 
 /* Today column highlighting */

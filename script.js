@@ -2753,9 +2753,69 @@ const pontoState = {
         }
         
         /**
+         * Check if a date is a Brazilian national holiday
+         * @param {number} day - Day of month
+         * @param {number} month - Month (1-12)
+         * @param {number} year - Year
+         * @returns {boolean}
+         */
+        function isBrazilianHoliday(day, month, year) {
+            // Fixed Brazilian national holidays (DD/MM)
+            const fixedHolidays = [
+                '01/01', // Confraternização Universal (New Year)
+                '21/04', // Tiradentes
+                '01/05', // Dia do Trabalho (Labor Day)
+                '07/09', // Independência do Brasil
+                '12/10', // Nossa Senhora Aparecida
+                '02/11', // Finados
+                '15/11', // Proclamação da República
+                '25/12', // Natal (Christmas)
+            ];
+            
+            const dateKey = `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}`;
+            if (fixedHolidays.includes(dateKey)) {
+                return true;
+            }
+            
+            // Calculate Easter-based mobile holidays
+            // Using Anonymous Gregorian algorithm
+            const a = year % 19;
+            const b = Math.floor(year / 100);
+            const c = year % 100;
+            const d = Math.floor(b / 4);
+            const e = b % 4;
+            const f = Math.floor((b + 8) / 25);
+            const g = Math.floor((b - f + 1) / 3);
+            const h = (19 * a + b - d - g + 15) % 30;
+            const i = Math.floor(c / 4);
+            const k = c % 4;
+            const l = (32 + 2 * e + 2 * i - h - k) % 7;
+            const m = Math.floor((a + 11 * h + 22 * l) / 451);
+            const easterMonth = Math.floor((h + l - 7 * m + 114) / 31);
+            const easterDay = ((h + l - 7 * m + 114) % 31) + 1;
+            
+            const easterDate = new Date(year, easterMonth - 1, easterDay);
+            
+            // Mobile holidays based on Easter
+            const mobileHolidays = [
+                new Date(easterDate.getTime() - 47 * 24 * 60 * 60 * 1000), // Carnaval (47 days before Easter)
+                new Date(easterDate.getTime() - 46 * 24 * 60 * 60 * 1000), // Carnaval (46 days before Easter)
+                new Date(easterDate.getTime() - 2 * 24 * 60 * 60 * 1000),  // Sexta-feira Santa (Good Friday)
+                easterDate, // Páscoa (Easter Sunday)
+                new Date(easterDate.getTime() + 60 * 24 * 60 * 60 * 1000), // Corpus Christi (60 days after Easter)
+            ];
+            
+            const checkDate = new Date(year, month - 1, day);
+            return mobileHolidays.some(holiday => 
+                holiday.getDate() === checkDate.getDate() && 
+                holiday.getMonth() === checkDate.getMonth()
+            );
+        }
+        
+        /**
          * Parse DD/MM date string and calculate day of week for current year
          * @param {string} ddmm - Date in DD/MM format
-         * @returns {object} { day, month, dayOfWeek, isWeekend }
+         * @returns {object} { day, month, dayOfWeek, isWeekend, isHoliday }
          */
         function parseDayMonth(ddmm) {
             const [day, month] = ddmm.split('/').map(Number);
@@ -2767,6 +2827,7 @@ const pontoState = {
                 month,
                 dayOfWeek,
                 isWeekend: isWeekend(dayOfWeek),
+                isHoliday: isBrazilianHoliday(day, month, year),
                 dayAbbr: getDayOfWeekAbbr(dayOfWeek)
             };
         }
@@ -2929,8 +2990,9 @@ const pontoState = {
             dayInfo.forEach(info => {
                 const isToday = info.date === todayBR;
                 const weekendClass = info.isWeekend ? 'weekend' : '';
+                const holidayClass = info.isHoliday ? 'holiday' : '';
                 const todayClass = isToday ? 'today-col' : '';
-                html += `<th class="${weekendClass} ${todayClass}">${info.day}</th>`;
+                html += `<th class="${weekendClass} ${holidayClass} ${todayClass}">${info.day}</th>`;
             });
             html += '</tr>';
             
@@ -2942,8 +3004,9 @@ const pontoState = {
             dayInfo.forEach(info => {
                 const isToday = info.date === todayBR;
                 const weekendClass = info.isWeekend ? 'weekend' : '';
+                const holidayClass = info.isHoliday ? 'holiday' : '';
                 const todayClass = isToday ? 'today-col' : '';
-                html += `<th class="${weekendClass} ${todayClass}">${info.dayAbbr}</th>`;
+                html += `<th class="${weekendClass} ${holidayClass} ${todayClass}">${info.dayAbbr}</th>`;
             });
             html += '</tr>';
             
@@ -3012,6 +3075,7 @@ const pontoState = {
                 dayInfo.forEach(info => {
                     const isToday = info.date === todayBR;
                     const weekendClass = info.isWeekend ? 'weekend' : '';
+                    const holidayClass = info.isHoliday ? 'holiday' : '';
                     const todayClass = isToday ? 'today-col' : '';
                     
                     // Try multiple key formats to find the value
@@ -3037,7 +3101,7 @@ const pontoState = {
                     const { badgeClass, displayValue } = getCompactShiftBadge(value);
                     
                     html += `
-                        <td class="${weekendClass} ${todayClass}">
+                        <td class="${weekendClass} ${holidayClass} ${todayClass}">
                             <span class="escala-mensal-shift ${badgeClass}">${escapeHtml(displayValue)}</span>
                         </td>
                     `;
