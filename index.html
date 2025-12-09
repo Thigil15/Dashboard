@@ -632,62 +632,164 @@
                         </nav>
                     </div>
 
-                    <!-- Legend -->
-                    <div class="escala-atual-legend">
-                        <div class="escala-atual-legend-header">
-                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <span>Legenda dos Turnos</span>
+                    <!-- Legend - Modern Table Design -->
+                    <div class="escala-legend-container">
+                        <div class="escala-legend-card">
+                            <div class="escala-legend-header">
+                                <div class="escala-legend-header-icon">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                    </svg>
+                                </div>
+                                <div class="escala-legend-header-text">
+                                    <h3>Legenda da Escala</h3>
+                                    <p>Referência para identificação dos códigos</p>
+                                </div>
+                            </div>
+                            
+                            <div class="escala-legend-table-wrapper">
+                                <table class="escala-legend-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Código</th>
+                                            <th>Descrição</th>
+                                            <th>Horário</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Turnos de Trabalho -->
+                                        <tr class="escala-legend-section-row">
+                                            <td colspan="3">
+                                                <span class="escala-legend-section-title">
+                                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
+                                                    Turnos de Trabalho
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="escala-atual-shift-badge shift-M">M</span></td>
+                                            <td>Manhã</td>
+                                            <td class="escala-legend-horario">07h às 13h</td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="escala-atual-shift-badge shift-T">T</span></td>
+                                            <td>Tarde</td>
+                                            <td class="escala-legend-horario">13h às 19h</td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="escala-atual-shift-badge shift-N">N</span></td>
+                                            <td>Noite</td>
+                                            <td class="escala-legend-horario">19h às 07h</td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="escala-atual-shift-badge shift-MT">MT</span></td>
+                                            <td>Manhã e Tarde</td>
+                                            <td class="escala-legend-horario">07h às 19h</td>
+                                        </tr>
+                                        
+                                        <!-- Folgas e Ausências -->
+                                        <tr class="escala-legend-section-row">
+                                            <td colspan="3">
+                                                <span class="escala-legend-section-title">
+                                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                    </svg>
+                                                    Folgas e Ausências
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="escala-atual-shift-badge shift-FC">FC</span></td>
+                                            <td>Folgas Programadas</td>
+                                            <td class="escala-legend-horario">—</td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="escala-atual-shift-badge shift-F">F</span></td>
+                                            <td>Folgas Pedidas</td>
+                                            <td class="escala-legend-horario">—</td>
+                                        </tr>
+                                        
+                                        <!-- Atividades Especiais -->
+                                        <tr class="escala-legend-section-row">
+                                            <td colspan="3">
+                                                <span class="escala-legend-section-title">
+                                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                                    </svg>
+                                                    Atividades Especiais
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="escala-atual-shift-badge shift-AULA">AULA</span></td>
+                                            <td>Espec. com bolsa - Aula HCx NComum</td>
+                                            <td class="escala-legend-horario">Conforme agenda</td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="escala-atual-shift-badge shift-AB">AB</span></td>
+                                            <td>Visita ao Ambulatório</td>
+                                            <td class="escala-legend-horario">07h às 13h</td>
+                                        </tr>
+                                        
+                                        <!-- Outros -->
+                                        <tr class="escala-legend-section-row">
+                                            <td colspan="3">
+                                                <span class="escala-legend-section-title">
+                                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
+                                                    </svg>
+                                                    Outros
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="escala-atual-shift-badge shift-empty">-</span></td>
+                                            <td>Não escalado / Sem atividade</td>
+                                            <td class="escala-legend-horario">—</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                        <div class="escala-atual-legend-items">
-                            <div class="escala-atual-legend-item">
-                                <span class="escala-atual-shift-badge shift-M">M</span>
-                                <span>Manhã</span>
+                        
+                        <!-- Student Type Card -->
+                        <div class="escala-legend-card escala-legend-card-small">
+                            <div class="escala-legend-header">
+                                <div class="escala-legend-header-icon escala-legend-header-icon-green">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                    </svg>
+                                </div>
+                                <div class="escala-legend-header-text">
+                                    <h3>Tipos de Profissional</h3>
+                                    <p>Identificação por cor</p>
+                                </div>
                             </div>
-                            <div class="escala-atual-legend-item">
-                                <span class="escala-atual-shift-badge shift-T">T</span>
-                                <span>Tarde</span>
-                            </div>
-                            <div class="escala-atual-legend-item">
-                                <span class="escala-atual-shift-badge shift-N">N</span>
-                                <span>Noite</span>
-                            </div>
-                            <div class="escala-atual-legend-item">
-                                <span class="escala-atual-shift-badge shift-MT">MT</span>
-                                <span>Manhã/Tarde</span>
-                            </div>
-                            <div class="escala-atual-legend-item">
-                                <span class="escala-atual-shift-badge shift-F">F</span>
-                                <span>Folga</span>
-                            </div>
-                            <div class="escala-atual-legend-item">
-                                <span class="escala-atual-shift-badge shift-empty">-</span>
-                                <span>Não escalado</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Student Type Legend -->
-                    <div class="escala-atual-legend student-type-legend">
-                        <div class="escala-atual-legend-header">
-                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                            </svg>
-                            <span>Tipos de Aluno</span>
-                        </div>
-                        <div class="escala-atual-legend-items">
-                            <div class="escala-atual-legend-item">
-                                <span class="escala-atual-student-type-badge student-type-bolsista">B</span>
-                                <span>Bolsista (Azul)</span>
-                            </div>
-                            <div class="escala-atual-legend-item">
-                                <span class="escala-atual-student-type-badge student-type-pagante">P</span>
-                                <span>Pagante (Vermelho)</span>
-                            </div>
-                            <div class="escala-atual-legend-item">
-                                <span class="escala-atual-student-type-badge student-type-residente">R</span>
-                                <span>Residente (Verde)</span>
+                            
+                            <div class="escala-legend-types-grid">
+                                <div class="escala-legend-type-item escala-legend-type-bolsista">
+                                    <span class="escala-atual-student-type-badge student-type-bolsista">B</span>
+                                    <div class="escala-legend-type-info">
+                                        <span class="escala-legend-type-name">Bolsista</span>
+                                        <span class="escala-legend-type-color">Cor Azul</span>
+                                    </div>
+                                </div>
+                                <div class="escala-legend-type-item escala-legend-type-pagante">
+                                    <span class="escala-atual-student-type-badge student-type-pagante">P</span>
+                                    <div class="escala-legend-type-info">
+                                        <span class="escala-legend-type-name">Pagante</span>
+                                        <span class="escala-legend-type-color">Cor Vermelha</span>
+                                    </div>
+                                </div>
+                                <div class="escala-legend-type-item escala-legend-type-residente">
+                                    <span class="escala-atual-student-type-badge student-type-residente">R</span>
+                                    <div class="escala-legend-type-info">
+                                        <span class="escala-legend-type-name">Residente</span>
+                                        <span class="escala-legend-type-color">Cor Verde</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

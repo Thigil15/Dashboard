@@ -2907,9 +2907,22 @@ const pontoState = {
                         } else if (shiftValue === 'MT' || shiftValue === 'TM') {
                             badgeClass = 'shift-MT';
                             displayValue = 'MT';
-                        } else if (shiftValue === 'F' || shiftValue === 'FOLGA' || shiftValue === '-') {
+                        } else if (shiftValue === 'FC') {
+                            badgeClass = 'shift-FC';
+                            displayValue = 'FC';
+                        } else if (shiftValue === 'F' || shiftValue === 'FOLGA') {
                             badgeClass = 'shift-F';
                             displayValue = 'F';
+                        } else if (shiftValue === 'AB' || shiftValue === 'AMBULATORIO' || shiftValue === 'AMBULATÓRIO') {
+                            badgeClass = 'shift-AB';
+                            displayValue = 'AB';
+                        } else if (shiftValue === 'AULA' || shiftValue.startsWith('AULA') || shiftValue === 'HCX' || shiftValue.startsWith('HCX ')) {
+                            // Match AULA, AULA HCX, HCX, etc. but avoid false positives
+                            badgeClass = 'shift-AULA';
+                            displayValue = 'AULA';
+                        } else if (shiftValue === '-' || shiftValue === '') {
+                            badgeClass = 'shift-empty';
+                            displayValue = '-';
                         } else if (shiftValue.length > 0 && shiftValue !== '-') {
                             // Any other value - display it with a neutral badge
                             badgeClass = 'shift-empty';

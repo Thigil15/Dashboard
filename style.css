@@ -14566,6 +14566,288 @@
     box-shadow: none;
 }
 
+/* New badge types for FC, AB, AULA */
+.shift-FC {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    color: white;
+    box-shadow: 0 2px 6px rgba(139, 92, 246, 0.35);
+}
+
+.shift-AB {
+    background: linear-gradient(135deg, #0891b2, #06b6d4);
+    color: white;
+    box-shadow: 0 2px 6px rgba(8, 145, 178, 0.35);
+}
+
+.shift-AULA {
+    background: linear-gradient(135deg, #ec4899, #db2777);
+    color: white;
+    box-shadow: 0 2px 6px rgba(236, 72, 153, 0.35);
+}
+
+/* ════════════════════════════════════════════════════════════════════════════════
+   ESCALA LEGEND - MODERN TABLE DESIGN v2.0
+   Beautiful styled table for schedule legend
+   ════════════════════════════════════════════════════════════════════════════════ */
+
+.escala-legend-container {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 1024px) {
+    .escala-legend-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+.escala-legend-card {
+    background: white;
+    border-radius: 16px;
+    border: 1px solid rgba(229, 233, 239, 0.8);
+    box-shadow: 0 4px 20px rgba(0, 51, 160, 0.06);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.escala-legend-card:hover {
+    box-shadow: 0 8px 30px rgba(0, 51, 160, 0.1);
+    transform: translateY(-2px);
+}
+
+.escala-legend-card-small {
+    height: fit-content;
+}
+
+.escala-legend-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    background: linear-gradient(135deg, rgba(0, 51, 160, 0.03), rgba(0, 84, 180, 0.06));
+    border-bottom: 1px solid rgba(229, 233, 239, 0.6);
+}
+
+.escala-legend-header-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--incor-blue-600), var(--incor-blue-500));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(0, 84, 180, 0.25);
+}
+
+.escala-legend-header-icon svg {
+    width: 24px;
+    height: 24px;
+    color: white;
+}
+
+.escala-legend-header-icon-green {
+    background: linear-gradient(135deg, #059669, #10b981);
+    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);
+}
+
+.escala-legend-header-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.escala-legend-header-text h3 {
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--content-text-primary);
+    margin: 0;
+    line-height: 1.3;
+}
+
+.escala-legend-header-text p {
+    font-size: 0.8125rem;
+    color: var(--content-text-muted);
+    margin: 0;
+}
+
+/* Legend Table Styles */
+.escala-legend-table-wrapper {
+    padding: 0.5rem;
+}
+
+.escala-legend-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.875rem;
+}
+
+.escala-legend-table thead {
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+}
+
+.escala-legend-table th {
+    padding: 0.875rem 1rem;
+    text-align: left;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--content-text-secondary);
+    border-bottom: 2px solid rgba(0, 84, 180, 0.1);
+}
+
+.escala-legend-table th:first-child {
+    width: 80px;
+    text-align: center;
+}
+
+.escala-legend-table th:last-child {
+    width: 120px;
+}
+
+.escala-legend-table tbody tr {
+    transition: all 0.15s ease;
+}
+
+.escala-legend-table tbody tr:hover {
+    background: rgba(0, 84, 180, 0.03);
+}
+
+.escala-legend-table tbody tr:not(.escala-legend-section-row):nth-child(even) {
+    background: rgba(0, 84, 180, 0.015);
+}
+
+.escala-legend-table tbody tr:not(.escala-legend-section-row):nth-child(even):hover {
+    background: rgba(0, 84, 180, 0.05);
+}
+
+.escala-legend-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(229, 233, 239, 0.5);
+    vertical-align: middle;
+    color: var(--content-text-secondary);
+}
+
+.escala-legend-table td:first-child {
+    text-align: center;
+}
+
+.escala-legend-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.escala-legend-horario {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.8125rem;
+    color: var(--incor-blue-600);
+    background: rgba(0, 84, 180, 0.06);
+    padding: 0.25rem 0.625rem;
+    border-radius: 50px;
+    display: inline-block;
+}
+
+/* Section Rows */
+.escala-legend-section-row {
+    background: linear-gradient(135deg, rgba(0, 51, 160, 0.04), rgba(0, 84, 180, 0.08)) !important;
+}
+
+.escala-legend-section-row td {
+    padding: 0.625rem 1rem;
+    border-bottom: none !important;
+}
+
+.escala-legend-section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--incor-blue-700);
+}
+
+.escala-legend-section-title svg {
+    width: 1rem;
+    height: 1rem;
+    color: var(--incor-blue-500);
+}
+
+/* Student Types Grid */
+.escala-legend-types-grid {
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+}
+
+.escala-legend-type-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.escala-legend-type-item:hover {
+    transform: translateX(4px);
+}
+
+.escala-legend-type-bolsista {
+    background: linear-gradient(135deg, rgba(30, 111, 217, 0.08), rgba(30, 111, 217, 0.12));
+    border-color: rgba(30, 111, 217, 0.2);
+}
+
+.escala-legend-type-bolsista:hover {
+    background: linear-gradient(135deg, rgba(30, 111, 217, 0.12), rgba(30, 111, 217, 0.16));
+}
+
+.escala-legend-type-pagante {
+    background: linear-gradient(135deg, rgba(226, 30, 38, 0.08), rgba(226, 30, 38, 0.12));
+    border-color: rgba(226, 30, 38, 0.2);
+}
+
+.escala-legend-type-pagante:hover {
+    background: linear-gradient(135deg, rgba(226, 30, 38, 0.12), rgba(226, 30, 38, 0.16));
+}
+
+.escala-legend-type-residente {
+    background: linear-gradient(135deg, rgba(5, 150, 105, 0.08), rgba(5, 150, 105, 0.12));
+    border-color: rgba(5, 150, 105, 0.2);
+}
+
+.escala-legend-type-residente:hover {
+    background: linear-gradient(135deg, rgba(5, 150, 105, 0.12), rgba(5, 150, 105, 0.16));
+}
+
+.escala-legend-type-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.escala-legend-type-name {
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--content-text-primary);
+}
+
+.escala-legend-type-color {
+    font-size: 0.75rem;
+    color: var(--content-text-muted);
+}
+
 /* === TABLE CONTAINER === */
 .escala-atual-table-container {
     background: white;
