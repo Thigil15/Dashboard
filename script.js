@@ -7100,30 +7100,30 @@ function renderTabFaltas(faltas) {
 
 
         /**
-         * [MASTERPIECE] Renderiza a aba de Notas Práticas com design revolucionário e artístico
-         * Versão v34 - Art & Perfection Edition
+         * [MASTERPIECE v35] Renderiza a aba de Notas Práticas com design profissional InCor
+         * Versão v35 - Professional InCor Edition - Matching Notas Teóricas Design
          */
         function renderTabNotasPraticas(notasP) {
-            console.log("[renderTabNotasPraticas v34 - Art & Perfection] Dados recebidos:", notasP);
+            console.log("[renderTabNotasPraticas v35 - Professional InCor] Dados recebidos:", notasP);
             const tabContainer = document.getElementById('tab-notas-p');
             
-            // === EMPTY STATE ARTÍSTICO === //
+            // === EMPTY STATE - INCOR PROFESSIONAL === //
             if (!notasP || notasP.length === 0) {
                 tabContainer.innerHTML = `
-                    <div class="np-empty-state">
-                        <svg class="np-empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    <div class="np-empty-state-pro">
+                        <svg class="np-empty-icon-pro" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                         </svg>
                         <div>
-                            <h3 class="np-empty-title">Nenhuma Avaliação Prática Registrada</h3>
-                            <p class="np-empty-description">
-                                As avaliações práticas aparecem aqui quando os supervisores enviam os formulários de avaliação.
+                            <h3 class="np-empty-title-pro">Nenhuma Avaliação Prática Registrada</h3>
+                            <p class="np-empty-description-pro">
+                                As avaliações práticas serão exibidas quando os supervisores concluírem os formulários de avaliação.
                             </p>
-                            <div class="np-empty-badge">
+                            <div class="np-empty-badge-pro">
                                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5" />
                                 </svg>
-                                Sistema de Validação Ativo
+                                Sistema Acadêmico InCor
                             </div>
                         </div>
                     </div>
@@ -7137,115 +7137,173 @@ function renderTabFaltas(faltas) {
             const totalValidated = hasValidatedData ? notasP.filter(n => n._uniqueId).length : 0;
             const progressPercent = summary.overallAvg * 10;
             
+            // Calcula estatísticas adicionais
+            let highestGrade = 0;
+            let lowestGrade = 10;
+            let totalCount = 0;
+            
+            notasP.forEach(n => {
+                const keyM = Object.keys(n).find(k => 
+                    /MÉDIA.*NOTA.*FINAL/i.test(k) || 
+                    /MEDIA.*NOTA.*FINAL/i.test(k) ||
+                    /MÉDIA.*FINAL/i.test(k) ||
+                    /MEDIA.*FINAL/i.test(k) ||
+                    /NOTA.*FINAL/i.test(k)
+                ) || null;
+                const nota = parseNota(n[keyM]);
+                if (nota > 0) {
+                    totalCount++;
+                    highestGrade = Math.max(highestGrade, nota);
+                    lowestGrade = Math.min(lowestGrade, nota);
+                }
+            });
+            
+            if (lowestGrade === 10 && totalCount === 0) lowestGrade = 0;
+            
             // Determina a mensagem de performance
-            let performanceMessage = '⚠ Precisa de atenção';
-            let performanceIcon = '⚠️';
+            let performanceMessage = 'Precisa de atenção';
             if (summary.overallAvg >= 9.0) {
-                performanceMessage = '🌟 Excelência Excepcional';
-                performanceIcon = '🌟';
-            } else if (summary.overallAvg >= 8.5) {
-                performanceMessage = '⭐ Excelente Desempenho';
-                performanceIcon = '⭐';
-            } else if (summary.overallAvg >= 7.5) {
-                performanceMessage = '✓ Muito Bom';
-                performanceIcon = '✓';
+                performanceMessage = 'Excelência Acadêmica';
+            } else if (summary.overallAvg >= 8.0) {
+                performanceMessage = 'Muito Bom';
             } else if (summary.overallAvg >= 7.0) {
-                performanceMessage = '✓ Bom Desempenho';
-                performanceIcon = '✓';
+                performanceMessage = 'Bom Desempenho';
             }
             
             // Calcula tendência
             const hasTrend = summary.last5Notes.length >= 2;
             const isTrendingUp = hasTrend && summary.last5Notes[summary.last5Notes.length - 1].value > summary.last5Notes[0].value;
             
-            // === HERO SECTION === //
+            // === HERO SECTION - INCOR CYAN (Prática) === //
             let heroHtml = `
-                <div class="np-hero-section">
-                    <div class="np-hero-content">
-                        <h1 class="np-hero-title">Avaliações Práticas</h1>
-                        <p class="np-hero-subtitle">
-                            Análise profunda e visual do seu desempenho em ambiente clínico real
+                <div class="np-hero-section-pro">
+                    <div class="np-hero-content-pro">
+                        <h1 class="np-hero-title-pro">Avaliações Práticas</h1>
+                        <p class="np-hero-subtitle-pro">
+                            Desempenho nas atividades práticas do Programa de Fisioterapia
                         </p>
-                        ${hasValidatedData ? `
-                            <div class="np-validation-badge">
-                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                ${totalValidated}/${notasP.length} Avaliações Validadas
-                            </div>
-                        ` : ''}
+                        <div class="np-validation-badge-pro">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                            </svg>
+                            ${totalCount > 0 ? `${totalCount} Avaliação${totalCount > 1 ? 'ões' : ''} Prática${totalCount > 1 ? 's' : ''}` : 'Dados Disponíveis'}
+                        </div>
                     </div>
                 </div>
             `;
             
-            // === DASHBOARD PRINCIPAL === //
+            // === DASHBOARD PRINCIPAL - Matching Notas Teóricas Layout === //
             let dashboardHtml = `
-                <div class="np-dashboard-grid">
-                    <!-- Anel de Progresso Masterpiece -->
-                    <div class="np-progress-masterpiece">
-                        <div class="np-progress-content">
-                            <div class="np-ring-container">
-                                <div class="np-progress-ring" style="--np-progress-percent: ${progressPercent}%;">
-                                    <div class="np-ring-value">${formatarNota(summary.overallAvg)}</div>
-                                    <div class="np-ring-subtitle">de 10,0</div>
+                <div class="np-dashboard-grid-pro">
+                    <div class="np-progress-masterpiece-pro">
+                        <div class="np-progress-content-pro">
+                            <div class="np-ring-container-pro">
+                                <div class="np-progress-ring-pro" style="--np-progress-percent: ${progressPercent}%;">
+                                    <div class="np-ring-value-pro">${formatarNota(summary.overallAvg)}</div>
+                                    <div class="np-ring-subtitle-pro">de 10,0</div>
                                 </div>
                             </div>
-                            <div class="np-progress-text">
-                                <h2 class="np-progress-title">Média Geral Prática</h2>
-                                <p class="np-progress-description">
-                                    ${performanceMessage}
-                                </p>
-                                <div class="np-progress-meta">
-                                    <svg class="np-progress-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            <div class="np-progress-text-pro">
+                                <h2 class="np-progress-title-pro">Média Geral</h2>
+                                <p class="np-progress-description-pro">${performanceMessage}</p>
+                                <div class="np-progress-meta-pro">
+                                    <svg class="np-progress-icon-pro" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                                     </svg>
-                                    <span class="np-progress-stats">
-                                        Baseado em <strong>${notasP.length}</strong> avaliação${notasP.length > 1 ? 'ões' : ''}
+                                    <span class="np-progress-stats-pro">
+                                        ${totalCount > 0 ? `Baseado em <strong>${totalCount}</strong> avaliação${totalCount > 1 ? 'ões' : ''}` : 'Calculando...'}
                                     </span>
                                 </div>
                             </div>
                         </div>
                     </div>
+
+                    <div class="np-stats-grid-pro">
+                        <div class="np-stat-card-pro">
+                            <div class="np-stat-icon-pro" style="background: linear-gradient(135deg, #059669, #10b981);">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="np-stat-value-pro">${highestGrade > 0 ? formatarNota(highestGrade) : '-'}</div>
+                                <div class="np-stat-label-pro">Maior Nota</div>
+                            </div>
+                        </div>
+                        <div class="np-stat-card-pro">
+                            <div class="np-stat-icon-pro" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="np-stat-value-pro">${lowestGrade < 10 && lowestGrade > 0 ? formatarNota(lowestGrade) : '-'}</div>
+                                <div class="np-stat-label-pro">Menor Nota</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             `;
             
-            // Competency showcase removed as per redesign requirements
+            // === SECTION HEADER - Evolução === //
+            let evolutionHeaderHtml = `
+                <div class="np-section-header-pro">
+                    <h3>Evolução de Desempenho</h3>
+                    <p>Acompanhamento das últimas avaliações práticas</p>
+                </div>
+            `;
             
-            // === EVOLUTION CHART === //
+            // === EVOLUTION CHART - Professional Style === //
             let evolutionHtml = `
-                <div class="np-evolution-masterpiece">
-                    <div class="np-evolution-header">
-                        <div class="np-evolution-title-group">
-                            <h3>Evolução de Desempenho</h3>
-                            <p>Acompanhamento das últimas 5 avaliações</p>
+                <div class="np-evolution-card-pro">
+                    <div class="np-evolution-header-pro">
+                        <div class="np-evolution-title-group-pro">
+                            <div class="np-evolution-icon-pro">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="np-evolution-card-title-pro">Gráfico de Evolução</h4>
+                                <span class="np-evolution-card-subtitle-pro">Últimas ${summary.last5Notes.length || 5} avaliações</span>
+                            </div>
                         </div>
                         ${hasTrend ? `
-                            <div class="np-trend-indicator ${isTrendingUp ? '' : 'stable'}">
-                                <svg class="np-trend-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <div class="np-trend-badge-pro ${isTrendingUp ? 'np-trend-up' : 'np-trend-stable'}">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                     ${isTrendingUp 
                                         ? '<path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />'
                                         : '<path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14" />'
                                     }
                                 </svg>
-                                ${isTrendingUp ? '↗ Tendência Crescente' : '→ Tendência Estável'}
+                                ${isTrendingUp ? 'Tendência Crescente' : 'Tendência Estável'}
                             </div>
                         ` : ''}
                     </div>
-                    <div class="np-chart-canvas">
-                        ${summary.last5Notes.length > 0 ? summary.last5Notes.map((note, i) => `
-                            <div class="np-chart-bar">
-                                <div class="np-bar-fill" style="height: ${Math.max(note.value * 25, 40)}px;">
-                                    <div class="np-bar-value">${formatarNota(note.value)}</div>
+                    <div class="np-chart-canvas-pro">
+                        ${summary.last5Notes.length > 0 ? summary.last5Notes.map((note, i) => {
+                            let barColor = '#0891B2';
+                            if (note.value >= 9) barColor = '#059669';
+                            else if (note.value >= 7) barColor = '#0891B2';
+                            else if (note.value < 7) barColor = '#f59e0b';
+                            return `
+                            <div class="np-chart-bar-pro">
+                                <div class="np-bar-fill-pro" style="height: ${Math.max(note.value * 22, 35)}px; background: linear-gradient(180deg, ${barColor}, ${barColor}dd);">
+                                    <div class="np-bar-value-pro">${formatarNota(note.value)}</div>
                                 </div>
-                                <div class="np-bar-label">${note.label && note.label.length > 18 ? note.label.substring(0, 18) + '...' : (note.label || `Avaliação ${i+1}`)}</div>
+                                <div class="np-bar-label-pro">${note.label && note.label.length > 15 ? note.label.substring(0, 15) + '...' : (note.label || `Aval. ${i+1}`)}</div>
                             </div>
-                        `).join('') : '<p style="text-align: center; color: var(--content-text-secondary); font-style: italic; padding: 2rem 0;">Não há dados suficientes para exibir a evolução.</p>'}
+                        `;}).join('') : `
+                            <div class="np-chart-empty-pro">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75z" />
+                                </svg>
+                                <p>Dados insuficientes para exibir evolução</p>
+                            </div>
+                        `}
                     </div>
                 </div>
             `;
-            
-            // === DIVIDER === //
-            let dividerHtml = '<div class="np-section-divider"></div>';
 
             // === NAVEGAÇÃO DE AVALIAÇÕES DETALHADAS === //
             let navHtml = '';
@@ -7358,165 +7416,166 @@ function renderTabFaltas(faltas) {
                 });
                 numericalScores.sort((a, b) => b.value - a.value);
                 
-                // === CARD DE AVALIAÇÃO === //
+                // === CARD DE AVALIAÇÃO - PROFESSIONAL INCOR DESIGN === //
                 contentHtml += `
                     <div id="${tabId}" class="sub-tab-content ${isActive ? 'active' : ''}">
-                        <div class="np-eval-card" style="--np-eval-color: ${gradeColor};">
+                        <div class="np-module-card-pro" style="--np-module-color: ${gradeColor};">
+                            <div class="np-module-header-pro">
+                                <div class="np-module-icon-pro" style="background: linear-gradient(135deg, ${gradeColor}, ${gradeColor}cc);">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                    </svg>
+                                </div>
+                                <div class="np-module-title-group-pro">
+                                    <h4 class="np-module-title-pro">${nomePratica}</h4>
+                                    <p class="np-module-subtitle-pro">${n.Supervisor ? `Supervisor: ${n.Supervisor}` : ''} ${dataFormatada !== 'N/A' ? `• ${dataFormatada}` : ''}</p>
+                                </div>
+                                <div class="np-module-grade-pro">
+                                    <div class="np-grade-value-pro" style="color: ${gradeColor};">${mediaFinal > 0 ? formatarNota(mediaFinal) : '-'}</div>
+                                    <div class="np-grade-label-pro">${gradeStatus}</div>
+                                </div>
+                            </div>
                             
-                            <div class="np-eval-header">
-                                <div>
-                                    <div class="np-eval-title-badge">
-                                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="width: 1rem; height: 1rem;">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
-                                        </svg>
-                                        ${gradeStatus}
+                            <div class="np-module-progress-bar-pro">
+                                <div class="np-module-progress-fill-pro" style="width: ${(mediaFinal / 10) * 100}%; background: ${gradeColor};"></div>
+                            </div>
+                            
+                            <details class="np-module-details-pro" open>
+                                <summary class="np-details-toggle-pro">
+                                    <span>Ver detalhes da avaliação</span>
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </summary>
+                                <div class="np-details-content-pro">
+                                    <!-- Metadata da avaliação -->
+                                    <div class="np-eval-metadata-pro">
+                                        <div class="np-meta-item-pro">
+                                            <span class="np-meta-label">Supervisor</span>
+                                            <span class="np-meta-value">${n.Supervisor || 'N/A'}</span>
+                                        </div>
+                                        <div class="np-meta-item-pro">
+                                            <span class="np-meta-label">Data</span>
+                                            <span class="np-meta-value">${dataFormatada}</span>
+                                        </div>
+                                        <div class="np-meta-item-pro">
+                                            <span class="np-meta-label">Unidade</span>
+                                            <span class="np-meta-value">${n.Unidade || 'N/A'}</span>
+                                        </div>
+                                        <div class="np-meta-item-pro">
+                                            <span class="np-meta-label">Período</span>
+                                            <span class="np-meta-value">${n.Periodo || 'N/A'}</span>
+                                        </div>
                                     </div>
-                                    <h3 class="np-eval-name">${nomePratica}</h3>
-                                    <dl class="np-eval-metadata">
-                                        <div class="np-meta-item">
-                                            <dt>Supervisor</dt>
-                                            <dd>${n.Supervisor || 'N/A'}</dd>
-                                        </div>
-                                        <div class="np-meta-item">
-                                            <dt>Data da Avaliação</dt>
-                                            <dd>${dataFormatada}</dd>
-                                        </div>
-                                        <div class="np-meta-item">
-                                            <dt>Unidade</dt>
-                                            <dd>${n.Unidade || 'N/A'}</dd>
-                                        </div>
-                                        <div class="np-meta-item">
-                                            <dt>Período</dt>
-                                            <dd>${n.Periodo || 'N/A'}</dd>
-                                        </div>
-                                    </dl>
-                                    ${n._uniqueId ? `
-                                        <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(16, 185, 129, 0.08); border: 2px solid rgba(16, 185, 129, 0.2); border-radius: 12px;">
-                                            <div style="display: flex; align-items: start; gap: 0.75rem;">
-                                                <svg style="width: 1.25rem; height: 1.25rem; color: #059669; flex-shrink: 0; margin-top: 0.125rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    
+                                    <!-- Competências numéricas -->
+                                    ${numericalScores.length > 0 ? `
+                                        <div class="np-competencies-section-pro">
+                                            <div class="np-competencies-header-pro">
+                                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                                                 </svg>
-                                                <div style="flex: 1;">
-                                                    <p style="font-size: 0.75rem; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 0.05em;">Sistema de Validação Ativo</p>
-                                                    <p style="font-size: 0.75rem; color: #047857; margin-top: 0.375rem;">
-                                                        ID Único: <code style="background: white; padding: 0.125rem 0.5rem; border-radius: 4px; font-weight: 600;">${n._uniqueId}</code>
-                                                        ${n._validatedAt ? `<br><span style="opacity: 0.8;">Validado em: ${new Date(n._validatedAt).toLocaleString('pt-BR')}</span>` : ''}
-                                                    </p>
-                                                </div>
+                                                <span>Desempenho por Competência</span>
+                                            </div>
+                                            ${numericalScores.map(score => {
+                                                const percentage = (score.value / 10) * 100;
+                                                let scoreColor = '#0891B2';
+                                                if (score.value >= 9) scoreColor = '#059669';
+                                                else if (score.value >= 7) scoreColor = '#0891B2';
+                                                else if (score.value < 7) scoreColor = '#f59e0b';
+                                                
+                                                const displayLabel = splitConcatenatedFieldName(score.label);
+                                                return `
+                                                    <div class="np-discipline-item-pro" style="--np-discipline-color: ${scoreColor};">
+                                                        <div class="np-discipline-header-pro">
+                                                            <span class="np-discipline-name-pro" title="${score.label}">${displayLabel}</span>
+                                                            <span class="np-discipline-value-pro" style="color: ${scoreColor};">${formatarNota(score.value)}</span>
+                                                        </div>
+                                                        <div class="np-discipline-progress-pro">
+                                                            <div class="np-discipline-fill-pro" style="width: ${percentage}%; background: ${scoreColor};"></div>
+                                                        </div>
+                                                    </div>
+                                                `;
+                                            }).join('')}
+                                        </div>
+                                    ` : ''}
+                                    
+                                    <!-- Checklist de habilidades -->
+                                    ${checklistScores.length > 0 ? `
+                                        <div class="np-checklist-section-pro">
+                                            <div class="np-checklist-header-pro">
+                                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                                                </svg>
+                                                <span>Checklist de Habilidades</span>
+                                            </div>
+                                            <div class="np-checklist-grid-pro">
+                                                ${checklistScores.map(skill => {
+                                                    const displayLabel = splitConcatenatedFieldName(skill.label);
+                                                    return `
+                                                    <div class="np-checklist-item-pro">
+                                                        <span class="np-checklist-label-pro" title="${skill.label}">${displayLabel}</span>
+                                                        <span class="np-checklist-value-pro" title="${skill.value}">${skill.value}</span>
+                                                    </div>
+                                                `;}).join('')}
+                                            </div>
+                                        </div>
+                                    ` : ''}
+                                    
+                                    <!-- Feedback do supervisor -->
+                                    <div class="np-feedback-section-pro">
+                                        <div class="np-feedback-header-pro">
+                                            <div class="np-feedback-title-pro">
+                                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                                                </svg>
+                                                <span>Feedback do Supervisor</span>
+                                            </div>
+                                            <button class="np-analyze-btn-pro gemini-analysis-button" data-loading="false" data-comment="${comentarioEscapado}">
+                                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                                </svg>
+                                                Analisar com IA
+                                            </button>
+                                        </div>
+                                        <div class="np-feedback-content-pro">${comentario}</div>
+                                    </div>
+                                    
+                                    ${n._uniqueId ? `
+                                        <div class="np-validation-info-pro">
+                                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            <div>
+                                                <span class="np-validation-title-pro">Avaliação Validada</span>
+                                                <span class="np-validation-id-pro">ID: ${n._uniqueId}</span>
                                             </div>
                                         </div>
                                     ` : ''}
                                 </div>
-                                
-                                <div class="np-grade-showcase">
-                                    <div class="np-grade-circle">
-                                        <div>
-                                            <div class="np-grade-number">${formatarNota(mediaFinal)}</div>
-                                            <div class="np-grade-denominator">de 10,0</div>
-                                        </div>
-                                    </div>
-                                    <div class="np-grade-label">Nota Final</div>
-                                </div>
-                            </div>
-                            
-                            <!-- Seção de Habilidades com Barras -->
-                            ${numericalScores.length > 0 ? `
-                                <div class="np-skills-section">
-                                    <div class="np-section-header">
-                                        <div class="np-section-icon">
-                                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                                            </svg>
-                                        </div>
-                                        <h4 class="np-section-title">Desempenho por Competência</h4>
-                                    </div>
-                                    ${numericalScores.map(score => {
-                                        const percentage = (score.value / 10) * 100;
-                                        let barColor = '#3b82f6';
-                                        if (score.value >= 9) barColor = '#10b981';
-                                        else if (score.value >= 7) barColor = '#6366f1';
-                                        else if (score.value < 6) barColor = '#ef4444';
-                                        
-                                        const displayLabel = splitConcatenatedFieldName(score.label);
-                                        return `
-                                            <div class="np-skill-bar-item" style="--np-skill-color: ${barColor};">
-                                                <div class="np-skill-header">
-                                                    <span class="np-skill-name" title="${score.label}">${displayLabel}</span>
-                                                    <span class="np-skill-value">${formatarNota(score.value)}</span>
-                                                </div>
-                                                <div class="np-skill-progress">
-                                                    <div class="np-skill-fill" style="width: ${percentage}%;"></div>
-                                                </div>
-                                            </div>
-                                        `;
-                                    }).join('')}
-                                </div>
-                            ` : ''}
-                            
-                            <!-- Checklist de Habilidades -->
-                            ${checklistScores.length > 0 ? `
-                                <div class="np-checklist-section">
-                                    <div class="np-section-header">
-                                        <div class="np-section-icon">
-                                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                                            </svg>
-                                        </div>
-                                        <h4 class="np-section-title">Checklist de Habilidades</h4>
-                                    </div>
-                                    <div class="np-checklist-grid">
-                                        ${checklistScores.map(skill => {
-                                            const displayLabel = splitConcatenatedFieldName(skill.label);
-                                            return `
-                                            <div class="np-checklist-item">
-                                                <div class="np-checklist-question" title="${skill.label}">${displayLabel}</div>
-                                                <div class="np-checklist-answer" title="${skill.value}">${skill.value}</div>
-                                            </div>
-                                        `;}).join('')}
-                                    </div>
-                                </div>
-                            ` : ''}
-                            
-                            <!-- Feedback do Supervisor -->
-                            <div class="np-feedback-card">
-                                <div class="np-feedback-header">
-                                    <div class="np-feedback-title-group">
-                                        <div class="np-feedback-icon">
-                                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-                                            </svg>
-                                        </div>
-                                        <h4 class="np-feedback-label">Feedback do Supervisor</h4>
-                                    </div>
-                                    <button class="gemini-analysis-button" data-loading="false" data-comment="${comentarioEscapado}">
-                                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                                        </svg>
-                                        Analisar com IA
-                                    </button>
-                                </div>
-                                <div class="np-feedback-text">${comentario}</div>
-                            </div>
+                            </details>
                         </div>
                     </div>
                 `;
             });
 
-            // === MONTAGEM FINAL DO HTML === //
+            // === MONTAGEM FINAL DO HTML - PROFESSIONAL INCOR DESIGN === //
             tabContainer.innerHTML = `
                 ${heroHtml}
                 ${dashboardHtml}
+                ${evolutionHeaderHtml}
                 ${evolutionHtml}
-                ${dividerHtml}
-                <div style="margin: 2.5rem 0 1.5rem;">
-                    <h3 style="font-family: var(--font-display); font-size: 1.75rem; font-weight: 800; color: var(--content-text-primary); margin-bottom: 0.75rem;">Avaliações Detalhadas</h3>
-                    <p style="font-size: 1rem; color: var(--content-text-secondary);">Histórico completo com análise profunda de cada avaliação</p>
+                <div class="np-section-header-pro">
+                    <h3>Avaliações Detalhadas</h3>
+                    <p>Histórico completo com análise profunda de cada avaliação prática</p>
                 </div>
-                <div class="np-tab-nav">
-                    ${navHtml}
-                </div>
-                <div id="student-detail-subnav-content">
-                    ${contentHtml}
+                <div class="np-modules-grid-pro">
+                    <div class="np-tab-nav-pro">
+                        ${navHtml}
+                    </div>
+                    <div id="student-detail-subnav-content" class="np-content-area-pro">
+                        ${contentHtml}
+                    </div>
                 </div>
             `;
             
