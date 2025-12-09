@@ -6924,30 +6924,28 @@ function renderTabFaltas(faltas) {
 
                 // Processa as disciplinas do módulo
                 let disciplinasHtml = '';
-                let hasDetails = false;
-                let disciplineCount = 0;
+                const disciplineCount = materias.length;
+                const hasDetails = disciplineCount > 0;
                 
                 materias.forEach(materia => {
                     const val = getNotaValue(materia);
-                    if (val !== null && val !== undefined && String(val).trim() !== '') {
-                        const notaMateria = parseNota(val);
-                        if (notaMateria > 0) {
-                            const percentage = (notaMateria / 10) * 100;
-                            disciplinasHtml += `
-                                <div class="nt-discipline-item" style="--nt-discipline-color: ${color};">
-                                    <div class="nt-discipline-header">
-                                        <span class="nt-discipline-name">${materia}</span>
-                                        <span class="nt-discipline-value">${formatarNota(notaMateria)}</span>
-                                    </div>
-                                    <div class="nt-discipline-progress">
-                                        <div class="nt-discipline-fill" style="width: ${percentage}%;"></div>
-                                    </div>
-                                </div>
-                            `;
-                            hasDetails = true;
-                            disciplineCount++;
-                        }
-                    }
+                    const hasValue = val !== null && val !== undefined && String(val).trim() !== '';
+                    const notaMateria = hasValue ? parseNota(val) : 0;
+                    const isValidNota = hasValue && notaMateria > 0;
+                    const percentage = isValidNota ? (notaMateria / 10) * 100 : 0;
+                    const displayValue = isValidNota ? formatarNota(notaMateria) : '-';
+                    
+                    disciplinasHtml += `
+                        <div class="nt-discipline-item" style="--nt-discipline-color: ${color};">
+                            <div class="nt-discipline-header">
+                                <span class="nt-discipline-name">${materia}</span>
+                                <span class="nt-discipline-value">${displayValue}</span>
+                            </div>
+                            <div class="nt-discipline-progress">
+                                <div class="nt-discipline-fill" style="width: ${percentage}%;"></div>
+                            </div>
+                        </div>
+                    `;
                 });
 
                 // Se tem média ou disciplinas, mostra o card
@@ -6996,53 +6994,8 @@ function renderTabFaltas(faltas) {
 
             modulesHtml += '</div>';
 
-            // === ALL GRADES TABLE (if available) === //
-            let allGradesHtml = '';
-            const gradeKeys = Object.keys(notas).filter(k => {
-                const keyNormalized = k.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
-                return !keyNormalized.includes('EMAILHC') && 
-                       !keyNormalized.includes('NOMECOMPLETO') && 
-                       !keyNormalized.includes('CURSO') &&
-                       notas[k] !== null && 
-                       notas[k] !== undefined && 
-                       String(notas[k]).trim() !== '';
-            });
-
-            if (gradeKeys.length > MIN_FIELDS_FOR_TABLE) {
-                allGradesHtml = `
-                    <div class="nt-all-grades">
-                        <div class="nt-all-grades-header">
-                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                            </svg>
-                            <span>Todas as Notas</span>
-                        </div>
-                        <table class="nt-grades-table">
-                            <thead>
-                                <tr>
-                                    <th>Disciplina / Campo</th>
-                                    <th style="text-align: right;">Valor</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${gradeKeys.map(key => {
-                                    const value = notas[key];
-                                    const gradeValid = isValidGrade(value);
-                                    return `
-                                        <tr>
-                                            <td>${key}</td>
-                                            <td style="text-align: right;" class="${gradeValid ? 'grade-cell' : ''}">${gradeValid ? formatarNota(parseNota(value)) : value}</td>
-                                        </tr>
-                                    `;
-                                }).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                `;
-            }
-
             // === MONTAGEM FINAL === //
-            tabContainer.innerHTML = heroHtml + dashboardHtml + sectionHeaderHtml + modulesHtml + allGradesHtml;
+            tabContainer.innerHTML = heroHtml + dashboardHtml + sectionHeaderHtml + modulesHtml;
         }
 
         function calculatePracticeSummary(notasP) {
