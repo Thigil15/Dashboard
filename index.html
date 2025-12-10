@@ -576,81 +576,181 @@
                 <div id="content-escala" class="view-container">
                     <h1>Escala do Programa</h1>
 
-                    <!-- Simplified Header Bar with Just Date -->
-                    <div class="escala-compact-toolbar">
-                        <div class="escala-date-display">
+                    <!-- Tab Navigation for Escala Types -->
+                    <div class="escala-tabs-nav">
+                        <button class="escala-tab-btn active" data-escala-tab="mensal">
                             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                            <span id="escala-atual-today-date">--</span>
+                            <span>Escala Mensal</span>
+                        </button>
+                        <button class="escala-tab-btn" data-escala-tab="atual">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                            </svg>
+                            <span>Escala Atual</span>
+                        </button>
+                    </div>
+
+                    <!-- Escala Mensal Container -->
+                    <div id="escala-mensal-container" class="escala-tab-content active">
+                        <!-- Simplified Header Bar with Just Date -->
+                        <div class="escala-compact-toolbar">
+                            <div class="escala-date-display">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <span id="escala-atual-today-date">--</span>
+                            </div>
+                        </div>
+
+                        <!-- Collapsible Legend (compact inline) -->
+                        <details class="escala-legend-compact">
+                            <summary class="escala-legend-toggle">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span>Legenda dos Códigos</span>
+                                <svg class="escala-legend-chevron" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </summary>
+                            <div class="escala-legend-inline-content">
+                                <!-- Shifts Row -->
+                                <div class="escala-legend-row">
+                                    <span class="escala-legend-category">Turnos:</span>
+                                    <div class="escala-legend-items-inline">
+                                        <div class="escala-legend-item-inline"><span class="escala-badge-mini shift-m">M</span><span>Manhã (07-13h)</span></div>
+                                        <div class="escala-legend-item-inline"><span class="escala-badge-mini shift-t">T</span><span>Tarde (13-19h)</span></div>
+                                        <div class="escala-legend-item-inline"><span class="escala-badge-mini shift-n">N</span><span>Noite (19-07h)</span></div>
+                                        <div class="escala-legend-item-inline"><span class="escala-badge-mini shift-mt">MT</span><span>Dia Completo</span></div>
+                                    </div>
+                                </div>
+                                <!-- Leaves Row -->
+                                <div class="escala-legend-row">
+                                    <span class="escala-legend-category">Folgas:</span>
+                                    <div class="escala-legend-items-inline">
+                                        <div class="escala-legend-item-inline"><span class="escala-badge-mini shift-fc">FC</span><span>Folga Compensatória</span></div>
+                                        <div class="escala-legend-item-inline"><span class="escala-badge-mini shift-f">F</span><span>Folga Pedida</span></div>
+                                    </div>
+                                </div>
+                                <!-- Other Row -->
+                                <div class="escala-legend-row">
+                                    <span class="escala-legend-category">Outros:</span>
+                                    <div class="escala-legend-items-inline">
+                                        <div class="escala-legend-item-inline"><span class="escala-badge-mini shift-aula">AULA</span><span>Aula/HCx</span></div>
+                                        <div class="escala-legend-item-inline"><span class="escala-badge-mini shift-ab">AB</span><span>Ambulatório</span></div>
+                                        <div class="escala-legend-item-inline"><span class="escala-badge-mini shift-empty">-</span><span>Sem atividade</span></div>
+                                    </div>
+                                </div>
+                                <!-- Student Types Row -->
+                                <div class="escala-legend-row escala-legend-types-row">
+                                    <span class="escala-legend-category">Tipos:</span>
+                                    <div class="escala-legend-items-inline">
+                                        <div class="escala-legend-item-inline"><span class="escala-type-dot tipo-bolsista"></span><span>Bolsista</span></div>
+                                        <div class="escala-legend-item-inline"><span class="escala-type-dot tipo-pagante"></span><span>Pagante</span></div>
+                                        <div class="escala-legend-item-inline"><span class="escala-type-dot tipo-residente"></span><span>Residente</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </details>
+
+                        <!-- Excel-style Table Container -->
+                        <div class="escala-excel-container">
+                            <div id="escala-mensal-loading" class="escala-excel-loading">
+                                <div class="escala-excel-spinner"></div>
+                                <span>Carregando escala mensal...</span>
+                            </div>
+                            <div id="escala-mensal-empty" class="escala-excel-empty" style="display: none;">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                                </svg>
+                                <span>Nenhuma escala mensal disponível.</span>
+                            </div>
+                            <div id="escala-mensal-content" class="escala-excel-content" style="display: none;">
+                                <!-- Excel-style table will be rendered by JavaScript -->
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Collapsible Legend (compact inline) -->
-                    <details class="escala-legend-compact">
-                        <summary class="escala-legend-toggle">
-                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <span>Legenda dos Códigos</span>
-                            <svg class="escala-legend-chevron" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </summary>
-                        <div class="escala-legend-inline-content">
-                            <!-- Shifts Row -->
-                            <div class="escala-legend-row">
-                                <span class="escala-legend-category">Turnos:</span>
-                                <div class="escala-legend-items-inline">
-                                    <div class="escala-legend-item-inline"><span class="escala-badge-mini shift-m">M</span><span>Manhã (07-13h)</span></div>
-                                    <div class="escala-legend-item-inline"><span class="escala-badge-mini shift-t">T</span><span>Tarde (13-19h)</span></div>
-                                    <div class="escala-legend-item-inline"><span class="escala-badge-mini shift-n">N</span><span>Noite (19-07h)</span></div>
-                                    <div class="escala-legend-item-inline"><span class="escala-badge-mini shift-mt">MT</span><span>Dia Completo</span></div>
-                                </div>
-                            </div>
-                            <!-- Leaves Row -->
-                            <div class="escala-legend-row">
-                                <span class="escala-legend-category">Folgas:</span>
-                                <div class="escala-legend-items-inline">
-                                    <div class="escala-legend-item-inline"><span class="escala-badge-mini shift-fc">FC</span><span>Folga Compensatória</span></div>
-                                    <div class="escala-legend-item-inline"><span class="escala-badge-mini shift-f">F</span><span>Folga Pedida</span></div>
-                                </div>
-                            </div>
-                            <!-- Other Row -->
-                            <div class="escala-legend-row">
-                                <span class="escala-legend-category">Outros:</span>
-                                <div class="escala-legend-items-inline">
-                                    <div class="escala-legend-item-inline"><span class="escala-badge-mini shift-aula">AULA</span><span>Aula/HCx</span></div>
-                                    <div class="escala-legend-item-inline"><span class="escala-badge-mini shift-ab">AB</span><span>Ambulatório</span></div>
-                                    <div class="escala-legend-item-inline"><span class="escala-badge-mini shift-empty">-</span><span>Sem atividade</span></div>
-                                </div>
-                            </div>
-                            <!-- Student Types Row -->
-                            <div class="escala-legend-row escala-legend-types-row">
-                                <span class="escala-legend-category">Tipos:</span>
-                                <div class="escala-legend-items-inline">
-                                    <div class="escala-legend-item-inline"><span class="escala-type-dot tipo-bolsista"></span><span>Bolsista</span></div>
-                                    <div class="escala-legend-item-inline"><span class="escala-type-dot tipo-pagante"></span><span>Pagante</span></div>
-                                    <div class="escala-legend-item-inline"><span class="escala-type-dot tipo-residente"></span><span>Residente</span></div>
-                                </div>
+                    <!-- Escala Atual Container -->
+                    <div id="escala-atual-container" class="escala-tab-content">
+                        <!-- Simplified Header Bar with Just Date -->
+                        <div class="escala-compact-toolbar">
+                            <div class="escala-date-display">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <span id="escala-atual-date">--</span>
                             </div>
                         </div>
-                    </details>
 
-                    <!-- Excel-style Table Container -->
-                    <div class="escala-excel-container">
-                        <div id="escala-atual-loading" class="escala-excel-loading">
-                            <div class="escala-excel-spinner"></div>
-                            <span>Carregando escala...</span>
-                        </div>
-                        <div id="escala-atual-empty" class="escala-excel-empty" style="display: none;">
-                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-                            </svg>
-                            <span>Nenhuma escala disponível para este setor.</span>
-                        </div>
-                        <div id="escala-atual-content" class="escala-excel-content" style="display: none;">
-                            <!-- Excel-style table will be rendered by JavaScript -->
+                        <!-- Collapsible Legend (compact inline) -->
+                        <details class="escala-legend-compact">
+                            <summary class="escala-legend-toggle">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span>Legenda dos Códigos</span>
+                                <svg class="escala-legend-chevron" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </summary>
+                            <div class="escala-legend-inline-content">
+                                <!-- Shifts Row -->
+                                <div class="escala-legend-row">
+                                    <span class="escala-legend-category">Turnos:</span>
+                                    <div class="escala-legend-items-inline">
+                                        <div class="escala-legend-item-inline"><span class="escala-badge-mini shift-m">M</span><span>Manhã (07-13h)</span></div>
+                                        <div class="escala-legend-item-inline"><span class="escala-badge-mini shift-t">T</span><span>Tarde (13-19h)</span></div>
+                                        <div class="escala-legend-item-inline"><span class="escala-badge-mini shift-n">N</span><span>Noite (19-07h)</span></div>
+                                        <div class="escala-legend-item-inline"><span class="escala-badge-mini shift-mt">MT</span><span>Dia Completo</span></div>
+                                    </div>
+                                </div>
+                                <!-- Leaves Row -->
+                                <div class="escala-legend-row">
+                                    <span class="escala-legend-category">Folgas:</span>
+                                    <div class="escala-legend-items-inline">
+                                        <div class="escala-legend-item-inline"><span class="escala-badge-mini shift-fc">FC</span><span>Folga Compensatória</span></div>
+                                        <div class="escala-legend-item-inline"><span class="escala-badge-mini shift-f">F</span><span>Folga Pedida</span></div>
+                                    </div>
+                                </div>
+                                <!-- Other Row -->
+                                <div class="escala-legend-row">
+                                    <span class="escala-legend-category">Outros:</span>
+                                    <div class="escala-legend-items-inline">
+                                        <div class="escala-legend-item-inline"><span class="escala-badge-mini shift-aula">AULA</span><span>Aula/HCx</span></div>
+                                        <div class="escala-legend-item-inline"><span class="escala-badge-mini shift-ab">AB</span><span>Ambulatório</span></div>
+                                        <div class="escala-legend-item-inline"><span class="escala-badge-mini shift-empty">-</span><span>Sem atividade</span></div>
+                                    </div>
+                                </div>
+                                <!-- Student Types Row -->
+                                <div class="escala-legend-row escala-legend-types-row">
+                                    <span class="escala-legend-category">Tipos:</span>
+                                    <div class="escala-legend-items-inline">
+                                        <div class="escala-legend-item-inline"><span class="escala-type-dot tipo-bolsista"></span><span>Bolsista</span></div>
+                                        <div class="escala-legend-item-inline"><span class="escala-type-dot tipo-pagante"></span><span>Pagante</span></div>
+                                        <div class="escala-legend-item-inline"><span class="escala-type-dot tipo-residente"></span><span>Residente</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </details>
+
+                        <!-- Excel-style Table Container -->
+                        <div class="escala-excel-container">
+                            <div id="escala-atual-loading" class="escala-excel-loading">
+                                <div class="escala-excel-spinner"></div>
+                                <span>Carregando escala atual...</span>
+                            </div>
+                            <div id="escala-atual-empty" class="escala-excel-empty" style="display: none;">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                                </svg>
+                                <span>Nenhuma escala atual disponível.</span>
+                            </div>
+                            <div id="escala-atual-content" class="escala-excel-content" style="display: none;">
+                                <!-- Excel-style table will be rendered by JavaScript -->
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -819,15 +819,29 @@
                     const escalaContent = document.getElementById('content-escala');
                     if (escalaContent && escalaContent.style.display !== 'none') {
                         console.log('[triggerUIUpdates] Atualizando painel de Escala (tab ativa)');
-                        renderMonthlyEscalaTable();
+                        // Check which tab is active and render the appropriate table
+                        const activeTabBtn = document.querySelector('.escala-tab-btn.active');
+                        if (activeTabBtn && activeTabBtn.dataset.escalaTab === 'mensal') {
+                            renderMonthlyEscalaTable();
+                        }
                     }
                     break;
                     
                 case 'escalaAtualEnfermaria':
                 case 'escalaAtualUTI':
                 case 'escalaAtualCardiopediatria':
-                    // Legacy EscalaAtual data - not used in new implementation
-                    console.log(`[triggerUIUpdates] Dados de ${stateKey} atualizados (legacy, not used)`);
+                    // EscalaAtual data updated - refresh if on Escala Atual tab
+                    console.log(`[triggerUIUpdates] Dados de ${stateKey} atualizados`);
+                    
+                    const escalaContentAtual = document.getElementById('content-escala');
+                    if (escalaContentAtual && escalaContentAtual.style.display !== 'none') {
+                        // Check if we're on the "Escala Atual" tab
+                        const activeTabBtnAtual = document.querySelector('.escala-tab-btn.active');
+                        if (activeTabBtnAtual && activeTabBtnAtual.dataset.escalaTab === 'atual') {
+                            console.log('[triggerUIUpdates] Atualizando Escala Atual (tab ativa)');
+                            renderEscalaAtualTable();
+                        }
+                    }
                     break;
                     
                 default:
@@ -2581,24 +2595,58 @@ const pontoState = {
          * Initialize the Escala panel - simplified version without tabs
          */
         function initializeEscalaAtualPanel() {
-            console.log('[initializeEscalaAtualPanel] Initializing NEW monthly view...');
+            console.log('[initializeEscalaAtualPanel] Initializing Escala panel with tabs...');
             
-            // Update today's date in the header
+            // Update today's date in both tab headers
             const todayDateEl = document.getElementById('escala-atual-today-date');
-            if (todayDateEl) {
+            const escalaAtualDateEl = document.getElementById('escala-atual-date');
+            
+            if (todayDateEl || escalaAtualDateEl) {
                 const today = new Date();
-                todayDateEl.textContent = today.toLocaleDateString('pt-BR', {
+                const formattedDate = today.toLocaleDateString('pt-BR', {
                     weekday: 'long',
                     day: '2-digit',
                     month: 'long',
                     year: 'numeric'
                 });
+                
+                if (todayDateEl) todayDateEl.textContent = formattedDate;
+                if (escalaAtualDateEl) escalaAtualDateEl.textContent = formattedDate;
             }
+            
+            // Setup tab switching
+            const tabButtons = document.querySelectorAll('.escala-tab-btn');
+            tabButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const targetTab = btn.dataset.escalaTab;
+                    
+                    // Update button states
+                    tabButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    // Update content visibility
+                    document.querySelectorAll('.escala-tab-content').forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    
+                    const tabContent = document.getElementById(`escala-${targetTab}-container`);
+                    if (tabContent) {
+                        tabContent.classList.add('active');
+                        
+                        // Render the appropriate table when tab becomes active
+                        if (targetTab === 'mensal') {
+                            renderMonthlyEscalaTable();
+                        } else if (targetTab === 'atual') {
+                            renderEscalaAtualTable();
+                        }
+                    }
+                });
+            });
             
             // Mark as initialized
             escalaAtualState.initialized = true;
             
-            // Render the new monthly view (no sector parameter needed)
+            // Render the default tab (mensal)
             renderMonthlyEscalaTable();
         }
         
@@ -2848,9 +2896,9 @@ const pontoState = {
         function renderMonthlyEscalaTable() {
             console.log(`[renderMonthlyEscalaTable] NEW IMPLEMENTATION - Building from Escala sheets data...`);
             
-            const loadingEl = document.getElementById('escala-atual-loading');
-            const emptyEl = document.getElementById('escala-atual-empty');
-            const contentEl = document.getElementById('escala-atual-content');
+            const loadingEl = document.getElementById('escala-mensal-loading');
+            const emptyEl = document.getElementById('escala-mensal-empty');
+            const contentEl = document.getElementById('escala-mensal-content');
             
             if (!loadingEl || !emptyEl || !contentEl) {
                 console.error('[renderMonthlyEscalaTable] Container elements not found');
@@ -2863,7 +2911,7 @@ const pontoState = {
             const escalasKeys = Object.keys(escalasData).filter(key => key.match(/^Escala\d+$/i));
             
             if (escalasKeys.length === 0) {
-                console.warn('[renderEscalaAtualTable] No Escala sheets found in Firebase');
+                console.warn('[renderMonthlyEscalaTable] No Escala sheets found in Firebase');
                 loadingEl.style.display = 'none';
                 emptyEl.style.display = 'flex';
                 contentEl.style.display = 'none';
@@ -2871,7 +2919,7 @@ const pontoState = {
                 return;
             }
             
-            console.log(`[renderEscalaAtualTable] Found ${escalasKeys.length} Escala sheets:`, escalasKeys.join(', '));
+            console.log(`[renderMonthlyEscalaTable] Found ${escalasKeys.length} Escala sheets:`, escalasKeys.join(', '));
             
             // Aggregate all students from all Escala sheets
             const allStudents = [];
@@ -2913,27 +2961,30 @@ const pontoState = {
                 const [, firstMonth] = firstDate.split('/').map(Number);
                 const [, lastMonth] = lastDate.split('/').map(Number);
                 
+                // Get current year dynamically
+                const currentYear = new Date().getFullYear();
+                
                 const monthNames = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
                                    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
                 
                 if (firstMonth === lastMonth) {
-                    periodLabel = `${monthNames[firstMonth]} 2025 (${firstDate} a ${lastDate})`;
+                    periodLabel = `${monthNames[firstMonth]} ${currentYear} (${firstDate} a ${lastDate})`;
                 } else {
-                    periodLabel = `${monthNames[firstMonth]}-${monthNames[lastMonth]} 2025 (${firstDate} a ${lastDate})`;
+                    periodLabel = `${monthNames[firstMonth]}-${monthNames[lastMonth]} ${currentYear} (${firstDate} a ${lastDate})`;
                 }
             }
             
             // Check if we have data
             if (allStudents.length === 0 || sortedDates.length === 0) {
-                console.warn('[renderEscalaAtualTable] No students or dates found in Escala sheets');
+                console.warn('[renderMonthlyEscalaTable] No students or dates found in Escala sheets');
                 loadingEl.style.display = 'none';
                 emptyEl.style.display = 'flex';
                 contentEl.style.display = 'none';
                 return;
             }
             
-            console.log(`[renderEscalaAtualTable] Aggregated ${allStudents.length} students with ${sortedDates.length} dates`);
-            console.log(`[renderEscalaAtualTable] Period: ${periodLabel}`);
+            console.log(`[renderMonthlyEscalaTable] Aggregated ${allStudents.length} students with ${sortedDates.length} dates`);
+            console.log(`[renderMonthlyEscalaTable] Period: ${periodLabel}`);
             
             // Hide loading, show content
             loadingEl.style.display = 'none';
@@ -2973,7 +3024,7 @@ const pontoState = {
             // Filter by selected sector if needed (for now, show all)
             // In the future, you could filter based on the `sector` parameter
             
-            console.log(`[renderEscalaAtualTable] Students grouped by ${sortedSectors.length} sectors:`, sortedSectors.join(', '));
+            console.log(`[renderMonthlyEscalaTable] Students grouped by ${sortedSectors.length} sectors:`, sortedSectors.join(', '));
             
             // Build minimalist Excel-style table HTML
             let html = '';
@@ -3117,6 +3168,282 @@ const pontoState = {
             html += '</div>'; // Close table wrapper
             
             contentEl.innerHTML = html;
+            
+            console.log(`[renderMonthlyEscalaTable] ✅ Rendered ${allStudents.length} students grouped in ${sortedSectors.length} sectors with ${sortedDates.length} days`);
+        }
+
+        /**
+         * [NEW] Render Escala Atual Table - Reference schedules from EscalaAtual Firebase data
+         * Aggregates data from EscalaAtualUTI, EscalaAtualCardiopediatria, EscalaAtualEnfermaria
+         * Shows shift codes (M, T, N, MT, FC, F, AULA, AB) for each student by date
+         */
+        function renderEscalaAtualTable() {
+            console.log(`[renderEscalaAtualTable] Rendering reference schedules from EscalaAtual data...`);
+            
+            const loadingEl = document.getElementById('escala-atual-loading');
+            const emptyEl = document.getElementById('escala-atual-empty');
+            const contentEl = document.getElementById('escala-atual-content');
+            
+            if (!loadingEl || !emptyEl || !contentEl) {
+                console.error('[renderEscalaAtualTable] Container elements not found');
+                return;
+            }
+            
+            // Collect data from all three EscalaAtual sources
+            const escalaAtualData = {
+                UTI: appState.escalaAtualUTI || null,
+                Cardiopediatria: appState.escalaAtualCardiopediatria || null,
+                Enfermaria: appState.escalaAtualEnfermaria || null
+            };
+            
+            // Aggregate all students from all sectors
+            const allStudents = [];
+            const allDates = new Set();
+            
+            Object.entries(escalaAtualData).forEach(([sectorName, sectorData]) => {
+                if (sectorData && sectorData.alunos && Array.isArray(sectorData.alunos)) {
+                    sectorData.alunos.forEach(aluno => {
+                        if (aluno && (aluno.Aluno || aluno.NomeCompleto || aluno.Nome)) {
+                            allStudents.push({
+                                ...aluno,
+                                _sector: sectorName,
+                                _sectorData: sectorData
+                            });
+                        }
+                    });
+                    
+                    // Collect all dates
+                    if (sectorData.headersDay && Array.isArray(sectorData.headersDay)) {
+                        sectorData.headersDay.forEach(date => allDates.add(date));
+                    }
+                }
+            });
+            
+            // Check if we have data
+            if (allStudents.length === 0 || allDates.size === 0) {
+                console.warn('[renderEscalaAtualTable] No students or dates found in EscalaAtual data');
+                loadingEl.style.display = 'none';
+                emptyEl.style.display = 'flex';
+                contentEl.style.display = 'none';
+                emptyEl.querySelector('span').textContent = 'Nenhum dado de Escala Atual encontrado no Firebase.';
+                return;
+            }
+            
+            // Sort dates chronologically
+            const sortedDates = Array.from(allDates).sort((a, b) => {
+                const [dayA, monthA] = a.split('/').map(Number);
+                const [dayB, monthB] = b.split('/').map(Number);
+                if (monthA !== monthB) return monthA - monthB;
+                return dayA - dayB;
+            });
+            
+            // Determine period label from dates
+            let periodLabel = '';
+            if (sortedDates.length > 0) {
+                const firstDate = sortedDates[0];
+                const lastDate = sortedDates[sortedDates.length - 1];
+                const [, firstMonth] = firstDate.split('/').map(Number);
+                const [, lastMonth] = lastDate.split('/').map(Number);
+                
+                // Get current year dynamically
+                const currentYear = new Date().getFullYear();
+                
+                const monthNames = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                                   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+                
+                if (firstMonth === lastMonth) {
+                    periodLabel = `${monthNames[firstMonth]} ${currentYear} (${firstDate} a ${lastDate})`;
+                } else {
+                    periodLabel = `${monthNames[firstMonth]}-${monthNames[lastMonth]} ${currentYear} (${firstDate} a ${lastDate})`;
+                }
+            }
+            
+            console.log(`[renderEscalaAtualTable] Aggregated ${allStudents.length} students with ${sortedDates.length} dates`);
+            console.log(`[renderEscalaAtualTable] Period: ${periodLabel}`);
+            
+            // Hide loading, show content
+            loadingEl.style.display = 'none';
+            emptyEl.style.display = 'none';
+            contentEl.style.display = 'block';
+            
+            // Get today's date in DD/MM format for highlighting
+            const todayBR = appState.todayBR || new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+            
+            // Parse day info for each date (for weekday abbreviations and weekend highlighting)
+            const dayInfo = sortedDates.map(day => ({
+                date: day,
+                ...parseDayMonth(day)
+            }));
+            
+            // Group students by sector
+            const studentsBySector = {};
+            allStudents.forEach(student => {
+                const sector = student._sector || 'Outros';
+                if (!studentsBySector[sector]) {
+                    studentsBySector[sector] = [];
+                }
+                studentsBySector[sector].push(student);
+            });
+            
+            // Sort sectors (UTI, Cardiopediatria, Enfermaria, then others alphabetically)
+            const sectorOrder = ['UTI', 'Cardiopediatria', 'Enfermaria'];
+            const sortedSectors = Object.keys(studentsBySector).sort((a, b) => {
+                const indexA = sectorOrder.indexOf(a);
+                const indexB = sectorOrder.indexOf(b);
+                if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+                if (indexA !== -1) return -1;
+                if (indexB !== -1) return 1;
+                return a.localeCompare(b);
+            });
+            
+            console.log(`[renderEscalaAtualTable] Students grouped by ${sortedSectors.length} sectors:`, sortedSectors.join(', '));
+            
+            // Build the Excel-style table HTML
+            // NOTE: Reusing escala-mensal CSS classes as they provide the exact styling we need
+            // This avoids code duplication and maintains consistency between both tabs
+            let tableHTML = `
+                <div class="escala-mensal-header">
+                    <h2 class="escala-mensal-title">Escala de Referência - ${periodLabel}</h2>
+                    <p class="escala-mensal-subtitle">Códigos de turno por aluno e data</p>
+                </div>
+                
+                <div class="escala-mensal-table-wrapper">
+                    <table class="escala-mensal-table">
+                        <thead>
+                            <tr class="header-dias">
+                                <th class="col-nome sticky-col">Nome / Supervisor</th>
+            `;
+            
+            // Day number headers
+            dayInfo.forEach(info => {
+                const isToday = info.date === todayBR;
+                const isWeekend = info.dayIndex === 0 || info.dayIndex === 6;
+                const classes = [];
+                if (isWeekend) classes.push('weekend');
+                if (isToday) classes.push('today-col');
+                
+                tableHTML += `<th class="${classes.join(' ')}">${info.day}</th>`;
+            });
+            
+            tableHTML += `
+                            </tr>
+                            <tr class="header-dia-semana">
+                                <th class="col-nome sticky-col">Setor</th>
+            `;
+            
+            // Day of week headers (D, S, T, Q, Q, S, S)
+            dayInfo.forEach(info => {
+                const isToday = info.date === todayBR;
+                const isWeekend = info.dayIndex === 0 || info.dayIndex === 6;
+                const classes = [];
+                if (isWeekend) classes.push('weekend');
+                if (isToday) classes.push('today-col');
+                
+                tableHTML += `<th class="${classes.join(' ')}">${info.dayOfWeekAbbr}</th>`;
+            });
+            
+            tableHTML += `
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            // Render students grouped by sector
+            sortedSectors.forEach(sector => {
+                const students = studentsBySector[sector];
+                
+                // Sector header row
+                tableHTML += `
+                    <tr class="escala-mensal-sector-row">
+                        <td colspan="${sortedDates.length + 1}">
+                            <div class="escala-mensal-sector-header">
+                                <span class="escala-mensal-sector-name">${sector}</span>
+                                <span class="escala-mensal-sector-count">${students.length} ${students.length === 1 ? 'aluno' : 'alunos'}</span>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                
+                // Student rows
+                students.forEach(student => {
+                    const studentName = student.Aluno || student.NomeCompleto || student.Nome || 'Sem nome';
+                    const supervisor = student.Supervisor || '';
+                    const horario = student.Horario || student['Horário'] || '';
+                    const curso = student.Curso || '';
+                    
+                    // Determine student type for color coding
+                    let tipoClass = 'tipo-bolsista'; // default
+                    if (curso) {
+                        const cursoLower = curso.toLowerCase();
+                        if (cursoLower.includes('pagante') || cursoLower.includes('pago')) {
+                            tipoClass = 'tipo-pagante';
+                        } else if (cursoLower.includes('residente') || cursoLower.includes('residência')) {
+                            tipoClass = 'tipo-residente';
+                        }
+                    }
+                    
+                    tableHTML += `<tr class="row-aluno">`;
+                    tableHTML += `
+                        <td class="col-nome sticky-col">
+                            <div class="escala-mensal-nome-aluno ${tipoClass}">${studentName}</div>
+                            ${supervisor ? `<div class="escala-mensal-nome-supervisor">${supervisor}</div>` : ''}
+                            ${horario ? `<div class="escala-mensal-horario">${horario}</div>` : ''}
+                        </td>
+                    `;
+                    
+                    // Render shift codes for each date
+                    dayInfo.forEach(info => {
+                        const isToday = info.date === todayBR;
+                        const isWeekend = info.dayIndex === 0 || info.dayIndex === 6;
+                        const classes = [];
+                        if (isWeekend) classes.push('weekend');
+                        if (isToday) classes.push('today-col');
+                        
+                        // Try to get shift value from student data
+                        // Date could be in formats: DD/MM, D_MM, DD_M, D_M
+                        let shiftValue = '';
+                        const dateFormats = [
+                            info.date, // DD/MM
+                            `${info.day}_${info.month}`, // DD_MM
+                            `${parseInt(info.day, 10)}_${info.month}`, // D_MM
+                            `${info.day}_${parseInt(info.month, 10)}`, // DD_M
+                            `${parseInt(info.day, 10)}_${parseInt(info.month, 10)}` // D_M
+                        ];
+                        
+                        for (const format of dateFormats) {
+                            if (student[format]) {
+                                shiftValue = String(student[format]).trim();
+                                break;
+                            }
+                        }
+                        
+                        // Normalize shift value (uppercase, remove spaces)
+                        shiftValue = shiftValue.toUpperCase().replace(/\s+/g, '');
+                        
+                        // Render shift badge
+                        let shiftHTML = '';
+                        if (shiftValue && shiftValue !== '-') {
+                            const shiftClass = `shift-${shiftValue.toLowerCase()}`;
+                            shiftHTML = `<span class="escala-mensal-shift ${shiftClass}">${shiftValue}</span>`;
+                        } else if (shiftValue === '-') {
+                            shiftHTML = `<span class="escala-mensal-shift shift-empty">-</span>`;
+                        }
+                        
+                        tableHTML += `<td class="${classes.join(' ')}">${shiftHTML}</td>`;
+                    });
+                    
+                    tableHTML += `</tr>`;
+                });
+            });
+            
+            tableHTML += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            // Render the table
+            contentEl.innerHTML = tableHTML;
             
             console.log(`[renderEscalaAtualTable] ✅ Rendered ${allStudents.length} students grouped in ${sortedSectors.length} sectors with ${sortedDates.length} days`);
         }
