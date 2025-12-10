@@ -2733,6 +2733,32 @@ const pontoState = {
         }
         
         /**
+         * Sanitize HTML to prevent XSS attacks
+         * @param {string} str - String to sanitize
+         * @returns {string} Sanitized string safe for HTML insertion
+         */
+        function escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+        
+        /**
+         * Get icon color based on file extension
+         * @param {string} extension - File extension (lowercase)
+         * @returns {string} Hex color code
+         */
+        function getFileIconColor(extension) {
+            const colorMap = {
+                'xlsm': '#0891b2',  // Cyan for xlsm (macros)
+                'xls': '#6366f1',   // Indigo for old xls
+                'xlsx': '#059669'   // Green for xlsx
+            };
+            return colorMap[extension] || '#059669'; // Default to green
+        }
+        
+        /**
          * Render the list of files from Firebase Storage
          * @param {Array} files - Array of file objects with name, url, extension
          */
@@ -2760,14 +2786,15 @@ const pontoState = {
                 `;
                 
                 excelFiles.forEach(file => {
-                    // Determine icon color based on extension
-                    let iconColor = '#059669'; // Green for xlsx/xlsm
-                    if (file.extension === 'xlsm') {
-                        iconColor = '#0891b2'; // Cyan for xlsm (macros)
-                    } else if (file.extension === 'xls') {
-                        iconColor = '#6366f1'; // Indigo for old xls
-                    }
+                    // Get icon color based on extension using helper function
+                    const iconColor = getFileIconColor(file.extension);
                     
+                    // Sanitize file name and URL to prevent XSS
+                    const safeName = escapeHtml(file.name);
+                    const safeUrl = escapeHtml(file.url);
+                    const safeExtension = escapeHtml(file.extension.toUpperCase());
+                    
+                    html += `
                     html += `
                         <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; display: flex; align-items: center; gap: 1rem; transition: all 0.2s; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05);" 
                              onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'; this.style.borderColor='${iconColor}';" 
@@ -2778,14 +2805,14 @@ const pontoState = {
                                 </svg>
                             </div>
                             <div style="flex: 1; min-width: 0;">
-                                <h4 style="font-size: 0.95rem; font-weight: 600; color: #0f172a; margin: 0 0 0.25rem 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${file.name}">
-                                    ${file.name}
+                                <h4 style="font-size: 0.95rem; font-weight: 600; color: #0f172a; margin: 0 0 0.25rem 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${safeName}">
+                                    ${safeName}
                                 </h4>
                                 <p style="font-size: 0.8rem; color: #64748b; margin: 0;">
-                                    Formato: ${file.extension.toUpperCase()}
+                                    Formato: ${safeExtension}
                                 </p>
                             </div>
-                            <a href="${file.url}" download="${file.name}" style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, ${iconColor}, ${iconColor}dd); color: white; border-radius: 6px; font-weight: 500; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s; flex-shrink: 0;" 
+                            <a href="${safeUrl}" download="${safeName}" style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, ${iconColor}, ${iconColor}dd); color: white; border-radius: 6px; font-weight: 500; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s; flex-shrink: 0;" 
                                onmouseover="this.style.transform='scale(1.05)';" 
                                onmouseout="this.style.transform='scale(1)';">
                                 <svg style="width: 18px; height: 18px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
@@ -2817,6 +2844,11 @@ const pontoState = {
                 `;
                 
                 otherFiles.forEach(file => {
+                    // Sanitize file name and URL to prevent XSS
+                    const safeName = escapeHtml(file.name);
+                    const safeUrl = escapeHtml(file.url);
+                    const safeExtension = escapeHtml(file.extension.toUpperCase());
+                    
                     html += `
                         <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; display: flex; align-items: center; gap: 1rem; transition: all 0.2s;">
                             <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #64748b, #475569); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
@@ -2825,14 +2857,14 @@ const pontoState = {
                                 </svg>
                             </div>
                             <div style="flex: 1; min-width: 0;">
-                                <h4 style="font-size: 0.95rem; font-weight: 600; color: #0f172a; margin: 0 0 0.25rem 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${file.name}">
-                                    ${file.name}
+                                <h4 style="font-size: 0.95rem; font-weight: 600; color: #0f172a; margin: 0 0 0.25rem 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${safeName}">
+                                    ${safeName}
                                 </h4>
                                 <p style="font-size: 0.8rem; color: #64748b; margin: 0;">
-                                    Formato: ${file.extension.toUpperCase()}
+                                    Formato: ${safeExtension}
                                 </p>
                             </div>
-                            <a href="${file.url}" download="${file.name}" style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #64748b, #475569); color: white; border-radius: 6px; font-weight: 500; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s; flex-shrink: 0;">
+                            <a href="${safeUrl}" download="${safeName}" style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #64748b, #475569); color: white; border-radius: 6px; font-weight: 500; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s; flex-shrink: 0;">
                                 <svg style="width: 18px; height: 18px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                 </svg>
