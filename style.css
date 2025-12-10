@@ -15688,3 +15688,637 @@ tr.student-type-residente:hover {
     }
 }
 
+/* ════════════════════════════════════════════════════════════════════════════════
+   ESCALA ATUAL v2.0 - MINIMALIST EXCEL-STYLE DESIGN
+   Professional, compact schedule table with pill selectors
+   ════════════════════════════════════════════════════════════════════════════════ */
+
+/* === COMPACT TOOLBAR === */
+.escala-compact-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    background: white;
+    border: 1px solid rgba(229, 233, 239, 0.8);
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    flex-wrap: wrap;
+}
+
+.escala-sector-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.escala-selector-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--content-text-secondary);
+    white-space: nowrap;
+}
+
+/* === PILL BUTTONS === */
+.escala-pills {
+    display: flex;
+    gap: 0.375rem;
+    flex-wrap: wrap;
+}
+
+.escala-pill-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.4375rem 0.875rem;
+    font-family: var(--font-main);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--content-text-secondary);
+    background: #f1f5f9;
+    border: 1px solid transparent;
+    border-radius: 100px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.escala-pill-btn:hover {
+    background: #e2e8f0;
+    color: var(--content-text-primary);
+}
+
+.escala-pill-btn.active {
+    background: var(--incor-blue-600);
+    color: white;
+    box-shadow: 0 2px 8px rgba(0, 84, 180, 0.25);
+}
+
+.escala-pill-btn.active .escala-pill-count {
+    background: rgba(255, 255, 255, 0.25);
+    color: white;
+}
+
+.escala-pill-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 0.375rem;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    background: rgba(0, 0, 0, 0.08);
+    border-radius: 100px;
+}
+
+/* === DATE DISPLAY === */
+.escala-date-display {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    color: var(--content-text-muted);
+}
+
+.escala-date-display svg {
+    width: 1rem;
+    height: 1rem;
+    color: var(--incor-blue-400);
+    flex-shrink: 0;
+}
+
+/* === COLLAPSIBLE LEGEND === */
+.escala-legend-compact {
+    background: white;
+    border: 1px solid rgba(229, 233, 239, 0.8);
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.escala-legend-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    cursor: pointer;
+    user-select: none;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--content-text-secondary);
+    list-style: none;
+}
+
+.escala-legend-toggle::-webkit-details-marker {
+    display: none;
+}
+
+.escala-legend-toggle svg:first-child {
+    width: 1rem;
+    height: 1rem;
+    color: var(--incor-blue-500);
+    flex-shrink: 0;
+}
+
+.escala-legend-chevron {
+    width: 1rem;
+    height: 1rem;
+    margin-left: auto;
+    color: var(--content-text-muted);
+    transition: transform 0.2s ease;
+}
+
+.escala-legend-compact[open] .escala-legend-chevron {
+    transform: rotate(180deg);
+}
+
+.escala-legend-inline-content {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid rgba(229, 233, 239, 0.6);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.escala-legend-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.escala-legend-category {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--content-text-muted);
+    min-width: 50px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.escala-legend-items-inline {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.escala-legend-item-inline {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.75rem;
+    color: var(--content-text-secondary);
+}
+
+/* === MINI BADGES FOR LEGEND === */
+.escala-badge-mini {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 18px;
+    padding: 0 0.25rem;
+    font-family: var(--font-display);
+    font-size: 0.625rem;
+    font-weight: 700;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+.escala-badge-mini.shift-m {
+    background: linear-gradient(135deg, #a7f3d0, #6ee7b7);
+    color: #065f46;
+}
+
+.escala-badge-mini.shift-t {
+    background: linear-gradient(135deg, #a7f3d0, #6ee7b7);
+    color: #065f46;
+}
+
+.escala-badge-mini.shift-n {
+    background: linear-gradient(135deg, #c7d2fe, #a5b4fc);
+    color: #3730a3;
+}
+
+.escala-badge-mini.shift-mt {
+    background: linear-gradient(135deg, #bae6fd, #7dd3fc);
+    color: #075985;
+}
+
+.escala-badge-mini.shift-fc {
+    background: linear-gradient(135deg, #e9d5ff, #d8b4fe);
+    color: #6b21a8;
+}
+
+.escala-badge-mini.shift-f {
+    background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+    color: #475569;
+}
+
+.escala-badge-mini.shift-aula {
+    background: linear-gradient(135deg, #fbcfe8, #f9a8d4);
+    color: #9d174d;
+}
+
+.escala-badge-mini.shift-ab {
+    background: linear-gradient(135deg, #cffafe, #a5f3fc);
+    color: #0e7490;
+}
+
+.escala-badge-mini.shift-empty {
+    background: #f1f5f9;
+    color: var(--content-text-muted);
+    border: 1px dashed #cbd5e1;
+}
+
+/* === TYPE DOTS FOR LEGEND === */
+.escala-type-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.escala-type-dot.tipo-bolsista {
+    background: linear-gradient(135deg, var(--incor-blue-500), var(--incor-blue-600));
+    box-shadow: 0 1px 3px rgba(30, 111, 217, 0.4);
+}
+
+.escala-type-dot.tipo-pagante {
+    background: linear-gradient(135deg, var(--incor-red-500), var(--incor-red-600));
+    box-shadow: 0 1px 3px rgba(226, 30, 38, 0.4);
+}
+
+.escala-type-dot.tipo-residente {
+    background: linear-gradient(135deg, var(--success-green), #10b981);
+    box-shadow: 0 1px 3px rgba(5, 150, 105, 0.4);
+}
+
+.escala-legend-types-row {
+    padding-top: 0.5rem;
+    border-top: 1px dashed rgba(229, 233, 239, 0.8);
+    margin-top: 0.25rem;
+}
+
+/* === EXCEL-STYLE TABLE CONTAINER === */
+.escala-excel-container {
+    background: white;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.escala-excel-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 3rem 1rem;
+    color: var(--content-text-muted);
+    font-size: 0.875rem;
+}
+
+.escala-excel-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(0, 84, 180, 0.2);
+    border-top-color: var(--incor-blue-600);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+.escala-excel-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 3rem 1rem;
+    text-align: center;
+    color: var(--content-text-muted);
+}
+
+.escala-excel-empty svg {
+    width: 2.5rem;
+    height: 2.5rem;
+    opacity: 0.4;
+}
+
+.escala-excel-empty span {
+    font-size: 0.875rem;
+}
+
+.escala-excel-content {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* === EXCEL-STYLE TABLE === */
+.escala-excel-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-main);
+    font-size: 0.75rem;
+}
+
+/* Table Header - Excel style */
+.escala-excel-table thead {
+    background: #f3f4f6;
+}
+
+.escala-excel-table th {
+    padding: 0.5rem 0.375rem;
+    font-weight: 600;
+    font-size: 0.6875rem;
+    text-align: center;
+    color: #374151;
+    border: 1px solid #d1d5db;
+    white-space: nowrap;
+    min-width: 28px;
+}
+
+.escala-excel-table th.col-nome {
+    min-width: 160px;
+    max-width: 200px;
+    text-align: left;
+    padding-left: 0.75rem;
+    position: sticky;
+    left: 0;
+    z-index: 10;
+    background: #f3f4f6;
+}
+
+/* Day of week row */
+.escala-excel-table thead tr:nth-child(2) th {
+    font-size: 0.625rem;
+    padding: 0.25rem 0.375rem;
+    color: #6b7280;
+    background: #e5e7eb;
+}
+
+/* Weekend columns - subtle green tint */
+.escala-excel-table th.weekend,
+.escala-excel-table td.weekend {
+    background-color: rgba(16, 185, 129, 0.08) !important;
+}
+
+.escala-excel-table thead th.weekend {
+    background-color: rgba(16, 185, 129, 0.15) !important;
+}
+
+/* Today column highlight */
+.escala-excel-table th.today-col,
+.escala-excel-table td.today-col {
+    background-color: rgba(0, 84, 180, 0.08) !important;
+    border-left: 2px solid var(--incor-blue-500) !important;
+    border-right: 2px solid var(--incor-blue-500) !important;
+}
+
+.escala-excel-table thead th.today-col {
+    background-color: rgba(0, 84, 180, 0.15) !important;
+    color: var(--incor-blue-700);
+}
+
+/* Table Body */
+.escala-excel-table tbody tr {
+    transition: background-color 0.1s ease;
+}
+
+.escala-excel-table tbody tr:hover {
+    background-color: rgba(0, 84, 180, 0.04);
+}
+
+.escala-excel-table tbody tr:nth-child(even) {
+    background-color: #fafafa;
+}
+
+.escala-excel-table td {
+    padding: 0.375rem 0.25rem;
+    text-align: center;
+    border: 1px solid #e5e7eb;
+    vertical-align: middle;
+}
+
+.escala-excel-table td.col-nome {
+    text-align: left;
+    padding-left: 0.75rem;
+    position: sticky;
+    left: 0;
+    background: white;
+    z-index: 5;
+    border-right: 2px solid #d1d5db;
+}
+
+.escala-excel-table tbody tr:nth-child(even) td.col-nome {
+    background: #fafafa;
+}
+
+.escala-excel-table tbody tr:hover td.col-nome {
+    background: rgba(0, 84, 180, 0.04);
+}
+
+/* Student name cell */
+.escala-excel-nome {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    line-height: 1.25;
+}
+
+.escala-excel-aluno {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #1f2937;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+}
+
+.escala-excel-aluno.tipo-bolsista {
+    color: var(--incor-blue-700);
+}
+
+.escala-excel-aluno.tipo-pagante {
+    color: var(--incor-red-600);
+}
+
+.escala-excel-aluno.tipo-residente {
+    color: var(--success-green);
+}
+
+.escala-excel-supervisor {
+    font-size: 0.625rem;
+    color: #9ca3af;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+}
+
+/* Sector header row */
+.escala-excel-sector-row {
+    background: linear-gradient(135deg, var(--incor-blue-600), var(--incor-blue-500)) !important;
+}
+
+.escala-excel-sector-row td {
+    padding: 0.375rem 0.75rem !important;
+    border: none !important;
+    text-align: left !important;
+}
+
+.escala-excel-sector-row td.col-nome {
+    background: linear-gradient(135deg, var(--incor-blue-600), var(--incor-blue-500)) !important;
+}
+
+.escala-excel-sector-title {
+    font-family: var(--font-display);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+/* Shift badges - small Excel style */
+.escala-excel-shift {
+    display: inline-block;
+    min-width: 20px;
+    height: 18px;
+    line-height: 18px;
+    padding: 0 3px;
+    font-family: var(--font-display);
+    font-size: 0.5625rem;
+    font-weight: 700;
+    border-radius: 3px;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.escala-excel-shift.shift-m {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.escala-excel-shift.shift-t {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.escala-excel-shift.shift-n {
+    background: #e0e7ff;
+    color: #3730a3;
+}
+
+.escala-excel-shift.shift-mt {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.escala-excel-shift.shift-fc {
+    background: #f3e8ff;
+    color: #6b21a8;
+}
+
+.escala-excel-shift.shift-f {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.escala-excel-shift.shift-aula {
+    background: #fce7f3;
+    color: #9d174d;
+}
+
+.escala-excel-shift.shift-ab {
+    background: #cffafe;
+    color: #0e7490;
+}
+
+.escala-excel-shift.shift-empty {
+    background: transparent;
+    color: #d1d5db;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+    .escala-compact-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+    
+    .escala-sector-selector {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+    }
+    
+    .escala-pills {
+        justify-content: flex-start;
+    }
+    
+    .escala-date-display {
+        justify-content: flex-end;
+        font-size: 0.75rem;
+    }
+    
+    .escala-legend-items-inline {
+        gap: 0.75rem;
+    }
+    
+    .escala-excel-table th.col-nome,
+    .escala-excel-table td.col-nome {
+        min-width: 120px;
+        max-width: 140px;
+    }
+    
+    .escala-excel-aluno,
+    .escala-excel-supervisor {
+        max-width: 120px;
+    }
+}
+
+@media (max-width: 480px) {
+    .escala-pill-btn {
+        padding: 0.375rem 0.625rem;
+        font-size: 0.75rem;
+    }
+    
+    .escala-legend-category {
+        min-width: 40px;
+        font-size: 0.6875rem;
+    }
+    
+    .escala-legend-item-inline {
+        font-size: 0.6875rem;
+    }
+    
+    .escala-excel-table {
+        font-size: 0.6875rem;
+    }
+    
+    .escala-excel-table th {
+        padding: 0.375rem 0.25rem;
+        font-size: 0.625rem;
+        min-width: 24px;
+    }
+    
+    .escala-excel-table td {
+        padding: 0.25rem 0.125rem;
+    }
+    
+    .escala-excel-shift {
+        min-width: 18px;
+        height: 16px;
+        line-height: 16px;
+        font-size: 0.5rem;
+    }
+}
+
