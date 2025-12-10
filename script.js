@@ -3056,12 +3056,9 @@ const pontoState = {
                     // Get badge styling
                     const { badgeClass, displayValue } = getCompactShiftBadge(value);
                     
-                    // Convert badge class to Excel style class
-                    const excelBadgeClass = badgeClass.replace('shift-', 'shift-');
-                    
                     html += `
                         <td class="${weekendClass} ${todayClass}">
-                            <span class="escala-excel-shift ${excelBadgeClass}">${escapeHtml(displayValue)}</span>
+                            <span class="escala-excel-shift ${badgeClass}">${escapeHtml(displayValue)}</span>
                         </td>
                     `;
                 });
