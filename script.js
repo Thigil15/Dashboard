@@ -2795,7 +2795,6 @@ const pontoState = {
                     const safeExtension = escapeHtml(file.extension.toUpperCase());
                     
                     html += `
-                    html += `
                         <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; display: flex; align-items: center; gap: 1rem; transition: all 0.2s; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05);" 
                              onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'; this.style.borderColor='${iconColor}';" 
                              onmouseout="this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)'; this.style.borderColor='#e5e7eb';">
@@ -4870,16 +4869,6 @@ const pontoState = {
                 });
             });
             return map;
-        }
-
-        function escapeHtml(value = '') {
-            if (value === null || value === undefined) return '';
-            return String(value)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#39;');
         }
 
         function sanitizeTime(value = '') {
@@ -8897,6 +8886,17 @@ function renderTabFaltas(faltas) {
                 console.log('[Firebase] Login button disabled - waiting for Firebase SDK');
             }
             
+            // CRITICAL FIX: Ensure login button is enabled after max 5 seconds
+            // This prevents users from being stuck if Firebase is slow or blocked
+            const loginButtonTimeout = setTimeout(() => {
+                const btn = document.getElementById('login-button');
+                if (btn && btn.disabled) {
+                    btn.disabled = false;
+                    btn.textContent = 'Entrar';
+                    console.log('[Firebase] Login button enabled by timeout (5s) - Firebase may still be loading');
+                }
+            }, 5000);
+            
             // Setup event handlers first
             setupEventHandlers();
             
@@ -8913,7 +8913,17 @@ function renderTabFaltas(faltas) {
                     console.error('3. Os scripts do Firebase SDK carregaram corretamente');
                     console.error('Mostrando tela de login, mas o login não funcionará até que Firebase seja inicializado.');
                     showView('login-view');
-                    showError('Firebase falhou ao inicializar. Verifique o console (F12) para mais detalhes e recarregue a página.', false);
+                    
+                    // Enable login button even on Firebase failure
+                    const loginButton = document.getElementById('login-button');
+                    if (loginButton) {
+                        loginButton.disabled = false;
+                        loginButton.textContent = 'Entrar';
+                        console.log('[Firebase] Login button enabled despite Firebase initialization failure');
+                    }
+                    clearTimeout(loginButtonTimeout);
+                    
+                    showError('Firebase falhou ao inicializar. Por favor, recarregue a página. Se o problema persistir, verifique sua conexão.', false);
                     return;
                 }
                 
@@ -8923,6 +8933,7 @@ function renderTabFaltas(faltas) {
                     loginButton.disabled = false;
                     loginButton.textContent = 'Entrar';
                     console.log('[Firebase] Login button enabled - Firebase is ready');
+                    clearTimeout(loginButtonTimeout);
                 }
                 
                 // Setup Firebase Authentication State Observer
@@ -8981,6 +8992,15 @@ function renderTabFaltas(faltas) {
                         console.error('  - Se há bloqueadores de anúncios/scripts ativos');
                         console.error('  - O console de rede (Network tab) para erros de carregamento');
                         console.error('Tentando inicializar mesmo assim...');
+                        
+                        // Ensure login button is enabled even if Firebase SDK never loaded
+                        const btn = document.getElementById('login-button');
+                        if (btn && btn.disabled) {
+                            btn.disabled = false;
+                            btn.textContent = 'Entrar';
+                            console.log('[Firebase] Login button force-enabled after SDK timeout');
+                        }
+                        
                         initializeApp();
                     }
                 }, 3000);
