@@ -795,7 +795,6 @@
                     
                 case 'pontoStaticRows':
                 case 'pontoPraticaRows':
-                case 'escalas':
                     // Ponto data updated - refresh ponto view if on ponto tab
                     console.log(`[triggerUIUpdates] Dados de ${stateKey} atualizados, atualizando painel`);
                     
@@ -820,7 +819,7 @@
                     const escalaContent = document.getElementById('content-escala');
                     if (escalaContent && escalaContent.style.display !== 'none') {
                         console.log('[triggerUIUpdates] Atualizando painel de Escala (tab ativa)');
-                        renderEscalaAtualTable();
+                        renderMonthlyEscalaTable();
                     }
                     break;
                     
@@ -829,7 +828,6 @@
                 case 'escalaAtualCardiopediatria':
                     // Legacy EscalaAtual data - not used in new implementation
                     console.log(`[triggerUIUpdates] Dados de ${stateKey} atualizados (legacy, not used)`);
-                    break;
                     break;
                     
                 default:
@@ -2601,7 +2599,7 @@ const pontoState = {
             escalaAtualState.initialized = true;
             
             // Render the new monthly view (no sector parameter needed)
-            renderEscalaAtualTable();
+            renderMonthlyEscalaTable();
         }
         
         /**
@@ -2833,8 +2831,12 @@ const pontoState = {
          * Professional compact schedule view similar to Excel spreadsheets
          * @param {string} sector - The sector to render (enfermaria, uti, cardiopediatria)
          */
-        function renderEscalaAtualTable(sector) {
-            console.log(`[renderEscalaAtualTable] NEW IMPLEMENTATION - Building from Escala sheets data...`);
+        /**
+         * Render the monthly Escala table from Firebase Escala sheets
+         * Aggregates all Escala1, Escala2, etc. into a unified view grouped by sector
+         */
+        function renderMonthlyEscalaTable() {
+            console.log(`[renderMonthlyEscalaTable] NEW IMPLEMENTATION - Building from Escala sheets data...`);
             
             const loadingEl = document.getElementById('escala-atual-loading');
             const emptyEl = document.getElementById('escala-atual-empty');
