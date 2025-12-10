@@ -2701,12 +2701,16 @@ const pontoState = {
             try {
                 // Check if Storage is available (it's optional - may have failed to initialize)
                 if (!fbStorage) {
-                    throw new Error('Firebase Storage não está disponível. O serviço de armazenamento pode não ter sido inicializado corretamente.');
+                    const err = new Error('Firebase Storage não está disponível. O serviço de armazenamento pode não ter sido inicializado corretamente.');
+                    err.isStorageUnavailable = true; // Custom flag for error handling
+                    throw err;
                 }
                 
                 // Check if Storage SDK functions are available (they are set in index.html when SDK loads)
                 if (typeof window.firebase.storageRef !== 'function' || typeof window.firebase.listAll !== 'function') {
-                    throw new Error('Serviço de arquivos temporariamente indisponível.');
+                    const err = new Error('Serviço de arquivos temporariamente indisponível.');
+                    err.isStorageUnavailable = true; // Custom flag for error handling
+                    throw err;
                 }
                 
                 // List all files in the root of the storage bucket
@@ -2759,13 +2763,14 @@ const pontoState = {
                 if (loadingEl) loadingEl.style.display = 'none';
                 if (errorEl) errorEl.style.display = 'flex';
                 if (errorMessageEl) {
-                    // Provide a user-friendly error message
+                    // Provide a user-friendly error message based on error type
                     let userMessage = error.message;
                     if (error.code === 'storage/unauthorized') {
                         userMessage = 'Você não tem permissão para acessar os arquivos. Faça login e tente novamente.';
                     } else if (error.code === 'storage/unauthenticated') {
                         userMessage = 'Você precisa estar logado para ver os arquivos.';
-                    } else if (error.message.includes('não está disponível')) {
+                    } else if (error.isStorageUnavailable) {
+                        // Custom flag set when Storage service is not available
                         userMessage = 'O serviço de arquivos não está disponível no momento. O restante do sistema continua funcionando normalmente.';
                     }
                     errorMessageEl.textContent = userMessage;
