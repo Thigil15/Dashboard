@@ -7,6 +7,7 @@
         const dbListenerUnsubscribes = []; // Store unsubscribe functions for cleanup
         
         // Initialize Firebase (will be called after window.firebase is available)
+        // CRITICAL: Auth and Database are essential. Storage is optional (used only for file downloads).
         function initializeFirebase() {
             if (!window.firebase) {
                 console.error('[Firebase] window.firebase not available yet');
@@ -14,14 +15,39 @@
             }
             
             try {
+                // Step 1: Initialize Firebase App (required for everything)
                 fbApp = window.firebase.initializeApp(window.firebase.firebaseConfig);
+                console.log('[Firebase] App initialized successfully');
+                
+                // Step 2: Initialize Auth (REQUIRED - login won't work without this)
                 fbAuth = window.firebase.getAuth(fbApp);
+                console.log('[Firebase] Auth initialized successfully');
+                
+                // Step 3: Initialize Realtime Database (REQUIRED - site data won't load without this)
                 fbDB = window.firebase.getDatabase(fbApp);
-                fbStorage = window.firebase.getStorage(fbApp);
-                console.log('[Firebase] Initialized successfully with Storage');
+                console.log('[Firebase] Realtime Database initialized successfully');
+                
+                // Step 4: Initialize Storage (OPTIONAL - only needed for file downloads in "Arquivos de Escalas" tab)
+                // If Storage fails, the rest of the site should still work normally
+                try {
+                    if (window.firebase.getStorage) {
+                        fbStorage = window.firebase.getStorage(fbApp);
+                        console.log('[Firebase] Storage initialized successfully');
+                    } else {
+                        console.warn('[Firebase] Storage SDK not loaded - file downloads will be unavailable');
+                        fbStorage = null;
+                    }
+                } catch (storageError) {
+                    console.warn('[Firebase] Storage initialization failed (non-critical):', storageError.message);
+                    console.warn('[Firebase] File downloads in "Arquivos de Escalas" tab will be unavailable.');
+                    fbStorage = null;
+                }
+                
+                console.log('[Firebase] Core services (Auth + Database) initialized successfully');
                 return true;
             } catch (error) {
-                console.error('[Firebase] Initialization error:', error);
+                console.error('[Firebase] Critical initialization error:', error);
+                console.error('[Firebase] Auth or Database failed to initialize - login will not work.');
                 return false;
             }
         }
@@ -2673,8 +2699,14 @@ const pontoState = {
             if (contentEl) contentEl.style.display = 'none';
             
             try {
+                // Check if Storage is available (it's optional - may have failed to initialize)
                 if (!fbStorage) {
-                    throw new Error('Firebase Storage não inicializado');
+                    throw new Error('Firebase Storage não está disponível. O serviço de armazenamento pode não ter sido inicializado corretamente.');
+                }
+                
+                // Check if Storage SDK functions are available
+                if (!window.firebase.storageRef || !window.firebase.listAll) {
+                    throw new Error('SDK do Firebase Storage não está carregado. Verifique sua conexão com a internet.');
                 }
                 
                 // List all files in the root of the storage bucket
@@ -2723,11 +2755,20 @@ const pontoState = {
             } catch (error) {
                 console.error('[loadStorageFiles] Error loading files:', error);
                 
-                // Show error state
+                // Show error state with helpful message
                 if (loadingEl) loadingEl.style.display = 'none';
                 if (errorEl) errorEl.style.display = 'flex';
                 if (errorMessageEl) {
-                    errorMessageEl.textContent = `Erro ao carregar arquivos: ${error.message}. Verifique as permissões do Firebase Storage.`;
+                    // Provide a user-friendly error message
+                    let userMessage = error.message;
+                    if (error.code === 'storage/unauthorized') {
+                        userMessage = 'Você não tem permissão para acessar os arquivos. Faça login e tente novamente.';
+                    } else if (error.code === 'storage/unauthenticated') {
+                        userMessage = 'Você precisa estar logado para ver os arquivos.';
+                    } else if (error.message.includes('não está disponível')) {
+                        userMessage = 'O serviço de arquivos não está disponível no momento. O restante do sistema continua funcionando normalmente.';
+                    }
+                    errorMessageEl.textContent = userMessage;
                 }
             }
         }
