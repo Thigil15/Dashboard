@@ -2961,13 +2961,16 @@ const pontoState = {
                 const [, firstMonth] = firstDate.split('/').map(Number);
                 const [, lastMonth] = lastDate.split('/').map(Number);
                 
+                // Get current year dynamically
+                const currentYear = new Date().getFullYear();
+                
                 const monthNames = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
                                    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
                 
                 if (firstMonth === lastMonth) {
-                    periodLabel = `${monthNames[firstMonth]} 2025 (${firstDate} a ${lastDate})`;
+                    periodLabel = `${monthNames[firstMonth]} ${currentYear} (${firstDate} a ${lastDate})`;
                 } else {
-                    periodLabel = `${monthNames[firstMonth]}-${monthNames[lastMonth]} 2025 (${firstDate} a ${lastDate})`;
+                    periodLabel = `${monthNames[firstMonth]}-${monthNames[lastMonth]} ${currentYear} (${firstDate} a ${lastDate})`;
                 }
             }
             
@@ -3242,13 +3245,16 @@ const pontoState = {
                 const [, firstMonth] = firstDate.split('/').map(Number);
                 const [, lastMonth] = lastDate.split('/').map(Number);
                 
+                // Get current year dynamically
+                const currentYear = new Date().getFullYear();
+                
                 const monthNames = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
                                    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
                 
                 if (firstMonth === lastMonth) {
-                    periodLabel = `${monthNames[firstMonth]} 2025 (${firstDate} a ${lastDate})`;
+                    periodLabel = `${monthNames[firstMonth]} ${currentYear} (${firstDate} a ${lastDate})`;
                 } else {
-                    periodLabel = `${monthNames[firstMonth]}-${monthNames[lastMonth]} 2025 (${firstDate} a ${lastDate})`;
+                    periodLabel = `${monthNames[firstMonth]}-${monthNames[lastMonth]} ${currentYear} (${firstDate} a ${lastDate})`;
                 }
             }
             
@@ -3293,6 +3299,8 @@ const pontoState = {
             console.log(`[renderEscalaAtualTable] Students grouped by ${sortedSectors.length} sectors:`, sortedSectors.join(', '));
             
             // Build the Excel-style table HTML
+            // NOTE: Reusing escala-mensal CSS classes as they provide the exact styling we need
+            // This avoids code duplication and maintains consistency between both tabs
             let tableHTML = `
                 <div class="escala-mensal-header">
                     <h2 class="escala-mensal-title">Escala de Referência - ${periodLabel}</h2>
