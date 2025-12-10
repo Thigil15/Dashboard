@@ -2832,8 +2832,18 @@ const pontoState = {
          * @param {string} sector - The sector to render (enfermaria, uti, cardiopediatria)
          */
         /**
-         * Render the monthly Escala table from Firebase Escala sheets
-         * Aggregates all Escala1, Escala2, etc. into a unified view grouped by sector
+         * Renders the monthly Escala table from Firebase Escala sheets.
+         * Aggregates data from all Escala sheets (Escala1, Escala2, etc.) and displays
+         * students grouped by sector in a professional Excel-like table format.
+         * 
+         * Features:
+         * - Automatic sector grouping (Enfermaria, UTI, Cardiopediatria, etc.)
+         * - Period detection from date range
+         * - Weekend and today highlighting
+         * - Shift badges (M, T, N, MT, FC, F, AULA, AB)
+         * - Student type color-coding (Bolsista=Blue, Pagante=Red, Residente=Green)
+         * 
+         * @returns {void} Updates the DOM with the rendered schedule table
          */
         function renderMonthlyEscalaTable() {
             console.log(`[renderMonthlyEscalaTable] NEW IMPLEMENTATION - Building from Escala sheets data...`);
@@ -2843,7 +2853,7 @@ const pontoState = {
             const contentEl = document.getElementById('escala-atual-content');
             
             if (!loadingEl || !emptyEl || !contentEl) {
-                console.error('[renderEscalaAtualTable] Container elements not found');
+                console.error('[renderMonthlyEscalaTable] Container elements not found');
                 return;
             }
             
