@@ -2614,7 +2614,7 @@ const pontoState = {
          * Setup event listeners for sector tabs
          */
         function setupEscalaAtualTabs() {
-            const tabs = document.querySelectorAll('#escala-atual-tabs .escala-atual-tab');
+            const tabs = document.querySelectorAll('#escala-atual-tabs .escala-pill-btn');
             tabs.forEach(tab => {
                 tab.addEventListener('click', () => {
                     const sector = tab.getAttribute('data-sector');
@@ -2874,12 +2874,12 @@ const pontoState = {
         }
         
         /**
-         * Render Escala Atual Table - Compact Monthly Layout
-         * Redesigned for hospital-style compact schedule view similar to InCor Excel spreadsheets
+         * Render Escala Atual Table - Minimalist Excel-style Layout
+         * Professional compact schedule view similar to Excel spreadsheets
          * @param {string} sector - The sector to render (enfermaria, uti, cardiopediatria)
          */
         function renderEscalaAtualTable(sector) {
-            console.log(`[renderEscalaAtualTable] Rendering ${sector} (compact monthly layout)...`);
+            console.log(`[renderEscalaAtualTable] Rendering ${sector} (minimalist Excel style)...`);
             
             const loadingEl = document.getElementById('escala-atual-loading');
             const emptyEl = document.getElementById('escala-atual-empty');
@@ -2895,7 +2895,7 @@ const pontoState = {
             let sectorLabel = '';
             if (sector === 'enfermaria') {
                 sectorData = appState.escalaAtualEnfermaria;
-                sectorLabel = 'ENFERMARIAS';
+                sectorLabel = 'ENFERMARIA';
             } else if (sector === 'uti') {
                 sectorData = appState.escalaAtualUTI;
                 sectorLabel = 'UTI';
@@ -2933,15 +2933,6 @@ const pontoState = {
                 return dayA - dayB;
             });
             
-            // Calculate date range for header
-            let periodoText = '';
-            if (sortedHeaders.length > 0) {
-                const firstDay = sortedHeaders[0];
-                const lastDay = sortedHeaders[sortedHeaders.length - 1];
-                const year = new Date().getFullYear();
-                periodoText = `${firstDay}/${year} à ${lastDay}/${year}`;
-            }
-            
             // Parse day info for each header (for weekday abbreviations and weekend highlighting)
             const dayInfo = sortedHeaders.map(day => ({
                 date: day,
@@ -2951,62 +2942,36 @@ const pontoState = {
             // Log first student's fields for debugging
             if (alunos.length > 0) {
                 console.log('[renderEscalaAtualTable] Sample student fields:', Object.keys(alunos[0]).slice(0, 15));
-                console.log('[renderEscalaAtualTable] Sample student data:', {
-                    Aluno: alunos[0].Aluno,
-                    NomeCompleto: alunos[0].NomeCompleto,
-                    Nome: alunos[0].Nome,
-                    Supervisor: alunos[0].Supervisor,
-                    IDAluno: alunos[0].IDAluno,
-                    Unidade: alunos[0].Unidade
-                });
             }
             
-            // Build compact monthly table HTML
+            // Build minimalist Excel-style table HTML
             let html = '';
             
-            // Header section with InCor branding
-            html += `
-                <div class="escala-mensal-header">
-                    <div class="escala-mensal-header-title">
-                        <h3 class="escala-mensal-header-main">SERVIÇO DE FISIOTERAPIA - InCor</h3>
-                        <p class="escala-mensal-header-sub">ESCALA MENSAL - PRÁTICA SUPERVISIONADA</p>
-                    </div>
-                    ${periodoText ? `<span class="escala-mensal-header-periodo">${periodoText}</span>` : ''}
-                </div>
-            `;
-            
             // Table wrapper for horizontal scroll
-            html += '<div class="escala-mensal-table-wrapper">';
-            html += '<table class="escala-mensal-table">';
+            html += '<table class="escala-excel-table">';
             
             // === TABLE HEADER ===
             html += '<thead>';
             
             // Row 1: Day numbers
             html += '<tr>';
-            html += '<th class="col-nome">Aluno</th>';
-            html += '<th class="col-id">ID</th>';
-            html += '<th class="col-unidade">Unidade</th>';
+            html += '<th class="col-nome">Aluno / Supervisor</th>';
             dayInfo.forEach(info => {
                 const isToday = info.date === todayBR;
                 const weekendClass = info.isWeekend ? 'weekend' : '';
-                const holidayClass = info.isHoliday ? 'holiday' : '';
                 const todayClass = isToday ? 'today-col' : '';
-                html += `<th class="${weekendClass} ${holidayClass} ${todayClass}">${info.day}</th>`;
+                html += `<th class="${weekendClass} ${todayClass}">${info.day}</th>`;
             });
             html += '</tr>';
             
             // Row 2: Day of week abbreviations (S, T, Q, Q, S, S, D)
             html += '<tr>';
             html += '<th class="col-nome"></th>';
-            html += '<th class="col-id"></th>';
-            html += '<th class="col-unidade"></th>';
             dayInfo.forEach(info => {
                 const isToday = info.date === todayBR;
                 const weekendClass = info.isWeekend ? 'weekend' : '';
-                const holidayClass = info.isHoliday ? 'holiday' : '';
                 const todayClass = isToday ? 'today-col' : '';
-                html += `<th class="${weekendClass} ${holidayClass} ${todayClass}">${info.dayAbbr}</th>`;
+                html += `<th class="${weekendClass} ${todayClass}">${info.dayAbbr}</th>`;
             });
             html += '</tr>';
             
@@ -3015,14 +2980,14 @@ const pontoState = {
             // === TABLE BODY ===
             html += '<tbody>';
             
-            // Number of fixed columns (Name, ID, Unidade) for colspan calculation
-            const FIXED_COLUMNS_COUNT = 3;
+            // Number of columns for colspan
+            const totalCols = 1 + sortedHeaders.length;
             
-            // Add sector separator row
+            // Add sector header row
             html += `
-                <tr class="escala-mensal-sector-row">
-                    <td class="col-nome" colspan="${FIXED_COLUMNS_COUNT + sortedHeaders.length}">
-                        <span class="escala-mensal-sector-title">${sectorLabel}</span>
+                <tr class="escala-excel-sector-row">
+                    <td class="col-nome" colspan="${totalCols}">
+                        <span class="escala-excel-sector-title">${sectorLabel}</span>
                     </td>
                 </tr>
             `;
@@ -3034,8 +2999,6 @@ const pontoState = {
                 // Get student data
                 const nome = aluno.Aluno || aluno.NomeCompleto || aluno.Nome || aluno.nomeCompleto || aluno.nome || '';
                 const supervisor = aluno.Supervisor || aluno.supervisor || '';
-                const idAluno = aluno.IDAluno || aluno.idAluno || aluno.ID || '';
-                const unidade = aluno.Unidade || aluno.unidade || aluno.Setor || aluno.setor || '';
                 
                 // Skip if no name (likely empty row)
                 if (!nome || nome.trim() === '') {
@@ -3055,27 +3018,20 @@ const pontoState = {
                 
                 html += '<tr>';
                 
-                // Name cell (with supervisor in parentheses if available)
+                // Name cell (with supervisor below if available)
                 html += `
                     <td class="col-nome">
-                        <div class="escala-mensal-nome">
-                            <span class="escala-mensal-nome-aluno ${nameTypeClass}">${escapeHtml(nome)}</span>
-                            ${supervisor ? `<span class="escala-mensal-nome-supervisor">(${escapeHtml(supervisor)})</span>` : ''}
+                        <div class="escala-excel-nome">
+                            <span class="escala-excel-aluno ${nameTypeClass}">${escapeHtml(nome)}</span>
+                            ${supervisor ? `<span class="escala-excel-supervisor">${escapeHtml(supervisor)}</span>` : ''}
                         </div>
                     </td>
                 `;
-                
-                // ID cell
-                html += `<td class="col-id">${escapeHtml(idAluno)}</td>`;
-                
-                // Unidade cell
-                html += `<td class="col-unidade">${escapeHtml(unidade)}</td>`;
                 
                 // Day cells
                 dayInfo.forEach(info => {
                     const isToday = info.date === todayBR;
                     const weekendClass = info.isWeekend ? 'weekend' : '';
-                    const holidayClass = info.isHoliday ? 'holiday' : '';
                     const todayClass = isToday ? 'today-col' : '';
                     
                     // Try multiple key formats to find the value
@@ -3101,8 +3057,8 @@ const pontoState = {
                     const { badgeClass, displayValue } = getCompactShiftBadge(value);
                     
                     html += `
-                        <td class="${weekendClass} ${holidayClass} ${todayClass}">
-                            <span class="escala-mensal-shift ${badgeClass}">${escapeHtml(displayValue)}</span>
+                        <td class="${weekendClass} ${todayClass}">
+                            <span class="escala-excel-shift ${badgeClass}">${escapeHtml(displayValue)}</span>
                         </td>
                     `;
                 });
@@ -3111,11 +3067,10 @@ const pontoState = {
             });
             
             html += '</tbody></table>';
-            html += '</div>'; // Close table wrapper
             
             contentEl.innerHTML = html;
             
-            console.log(`[renderEscalaAtualTable] Rendered ${alunos.length} students with ${sortedHeaders.length} days (compact monthly layout)`);
+            console.log(`[renderEscalaAtualTable] Rendered ${alunos.length} students with ${sortedHeaders.length} days (minimalist Excel style)`);
         }
 
         // --- CÁLCULOS AUXILIARES ---
