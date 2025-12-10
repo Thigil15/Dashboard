@@ -2704,9 +2704,9 @@ const pontoState = {
                     throw new Error('Firebase Storage não está disponível. O serviço de armazenamento pode não ter sido inicializado corretamente.');
                 }
                 
-                // Check if Storage SDK functions are available
-                if (!window.firebase.storageRef || !window.firebase.listAll) {
-                    throw new Error('SDK do Firebase Storage não está carregado. Verifique sua conexão com a internet.');
+                // Check if Storage SDK functions are available (they are set in index.html when SDK loads)
+                if (typeof window.firebase.storageRef !== 'function' || typeof window.firebase.listAll !== 'function') {
+                    throw new Error('Serviço de arquivos temporariamente indisponível.');
                 }
                 
                 // List all files in the root of the storage bucket
