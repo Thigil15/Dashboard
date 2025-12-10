@@ -8886,14 +8886,29 @@ function renderTabFaltas(faltas) {
                 console.log('[Firebase] Login button disabled - waiting for Firebase SDK');
             }
             
-            // CRITICAL FIX: Ensure login button is enabled after max 5 seconds
-            // This prevents users from being stuck if Firebase is slow or blocked
-            const loginButtonTimeout = setTimeout(() => {
+            // Timeout reference for cleanup
+            let loginButtonTimeout = null;
+            
+            // Helper function to enable login button and clear timeout
+            const enableLoginButton = (reason) => {
                 const btn = document.getElementById('login-button');
-                if (btn && btn.disabled) {
+                if (btn) {
                     btn.disabled = false;
                     btn.textContent = 'Entrar';
-                    console.log('[Firebase] Login button enabled by timeout (5s) - Firebase may still be loading');
+                    console.log(`[Firebase] Login button enabled - ${reason}`);
+                }
+                if (loginButtonTimeout) {
+                    clearTimeout(loginButtonTimeout);
+                    loginButtonTimeout = null;
+                }
+            };
+            
+            // CRITICAL FIX: Ensure login button is enabled after max 5 seconds
+            // This prevents users from being stuck if Firebase is slow or blocked
+            loginButtonTimeout = setTimeout(() => {
+                const btn = document.getElementById('login-button');
+                if (btn && btn.disabled) {
+                    enableLoginButton('timeout (5s), Firebase may still be loading');
                 }
             }, 5000);
             
@@ -8915,26 +8930,14 @@ function renderTabFaltas(faltas) {
                     showView('login-view');
                     
                     // Enable login button even on Firebase failure
-                    const loginButton = document.getElementById('login-button');
-                    if (loginButton) {
-                        loginButton.disabled = false;
-                        loginButton.textContent = 'Entrar';
-                        console.log('[Firebase] Login button enabled despite Firebase initialization failure');
-                    }
-                    clearTimeout(loginButtonTimeout);
+                    enableLoginButton('despite Firebase initialization failure');
                     
                     showError('Firebase falhou ao inicializar. Por favor, recarregue a página. Se o problema persistir, verifique sua conexão.', false);
                     return;
                 }
                 
                 // CRITICAL FIX: Enable login button now that Firebase is ready
-                const loginButton = document.getElementById('login-button');
-                if (loginButton) {
-                    loginButton.disabled = false;
-                    loginButton.textContent = 'Entrar';
-                    console.log('[Firebase] Login button enabled - Firebase is ready');
-                    clearTimeout(loginButtonTimeout);
-                }
+                enableLoginButton('Firebase is ready');
                 
                 // Setup Firebase Authentication State Observer
                 // This is the new entry point for the application
@@ -8996,9 +8999,7 @@ function renderTabFaltas(faltas) {
                         // Ensure login button is enabled even if Firebase SDK never loaded
                         const btn = document.getElementById('login-button');
                         if (btn && btn.disabled) {
-                            btn.disabled = false;
-                            btn.textContent = 'Entrar';
-                            console.log('[Firebase] Login button force-enabled after SDK timeout');
+                            enableLoginButton('force-enabled after SDK timeout');
                         }
                         
                         initializeApp();
