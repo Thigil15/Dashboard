@@ -2795,7 +2795,6 @@ const pontoState = {
                     const safeExtension = escapeHtml(file.extension.toUpperCase());
                     
                     html += `
-                    html += `
                         <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; display: flex; align-items: center; gap: 1rem; transition: all 0.2s; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05);" 
                              onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'; this.style.borderColor='${iconColor}';" 
                              onmouseout="this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)'; this.style.borderColor='#e5e7eb';">
@@ -4870,16 +4869,6 @@ const pontoState = {
                 });
             });
             return map;
-        }
-
-        function escapeHtml(value = '') {
-            if (value === null || value === undefined) return '';
-            return String(value)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#39;');
         }
 
         function sanitizeTime(value = '') {
@@ -8897,6 +8886,32 @@ function renderTabFaltas(faltas) {
                 console.log('[Firebase] Login button disabled - waiting for Firebase SDK');
             }
             
+            // Timeout reference for cleanup
+            let loginButtonTimeout = null;
+            
+            // Helper function to enable login button and clear timeout
+            const enableLoginButton = (reason) => {
+                const btn = document.getElementById('login-button');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = 'Entrar';
+                    console.log(`[Firebase] Login button enabled - ${reason}`);
+                }
+                if (loginButtonTimeout) {
+                    clearTimeout(loginButtonTimeout);
+                    loginButtonTimeout = null;
+                }
+            };
+            
+            // CRITICAL FIX: Ensure login button is enabled after max 5 seconds
+            // This prevents users from being stuck if Firebase is slow or blocked
+            loginButtonTimeout = setTimeout(() => {
+                const btn = document.getElementById('login-button');
+                if (btn && btn.disabled) {
+                    enableLoginButton('timeout (5s), Firebase may still be loading');
+                }
+            }, 5000);
+            
             // Setup event handlers first
             setupEventHandlers();
             
@@ -8913,17 +8928,16 @@ function renderTabFaltas(faltas) {
                     console.error('3. Os scripts do Firebase SDK carregaram corretamente');
                     console.error('Mostrando tela de login, mas o login não funcionará até que Firebase seja inicializado.');
                     showView('login-view');
-                    showError('Firebase falhou ao inicializar. Verifique o console (F12) para mais detalhes e recarregue a página.', false);
+                    
+                    // Enable login button even on Firebase failure
+                    enableLoginButton('despite Firebase initialization failure');
+                    
+                    showError('Firebase falhou ao inicializar. Por favor, recarregue a página. Se o problema persistir, verifique sua conexão.', false);
                     return;
                 }
                 
                 // CRITICAL FIX: Enable login button now that Firebase is ready
-                const loginButton = document.getElementById('login-button');
-                if (loginButton) {
-                    loginButton.disabled = false;
-                    loginButton.textContent = 'Entrar';
-                    console.log('[Firebase] Login button enabled - Firebase is ready');
-                }
+                enableLoginButton('Firebase is ready');
                 
                 // Setup Firebase Authentication State Observer
                 // This is the new entry point for the application
@@ -8981,6 +8995,13 @@ function renderTabFaltas(faltas) {
                         console.error('  - Se há bloqueadores de anúncios/scripts ativos');
                         console.error('  - O console de rede (Network tab) para erros de carregamento');
                         console.error('Tentando inicializar mesmo assim...');
+                        
+                        // Ensure login button is enabled even if Firebase SDK never loaded
+                        const btn = document.getElementById('login-button');
+                        if (btn && btn.disabled) {
+                            enableLoginButton('force-enabled after SDK timeout');
+                        }
+                        
                         initializeApp();
                     }
                 }, 3000);
