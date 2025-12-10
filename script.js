@@ -3,7 +3,7 @@
         // ====================================================================
         
         // Wait for window.firebase to be available (loaded by index.html)
-        let fbApp, fbAuth, fbDB;
+        let fbApp, fbAuth, fbDB, fbStorage;
         const dbListenerUnsubscribes = []; // Store unsubscribe functions for cleanup
         
         // Initialize Firebase (will be called after window.firebase is available)
@@ -17,7 +17,8 @@
                 fbApp = window.firebase.initializeApp(window.firebase.firebaseConfig);
                 fbAuth = window.firebase.getAuth(fbApp);
                 fbDB = window.firebase.getDatabase(fbApp);
-                console.log('[Firebase] Initialized successfully');
+                fbStorage = window.firebase.getStorage(fbApp);
+                console.log('[Firebase] Initialized successfully with Storage');
                 return true;
             } catch (error) {
                 console.error('[Firebase] Initialization error:', error);
@@ -2638,6 +2639,8 @@ const pontoState = {
                             renderMonthlyEscalaTable();
                         } else if (targetTab === 'atual') {
                             renderEscalaAtualTable();
+                        } else if (targetTab === 'arquivos') {
+                            loadStorageFiles();
                         }
                     }
                 });
@@ -2648,6 +2651,204 @@ const pontoState = {
             
             // Render the default tab (mensal)
             renderMonthlyEscalaTable();
+        }
+        
+        /**
+         * Load and display files from Firebase Storage
+         * Files are expected to be in the root of the storage bucket
+         */
+        async function loadStorageFiles() {
+            console.log('[loadStorageFiles] Starting to load files from Firebase Storage...');
+            
+            const loadingEl = document.getElementById('storage-files-loading');
+            const emptyEl = document.getElementById('storage-files-empty');
+            const errorEl = document.getElementById('storage-files-error');
+            const contentEl = document.getElementById('storage-files-content');
+            const errorMessageEl = document.getElementById('storage-error-message');
+            
+            // Show loading state
+            if (loadingEl) loadingEl.style.display = 'flex';
+            if (emptyEl) emptyEl.style.display = 'none';
+            if (errorEl) errorEl.style.display = 'none';
+            if (contentEl) contentEl.style.display = 'none';
+            
+            try {
+                if (!fbStorage) {
+                    throw new Error('Firebase Storage não inicializado');
+                }
+                
+                // List all files in the root of the storage bucket
+                const listRef = window.firebase.storageRef(fbStorage, '/');
+                const result = await window.firebase.listAll(listRef);
+                
+                console.log(`[loadStorageFiles] Found ${result.items.length} files in Storage`);
+                
+                if (result.items.length === 0) {
+                    // No files found
+                    if (loadingEl) loadingEl.style.display = 'none';
+                    if (emptyEl) emptyEl.style.display = 'flex';
+                    return;
+                }
+                
+                // Get download URLs for all files
+                const filePromises = result.items.map(async (itemRef) => {
+                    const url = await window.firebase.getDownloadURL(itemRef);
+                    const name = itemRef.name;
+                    const fullPath = itemRef.fullPath;
+                    
+                    // Get file size and last modified (if available via metadata)
+                    // Note: getMetadata requires storage.object.get permission
+                    // We'll skip it for now to avoid permission issues
+                    
+                    return {
+                        name,
+                        fullPath,
+                        url,
+                        // Extract file extension
+                        extension: name.split('.').pop().toLowerCase()
+                    };
+                });
+                
+                const files = await Promise.all(filePromises);
+                
+                console.log('[loadStorageFiles] Files with URLs:', files);
+                
+                // Render files list
+                renderStorageFiles(files);
+                
+                // Hide loading, show content
+                if (loadingEl) loadingEl.style.display = 'none';
+                if (contentEl) contentEl.style.display = 'block';
+                
+            } catch (error) {
+                console.error('[loadStorageFiles] Error loading files:', error);
+                
+                // Show error state
+                if (loadingEl) loadingEl.style.display = 'none';
+                if (errorEl) errorEl.style.display = 'flex';
+                if (errorMessageEl) {
+                    errorMessageEl.textContent = `Erro ao carregar arquivos: ${error.message}. Verifique as permissões do Firebase Storage.`;
+                }
+            }
+        }
+        
+        /**
+         * Render the list of files from Firebase Storage
+         * @param {Array} files - Array of file objects with name, url, extension
+         */
+        function renderStorageFiles(files) {
+            const contentEl = document.getElementById('storage-files-content');
+            if (!contentEl) return;
+            
+            // Filter for Excel files (xlsx, xlsm, xls)
+            const excelFiles = files.filter(f => ['xlsx', 'xlsm', 'xls'].includes(f.extension));
+            const otherFiles = files.filter(f => !['xlsx', 'xlsm', 'xls'].includes(f.extension));
+            
+            let html = '';
+            
+            // Excel files section
+            if (excelFiles.length > 0) {
+                html += `
+                    <div style="margin-bottom: 2rem;">
+                        <h3 style="font-size: 1.125rem; font-weight: 600; color: #0f172a; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <svg style="width: 20px; height: 20px; color: #059669;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Arquivos Excel (${excelFiles.length})
+                        </h3>
+                        <div style="display: grid; gap: 0.75rem;">
+                `;
+                
+                excelFiles.forEach(file => {
+                    // Determine icon color based on extension
+                    let iconColor = '#059669'; // Green for xlsx/xlsm
+                    if (file.extension === 'xlsm') {
+                        iconColor = '#0891b2'; // Cyan for xlsm (macros)
+                    } else if (file.extension === 'xls') {
+                        iconColor = '#6366f1'; // Indigo for old xls
+                    }
+                    
+                    html += `
+                        <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; display: flex; align-items: center; gap: 1rem; transition: all 0.2s; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05);" 
+                             onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'; this.style.borderColor='${iconColor}';" 
+                             onmouseout="this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)'; this.style.borderColor='#e5e7eb';">
+                            <div style="width: 48px; height: 48px; background: linear-gradient(135deg, ${iconColor}, ${iconColor}dd); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <svg style="width: 28px; height: 28px; color: white;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                            </div>
+                            <div style="flex: 1; min-width: 0;">
+                                <h4 style="font-size: 0.95rem; font-weight: 600; color: #0f172a; margin: 0 0 0.25rem 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${file.name}">
+                                    ${file.name}
+                                </h4>
+                                <p style="font-size: 0.8rem; color: #64748b; margin: 0;">
+                                    Formato: ${file.extension.toUpperCase()}
+                                </p>
+                            </div>
+                            <a href="${file.url}" download="${file.name}" style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, ${iconColor}, ${iconColor}dd); color: white; border-radius: 6px; font-weight: 500; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s; flex-shrink: 0;" 
+                               onmouseover="this.style.transform='scale(1.05)';" 
+                               onmouseout="this.style.transform='scale(1)';">
+                                <svg style="width: 18px; height: 18px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                Baixar
+                            </a>
+                        </div>
+                    `;
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Other files section (if any)
+            if (otherFiles.length > 0) {
+                html += `
+                    <div>
+                        <h3 style="font-size: 1.125rem; font-weight: 600; color: #0f172a; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <svg style="width: 20px; height: 20px; color: #64748b;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                            Outros Arquivos (${otherFiles.length})
+                        </h3>
+                        <div style="display: grid; gap: 0.75rem;">
+                `;
+                
+                otherFiles.forEach(file => {
+                    html += `
+                        <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; display: flex; align-items: center; gap: 1rem; transition: all 0.2s;">
+                            <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #64748b, #475569); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <svg style="width: 28px; height: 28px; color: white;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                </svg>
+                            </div>
+                            <div style="flex: 1; min-width: 0;">
+                                <h4 style="font-size: 0.95rem; font-weight: 600; color: #0f172a; margin: 0 0 0.25rem 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${file.name}">
+                                    ${file.name}
+                                </h4>
+                                <p style="font-size: 0.8rem; color: #64748b; margin: 0;">
+                                    Formato: ${file.extension.toUpperCase()}
+                                </p>
+                            </div>
+                            <a href="${file.url}" download="${file.name}" style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #64748b, #475569); color: white; border-radius: 6px; font-weight: 500; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s; flex-shrink: 0;">
+                                <svg style="width: 18px; height: 18px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                Baixar
+                            </a>
+                        </div>
+                    `;
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            }
+            
+            contentEl.innerHTML = html;
         }
         
         /**

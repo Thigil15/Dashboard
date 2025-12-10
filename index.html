@@ -590,6 +590,12 @@
                             </svg>
                             <span>Escala Atual</span>
                         </button>
+                        <button class="escala-tab-btn" data-escala-tab="arquivos">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                            </svg>
+                            <span>Arquivos de Escalas</span>
+                        </button>
                     </div>
 
                     <!-- Escala Mensal Container -->
@@ -750,6 +756,59 @@
                             </div>
                             <div id="escala-atual-content" class="escala-excel-content" style="display: none;">
                                 <!-- Excel-style table will be rendered by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Arquivos de Escalas Container -->
+                    <div id="escala-arquivos-container" class="escala-tab-content">
+                        <!-- Header -->
+                        <div class="escala-compact-toolbar">
+                            <div class="escala-date-display">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <span>Arquivos XLSX das Escalas</span>
+                            </div>
+                        </div>
+
+                        <!-- Info Box -->
+                        <div style="background: linear-gradient(135deg, #0891b2, #0e7490); color: white; padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; box-shadow: 0 4px 12px rgba(8, 145, 178, 0.15);">
+                            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem;">
+                                <svg style="width: 24px; height: 24px; flex-shrink: 0;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <h3 style="margin: 0; font-size: 1.125rem; font-weight: 600;">Arquivos Originais</h3>
+                            </div>
+                            <p style="margin: 0; font-size: 0.95rem; opacity: 0.95; line-height: 1.6;">
+                                Aqui você pode baixar os arquivos Excel (XLSM) originais das escalas que foram carregados no Firebase Storage. 
+                                Estes arquivos contêm as escalas completas dos alunos com todas as formatações e fórmulas originais.
+                            </p>
+                        </div>
+
+                        <!-- Files Container -->
+                        <div class="escala-excel-container">
+                            <div id="storage-files-loading" class="escala-excel-loading">
+                                <div class="escala-excel-spinner"></div>
+                                <span>Carregando arquivos do Firebase Storage...</span>
+                            </div>
+                            <div id="storage-files-empty" class="escala-excel-empty" style="display: none;">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                                </svg>
+                                <span>Nenhum arquivo encontrado no Firebase Storage.</span>
+                                <p style="margin-top: 0.5rem; font-size: 0.875rem; opacity: 0.7;">
+                                    Verifique se os arquivos foram enviados para o Firebase Storage.
+                                </p>
+                            </div>
+                            <div id="storage-files-error" class="escala-excel-empty" style="display: none; background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                                </svg>
+                                <span id="storage-error-message">Erro ao carregar arquivos.</span>
+                            </div>
+                            <div id="storage-files-content" style="display: none;">
+                                <!-- Files list will be rendered by JavaScript -->
                             </div>
                         </div>
                     </div>
@@ -1277,6 +1336,12 @@
             onValue,
             get 
         } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+        import { 
+            getStorage, 
+            ref as storageRef, 
+            listAll, 
+            getDownloadURL 
+        } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
 
         // Import Firebase configuration
         import firebaseConfigModule from './firebase-config.js';
@@ -1293,6 +1358,10 @@
             ref,
             onValue,
             get,
+            getStorage,
+            storageRef,
+            listAll,
+            getDownloadURL,
             firebaseConfig
         };
         
