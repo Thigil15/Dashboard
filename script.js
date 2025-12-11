@@ -747,18 +747,8 @@
                     break;
                     
                 case 'escalas':
-                    // Escala data updated - refresh escala view if on escala tab
+                    // Escala data updated - log but don't try to update removed tab
                     console.log(`[triggerUIUpdates] Dados de ${stateKey} atualizados`);
-                    
-                    const escalaContent = document.getElementById('content-escala');
-                    if (escalaContent && escalaContent.style.display !== 'none') {
-                        console.log('[triggerUIUpdates] Atualizando painel de Escala (tab ativa)');
-                        // Check which tab is active and render the appropriate table
-                        const activeTabBtn = document.querySelector('.escala-tab-btn.active');
-                        if (activeTabBtn && activeTabBtn.dataset.escalaTab === 'mensal') {
-                            renderMonthlyEscalaTable();
-                        }
-                    }
                     break;
                     
                 default:
@@ -2487,17 +2477,11 @@ const pontoState = {
                 }
             }
             
-            // Initialize escala atual panel when switching to escala tab
-            if (tabName === 'escala') {
-                console.log('[switchMainTab] Inicializando painel de Escala Atual...');
-                initializeEscalaAtualPanel();
-            }
-            
             window.scrollTo(0, 0);
         }
         
         // ====================================================================
-        // ESCALA - MONTHLY VIEW FROM FIREBASE
+        // ESCALA - MONTHLY VIEW FROM FIREBASE (kept for student detail page)
         // Renders the complete monthly schedule from Escala sheets
         // ====================================================================
         
@@ -2506,7 +2490,7 @@ const pontoState = {
         };
         
         /**
-         * Initialize the Escala panel
+         * Initialize the Escala panel (kept for potential future use)
          * Sets up the date display and renders the monthly escala table
          */
         function initializeEscalaAtualPanel() {
