@@ -2497,16 +2497,17 @@ const pontoState = {
         }
         
         // ====================================================================
-        // ESCALA - NEW MONTHLY VIEW FROM FIREBASE
+        // ESCALA - MONTHLY VIEW FROM FIREBASE
         // Renders the complete monthly schedule from Escala sheets
         // ====================================================================
         
-        let escalaAtualState = {
+        let escalaPanelState = {
             initialized: false
         };
         
         /**
-         * Initialize the Escala panel - simplified version with only Escala Mensal
+         * Initialize the Escala panel
+         * Sets up the date display and renders the monthly escala table
          */
         function initializeEscalaAtualPanel() {
             console.log('[initializeEscalaAtualPanel] Initializing Escala panel...');
@@ -2527,7 +2528,7 @@ const pontoState = {
             }
             
             // Mark as initialized
-            escalaAtualState.initialized = true;
+            escalaPanelState.initialized = true;
             
             // Render the monthly escala table
             renderMonthlyEscalaTable();
