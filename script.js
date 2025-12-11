@@ -3,11 +3,11 @@
         // ====================================================================
         
         // Wait for window.firebase to be available (loaded by index.html)
-        let fbApp, fbAuth, fbDB, fbStorage;
+        let fbApp, fbAuth, fbDB;
         const dbListenerUnsubscribes = []; // Store unsubscribe functions for cleanup
         
         // Initialize Firebase (will be called after window.firebase is available)
-        // CRITICAL: Auth and Database are essential. Storage is optional (used only for file downloads).
+        // CRITICAL: Auth and Database are essential.
         function initializeFirebase() {
             if (!window.firebase) {
                 console.error('[Firebase] window.firebase not available yet');
@@ -26,22 +26,6 @@
                 // Step 3: Initialize Realtime Database (REQUIRED - site data won't load without this)
                 fbDB = window.firebase.getDatabase(fbApp);
                 console.log('[Firebase] Realtime Database initialized successfully');
-                
-                // Step 4: Initialize Storage (OPTIONAL - only needed for file downloads in "Arquivos de Escalas" tab)
-                // If Storage fails, the rest of the site should still work normally
-                try {
-                    if (window.firebase.getStorage) {
-                        fbStorage = window.firebase.getStorage(fbApp);
-                        console.log('[Firebase] Storage initialized successfully');
-                    } else {
-                        console.warn('[Firebase] Storage SDK not loaded - file downloads will be unavailable');
-                        fbStorage = null;
-                    }
-                } catch (storageError) {
-                    console.warn('[Firebase] Storage initialization failed (non-critical):', storageError.message);
-                    console.warn('[Firebase] File downloads in "Arquivos de Escalas" tab will be unavailable.');
-                    fbStorage = null;
-                }
                 
                 console.log('[Firebase] Core services (Auth + Database) initialized successfully');
                 return true;
@@ -296,85 +280,8 @@
                     }
                     
                     return Object.keys(escalasData).length > 0 ? escalasData : appState.escalas;
-                }},
-                // EscalaAtual - Reference schedules with M, T, N codes (3 sectors)
-                { path: 'exportAll/EscalaAtualCardiopediatria/dados', stateKey: 'escalaAtualCardiopediatria', processor: (data) => {
-                    return processEscalaAtualData(data, 'Cardiopediatria');
-                }},
-                { path: 'exportAll/EscalaAtualUTI/dados', stateKey: 'escalaAtualUTI', processor: (data) => {
-                    return processEscalaAtualData(data, 'UTI');
-                }},
-                { path: 'exportAll/EscalaAtualEnfermaria/dados', stateKey: 'escalaAtualEnfermaria', processor: (data) => {
-                    return processEscalaAtualData(data, 'Enfermaria');
                 }}
             ];
-            
-            // Helper function to process EscalaAtual data
-            function processEscalaAtualData(data, sectorName) {
-                if (!data || !Array.isArray(data)) {
-                    console.warn(`[setupDatabaseListeners] ⚠️ EscalaAtual${sectorName} não encontrada ou formato inválido`);
-                    return { alunos: [], headersDay: [], setor: sectorName };
-                }
-                
-                console.log(`[setupDatabaseListeners] ✅ EscalaAtual${sectorName} carregada: ${data.length} registros`);
-                
-                // Log sample row fields for debugging
-                if (data.length > 0 && data[0]) {
-                    console.log(`[setupDatabaseListeners] EscalaAtual${sectorName} - Campos disponíveis:`, Object.keys(data[0]).join(', '));
-                    console.log(`[setupDatabaseListeners] EscalaAtual${sectorName} - Amostra de dados:`, {
-                        Aluno: data[0].Aluno,
-                        Supervisor: data[0].Supervisor,
-                        IDAluno: data[0].IDAluno,
-                        Unidade: data[0].Unidade,
-                        Horario: data[0].Horario || data[0]['Horário']
-                    });
-                }
-                
-                // Process similar to escalas - extract day headers
-                const headersDay = [];
-                // Regex to match date formats: d_mm, dd_mm, d_m, dd_m (day_month)
-                // Examples: 1_12, 01_12, 31_12, 1_01, 15_1, etc.
-                const dayKeyRegex = /^(\d{1,2})_(\d{1,2})$/;
-                
-                if (data.length > 0 && data[0]) {
-                    const firstRow = data[0];
-                    const dayKeyMap = new Map();
-                    
-                    Object.keys(firstRow).forEach((rowKey) => {
-                        const match = rowKey.match(dayKeyRegex);
-                        if (match) {
-                            const day = match[1].padStart(2, '0');
-                            const month = match[2].padStart(2, '0');
-                            const pretty = `${day}/${month}`;
-                            if (!dayKeyMap.has(rowKey)) {
-                                dayKeyMap.set(rowKey, pretty);
-                            }
-                        }
-                    });
-                    
-                    const uniqueDates = Array.from(new Set(dayKeyMap.values()));
-                    headersDay.push(...uniqueDates);
-                    
-                    console.log(`[setupDatabaseListeners] EscalaAtual${sectorName} - ${headersDay.length} dias encontrados:`, headersDay.slice(0, 10).join(', ') + (headersDay.length > 10 ? '...' : ''));
-                    
-                    // Add pretty-formatted keys to each row for easier access
-                    data.forEach((row) => {
-                        if (row && typeof row === 'object') {
-                            dayKeyMap.forEach((pretty, originalKey) => {
-                                if (typeof row[pretty] === 'undefined') {
-                                    row[pretty] = row[originalKey];
-                                }
-                            });
-                        }
-                    });
-                }
-                
-                return {
-                    alunos: data,
-                    headersDay: headersDay,
-                    setor: sectorName
-                };
-            }
             
             // Setup listener for each path
             pathMappings.forEach(({ path, stateKey, processor }) => {
@@ -850,23 +757,6 @@
                         const activeTabBtn = document.querySelector('.escala-tab-btn.active');
                         if (activeTabBtn && activeTabBtn.dataset.escalaTab === 'mensal') {
                             renderMonthlyEscalaTable();
-                        }
-                    }
-                    break;
-                    
-                case 'escalaAtualEnfermaria':
-                case 'escalaAtualUTI':
-                case 'escalaAtualCardiopediatria':
-                    // EscalaAtual data updated - refresh if on Escala Atual tab
-                    console.log(`[triggerUIUpdates] Dados de ${stateKey} atualizados`);
-                    
-                    const escalaContentAtual = document.getElementById('content-escala');
-                    if (escalaContentAtual && escalaContentAtual.style.display !== 'none') {
-                        // Check if we're on the "Escala Atual" tab
-                        const activeTabBtnAtual = document.querySelector('.escala-tab-btn.active');
-                        if (activeTabBtnAtual && activeTabBtnAtual.dataset.escalaTab === 'atual') {
-                            console.log('[triggerUIUpdates] Atualizando Escala Atual (tab ativa)');
-                            renderEscalaAtualTable();
                         }
                     }
                     break;
@@ -1465,9 +1355,6 @@ const appState = {
     pontoHojeMap: new Map(),
     pontoHojeAliases: new Map(),
     escalas: {},
-    escalaAtualCardiopediatria: { alunos: [], headersDay: [], setor: 'Cardiopediatria' },
-    escalaAtualUTI: { alunos: [], headersDay: [], setor: 'UTI' },
-    escalaAtualEnfermaria: { alunos: [], headersDay: [], setor: 'Enfermaria' },
     ausenciasReposicoes: [],
     notasTeoricas: {},
     notasPraticas: {},
@@ -2610,25 +2497,25 @@ const pontoState = {
         }
         
         // ====================================================================
-        // ESCALA - NEW MONTHLY VIEW FROM FIREBASE
+        // ESCALA - MONTHLY VIEW FROM FIREBASE
         // Renders the complete monthly schedule from Escala sheets
         // ====================================================================
         
-        let escalaAtualState = {
+        let escalaPanelState = {
             initialized: false
         };
         
         /**
-         * Initialize the Escala panel - simplified version without tabs
+         * Initialize the Escala panel
+         * Sets up the date display and renders the monthly escala table
          */
         function initializeEscalaAtualPanel() {
-            console.log('[initializeEscalaAtualPanel] Initializing Escala panel with tabs...');
+            console.log('[initializeEscalaAtualPanel] Initializing Escala panel...');
             
-            // Update today's date in both tab headers
+            // Update today's date in the header
             const todayDateEl = document.getElementById('escala-atual-today-date');
-            const escalaAtualDateEl = document.getElementById('escala-atual-date');
             
-            if (todayDateEl || escalaAtualDateEl) {
+            if (todayDateEl) {
                 const today = new Date();
                 const formattedDate = today.toLocaleDateString('pt-BR', {
                     weekday: 'long',
@@ -2637,145 +2524,14 @@ const pontoState = {
                     year: 'numeric'
                 });
                 
-                if (todayDateEl) todayDateEl.textContent = formattedDate;
-                if (escalaAtualDateEl) escalaAtualDateEl.textContent = formattedDate;
+                todayDateEl.textContent = formattedDate;
             }
-            
-            // Setup tab switching
-            const tabButtons = document.querySelectorAll('.escala-tab-btn');
-            tabButtons.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const targetTab = btn.dataset.escalaTab;
-                    
-                    // Update button states
-                    tabButtons.forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    
-                    // Update content visibility
-                    document.querySelectorAll('.escala-tab-content').forEach(content => {
-                        content.classList.remove('active');
-                    });
-                    
-                    const tabContent = document.getElementById(`escala-${targetTab}-container`);
-                    if (tabContent) {
-                        tabContent.classList.add('active');
-                        
-                        // Render the appropriate table when tab becomes active
-                        if (targetTab === 'mensal') {
-                            renderMonthlyEscalaTable();
-                        } else if (targetTab === 'atual') {
-                            renderEscalaAtualTable();
-                        } else if (targetTab === 'arquivos') {
-                            loadStorageFiles();
-                        }
-                    }
-                });
-            });
             
             // Mark as initialized
-            escalaAtualState.initialized = true;
+            escalaPanelState.initialized = true;
             
-            // Render the default tab (mensal)
+            // Render the monthly escala table
             renderMonthlyEscalaTable();
-        }
-        
-        /**
-         * Load and display files from Firebase Storage
-         * Files are expected to be in the root of the storage bucket
-         */
-        async function loadStorageFiles() {
-            console.log('[loadStorageFiles] Starting to load files from Firebase Storage...');
-            
-            const loadingEl = document.getElementById('storage-files-loading');
-            const emptyEl = document.getElementById('storage-files-empty');
-            const errorEl = document.getElementById('storage-files-error');
-            const contentEl = document.getElementById('storage-files-content');
-            const errorMessageEl = document.getElementById('storage-error-message');
-            
-            // Show loading state
-            if (loadingEl) loadingEl.style.display = 'flex';
-            if (emptyEl) emptyEl.style.display = 'none';
-            if (errorEl) errorEl.style.display = 'none';
-            if (contentEl) contentEl.style.display = 'none';
-            
-            try {
-                // Check if Storage is available (it's optional - may have failed to initialize)
-                if (!fbStorage) {
-                    const err = new Error('Firebase Storage não está disponível. O serviço de armazenamento pode não ter sido inicializado corretamente.');
-                    err.isStorageUnavailable = true; // Custom flag for error handling
-                    throw err;
-                }
-                
-                // Check if Storage SDK functions are available (they are set in index.html when SDK loads)
-                if (typeof window.firebase.storageRef !== 'function' || typeof window.firebase.listAll !== 'function') {
-                    const err = new Error('Serviço de arquivos temporariamente indisponível.');
-                    err.isStorageUnavailable = true; // Custom flag for error handling
-                    throw err;
-                }
-                
-                // List all files in the root of the storage bucket
-                const listRef = window.firebase.storageRef(fbStorage, '/');
-                const result = await window.firebase.listAll(listRef);
-                
-                console.log(`[loadStorageFiles] Found ${result.items.length} files in Storage`);
-                
-                if (result.items.length === 0) {
-                    // No files found
-                    if (loadingEl) loadingEl.style.display = 'none';
-                    if (emptyEl) emptyEl.style.display = 'flex';
-                    return;
-                }
-                
-                // Get download URLs for all files
-                const filePromises = result.items.map(async (itemRef) => {
-                    const url = await window.firebase.getDownloadURL(itemRef);
-                    const name = itemRef.name;
-                    const fullPath = itemRef.fullPath;
-                    
-                    // Get file size and last modified (if available via metadata)
-                    // Note: getMetadata requires storage.object.get permission
-                    // We'll skip it for now to avoid permission issues
-                    
-                    return {
-                        name,
-                        fullPath,
-                        url,
-                        // Extract file extension
-                        extension: name.split('.').pop().toLowerCase()
-                    };
-                });
-                
-                const files = await Promise.all(filePromises);
-                
-                console.log('[loadStorageFiles] Files with URLs:', files);
-                
-                // Render files list
-                renderStorageFiles(files);
-                
-                // Hide loading, show content
-                if (loadingEl) loadingEl.style.display = 'none';
-                if (contentEl) contentEl.style.display = 'block';
-                
-            } catch (error) {
-                console.error('[loadStorageFiles] Error loading files:', error);
-                
-                // Show error state with helpful message
-                if (loadingEl) loadingEl.style.display = 'none';
-                if (errorEl) errorEl.style.display = 'flex';
-                if (errorMessageEl) {
-                    // Provide a user-friendly error message based on error type
-                    let userMessage = error.message;
-                    if (error.code === 'storage/unauthorized') {
-                        userMessage = 'Você não tem permissão para acessar os arquivos. Faça login e tente novamente.';
-                    } else if (error.code === 'storage/unauthenticated') {
-                        userMessage = 'Você precisa estar logado para ver os arquivos.';
-                    } else if (error.isStorageUnavailable) {
-                        // Custom flag set when Storage service is not available
-                        userMessage = 'O serviço de arquivos não está disponível no momento. O restante do sistema continua funcionando normalmente.';
-                    }
-                    errorMessageEl.textContent = userMessage;
-                }
-            }
         }
         
         /**
@@ -2788,144 +2544,6 @@ const pontoState = {
             const div = document.createElement('div');
             div.textContent = str;
             return div.innerHTML;
-        }
-        
-        /**
-         * Get icon color based on file extension
-         * @param {string} extension - File extension (lowercase)
-         * @returns {string} Hex color code
-         */
-        function getFileIconColor(extension) {
-            const colorMap = {
-                'xlsm': '#0891b2',  // Cyan for xlsm (macros)
-                'xls': '#6366f1',   // Indigo for old xls
-                'xlsx': '#059669'   // Green for xlsx
-            };
-            return colorMap[extension] || '#059669'; // Default to green
-        }
-        
-        /**
-         * Render the list of files from Firebase Storage
-         * @param {Array} files - Array of file objects with name, url, extension
-         */
-        function renderStorageFiles(files) {
-            const contentEl = document.getElementById('storage-files-content');
-            if (!contentEl) return;
-            
-            // Filter for Excel files (xlsx, xlsm, xls)
-            const excelFiles = files.filter(f => ['xlsx', 'xlsm', 'xls'].includes(f.extension));
-            const otherFiles = files.filter(f => !['xlsx', 'xlsm', 'xls'].includes(f.extension));
-            
-            let html = '';
-            
-            // Excel files section
-            if (excelFiles.length > 0) {
-                html += `
-                    <div style="margin-bottom: 2rem;">
-                        <h3 style="font-size: 1.125rem; font-weight: 600; color: #0f172a; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-                            <svg style="width: 20px; height: 20px; color: #059669;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            Arquivos Excel (${excelFiles.length})
-                        </h3>
-                        <div style="display: grid; gap: 0.75rem;">
-                `;
-                
-                excelFiles.forEach(file => {
-                    // Get icon color based on extension using helper function
-                    const iconColor = getFileIconColor(file.extension);
-                    
-                    // Sanitize file name and URL to prevent XSS
-                    const safeName = escapeHtml(file.name);
-                    const safeUrl = escapeHtml(file.url);
-                    const safeExtension = escapeHtml(file.extension.toUpperCase());
-                    
-                    html += `
-                        <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; display: flex; align-items: center; gap: 1rem; transition: all 0.2s; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05);" 
-                             onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'; this.style.borderColor='${iconColor}';" 
-                             onmouseout="this.style.boxShadow='0 1px 2px rgba(0,0,0,0.05)'; this.style.borderColor='#e5e7eb';">
-                            <div style="width: 48px; height: 48px; background: linear-gradient(135deg, ${iconColor}, ${iconColor}dd); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                <svg style="width: 28px; height: 28px; color: white;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                            </div>
-                            <div style="flex: 1; min-width: 0;">
-                                <h4 style="font-size: 0.95rem; font-weight: 600; color: #0f172a; margin: 0 0 0.25rem 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${safeName}">
-                                    ${safeName}
-                                </h4>
-                                <p style="font-size: 0.8rem; color: #64748b; margin: 0;">
-                                    Formato: ${safeExtension}
-                                </p>
-                            </div>
-                            <a href="${safeUrl}" download="${safeName}" style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, ${iconColor}, ${iconColor}dd); color: white; border-radius: 6px; font-weight: 500; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s; flex-shrink: 0;" 
-                               onmouseover="this.style.transform='scale(1.05)';" 
-                               onmouseout="this.style.transform='scale(1)';">
-                                <svg style="width: 18px; height: 18px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                </svg>
-                                Baixar
-                            </a>
-                        </div>
-                    `;
-                });
-                
-                html += `
-                        </div>
-                    </div>
-                `;
-            }
-            
-            // Other files section (if any)
-            if (otherFiles.length > 0) {
-                html += `
-                    <div>
-                        <h3 style="font-size: 1.125rem; font-weight: 600; color: #0f172a; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-                            <svg style="width: 20px; height: 20px; color: #64748b;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                            </svg>
-                            Outros Arquivos (${otherFiles.length})
-                        </h3>
-                        <div style="display: grid; gap: 0.75rem;">
-                `;
-                
-                otherFiles.forEach(file => {
-                    // Sanitize file name and URL to prevent XSS
-                    const safeName = escapeHtml(file.name);
-                    const safeUrl = escapeHtml(file.url);
-                    const safeExtension = escapeHtml(file.extension.toUpperCase());
-                    
-                    html += `
-                        <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; display: flex; align-items: center; gap: 1rem; transition: all 0.2s;">
-                            <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #64748b, #475569); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                <svg style="width: 28px; height: 28px; color: white;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                </svg>
-                            </div>
-                            <div style="flex: 1; min-width: 0;">
-                                <h4 style="font-size: 0.95rem; font-weight: 600; color: #0f172a; margin: 0 0 0.25rem 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${safeName}">
-                                    ${safeName}
-                                </h4>
-                                <p style="font-size: 0.8rem; color: #64748b; margin: 0;">
-                                    Formato: ${safeExtension}
-                                </p>
-                            </div>
-                            <a href="${safeUrl}" download="${safeName}" style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #64748b, #475569); color: white; border-radius: 6px; font-weight: 500; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s; flex-shrink: 0;">
-                                <svg style="width: 18px; height: 18px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                </svg>
-                                Baixar
-                            </a>
-                        </div>
-                    `;
-                });
-                
-                html += `
-                        </div>
-                    </div>
-                `;
-            }
-            
-            contentEl.innerHTML = html;
         }
         
         /**
@@ -3448,282 +3066,6 @@ const pontoState = {
             contentEl.innerHTML = html;
             
             console.log(`[renderMonthlyEscalaTable] ✅ Rendered ${allStudents.length} students grouped in ${sortedSectors.length} sectors with ${sortedDates.length} days`);
-        }
-
-        /**
-         * [NEW] Render Escala Atual Table - Reference schedules from EscalaAtual Firebase data
-         * Aggregates data from EscalaAtualUTI, EscalaAtualCardiopediatria, EscalaAtualEnfermaria
-         * Shows shift codes (M, T, N, MT, FC, F, AULA, AB) for each student by date
-         */
-        function renderEscalaAtualTable() {
-            console.log(`[renderEscalaAtualTable] Rendering reference schedules from EscalaAtual data...`);
-            
-            const loadingEl = document.getElementById('escala-atual-loading');
-            const emptyEl = document.getElementById('escala-atual-empty');
-            const contentEl = document.getElementById('escala-atual-content');
-            
-            if (!loadingEl || !emptyEl || !contentEl) {
-                console.error('[renderEscalaAtualTable] Container elements not found');
-                return;
-            }
-            
-            // Collect data from all three EscalaAtual sources
-            const escalaAtualData = {
-                UTI: appState.escalaAtualUTI || null,
-                Cardiopediatria: appState.escalaAtualCardiopediatria || null,
-                Enfermaria: appState.escalaAtualEnfermaria || null
-            };
-            
-            // Aggregate all students from all sectors
-            const allStudents = [];
-            const allDates = new Set();
-            
-            Object.entries(escalaAtualData).forEach(([sectorName, sectorData]) => {
-                if (sectorData && sectorData.alunos && Array.isArray(sectorData.alunos)) {
-                    sectorData.alunos.forEach(aluno => {
-                        if (aluno && (aluno.Aluno || aluno.NomeCompleto || aluno.Nome)) {
-                            allStudents.push({
-                                ...aluno,
-                                _sector: sectorName,
-                                _sectorData: sectorData
-                            });
-                        }
-                    });
-                    
-                    // Collect all dates
-                    if (sectorData.headersDay && Array.isArray(sectorData.headersDay)) {
-                        sectorData.headersDay.forEach(date => allDates.add(date));
-                    }
-                }
-            });
-            
-            // Check if we have data
-            if (allStudents.length === 0 || allDates.size === 0) {
-                console.warn('[renderEscalaAtualTable] No students or dates found in EscalaAtual data');
-                loadingEl.style.display = 'none';
-                emptyEl.style.display = 'flex';
-                contentEl.style.display = 'none';
-                emptyEl.querySelector('span').textContent = 'Nenhum dado de Escala Atual encontrado no Firebase.';
-                return;
-            }
-            
-            // Sort dates chronologically
-            const sortedDates = Array.from(allDates).sort((a, b) => {
-                const [dayA, monthA] = a.split('/').map(Number);
-                const [dayB, monthB] = b.split('/').map(Number);
-                if (monthA !== monthB) return monthA - monthB;
-                return dayA - dayB;
-            });
-            
-            // Determine period label from dates
-            let periodLabel = '';
-            if (sortedDates.length > 0) {
-                const firstDate = sortedDates[0];
-                const lastDate = sortedDates[sortedDates.length - 1];
-                const [, firstMonth] = firstDate.split('/').map(Number);
-                const [, lastMonth] = lastDate.split('/').map(Number);
-                
-                // Get current year dynamically
-                const currentYear = new Date().getFullYear();
-                
-                const monthNames = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-                                   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-                
-                if (firstMonth === lastMonth) {
-                    periodLabel = `${monthNames[firstMonth]} ${currentYear} (${firstDate} a ${lastDate})`;
-                } else {
-                    periodLabel = `${monthNames[firstMonth]}-${monthNames[lastMonth]} ${currentYear} (${firstDate} a ${lastDate})`;
-                }
-            }
-            
-            console.log(`[renderEscalaAtualTable] Aggregated ${allStudents.length} students with ${sortedDates.length} dates`);
-            console.log(`[renderEscalaAtualTable] Period: ${periodLabel}`);
-            
-            // Hide loading, show content
-            loadingEl.style.display = 'none';
-            emptyEl.style.display = 'none';
-            contentEl.style.display = 'block';
-            
-            // Get today's date in DD/MM format for highlighting
-            const todayBR = appState.todayBR || new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-            
-            // Parse day info for each date (for weekday abbreviations and weekend highlighting)
-            const dayInfo = sortedDates.map(day => ({
-                date: day,
-                ...parseDayMonth(day)
-            }));
-            
-            // Group students by sector
-            const studentsBySector = {};
-            allStudents.forEach(student => {
-                const sector = student._sector || 'Outros';
-                if (!studentsBySector[sector]) {
-                    studentsBySector[sector] = [];
-                }
-                studentsBySector[sector].push(student);
-            });
-            
-            // Sort sectors (UTI, Cardiopediatria, Enfermaria, then others alphabetically)
-            const sectorOrder = ['UTI', 'Cardiopediatria', 'Enfermaria'];
-            const sortedSectors = Object.keys(studentsBySector).sort((a, b) => {
-                const indexA = sectorOrder.indexOf(a);
-                const indexB = sectorOrder.indexOf(b);
-                if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-                if (indexA !== -1) return -1;
-                if (indexB !== -1) return 1;
-                return a.localeCompare(b);
-            });
-            
-            console.log(`[renderEscalaAtualTable] Students grouped by ${sortedSectors.length} sectors:`, sortedSectors.join(', '));
-            
-            // Build the Excel-style table HTML
-            // NOTE: Reusing escala-mensal CSS classes as they provide the exact styling we need
-            // This avoids code duplication and maintains consistency between both tabs
-            let tableHTML = `
-                <div class="escala-mensal-header">
-                    <h2 class="escala-mensal-title">Escala de Referência - ${periodLabel}</h2>
-                    <p class="escala-mensal-subtitle">Códigos de turno por aluno e data</p>
-                </div>
-                
-                <div class="escala-mensal-table-wrapper">
-                    <table class="escala-mensal-table">
-                        <thead>
-                            <tr class="header-dias">
-                                <th class="col-nome sticky-col">Nome / Supervisor</th>
-            `;
-            
-            // Day number headers
-            dayInfo.forEach(info => {
-                const isToday = info.date === todayBR;
-                const isWeekend = info.dayIndex === 0 || info.dayIndex === 6;
-                const classes = [];
-                if (isWeekend) classes.push('weekend');
-                if (isToday) classes.push('today-col');
-                
-                tableHTML += `<th class="${classes.join(' ')}">${info.day}</th>`;
-            });
-            
-            tableHTML += `
-                            </tr>
-                            <tr class="header-dia-semana">
-                                <th class="col-nome sticky-col">Setor</th>
-            `;
-            
-            // Day of week headers (D, S, T, Q, Q, S, S)
-            dayInfo.forEach(info => {
-                const isToday = info.date === todayBR;
-                const isWeekend = info.dayIndex === 0 || info.dayIndex === 6;
-                const classes = [];
-                if (isWeekend) classes.push('weekend');
-                if (isToday) classes.push('today-col');
-                
-                tableHTML += `<th class="${classes.join(' ')}">${info.dayOfWeekAbbr}</th>`;
-            });
-            
-            tableHTML += `
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
-            
-            // Render students grouped by sector
-            sortedSectors.forEach(sector => {
-                const students = studentsBySector[sector];
-                
-                // Sector header row
-                tableHTML += `
-                    <tr class="escala-mensal-sector-row">
-                        <td colspan="${sortedDates.length + 1}">
-                            <div class="escala-mensal-sector-header">
-                                <span class="escala-mensal-sector-name">${sector}</span>
-                                <span class="escala-mensal-sector-count">${students.length} ${students.length === 1 ? 'aluno' : 'alunos'}</span>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-                
-                // Student rows
-                students.forEach(student => {
-                    const studentName = student.Aluno || student.NomeCompleto || student.Nome || 'Sem nome';
-                    const supervisor = student.Supervisor || '';
-                    const horario = student.Horario || student['Horário'] || '';
-                    const curso = student.Curso || '';
-                    
-                    // Determine student type for color coding
-                    let tipoClass = 'tipo-bolsista'; // default
-                    if (curso) {
-                        const cursoLower = curso.toLowerCase();
-                        if (cursoLower.includes('pagante') || cursoLower.includes('pago')) {
-                            tipoClass = 'tipo-pagante';
-                        } else if (cursoLower.includes('residente') || cursoLower.includes('residência')) {
-                            tipoClass = 'tipo-residente';
-                        }
-                    }
-                    
-                    tableHTML += `<tr class="row-aluno">`;
-                    tableHTML += `
-                        <td class="col-nome sticky-col">
-                            <div class="escala-mensal-nome-aluno ${tipoClass}">${studentName}</div>
-                            ${supervisor ? `<div class="escala-mensal-nome-supervisor">${supervisor}</div>` : ''}
-                            ${horario ? `<div class="escala-mensal-horario">${horario}</div>` : ''}
-                        </td>
-                    `;
-                    
-                    // Render shift codes for each date
-                    dayInfo.forEach(info => {
-                        const isToday = info.date === todayBR;
-                        const isWeekend = info.dayIndex === 0 || info.dayIndex === 6;
-                        const classes = [];
-                        if (isWeekend) classes.push('weekend');
-                        if (isToday) classes.push('today-col');
-                        
-                        // Try to get shift value from student data
-                        // Date could be in formats: DD/MM, D_MM, DD_M, D_M
-                        let shiftValue = '';
-                        const dateFormats = [
-                            info.date, // DD/MM
-                            `${info.day}_${info.month}`, // DD_MM
-                            `${parseInt(info.day, 10)}_${info.month}`, // D_MM
-                            `${info.day}_${parseInt(info.month, 10)}`, // DD_M
-                            `${parseInt(info.day, 10)}_${parseInt(info.month, 10)}` // D_M
-                        ];
-                        
-                        for (const format of dateFormats) {
-                            if (student[format]) {
-                                shiftValue = String(student[format]).trim();
-                                break;
-                            }
-                        }
-                        
-                        // Normalize shift value (uppercase, remove spaces)
-                        shiftValue = shiftValue.toUpperCase().replace(/\s+/g, '');
-                        
-                        // Render shift badge
-                        let shiftHTML = '';
-                        if (shiftValue && shiftValue !== '-') {
-                            const shiftClass = `shift-${shiftValue.toLowerCase()}`;
-                            shiftHTML = `<span class="escala-mensal-shift ${shiftClass}">${shiftValue}</span>`;
-                        } else if (shiftValue === '-') {
-                            shiftHTML = `<span class="escala-mensal-shift shift-empty">-</span>`;
-                        }
-                        
-                        tableHTML += `<td class="${classes.join(' ')}">${shiftHTML}</td>`;
-                    });
-                    
-                    tableHTML += `</tr>`;
-                });
-            });
-            
-            tableHTML += `
-                        </tbody>
-                    </table>
-                </div>
-            `;
-            
-            // Render the table
-            contentEl.innerHTML = tableHTML;
-            
-            console.log(`[renderEscalaAtualTable] ✅ Rendered ${allStudents.length} students grouped in ${sortedSectors.length} sectors with ${sortedDates.length} days`);
         }
 
         // --- CÁLCULOS AUXILIARES ---
@@ -6769,34 +6111,6 @@ function calcularBancoHoras(emailNorm, nomeNorm, escalas) {
                         });
                         break;
                     }
-                }
-            }
-        }
-    }
-    
-    // Fallback: Buscar informações do setor/supervisor na EscalaAtual (se NotasPraticas não encontrou)
-    if (!resultado.setor) {
-        const setores = [
-            { data: appState.escalaAtualEnfermaria, nome: 'Enfermaria' },
-            { data: appState.escalaAtualUTI, nome: 'UTI' },
-            { data: appState.escalaAtualCardiopediatria, nome: 'Cardiopediatria' }
-        ];
-        
-        for (const setor of setores) {
-            if (setor.data && setor.data.alunos && setor.data.alunos.length > 0) {
-                const aluno = setor.data.alunos.find(a => {
-                    const aEmailNorm = normalizeString(a.EmailHC || '');
-                    const aNomeNorm = normalizeString(a.NomeCompleto || '');
-                    return (aEmailNorm && aEmailNorm === emailNorm) || 
-                           (aNomeNorm && aNomeNorm === nomeNorm);
-                });
-                
-                if (aluno) {
-                    resultado.setor = setor.nome;
-                    resultado.supervisor = aluno.Supervisor || aluno.supervisor || null;
-                    resultado.unidade = aluno.Unidade || aluno.unidade || setor.nome;
-                    console.log(`[calcularBancoHoras v3] ✅ Setor do aluno (fallback EscalaAtual): ${setor.nome}`);
-                    break;
                 }
             }
         }
