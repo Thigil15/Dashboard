@@ -5355,8 +5355,8 @@ const pontoState = {
                 : '<span class="ponto-escala-pill">Sem escala</span>';
             
             // Determine modalidade (Prática vs Teoria) with distinct visual styling
-            // NOTE: The business logic (fixed 18h, tolerance) is handled in the backend (Ponto.gs/PontoEscala.gs)
-            // Here we only provide visual distinction between Prática and Teoria
+            // NOTE: Business logic (fixed 18h, tolerance) is in enrichPontoRows() function
+            // This section only provides visual distinction between Prática and Teoria
             const modalidadeNorm = (row.modalidade || '').toLowerCase().trim();
             const isTeoria = modalidadeNorm === 'teoria' || modalidadeNorm === 'teórica' || modalidadeNorm === 'teorica' || modalidadeNorm.includes('teoria');
             const isPratica = modalidadeNorm === 'prática' || modalidadeNorm === 'pratica' || modalidadeNorm.includes('pratica') || modalidadeNorm.includes('prática');
