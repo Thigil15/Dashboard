@@ -386,7 +386,207 @@
             // Setup listeners for notas práticas (dynamic sheets)
             setupNotasPraticasListeners();
             
+            // Setup listeners for EscalaAtual (Enfermaria, UTI, Cardiopediatria)
+            setupEscalaAtualListeners();
+            
             console.log('[setupDatabaseListeners] Listeners configurados com sucesso.');
+        }
+        
+        /**
+         * Setup listeners for EscalaAtual data from Firebase
+         * This data is used to calculate the real "Escalados" count for the Ponto tab
+         * Only students without "F" (Folga) for the selected date should be counted
+         */
+        function setupEscalaAtualListeners() {
+            const escalaAtualPaths = [
+                { path: 'exportAll/EscalaAtualEnfermaria/dados', stateKey: 'escalaAtualEnfermaria' },
+                { path: 'exportAll/EscalaAtualUTI/dados', stateKey: 'escalaAtualUTI' },
+                { path: 'exportAll/EscalaAtualCardiopediatria/dados', stateKey: 'escalaAtualCardiopediatria' }
+            ];
+            
+            escalaAtualPaths.forEach(({ path, stateKey }) => {
+                const dbRef = window.firebase.ref(fbDB, path);
+                
+                const unsubscribe = window.firebase.onValue(dbRef, (snapshot) => {
+                    try {
+                        const data = snapshot.val();
+                        
+                        if (data) {
+                            const processed = (Array.isArray(data) ? data : Object.values(data))
+                                .filter(row => row && typeof row === 'object')
+                                .map(row => deepNormalizeObject(row));
+                            
+                            appState[stateKey] = processed;
+                            console.log(`[setupEscalaAtualListeners] ✅ ${stateKey} carregado com ${processed.length} registros`);
+                            
+                            // Log sample fields for debugging
+                            if (processed.length > 0) {
+                                const sampleFields = Object.keys(processed[0]).slice(0, 15).join(', ');
+                                console.log(`[setupEscalaAtualListeners] Campos disponíveis: ${sampleFields}`);
+                            }
+                        } else {
+                            console.warn(`[setupEscalaAtualListeners] ⚠️ Nenhum dado em ${path}`);
+                            appState[stateKey] = [];
+                        }
+                        
+                        // Mark as loaded
+                        if (appState.dataLoadingState) {
+                            appState.dataLoadingState[stateKey] = true;
+                        }
+                        
+                        // Trigger UI update for Ponto tab
+                        triggerUIUpdates('escalaAtual');
+                        
+                    } catch (error) {
+                        console.error(`[setupEscalaAtualListeners] Erro ao processar ${stateKey}:`, error);
+                        appState[stateKey] = [];
+                        if (appState.dataLoadingState) {
+                            appState.dataLoadingState[stateKey] = true;
+                        }
+                    }
+                }, (error) => {
+                    console.error(`[setupEscalaAtualListeners] Erro no listener ${stateKey}:`, error);
+                    appState[stateKey] = [];
+                    if (appState.dataLoadingState) {
+                        appState.dataLoadingState[stateKey] = true;
+                    }
+                });
+                
+                dbListenerUnsubscribes.push(unsubscribe);
+            });
+            
+            console.log('[setupEscalaAtualListeners] Listeners para EscalaAtual configurados.');
+        }
+        
+        // Constant for Folga value in EscalaAtual
+        const ESCALA_FOLGA_VALUE = 'F';
+        
+        /**
+         * Helper function to check if a schedule value indicates Folga
+         * @param {*} value - The schedule value from EscalaAtual
+         * @returns {boolean} - True if the student is on Folga
+         */
+        function isStudentOnFolga(value) {
+            return value && typeof value === 'string' && value.toUpperCase().trim() === ESCALA_FOLGA_VALUE;
+        }
+        
+        /**
+         * Helper function to check if a schedule value represents active duty
+         * @param {*} value - The schedule value from EscalaAtual
+         * @returns {boolean} - True if the student has an active schedule
+         */
+        function isActiveSchedule(value) {
+            if (!value) return false;
+            const strValue = value.toString().trim();
+            return strValue !== '' && strValue !== '-';
+        }
+        
+        /**
+         * Convert a date to possible Firebase column key formats
+         * @param {string} dateIso - Date in ISO format (YYYY-MM-DD) or DD/MM
+         * @returns {object|null} - Object with various date key formats, or null if invalid
+         */
+        function getDateKeyVariants(dateIso) {
+            let dateDDMM = '';
+            
+            if (dateIso && dateIso.includes('-')) {
+                // ISO format: 2025-12-11 -> 11/12
+                const parts = dateIso.split('-');
+                if (parts.length === 3 && parts[1] && parts[2]) {
+                    // Validate parts are numeric
+                    const month = parseInt(parts[1], 10);
+                    const day = parseInt(parts[2], 10);
+                    if (!isNaN(month) && !isNaN(day)) {
+                        dateDDMM = `${parts[2]}/${parts[1]}`;
+                    }
+                }
+            } else if (dateIso && dateIso.includes('/')) {
+                // Already in DD/MM format
+                dateDDMM = dateIso;
+            }
+            
+            if (!dateDDMM) {
+                return null;
+            }
+            
+            const dateUnderscore = dateDDMM.replace('/', '_');
+            const dateDDMMNoLeadingZero = dateDDMM.replace(/^0/, '');
+            const dateUnderscoreNoLeadingZero = dateUnderscore.replace(/^0/, '');
+            
+            return {
+                dateDDMM,
+                dateUnderscore,
+                dateDDMMNoLeadingZero,
+                dateUnderscoreNoLeadingZero,
+                // For key matching
+                normalizedTarget: dateUnderscoreNoLeadingZero
+            };
+        }
+        
+        /**
+         * Calculate the real "Escalados" count for a given date
+         * Uses EscalaAtual data from Firebase (Enfermaria, UTI, Cardiopediatria)
+         * Excludes students with "F" (Folga) for that date
+         * 
+         * @param {string} dateIso - Date in ISO format (YYYY-MM-DD) or DD/MM
+         * @returns {number} - Count of students scheduled (not on Folga) for that date
+         */
+        function calculateEscaladosForDate(dateIso) {
+            // Get all date key variants
+            const dateKeys = getDateKeyVariants(dateIso);
+            
+            if (!dateKeys) {
+                console.log('[calculateEscaladosForDate] Data inválida:', dateIso);
+                return 0;
+            }
+            
+            let escaladosCount = 0;
+            
+            // Combine all EscalaAtual data with null checks
+            const allEscalaAtual = [
+                ...(appState.escalaAtualEnfermaria || []),
+                ...(appState.escalaAtualUTI || []),
+                ...(appState.escalaAtualCardiopediatria || [])
+            ];
+            
+            if (allEscalaAtual.length === 0) {
+                return 0;
+            }
+            
+            // Count students who are NOT on Folga for the selected date
+            allEscalaAtual.forEach(student => {
+                if (!student) return;
+                
+                // Try to find the value for this date using pre-computed key variants
+                let dateValue = student[dateKeys.dateDDMM] || 
+                               student[dateKeys.dateUnderscore] || 
+                               student[dateKeys.dateDDMMNoLeadingZero] || 
+                               student[dateKeys.dateUnderscoreNoLeadingZero];
+                
+                // If no value found with direct keys, try normalized key matching
+                if (dateValue === undefined) {
+                    for (const key of Object.keys(student)) {
+                        const normalizedKey = key.replace(/[\/\-]/g, '_').replace(/^0/, '');
+                        if (normalizedKey === dateKeys.normalizedTarget) {
+                            dateValue = student[key];
+                            break;
+                        }
+                    }
+                }
+                
+                // No data for this date
+                if (dateValue === undefined) return;
+                
+                // Skip if student is on Folga
+                if (isStudentOnFolga(dateValue)) return;
+                
+                // Count if student has an active schedule
+                if (isActiveSchedule(dateValue)) {
+                    escaladosCount++;
+                }
+            });
+            
+            return escaladosCount;
         }
         
         /**
@@ -747,17 +947,17 @@
                     break;
                     
                 case 'escalas':
-                    // Escala data updated - refresh escala view if on escala tab
+                    // Escala data updated - log but don't try to update removed tab
                     console.log(`[triggerUIUpdates] Dados de ${stateKey} atualizados`);
-                    
-                    const escalaContent = document.getElementById('content-escala');
-                    if (escalaContent && escalaContent.style.display !== 'none') {
-                        console.log('[triggerUIUpdates] Atualizando painel de Escala (tab ativa)');
-                        // Check which tab is active and render the appropriate table
-                        const activeTabBtn = document.querySelector('.escala-tab-btn.active');
-                        if (activeTabBtn && activeTabBtn.dataset.escalaTab === 'mensal') {
-                            renderMonthlyEscalaTable();
-                        }
+                    break;
+                
+                case 'escalaAtual':
+                    // EscalaAtual data updated - refresh ponto view to update Escalados count
+                    console.log('[triggerUIUpdates] Dados de EscalaAtual atualizados');
+                    const pontoContentEscala = document.getElementById('content-ponto');
+                    if (pontoContentEscala && !pontoContentEscala.classList.contains('hidden')) {
+                        console.log('[triggerUIUpdates] Atualizando painel de ponto com novos dados de EscalaAtual');
+                        refreshPontoView();
                     }
                     break;
                     
@@ -1368,6 +1568,10 @@ const appState = {
         pdfRawUrl: '',
         pdfViewerUrl: ''
     },
+    // EscalaAtual data from Firebase - used to calculate real "Escalados" count
+    escalaAtualEnfermaria: [],
+    escalaAtualUTI: [],
+    escalaAtualCardiopediatria: [],
     // Track data loading state
     dataLoadingState: {
         alunos: false,
@@ -1376,7 +1580,10 @@ const appState = {
         notasPraticas: false,
         pontoStaticRows: false,
         pontoPraticaRows: false,
-        escalas: false
+        escalas: false,
+        escalaAtualEnfermaria: false,
+        escalaAtualUTI: false,
+        escalaAtualCardiopediatria: false
     }
 };
 
@@ -2487,17 +2694,11 @@ const pontoState = {
                 }
             }
             
-            // Initialize escala atual panel when switching to escala tab
-            if (tabName === 'escala') {
-                console.log('[switchMainTab] Inicializando painel de Escala Atual...');
-                initializeEscalaAtualPanel();
-            }
-            
             window.scrollTo(0, 0);
         }
         
         // ====================================================================
-        // ESCALA - MONTHLY VIEW FROM FIREBASE
+        // ESCALA - MONTHLY VIEW FROM FIREBASE (kept for student detail page)
         // Renders the complete monthly schedule from Escala sheets
         // ====================================================================
         
@@ -2506,7 +2707,7 @@ const pontoState = {
         };
         
         /**
-         * Initialize the Escala panel
+         * Initialize the Escala panel (kept for potential future use)
          * Sets up the date display and renders the monthly escala table
          */
         function initializeEscalaAtualPanel() {
@@ -4590,7 +4791,7 @@ const pontoState = {
                 }
             }
 
-            document.querySelectorAll('#ponto-filter-bar .escala-pill').forEach((pill) => {
+            document.querySelectorAll('#ponto-filter-bar .ponto-pill').forEach((pill) => {
                 const filter = pill.getAttribute('data-filter');
                 pill.classList.toggle('active', filter === pontoState.filter);
             });
@@ -4768,12 +4969,19 @@ const pontoState = {
                 const lateCount = enriched.filter((row) => row.status === 'late').length;
                 const absentCount = enriched.filter((row) => row.status === 'absent').length;
                 const offCount = enriched.filter((row) => row.status === 'off').length;
-                // Total escalados should not include people on rest days
-                const totalEscalados = Math.max(
-                    Math.max(0, (dataset.rosterSize || 0) - offCount), 
-                    Math.max(0, (enriched.length - offCount) || 0), 
-                    Math.max(0, TOTAL_ESCALADOS - offCount)
-                );
+                
+                // Calculate total escalados from EscalaAtual data (Enfermaria, UTI, Cardiopediatria)
+                // This excludes students with "F" (Folga) for the selected date
+                let totalEscalados = calculateEscaladosForDate(pontoState.selectedDate);
+                
+                // If EscalaAtual data is not available yet, fall back to previous calculation
+                if (totalEscalados === 0) {
+                    totalEscalados = Math.max(
+                        Math.max(0, (dataset.rosterSize || 0) - offCount), 
+                        Math.max(0, (enriched.length - offCount) || 0), 
+                        Math.max(0, TOTAL_ESCALADOS - offCount)
+                    );
+                }
 
                 updatePontoSummary({
                     total: totalEscalados,
@@ -4834,7 +5042,13 @@ const pontoState = {
             const presentCount = rows.filter((row) => row.status === 'present').length;
             const lateCount = rows.filter((row) => row.status === 'late').length;
             const absentCount = rows.filter((row) => row.status === 'absent').length;
-            const totalEscalados = Math.max(dataset.rosterSize || 0, rows.length || 0, TOTAL_ESCALADOS);
+            
+            // Calculate total escalados from EscalaAtual data
+            let totalEscalados = calculateEscaladosForDate(targetDate);
+            if (totalEscalados === 0) {
+                // Fallback if EscalaAtual data not available
+                totalEscalados = Math.max(dataset.rosterSize || 0, rows.length || 0, TOTAL_ESCALADOS);
+            }
 
             totalEl.textContent = totalEscalados;
             presentEl.textContent = presentCount + lateCount;
@@ -5143,18 +5357,24 @@ const pontoState = {
                 const dateCount = pontoState.dates && pontoState.dates.length > 0
                     ? ` • ${pontoState.dates.length} ${pontoState.dates.length === 1 ? 'data disponível' : 'datas disponíveis'}`
                     : '';
-                syncLabel.textContent = timeStr + dateCount;
+                // Update the text span inside the badge
+                const textSpan = syncLabel.querySelector('span');
+                if (textSpan) {
+                    textSpan.textContent = timeStr + dateCount;
+                } else {
+                    syncLabel.textContent = timeStr + dateCount;
+                }
             }
         }
 
         function handlePontoFilterClick(event) {
-            const button = event.target.closest('.escala-pill');
+            const button = event.target.closest('.ponto-pill');
             if (!button) return;
             const filter = button.getAttribute('data-filter');
             if (!filter) return;
 
             pontoState.filter = filter;
-            document.querySelectorAll('#ponto-filter-bar .escala-pill').forEach((pill) => {
+            document.querySelectorAll('#ponto-filter-bar .ponto-pill').forEach((pill) => {
                 pill.classList.toggle('active', pill === button);
             });
             refreshPontoView();
