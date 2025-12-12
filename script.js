@@ -1592,6 +1592,19 @@ const TOTAL_ESCALADOS = 25;
 const MAX_RECENT_ACTIVITIES = 10;
 // MAX_PENDING_STUDENTS removed - now shows all students
 
+// =====================================================================
+// TEORIA (THEORY) ATTENDANCE RULES
+// =====================================================================
+// In Theory classes:
+// - ALL students are scheduled regardless of 'F' (Folga) in the scale
+// - The class starts at a fixed time of 18:00 (6 PM) for ALL students
+// - Students have until 18:10 to clock in (10 min tolerance)
+// - Arriving after 18:10 is considered late (atraso)
+// =====================================================================
+const TEORIA_FIXED_START_TIME = '18:00';
+const TEORIA_FIXED_START_MINUTES = 18 * 60; // 18:00 = 1080 minutes from midnight
+const TEORIA_TOLERANCE_MINUTES = 10; // Students have 10 min tolerance (until 18:10)
+
 // InCor Dashboard KPI Thresholds (Semantic Status Configuration)
 const INCOR_KPI_THRESHOLDS = {
     // Frequency: ratio of active to total students
@@ -4872,15 +4885,31 @@ const pontoState = {
                     }
                 }
             });
+            
+            /**
+             * Helper function to check if a record is for Theory (Teoria)
+             * Checks the modalidade field for variations of "Teoria"
+             */
+            function isTeoriaRecord(row) {
+                const modalidade = (row.modalidade || '').toLowerCase().trim();
+                return modalidade === 'teoria' || 
+                       modalidade === 'teórica' || 
+                       modalidade === 'teorica' ||
+                       modalidade.includes('teoria');
+            }
 
             return rows.map((row) => {
                 let status = 'absent';
                 let statusLabel = 'Falta';
                 let badgeClass = 'badge badge-red';
                 let delayMinutes = null;
+                
+                // Check if this is a Theory (Teoria) attendance record
+                const isTeoria = isTeoriaRecord(row);
 
                 // Check if this is a scheduled rest day
-                if (row.isRestDay) {
+                // IMPORTANT: For Teoria, rest days (Folga) don't apply - ALL students must attend
+                if (row.isRestDay && !isTeoria) {
                     status = 'off';
                     statusLabel = 'Folga';
                     badgeClass = 'badge badge-gray';
@@ -4911,7 +4940,14 @@ const pontoState = {
                 if (Number.isFinite(row.horaEntradaMinutes)) {
                     // Get the scheduled time for this student
                     const key = row.id || row.nomeId;
-                    const scheduledTime = key ? scheduledTimesMap.get(key) : null;
+                    let scheduledTime = key ? scheduledTimesMap.get(key) : null;
+                    
+                    // TEORIA SPECIAL HANDLING:
+                    // For Theory (Teoria) records, use the fixed start time of 18:00 (6 PM)
+                    // All students in Theory have the same fixed schedule
+                    if (isTeoria) {
+                        scheduledTime = TEORIA_FIXED_START_MINUTES; // 18:00 = 1080 minutes
+                    }
                     
                     // If we have a scheduled time, compare against it
                     // Otherwise, student is present (no delay calculation possible)
@@ -4919,7 +4955,11 @@ const pontoState = {
                         const diff = Math.max(0, row.horaEntradaMinutes - scheduledTime);
                         delayMinutes = diff;
                         
-                        if (diff > ATRASO_THRESHOLD_MINUTES) {
+                        // For Teoria, use TEORIA_TOLERANCE_MINUTES (10 min - until 18:10)
+                        // For Prática, use ATRASO_THRESHOLD_MINUTES
+                        const toleranceMinutes = isTeoria ? TEORIA_TOLERANCE_MINUTES : ATRASO_THRESHOLD_MINUTES;
+                        
+                        if (diff > toleranceMinutes) {
                             status = 'late';
                             statusLabel = `Atraso (+${diff} min)`;
                             badgeClass = 'badge badge-yellow';

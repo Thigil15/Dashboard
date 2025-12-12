@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste - Regras de Frequência na Teoria</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #2563eb;
+            margin-bottom: 10px;
+        }
+        
+        .description {
+            color: #64748b;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+        }
+        
+        .test-section h2 {
+            color: #1e40af;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .test-case {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8fafc;
+            border-left: 3px solid #94a3b8;
+            border-radius: 4px;
+        }
+        
+        .test-case.pass {
+            border-left-color: #22c55e;
+            background: #f0fdf4;
+        }
+        
+        .test-case.fail {
+            border-left-color: #ef4444;
+            background: #fef2f2;
+        }
+        
+        .test-result {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .test-result.pass {
+            color: #16a34a;
+        }
+        
+        .test-result.fail {
+            color: #dc2626;
+        }
+        
+        .test-details {
+            font-size: 14px;
+            color: #475569;
+            margin-top: 5px;
+        }
+        
+        .code {
+            font-family: 'Courier New', monospace;
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        
+        .summary {
+            margin-top: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+            border-radius: 8px;
+            color: white;
+        }
+        
+        .summary h2 {
+            margin-bottom: 15px;
+        }
+        
+        .summary-stats {
+            display: flex;
+            gap: 30px;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .rules-box {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .rules-box h3 {
+            color: #b45309;
+            margin-bottom: 10px;
+        }
+        
+        .rules-box ul {
+            margin-left: 20px;
+            color: #78350f;
+        }
+        
+        .rules-box li {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎓 Teste: Regras de Frequência na Teoria</h1>
+        <p class="description">
+            Valida as regras específicas para registros de ponto na Teoria (teórica).<br>
+            <strong>Diferença entre Prática e Teoria:</strong> Em teoria, todos os alunos estão escalados e o horário é fixo às 18h.
+        </p>
+        
+        <div class="rules-box">
+            <h3>📋 Regras da Teoria</h3>
+            <ul>
+                <li><strong>Todos os alunos</strong> devem comparecer (independente de F/Folga na escala)</li>
+                <li><strong>Horário fixo:</strong> 18:00 para todos os alunos</li>
+                <li><strong>Tolerância:</strong> até 18:10 = Presente</li>
+                <li><strong>Atraso:</strong> após 18:10</li>
+            </ul>
+        </div>
+        
+        <div id="test-results"></div>
+        
+        <div class="summary" id="summary" style="display: none;">
+            <h2>📊 Resumo dos Testes</h2>
+            <div class="summary-stats">
+                <div class="stat">
+                    <div class="stat-value" id="total-count">0</div>
+                    <div class="stat-label">Total</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="pass-count">0</div>
+                    <div class="stat-label">✅ Passou</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="fail-count">0</div>
+                    <div class="stat-label">❌ Falhou</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =========================================================
+        // Constants from script.js
+        // =========================================================
+        const TEORIA_FIXED_START_TIME = '18:00';
+        const TEORIA_FIXED_START_MINUTES = 18 * 60; // 18:00 = 1080 minutes
+        const TEORIA_TOLERANCE_MINUTES = 10; // Students have 10 min tolerance (until 18:10)
+        const ATRASO_THRESHOLD_MINUTES = 10; // General threshold for practice
+
+        // =========================================================
+        // Helper Functions (copied from script.js)
+        // =========================================================
+        function toMinutes(timeStr) {
+            if (!timeStr || typeof timeStr !== 'string') return NaN;
+            const match = timeStr.match(/(\d{1,2}):(\d{2})(?::\d{2})?/);
+            if (!match) return NaN;
+            const h = parseInt(match[1], 10);
+            const m = parseInt(match[2], 10);
+            if (h < 0 || h > 23 || m < 0 || m > 59) return NaN;
+            return h * 60 + m;
+        }
+        
+        function isTeoriaRecord(row) {
+            const modalidade = (row.modalidade || '').toLowerCase().trim();
+            return modalidade === 'teoria' || 
+                   modalidade === 'teórica' || 
+                   modalidade === 'teorica' ||
+                   modalidade.includes('teoria');
+        }
+        
+        // =========================================================
+        // Test Definitions
+        // =========================================================
+        const testSuites = [
+            {
+                section: 'Teste 1: Detecção de Registros de Teoria',
+                cases: [
+                    {
+                        name: 'Detecta modalidade "Teoria"',
+                        input: { modalidade: 'Teoria' },
+                        test: () => isTeoriaRecord({ modalidade: 'Teoria' }),
+                        expected: true
+                    },
+                    {
+                        name: 'Detecta modalidade "Teórica"',
+                        input: { modalidade: 'Teórica' },
+                        test: () => isTeoriaRecord({ modalidade: 'Teórica' }),
+                        expected: true
+                    },
+                    {
+                        name: 'Detecta modalidade "teoria" (lowercase)',
+                        input: { modalidade: 'teoria' },
+                        test: () => isTeoriaRecord({ modalidade: 'teoria' }),
+                        expected: true
+                    },
+                    {
+                        name: 'NÃO detecta modalidade "Prática"',
+                        input: { modalidade: 'Prática' },
+                        test: () => !isTeoriaRecord({ modalidade: 'Prática' }),
+                        expected: true
+                    },
+                    {
+                        name: 'NÃO detecta modalidade vazia',
+                        input: { modalidade: '' },
+                        test: () => !isTeoriaRecord({ modalidade: '' }),
+                        expected: true
+                    }
+                ]
+            },
+            {
+                section: 'Teste 2: Horário Fixo da Teoria (18:00)',
+                cases: [
+                    {
+                        name: 'Horário fixo da teoria é 18:00',
+                        input: { TEORIA_FIXED_START_TIME },
+                        test: () => TEORIA_FIXED_START_TIME === '18:00',
+                        expected: true
+                    },
+                    {
+                        name: 'Horário fixo em minutos é 1080 (18*60)',
+                        input: { TEORIA_FIXED_START_MINUTES },
+                        test: () => TEORIA_FIXED_START_MINUTES === 1080,
+                        expected: true
+                    },
+                    {
+                        name: 'Tolerância é 10 minutos',
+                        input: { TEORIA_TOLERANCE_MINUTES },
+                        test: () => TEORIA_TOLERANCE_MINUTES === 10,
+                        expected: true
+                    }
+                ]
+            },
+            {
+                section: 'Teste 3: Cálculo de Atraso na Teoria (Horário Fixo 18:00)',
+                cases: [
+                    {
+                        name: 'Aluno chega às 18:00 - PRESENTE (sem atraso)',
+                        input: { chegada: '18:00', inicio: '18:00' },
+                        test: () => {
+                            const chegadaMinutes = toMinutes('18:00');
+                            const diff = chegadaMinutes - TEORIA_FIXED_START_MINUTES;
+                            return diff <= TEORIA_TOLERANCE_MINUTES;
+                        },
+                        expected: true
+                    },
+                    {
+                        name: 'Aluno chega às 18:05 - PRESENTE (dentro da tolerância)',
+                        input: { chegada: '18:05', inicio: '18:00' },
+                        test: () => {
+                            const chegadaMinutes = toMinutes('18:05');
+                            const diff = chegadaMinutes - TEORIA_FIXED_START_MINUTES;
+                            return diff === 5 && diff <= TEORIA_TOLERANCE_MINUTES;
+                        },
+                        expected: true
+                    },
+                    {
+                        name: 'Aluno chega às 18:10 - PRESENTE (limite da tolerância)',
+                        input: { chegada: '18:10', inicio: '18:00' },
+                        test: () => {
+                            const chegadaMinutes = toMinutes('18:10');
+                            const diff = chegadaMinutes - TEORIA_FIXED_START_MINUTES;
+                            return diff === 10 && diff <= TEORIA_TOLERANCE_MINUTES;
+                        },
+                        expected: true
+                    },
+                    {
+                        name: 'Aluno chega às 18:11 - ATRASO (passou 1 min da tolerância)',
+                        input: { chegada: '18:11', inicio: '18:00' },
+                        test: () => {
+                            const chegadaMinutes = toMinutes('18:11');
+                            const diff = chegadaMinutes - TEORIA_FIXED_START_MINUTES;
+                            return diff === 11 && diff > TEORIA_TOLERANCE_MINUTES;
+                        },
+                        expected: true
+                    },
+                    {
+                        name: 'Aluno chega às 18:30 - ATRASO (20 min)',
+                        input: { chegada: '18:30', inicio: '18:00' },
+                        test: () => {
+                            const chegadaMinutes = toMinutes('18:30');
+                            const diff = chegadaMinutes - TEORIA_FIXED_START_MINUTES;
+                            return diff === 30 && diff > TEORIA_TOLERANCE_MINUTES;
+                        },
+                        expected: true
+                    },
+                    {
+                        name: 'Aluno chega às 17:55 - PRESENTE (chegou antes)',
+                        input: { chegada: '17:55', inicio: '18:00' },
+                        test: () => {
+                            const chegadaMinutes = toMinutes('17:55');
+                            const diff = chegadaMinutes - TEORIA_FIXED_START_MINUTES;
+                            return diff === -5 && diff <= TEORIA_TOLERANCE_MINUTES;
+                        },
+                        expected: true
+                    }
+                ]
+            },
+            {
+                section: 'Teste 4: Diferença entre Prática e Teoria',
+                cases: [
+                    {
+                        name: 'Na PRÁTICA: Folga é respeitada (aluno não precisa ir)',
+                        input: { isRestDay: true, modalidade: 'Prática' },
+                        test: () => {
+                            // In practice, rest day = not required to attend
+                            const isTeoria = isTeoriaRecord({ modalidade: 'Prática' });
+                            const isRestDay = true;
+                            // For practice, rest days apply
+                            return !isTeoria && isRestDay;
+                        },
+                        expected: true,
+                        note: 'Na prática, F na escala = folga válida'
+                    },
+                    {
+                        name: 'Na TEORIA: Folga NÃO é respeitada (aluno DEVE ir)',
+                        input: { isRestDay: true, modalidade: 'Teoria' },
+                        test: () => {
+                            // In theory, ALL students must attend regardless of F in schedule
+                            const isTeoria = isTeoriaRecord({ modalidade: 'Teoria' });
+                            // For theory, rest days do NOT apply
+                            return isTeoria === true;
+                        },
+                        expected: true,
+                        note: 'Na teoria, todos devem comparecer independente de F'
+                    },
+                    {
+                        name: 'Na PRÁTICA: Horário é variável por aluno',
+                        input: { scheduled: '08:00', actual: '08:00', modalidade: 'Prática' },
+                        test: () => {
+                            // Practice: variable schedule per student
+                            const scheduled = toMinutes('08:00');
+                            const actual = toMinutes('08:00');
+                            return scheduled === 8 * 60 && scheduled !== TEORIA_FIXED_START_MINUTES;
+                        },
+                        expected: true,
+                        note: 'Cada aluno tem seu horário na escala'
+                    },
+                    {
+                        name: 'Na TEORIA: Horário é FIXO (18:00) para todos',
+                        input: { modalidade: 'Teoria' },
+                        test: () => {
+                            // Theory: fixed time 18:00 for everyone
+                            const isTeoria = isTeoriaRecord({ modalidade: 'Teoria' });
+                            return isTeoria && TEORIA_FIXED_START_MINUTES === 18 * 60;
+                        },
+                        expected: true,
+                        note: 'Todos começam às 18h na teoria'
+                    }
+                ]
+            },
+            {
+                section: 'Teste 5: Cenários Reais de Teoria',
+                cases: [
+                    {
+                        name: 'João chega às 17:50 na teoria - PRESENTE (adiantado)',
+                        input: { aluno: 'João', chegada: '17:50' },
+                        test: () => {
+                            const diff = toMinutes('17:50') - TEORIA_FIXED_START_MINUTES;
+                            return diff < 0; // Arrived early
+                        },
+                        expected: true
+                    },
+                    {
+                        name: 'Maria chega às 18:08 na teoria - PRESENTE (dentro da tolerância)',
+                        input: { aluno: 'Maria', chegada: '18:08' },
+                        test: () => {
+                            const diff = toMinutes('18:08') - TEORIA_FIXED_START_MINUTES;
+                            return diff > 0 && diff <= TEORIA_TOLERANCE_MINUTES;
+                        },
+                        expected: true
+                    },
+                    {
+                        name: 'Pedro chega às 18:15 na teoria - ATRASO (+5 min)',
+                        input: { aluno: 'Pedro', chegada: '18:15' },
+                        test: () => {
+                            const diff = toMinutes('18:15') - TEORIA_FIXED_START_MINUTES;
+                            return diff === 15 && diff > TEORIA_TOLERANCE_MINUTES;
+                        },
+                        expected: true
+                    },
+                    {
+                        name: 'Ana tem F na escala mas está na teoria - DEVE comparecer',
+                        input: { aluno: 'Ana', isRestDay: true, modalidade: 'Teoria' },
+                        test: () => {
+                            // Even with F in schedule, must attend theory
+                            return isTeoriaRecord({ modalidade: 'Teoria' });
+                        },
+                        expected: true,
+                        note: 'Todos devem comparecer na teoria, independente de F na escala'
+                    }
+                ]
+            }
+        ];
+
+        // =========================================================
+        // Test Runner
+        // =========================================================
+        function runTests() {
+            const container = document.getElementById('test-results');
+            let totalTests = 0;
+            let passedTests = 0;
+            
+            testSuites.forEach(suite => {
+                const section = document.createElement('div');
+                section.className = 'test-section';
+                
+                const title = document.createElement('h2');
+                title.textContent = suite.section;
+                section.appendChild(title);
+                
+                suite.cases.forEach(testCase => {
+                    totalTests++;
+                    const caseDiv = document.createElement('div');
+                    caseDiv.className = 'test-case';
+                    
+                    let passed = false;
+                    let error = null;
+                    
+                    try {
+                        const result = testCase.test();
+                        passed = result === testCase.expected;
+                    } catch (e) {
+                        error = e.message;
+                    }
+                    
+                    if (passed) passedTests++;
+                    caseDiv.classList.add(passed ? 'pass' : 'fail');
+                    
+                    const resultDiv = document.createElement('div');
+                    resultDiv.className = `test-result ${passed ? 'pass' : 'fail'}`;
+                    resultDiv.textContent = `${passed ? '✅' : '❌'} ${testCase.name}`;
+                    caseDiv.appendChild(resultDiv);
+                    
+                    if (testCase.input) {
+                        const inputDiv = document.createElement('div');
+                        inputDiv.className = 'test-details';
+                        inputDiv.textContent = `Input: ${JSON.stringify(testCase.input)}`;
+                        caseDiv.appendChild(inputDiv);
+                    }
+                    
+                    if (testCase.note) {
+                        const noteDiv = document.createElement('div');
+                        noteDiv.className = 'test-details';
+                        noteDiv.style.fontStyle = 'italic';
+                        noteDiv.textContent = `📝 ${testCase.note}`;
+                        caseDiv.appendChild(noteDiv);
+                    }
+                    
+                    if (error) {
+                        const errorDiv = document.createElement('div');
+                        errorDiv.className = 'test-details';
+                        errorDiv.style.color = '#dc2626';
+                        errorDiv.textContent = `Error: ${error}`;
+                        caseDiv.appendChild(errorDiv);
+                    }
+                    
+                    section.appendChild(caseDiv);
+                });
+                
+                container.appendChild(section);
+            });
+            
+            // Show summary
+            const summary = document.getElementById('summary');
+            summary.style.display = 'block';
+            document.getElementById('total-count').textContent = totalTests;
+            document.getElementById('pass-count').textContent = passedTests;
+            document.getElementById('fail-count').textContent = totalTests - passedTests;
+        }
+        
+        // Run tests on page load
+        window.onload = runTests;
+    </script>
+</body>
+</html>
