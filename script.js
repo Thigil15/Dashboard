@@ -1630,6 +1630,7 @@ const pontoState = {
     dates: [],
     selectedDate: '',
     selectedScale: 'all',
+    selectedType: 'pratica', // 'pratica' or 'teoria' for filtering by type
     filter: 'all',
     search: '',
     searchRaw: '',
@@ -1885,6 +1886,12 @@ const pontoState = {
             if (pontoNextButton) {
                 pontoNextButton.addEventListener('click', handlePontoNextDate);
             }
+
+            // Ponto Type Tabs (Prática/Teoria)
+            const pontoTypeTabs = document.querySelectorAll('.ponto-type-tab');
+            pontoTypeTabs.forEach(tab => {
+                tab.addEventListener('click', handlePontoTypeTabSwitch);
+            });
 
             // Academic Performance tabs - support both old and new class names
             const performanceTabs = document.querySelectorAll('.dash-tab, .incor-story-tab, .incor-modules-tab');
@@ -4873,6 +4880,20 @@ const pontoState = {
             nextButton.disabled = currentIndex <= 0;
         }
 
+        /**
+         * Helper function to check if a ponto record is for Theory (Teoria)
+         * Checks the modalidade field for variations of "Teoria"
+         * @param {Object} row - The ponto record to check
+         * @returns {boolean} - True if the record is for Teoria, false for Prática
+         */
+        function isTeoriaRecord(row) {
+            const modalidade = (row.modalidade || '').toLowerCase().trim();
+            return modalidade === 'teoria' || 
+                   modalidade === 'teórica' || 
+                   modalidade === 'teorica' ||
+                   modalidade.includes('teoria');
+        }
+
         function enrichPontoRows(rows = []) {
             // Build a map of scheduled times per student (from roster/escala data)
             // These are the expected times based on their schedule
@@ -4885,18 +4906,6 @@ const pontoState = {
                     }
                 }
             });
-            
-            /**
-             * Helper function to check if a record is for Theory (Teoria)
-             * Checks the modalidade field for variations of "Teoria"
-             */
-            function isTeoriaRecord(row) {
-                const modalidade = (row.modalidade || '').toLowerCase().trim();
-                return modalidade === 'teoria' || 
-                       modalidade === 'teórica' || 
-                       modalidade === 'teorica' ||
-                       modalidade.includes('teoria');
-            }
 
             return rows.map((row) => {
                 let status = 'absent';
@@ -5001,14 +5010,41 @@ const pontoState = {
             });
         }
 
+        // Cached DOM elements for ponto type badges (avoid repeated lookups)
+        let _pontoPraticaCountEl = null;
+        let _pontoTeoriaCountEl = null;
+
         function refreshPontoView() {
             try {
                 const dataset = buildPontoDataset(pontoState.selectedDate, pontoState.selectedScale);
                 const enriched = dataset.rows || [];
-                const presentCount = enriched.filter((row) => row.status === 'present' || row.status === 'late').length;
-                const lateCount = enriched.filter((row) => row.status === 'late').length;
-                const absentCount = enriched.filter((row) => row.status === 'absent').length;
-                const offCount = enriched.filter((row) => row.status === 'off').length;
+                
+                // Filter by selected type (pratica or teoria) using shared isTeoriaRecord function
+                const selectedType = pontoState.selectedType || 'pratica';
+                const typeFilteredRows = enriched.filter(row => {
+                    if (selectedType === 'teoria') {
+                        return isTeoriaRecord(row);
+                    } else {
+                        // Prática = NOT teoria
+                        return !isTeoriaRecord(row);
+                    }
+                });
+                
+                // Calculate counts for each type for the badges
+                const praticaRows = enriched.filter(row => !isTeoriaRecord(row));
+                const teoriaRows = enriched.filter(row => isTeoriaRecord(row));
+                
+                // Cache and update type badge counts
+                if (!_pontoPraticaCountEl) _pontoPraticaCountEl = document.getElementById('ponto-pratica-count');
+                if (!_pontoTeoriaCountEl) _pontoTeoriaCountEl = document.getElementById('ponto-teoria-count');
+                if (_pontoPraticaCountEl) _pontoPraticaCountEl.textContent = praticaRows.length;
+                if (_pontoTeoriaCountEl) _pontoTeoriaCountEl.textContent = teoriaRows.length;
+                
+                // Use type-filtered rows for stats
+                const presentCount = typeFilteredRows.filter((row) => row.status === 'present' || row.status === 'late').length;
+                const lateCount = typeFilteredRows.filter((row) => row.status === 'late').length;
+                const absentCount = typeFilteredRows.filter((row) => row.status === 'absent').length;
+                const offCount = typeFilteredRows.filter((row) => row.status === 'off').length;
                 
                 // Calculate total escalados from EscalaAtual data (Enfermaria, UTI, Cardiopediatria)
                 // This excludes students with "F" (Folga) for the selected date
@@ -5018,7 +5054,7 @@ const pontoState = {
                 if (totalEscalados === 0) {
                     totalEscalados = Math.max(
                         Math.max(0, (dataset.rosterSize || 0) - offCount), 
-                        Math.max(0, (enriched.length - offCount) || 0), 
+                        Math.max(0, (typeFilteredRows.length - offCount) || 0), 
                         Math.max(0, TOTAL_ESCALADOS - offCount)
                     );
                 }
@@ -5029,11 +5065,11 @@ const pontoState = {
                     late: lateCount,
                     absent: absentCount
                 });
-                updatePontoFilterCounters(enriched);
+                updatePontoFilterCounters(typeFilteredRows);
 
                 const searchTerm = pontoState.search || '';
                 const filter = pontoState.filter || 'all';
-                const filteredRows = enriched.filter((row) => {
+                const filteredRows = typeFilteredRows.filter((row) => {
                     let matchesFilter = filter === 'all';
                     if (!matchesFilter) {
                         if (filter === 'present') {
@@ -5046,7 +5082,7 @@ const pontoState = {
                     return matchesFilter && matchesSearch;
                 });
 
-                renderPontoTable(filteredRows, enriched.length, (dataset.baseRecords || []).length);
+                renderPontoTable(filteredRows, typeFilteredRows.length, (dataset.baseRecords || []).length);
                 updatePontoMeta();
                 renderEscalaOverview();
             } catch (error) {
@@ -5489,6 +5525,33 @@ const pontoState = {
             }
             hydratePontoSelectors();
             refreshPontoView();
+        }
+
+        /**
+         * Handle switching between Prática and Teoria tabs in the Ponto section
+         * Updates the UI to show the active tab and filters records by type
+         */
+        function handlePontoTypeTabSwitch(e) {
+            const tab = e.target.closest('.ponto-type-tab');
+            if (!tab) return;
+            
+            const newType = tab.getAttribute('data-ponto-type');
+            if (!newType || newType === pontoState.selectedType) return;
+            
+            // Update state
+            pontoState.selectedType = newType;
+            pontoState.filter = 'all'; // Reset filter when switching types
+            
+            // Update UI - toggle active class
+            document.querySelectorAll('.ponto-type-tab').forEach(t => {
+                t.classList.toggle('ponto-type-tab--active', t.getAttribute('data-ponto-type') === newType);
+            });
+            
+            // Refresh the view to show filtered data
+            hydratePontoSelectors();
+            refreshPontoView();
+            
+            console.log(`[handlePontoTypeTabSwitch] Switched to type: ${newType}`);
         }
 
         async function handlePontoRefresh() {
