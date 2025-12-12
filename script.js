@@ -4791,7 +4791,7 @@ const pontoState = {
                 }
             }
 
-            document.querySelectorAll('#ponto-filter-bar .escala-pill').forEach((pill) => {
+            document.querySelectorAll('#ponto-filter-bar .ponto-pill').forEach((pill) => {
                 const filter = pill.getAttribute('data-filter');
                 pill.classList.toggle('active', filter === pontoState.filter);
             });
@@ -5357,18 +5357,24 @@ const pontoState = {
                 const dateCount = pontoState.dates && pontoState.dates.length > 0
                     ? ` • ${pontoState.dates.length} ${pontoState.dates.length === 1 ? 'data disponível' : 'datas disponíveis'}`
                     : '';
-                syncLabel.textContent = timeStr + dateCount;
+                // Update the text span inside the badge
+                const textSpan = syncLabel.querySelector('span');
+                if (textSpan) {
+                    textSpan.textContent = timeStr + dateCount;
+                } else {
+                    syncLabel.textContent = timeStr + dateCount;
+                }
             }
         }
 
         function handlePontoFilterClick(event) {
-            const button = event.target.closest('.escala-pill');
+            const button = event.target.closest('.ponto-pill');
             if (!button) return;
             const filter = button.getAttribute('data-filter');
             if (!filter) return;
 
             pontoState.filter = filter;
-            document.querySelectorAll('#ponto-filter-bar .escala-pill').forEach((pill) => {
+            document.querySelectorAll('#ponto-filter-bar .ponto-pill').forEach((pill) => {
                 pill.classList.toggle('active', pill === button);
             });
             refreshPontoView();

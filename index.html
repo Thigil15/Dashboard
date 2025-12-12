@@ -445,122 +445,199 @@
                      <div id="student-list-panel" class="max-h-[calc(100vh-200px)] overflow-y-auto"></div>
                  </div>
 
-                <!-- View: Ponto -->
+                <!-- View: Ponto - Modern InCor Design -->
                 <div id="content-ponto" class="view-container">
-                    <h1>Registro de Ponto</h1>
-
-                    <div class="content-card p-6 lg:p-8 animated-card delay-100 ponto-panel">
-                        <div class="ponto-header">
-                            <div>
-                                <h2 class="content-card-header mb-2 border-b-0">Painel Diário de Frequência</h2>
-                                <p class="ponto-subtitle">Consulte presença, atrasos e faltas diretamente da planilha oficial.</p>
+                    <!-- Modern Header with Gradient -->
+                    <div class="ponto-modern-header">
+                        <div class="ponto-header-content">
+                            <div class="ponto-header-icon">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
                             </div>
-                            <div class="ponto-meta">
-                                <span id="ponto-active-date" class="ponto-date-chip">--</span>
-                                <span id="ponto-last-sync" class="ponto-sync">Dados não carregados</span>
+                            <div class="ponto-header-text">
+                                <h1>Registro de Ponto</h1>
+                                <p>Controle de frequência e presença dos alunos</p>
                             </div>
                         </div>
+                        <div class="ponto-header-meta">
+                            <span id="ponto-last-sync" class="ponto-sync-badge">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span>Dados não carregados</span>
+                            </span>
+                        </div>
+                    </div>
 
-                        <div class="ponto-toolbar">
-                            <div class="ponto-toolbar-group">
-                                <div class="ponto-field">
-                                    <label for="ponto-date-picker">Data</label>
-                                    <div class="ponto-date-controls">
-                                        <button id="ponto-prev-date" class="ponto-nav-button" type="button" title="Data anterior">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-                                            </svg>
-                                        </button>
+                    <!-- Controls Card -->
+                    <div class="ponto-controls-card animated-card delay-100">
+                        <div class="ponto-controls-row">
+                            <!-- Date Selector -->
+                            <div class="ponto-control-group">
+                                <label class="ponto-control-label">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                                    </svg>
+                                    Data
+                                </label>
+                                <div class="ponto-date-selector">
+                                    <button id="ponto-prev-date" class="ponto-date-nav" type="button" title="Data anterior">
+                                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                                        </svg>
+                                    </button>
+                                    <div class="ponto-date-display">
                                         <input type="date" id="ponto-date-picker" list="ponto-date-options">
                                         <datalist id="ponto-date-options"></datalist>
-                                        <button id="ponto-next-date" class="ponto-nav-button" type="button" title="Próxima data">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                                            </svg>
-                                        </button>
+                                        <span id="ponto-active-date" class="ponto-date-label">--</span>
                                     </div>
-                                </div>
-                                <div class="ponto-field">
-                                    <label for="ponto-scale-select">Escala</label>
-                                    <select id="ponto-scale-select"></select>
+                                    <button id="ponto-next-date" class="ponto-date-nav" type="button" title="Próxima data">
+                                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                                        </svg>
+                                    </button>
                                 </div>
                             </div>
-                            <div class="ponto-actions">
-                                <button id="ponto-refresh-button" class="ponto-ghost-button" type="button">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" class="ponto-refresh-icon">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+
+                            <!-- Scale Selector -->
+                            <div class="ponto-control-group">
+                                <label class="ponto-control-label" for="ponto-scale-select">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
                                     </svg>
-                                    Atualizar
+                                    Setor
+                                </label>
+                                <div class="ponto-select-wrapper">
+                                    <select id="ponto-scale-select"></select>
+                                    <svg class="ponto-select-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                                    </svg>
+                                </div>
+                            </div>
+
+                            <!-- Refresh Button -->
+                            <div class="ponto-control-group ponto-control-action">
+                                <button id="ponto-refresh-button" class="ponto-refresh-btn" type="button">
+                                    <svg class="ponto-refresh-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                                    </svg>
+                                    <span>Atualizar</span>
                                 </button>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="ponto-summary-grid">
-                            <div class="ponto-summary-card">
-                                <span class="ponto-summary-label">Escalados</span>
-                                <span id="ponto-count-total" class="ponto-summary-value">0</span>
+                    <!-- Stats Cards -->
+                    <div class="ponto-stats-grid animated-card delay-200">
+                        <div class="ponto-stat-card ponto-stat-total">
+                            <div class="ponto-stat-icon">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+                                </svg>
                             </div>
-                            <div class="ponto-summary-card is-green">
-                                <span class="ponto-summary-label">Presentes</span>
-                                <span id="ponto-count-present" class="ponto-summary-value">0</span>
+                            <div class="ponto-stat-content">
+                                <span class="ponto-stat-value" id="ponto-count-total">0</span>
+                                <span class="ponto-stat-label">Escalados</span>
                             </div>
-                            <div class="ponto-summary-card is-amber">
-                                <span class="ponto-summary-label">Atrasos</span>
-                                <span id="ponto-count-late" class="ponto-summary-value">0</span>
+                        </div>
+                        <div class="ponto-stat-card ponto-stat-present">
+                            <div class="ponto-stat-icon">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
                             </div>
-                            <div class="ponto-summary-card is-red">
-                                <span class="ponto-summary-label">Faltas</span>
-                                <span id="ponto-count-absent" class="ponto-summary-value">0</span>
+                            <div class="ponto-stat-content">
+                                <span class="ponto-stat-value" id="ponto-count-present">0</span>
+                                <span class="ponto-stat-label">Presentes</span>
+                            </div>
+                        </div>
+                        <div class="ponto-stat-card ponto-stat-late">
+                            <div class="ponto-stat-icon">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <div class="ponto-stat-content">
+                                <span class="ponto-stat-value" id="ponto-count-late">0</span>
+                                <span class="ponto-stat-label">Atrasos</span>
+                            </div>
+                        </div>
+                        <div class="ponto-stat-card ponto-stat-absent">
+                            <div class="ponto-stat-icon">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                </svg>
+                            </div>
+                            <div class="ponto-stat-content">
+                                <span class="ponto-stat-value" id="ponto-count-absent">0</span>
+                                <span class="ponto-stat-label">Faltas</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Data Table Card -->
+                    <div class="ponto-data-card animated-card delay-300">
+                        <!-- Filter & Search Row -->
+                        <div class="ponto-data-toolbar">
+                            <div id="ponto-filter-bar" class="ponto-filter-pills">
+                                <button class="ponto-pill active" data-filter="all">
+                                    <span>Todos</span>
+                                    <span class="ponto-pill-count" id="ponto-filter-total">0</span>
+                                </button>
+                                <button class="ponto-pill" data-filter="present">
+                                    <span>Presentes</span>
+                                    <span class="ponto-pill-count" id="ponto-filter-present">0</span>
+                                </button>
+                                <button class="ponto-pill" data-filter="late">
+                                    <span>Atrasos</span>
+                                    <span class="ponto-pill-count" id="ponto-filter-late">0</span>
+                                </button>
+                                <button class="ponto-pill" data-filter="absent">
+                                    <span>Faltas</span>
+                                    <span class="ponto-pill-count" id="ponto-filter-absent">0</span>
+                                </button>
+                            </div>
+                            <div class="ponto-search-box">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                                </svg>
+                                <input type="search" id="ponto-search-input" placeholder="Buscar aluno..." autocomplete="off">
                             </div>
                         </div>
 
-                        <div id="ponto-filter-bar" class="ponto-filter-bar">
-                            <button class="escala-pill active" data-filter="all">
-                                Todos
-                                <span class="pill-counter" id="ponto-filter-total">0</span>
-                            </button>
-                            <button class="escala-pill" data-filter="present">
-                                Presentes
-                                <span class="pill-counter" id="ponto-filter-present">0</span>
-                            </button>
-                            <button class="escala-pill" data-filter="late">
-                                Atrasos
-                                <span class="pill-counter" id="ponto-filter-late">0</span>
-                            </button>
-                            <button class="escala-pill" data-filter="absent">
-                                Faltas
-                                <span class="pill-counter" id="ponto-filter-absent">0</span>
-                            </button>
+                        <!-- Loading State -->
+                        <div id="ponto-loading-state" class="ponto-loading-state" hidden>
+                            <div class="ponto-loading-spinner"></div>
+                            <span>Carregando registros...</span>
                         </div>
 
-                        <div class="ponto-search-wrapper">
-                            <label class="sr-only" for="ponto-search-input">Buscar profissional</label>
-                            <input type="search" id="ponto-search-input" placeholder="Buscar por nome, escala ou horário" autocomplete="off">
-                        </div>
-
-                        <div id="ponto-loading-state" class="ponto-loading" hidden>Carregando registros do ponto...</div>
-
-                        <div class="ponto-table-wrapper">
+                        <!-- Table -->
+                        <div class="ponto-table-container">
                             <table class="ponto-table">
                                 <thead>
                                     <tr>
-                                        <th scope="col">Nome</th>
+                                        <th scope="col">Aluno</th>
                                         <th scope="col">Data</th>
-                                        <th scope="col">Hora de Entrada</th>
-                                        <th scope="col">Hora de Saída</th>
-                                        <th scope="col">Escala</th>
-                                        <th scope="col">Prática/Teórica</th>
+                                        <th scope="col">Entrada</th>
+                                        <th scope="col">Saída</th>
+                                        <th scope="col">Setor</th>
+                                        <th scope="col">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody id="ponto-table-body"></tbody>
                             </table>
                         </div>
 
+                        <!-- Empty State -->
                         <div id="ponto-empty-state" class="ponto-empty-state" hidden>
-                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                            </svg>
-                            <p>Nenhum registro encontrado para os filtros selecionados.</p>
+                            <div class="ponto-empty-icon">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m6 4.125l2.25 2.25m0 0l2.25 2.25M12 13.875l2.25-2.25M12 13.875l-2.25 2.25M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+                                </svg>
+                            </div>
+                            <h3>Nenhum registro encontrado</h3>
+                            <p>Não há registros para os filtros selecionados.</p>
                         </div>
                     </div>
 
