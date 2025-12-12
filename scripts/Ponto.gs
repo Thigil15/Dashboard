@@ -1,33 +1,3 @@
-/**
- * Sistema de Registro de Ponto - Ponto.gs
- * 
- * Este script processa as batidas de ponto dos alunos via POST request.
- * 
- * =====================================================================
- * SEPARAÇÃO ENTRE PRÁTICA E TEORIA:
- * =====================================================================
- * - PRÁTICA: Registrado todos os dias úteis
- *   - Horário variável por aluno (conforme EscalaPratica)
- *   - Folga (F) na escala = não precisa comparecer
- * 
- * - TEORIA: Registrado apenas em terças e quintas (ou dias especiais)
- *   - TODOS os alunos devem comparecer (independente de F na escala)
- *   - Horário FIXO: 18h para todos os alunos
- *   - Tolerância: até 18:10 = presente, após 18:10 = atraso
- * =====================================================================
- * 
- * FLUXO:
- * 1. Aluno bate ponto → sistema verifica se há prática/teoria aberta
- * 2. Se é dia de teoria (terça/quinta), cria entrada teórica após fechar prática
- */
-
-// =====================================================================
-// CONSTANTES - REGRAS PARA TEORIA
-// =====================================================================
-var TEORIA_HORA_INICIO = '18:00:00';  // Horário fixo de início da teoria
-var TEORIA_HORA_LIMITE = '18:10:00';  // Limite para não ser considerado atraso
-var TEORIA_TOLERANCIA_MINUTOS = 10;   // 10 minutos de tolerância
-
 function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents);

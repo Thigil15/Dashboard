@@ -16,29 +16,10 @@
  * Atualizado para inserir apenas "HH:MM:SS às HH:MM:SS" (sem "Prática:"/ "Teoria:")
  * Cole em Extensions → Apps Script do seu Google Sheets.
  * 
- * =====================================================================
- * REGRAS ESPECIAIS PARA TEORIA (PontoTeoria / EscalaTeoria):
- * - Em Teoria, TODOS os alunos estão escalados independente do "F" na escala
- * - O horário de Teoria é FIXO para todos: começa às 18h
- * - Tolerância de 10 minutos: o aluno deve bater ponto até 18:10
- * - Mais que 18:10 é considerado ATRASO
- * =====================================================================
- * 
  * IMPORTANTE: Para funcionar automaticamente mesmo com a planilha fechada,
  * execute a função criarGatilhosPontoAutomatico() UMA VEZ para criar
  * os gatilhos instaláveis.
  */
-
-// =====================================================================
-// CONSTANTES - REGRAS PARA TEORIA
-// =====================================================================
-// NOTA: Estas constantes são duplicadas em script.js (cliente) porque
-// Google Apps Script e JavaScript do navegador rodam em ambientes diferentes
-// e não podem compartilhar código. Mantenha ambos sincronizados ao alterar.
-// =====================================================================
-var TEORIA_HORA_INICIO = '18:00:00';
-var TEORIA_HORA_LIMITE_PONTO = '18:10:00'; // Limite para não ser considerado atraso
-var TEORIA_TOLERANCIA_MINUTOS = 10;
 
 // Nomes das funções de gatilhos para evitar duplicação
 var TRIGGER_FUNCTIONS = [
@@ -133,20 +114,14 @@ function criarGatilhosPontoAutomatico() {
 /**
  * Função chamada pelo gatilho INSTALÁVEL onChange.
  * Processa inserção de novas linhas mesmo com planilha fechada.
- * 
- * IMPORTANTE: Este gatilho só processa INSERT_ROW para evitar duplicação.
- * - onEditPontoInstalavel já processa edições (EDIT)
- * - Este gatilho processa apenas inserções de linhas novas (INSERT_ROW)
- * 
  * @param {Object} e - Objeto evento do Google Apps Script
  */
 function onChangePontoInstalavel(e) {
   try {
     if (!e || !e.source) return;
     
-    // CORREÇÃO: Só processa INSERT_ROW para evitar duplicação com onEdit
-    // O evento EDIT já é tratado por onEditPontoInstalavel
-    if (e.changeType === 'INSERT_ROW') {
+    // Verifica se foi uma inserção de linha
+    if (e.changeType === 'INSERT_ROW' || e.changeType === 'EDIT') {
       var ss = e.source;
       var sheets = ['PontoPratica', 'PontoTeoria'];
       var syncedSheets = [];
