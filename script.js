@@ -1587,28 +1587,16 @@ const appState = {
     }
 };
 
-const ATRASO_THRESHOLD_MINUTES = 10;  // General threshold for lateness in Prática (practice)
+const ATRASO_THRESHOLD_MINUTES = 10;  // General threshold for lateness
 const TOTAL_ESCALADOS = 25;
 const MAX_RECENT_ACTIVITIES = 10;
 // MAX_PENDING_STUDENTS removed - now shows all students
 
 // =====================================================================
-// TEORIA (THEORY) ATTENDANCE RULES
+// NOTA: A lógica de horário fixo (18h) e tolerância (10 min) para Teoria
+// está implementada no backend (Ponto.gs e PontoEscala.gs).
+// O Dashboard apenas exibe os dados já processados pelo backend.
 // =====================================================================
-// In Theory classes:
-// - ALL students are scheduled regardless of 'F' (Folga) in the scale
-// - The class starts at a fixed time of 18:00 (6 PM) for ALL students
-// - Students have until 18:10 to clock in (10 min tolerance)
-// - Arriving after 18:10 is considered late (atraso)
-//
-// Note: TEORIA_TOLERANCE_MINUTES has the same value as ATRASO_THRESHOLD_MINUTES
-// (both 10 min) but they serve different purposes:
-// - ATRASO_THRESHOLD_MINUTES: tolerance for Prática based on individual schedules
-// - TEORIA_TOLERANCE_MINUTES: tolerance for Teoria based on fixed 18:00 start time
-// =====================================================================
-const TEORIA_FIXED_START_TIME = '18:00';
-const TEORIA_FIXED_START_MINUTES = 18 * 60; // 18:00 = 1080 minutes from midnight
-const TEORIA_TOLERANCE_MINUTES = 10; // Students have 10 min tolerance (until 18:10)
 
 // InCor Dashboard KPI Thresholds (Semantic Status Configuration)
 const INCOR_KPI_THRESHOLDS = {
@@ -4890,31 +4878,15 @@ const pontoState = {
                     }
                 }
             });
-            
-            /**
-             * Helper function to check if a record is for Theory (Teoria)
-             * Checks the modalidade field for variations of "Teoria"
-             */
-            function isTeoriaRecord(row) {
-                const modalidade = (row.modalidade || '').toLowerCase().trim();
-                return modalidade === 'teoria' || 
-                       modalidade === 'teórica' || 
-                       modalidade === 'teorica' ||
-                       modalidade.includes('teoria');
-            }
 
             return rows.map((row) => {
                 let status = 'absent';
                 let statusLabel = 'Falta';
                 let badgeClass = 'badge badge-red';
                 let delayMinutes = null;
-                
-                // Check if this is a Theory (Teoria) attendance record
-                const isTeoria = isTeoriaRecord(row);
 
                 // Check if this is a scheduled rest day
-                // IMPORTANT: For Teoria, rest days (Folga) don't apply - ALL students must attend
-                if (row.isRestDay && !isTeoria) {
+                if (row.isRestDay) {
                     status = 'off';
                     statusLabel = 'Folga';
                     badgeClass = 'badge badge-gray';
@@ -4945,14 +4917,7 @@ const pontoState = {
                 if (Number.isFinite(row.horaEntradaMinutes)) {
                     // Get the scheduled time for this student
                     const key = row.id || row.nomeId;
-                    let scheduledTime = key ? scheduledTimesMap.get(key) : null;
-                    
-                    // TEORIA SPECIAL HANDLING:
-                    // For Theory (Teoria) records, use the fixed start time of 18:00 (6 PM)
-                    // All students in Theory have the same fixed schedule
-                    if (isTeoria) {
-                        scheduledTime = TEORIA_FIXED_START_MINUTES; // 18:00 = 1080 minutes
-                    }
+                    const scheduledTime = key ? scheduledTimesMap.get(key) : null;
                     
                     // If we have a scheduled time, compare against it
                     // Otherwise, student is present (no delay calculation possible)
@@ -4960,11 +4925,7 @@ const pontoState = {
                         const diff = Math.max(0, row.horaEntradaMinutes - scheduledTime);
                         delayMinutes = diff;
                         
-                        // For Teoria, use TEORIA_TOLERANCE_MINUTES (10 min - until 18:10)
-                        // For Prática, use ATRASO_THRESHOLD_MINUTES
-                        const toleranceMinutes = isTeoria ? TEORIA_TOLERANCE_MINUTES : ATRASO_THRESHOLD_MINUTES;
-                        
-                        if (diff > toleranceMinutes) {
+                        if (diff > ATRASO_THRESHOLD_MINUTES) {
                             status = 'late';
                             statusLabel = `Atraso (+${diff} min)`;
                             badgeClass = 'badge badge-yellow';
@@ -5358,14 +5319,45 @@ const pontoState = {
             const escalaContent = row.escala && row.escala.trim().length > 0
                 ? `<span class="ponto-escala-pill">${escapeHtml(row.escala)}</span>`
                 : '<span class="ponto-escala-pill">Sem escala</span>';
-            const modalidadeContent = row.modalidade && row.modalidade.trim().length > 0
-                ? `<span class="ponto-modalidade">${escapeHtml(row.modalidade)}</span>`
-                : '<span class="ponto-modalidade">—</span>';
+            
+            // Determine modalidade (Prática vs Teoria) with distinct visual styling
+            // NOTE: The business logic (fixed 18h, tolerance) is handled in the backend (Ponto.gs/PontoEscala.gs)
+            // Here we only provide visual distinction between Prática and Teoria
+            const modalidadeNorm = (row.modalidade || '').toLowerCase().trim();
+            const isTeoria = modalidadeNorm === 'teoria' || modalidadeNorm === 'teórica' || modalidadeNorm === 'teorica' || modalidadeNorm.includes('teoria');
+            const isPratica = modalidadeNorm === 'prática' || modalidadeNorm === 'pratica' || modalidadeNorm.includes('pratica') || modalidadeNorm.includes('prática');
+            
+            let modalidadeContent;
+            if (isTeoria) {
+                // Teoria badge - amber color (book icon)
+                modalidadeContent = `
+                    <span class="ponto-tipo-badge ponto-tipo-teoria">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                        </svg>
+                        Teoria
+                    </span>`;
+            } else if (isPratica) {
+                // Prática badge - cyan color (heart icon)
+                modalidadeContent = `
+                    <span class="ponto-tipo-badge ponto-tipo-pratica">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                        </svg>
+                        Prática
+                    </span>`;
+            } else if (row.modalidade && row.modalidade.trim().length > 0) {
+                // Other modalidade - neutral color
+                modalidadeContent = `<span class="ponto-tipo-badge ponto-tipo-outro">${escapeHtml(row.modalidade)}</span>`;
+            } else {
+                modalidadeContent = '<span class="ponto-tipo-badge ponto-tipo-outro">—</span>';
+            }
+            
             const emailLine = row.email ? `<span class="ponto-person-email">${escapeHtml(row.email)}</span>` : '';
             const serialLine = row.rawSerial ? `<span class="ponto-person-extra">Crachá: ${escapeHtml(row.rawSerial)}</span>` : '';
 
             return `
-                <tr class="ponto-row" data-status="${row.status}" data-search="${row.searchKey}">
+                <tr class="ponto-row" data-status="${row.status}" data-search="${row.searchKey}" data-tipo="${isTeoria ? 'teoria' : (isPratica ? 'pratica' : 'outro')}">
                     <td data-label="Nome">
                         <div class="ponto-person">
                             <div class="ponto-avatar">${escapeHtml(initials)}</div>
@@ -5379,13 +5371,15 @@ const pontoState = {
                     <td data-label="Data">${escapeHtml(row.dataBR)}</td>
                     <td data-label="Hora de Entrada">${escapeHtml(row.horaEntrada || '—')}</td>
                     <td data-label="Hora de Saída">${escapeHtml(row.horaSaida || '—')}</td>
-                    <td data-label="Escala">
-                        <div class="ponto-escala-cell">
-                            ${escalaContent}
-                            <span class="${row.badgeClass}">${escapeHtml(row.statusLabel)}</span>
+                    <td data-label="Escala">${escalaContent}</td>
+                    <td data-label="Tipo">
+                        <div class="ponto-tipo-cell">
+                            ${modalidadeContent}
                         </div>
                     </td>
-                    <td data-label="Prática/Teórica">${modalidadeContent}</td>
+                    <td data-label="Status">
+                        <span class="${row.badgeClass}">${escapeHtml(row.statusLabel)}</span>
+                    </td>
                 </tr>`;
         }
 
