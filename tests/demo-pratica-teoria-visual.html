@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo - Prática vs Teoria no Ponto</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --font-main: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --incor-blue-700: #0033A0;
+            --incor-blue-100: #E6F0FF;
+            --incor-blue-50: #F5F9FF;
+            --content-text-primary: #1E293B;
+            --content-text-secondary: #475569;
+            --radius-full: 9999px;
+            --radius-sm: 0.25rem;
+            --radius-lg: 0.75rem;
+        }
+        
+        body {
+            font-family: var(--font-main);
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: var(--incor-blue-700);
+            margin-bottom: 10px;
+            font-size: 1.5rem;
+        }
+        
+        .description {
+            color: var(--content-text-secondary);
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        
+        .legend {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: var(--radius-lg);
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .legend-item span.label {
+            font-size: 0.875rem;
+            color: var(--content-text-secondary);
+        }
+        
+        /* Table styles */
+        .ponto-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        
+        .ponto-table th {
+            background: var(--incor-blue-50);
+            color: var(--incor-blue-700);
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 2px solid var(--incor-blue-100);
+        }
+        
+        .ponto-table td {
+            padding: 16px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 0.875rem;
+        }
+        
+        .ponto-table tr:hover {
+            background: #fafbfc;
+        }
+        
+        /* Person cell */
+        .ponto-person {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .ponto-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--incor-blue-100);
+            color: var(--incor-blue-700);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+        
+        .ponto-person-name {
+            font-weight: 600;
+            color: var(--content-text-primary);
+        }
+        
+        .ponto-escala-pill {
+            display: inline-flex;
+            padding: 0.25rem 0.625rem;
+            font-size: 0.6875rem;
+            font-weight: 600;
+            color: var(--incor-blue-700);
+            background: var(--incor-blue-50);
+            border: 1px solid var(--incor-blue-100);
+            border-radius: var(--radius-full);
+        }
+        
+        /* Tipo badges */
+        .ponto-tipo-cell {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.25rem;
+        }
+        
+        .ponto-tipo-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border-radius: var(--radius-full);
+            white-space: nowrap;
+        }
+        
+        .ponto-tipo-badge svg {
+            width: 0.875rem;
+            height: 0.875rem;
+            flex-shrink: 0;
+        }
+        
+        /* Teoria badge - amber style */
+        .ponto-tipo-teoria {
+            color: #92400E;
+            background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+            border: 1px solid #F59E0B;
+            box-shadow: 0 1px 2px rgba(245, 158, 11, 0.15);
+        }
+        
+        .ponto-tipo-teoria svg {
+            color: #D97706;
+        }
+        
+        /* Prática badge - cyan style */
+        .ponto-tipo-pratica {
+            color: #0E7490;
+            background: linear-gradient(135deg, #ECFEFF 0%, #CFFAFE 100%);
+            border: 1px solid #06B6D4;
+            box-shadow: 0 1px 2px rgba(6, 182, 212, 0.15);
+        }
+        
+        .ponto-tipo-pratica svg {
+            color: #0891B2;
+        }
+        
+        /* Status badges */
+        .badge {
+            display: inline-flex;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.6875rem;
+            font-weight: 600;
+            border-radius: var(--radius-full);
+        }
+        
+        .badge-green {
+            color: #065F46;
+            background: #D1FAE5;
+            border: 1px solid #6EE7B7;
+        }
+        
+        .badge-yellow {
+            color: #92400E;
+            background: #FEF3C7;
+            border: 1px solid #FCD34D;
+        }
+        
+        .badge-red {
+            color: #991B1B;
+            background: #FEE2E2;
+            border: 1px solid #FCA5A5;
+        }
+        
+        .info-box {
+            margin-top: 30px;
+            padding: 20px;
+            background: #EFF6FF;
+            border-radius: 8px;
+            border-left: 4px solid #3B82F6;
+        }
+        
+        .info-box h3 {
+            color: #1E40AF;
+            margin-bottom: 10px;
+        }
+        
+        .info-box p {
+            color: #1E3A8A;
+            line-height: 1.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📋 Registro de Ponto - Visualização Prática vs Teoria</h1>
+        <p class="description">
+            Demonstração visual da separação entre <strong>Prática</strong> e <strong>Teoria</strong> na tabela de frequência do Dashboard.
+        </p>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <span class="ponto-tipo-badge ponto-tipo-pratica">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                    </svg>
+                    Prática
+                </span>
+                <span class="label">Atividades práticas</span>
+            </div>
+            <div class="legend-item">
+                <span class="ponto-tipo-badge ponto-tipo-teoria">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                    </svg>
+                    Teoria
+                </span>
+                <span class="label">Aulas teóricas</span>
+            </div>
+        </div>
+        
+        <table class="ponto-table">
+            <thead>
+                <tr>
+                    <th>Aluno</th>
+                    <th>Data</th>
+                    <th>Entrada</th>
+                    <th>Saída</th>
+                    <th>Setor</th>
+                    <th>Tipo</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <div class="ponto-person">
+                            <div class="ponto-avatar">JC</div>
+                            <span class="ponto-person-name">João Costa</span>
+                        </div>
+                    </td>
+                    <td>12/12/2025</td>
+                    <td>07:55</td>
+                    <td>12:30</td>
+                    <td><span class="ponto-escala-pill">Escala 1</span></td>
+                    <td>
+                        <div class="ponto-tipo-cell">
+                            <span class="ponto-tipo-badge ponto-tipo-pratica">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                                </svg>
+                                Prática
+                            </span>
+                        </div>
+                    </td>
+                    <td><span class="badge badge-green">Presente</span></td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="ponto-person">
+                            <div class="ponto-avatar">MS</div>
+                            <span class="ponto-person-name">Maria Silva</span>
+                        </div>
+                    </td>
+                    <td>12/12/2025</td>
+                    <td>18:05</td>
+                    <td>21:30</td>
+                    <td><span class="ponto-escala-pill">Escala 2</span></td>
+                    <td>
+                        <div class="ponto-tipo-cell">
+                            <span class="ponto-tipo-badge ponto-tipo-teoria">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                                </svg>
+                                Teoria
+                            </span>
+                        </div>
+                    </td>
+                    <td><span class="badge badge-green">Presente</span></td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="ponto-person">
+                            <div class="ponto-avatar">PO</div>
+                            <span class="ponto-person-name">Pedro Oliveira</span>
+                        </div>
+                    </td>
+                    <td>12/12/2025</td>
+                    <td>08:15</td>
+                    <td>13:00</td>
+                    <td><span class="ponto-escala-pill">Escala 1</span></td>
+                    <td>
+                        <div class="ponto-tipo-cell">
+                            <span class="ponto-tipo-badge ponto-tipo-pratica">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                                </svg>
+                                Prática
+                            </span>
+                        </div>
+                    </td>
+                    <td><span class="badge badge-yellow">Atraso (+15 min)</span></td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="ponto-person">
+                            <div class="ponto-avatar">AL</div>
+                            <span class="ponto-person-name">Ana Lima</span>
+                        </div>
+                    </td>
+                    <td>12/12/2025</td>
+                    <td>18:20</td>
+                    <td>21:30</td>
+                    <td><span class="ponto-escala-pill">Escala 2</span></td>
+                    <td>
+                        <div class="ponto-tipo-cell">
+                            <span class="ponto-tipo-badge ponto-tipo-teoria">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                                </svg>
+                                Teoria
+                            </span>
+                        </div>
+                    </td>
+                    <td><span class="badge badge-yellow">Atraso (+20 min)</span></td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="ponto-person">
+                            <div class="ponto-avatar">CS</div>
+                            <span class="ponto-person-name">Carlos Santos</span>
+                        </div>
+                    </td>
+                    <td>12/12/2025</td>
+                    <td>—</td>
+                    <td>—</td>
+                    <td><span class="ponto-escala-pill">Escala 1</span></td>
+                    <td>
+                        <div class="ponto-tipo-cell">
+                            <span class="ponto-tipo-badge ponto-tipo-pratica">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                                </svg>
+                                Prática
+                            </span>
+                        </div>
+                    </td>
+                    <td><span class="badge badge-red">Falta</span></td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <div class="info-box">
+            <h3>ℹ️ Informação</h3>
+            <p>
+                O Dashboard exibe visualmente a diferença entre registros de <strong>Prática</strong> e <strong>Teoria</strong>.<br>
+                A lógica de regras de negócio (horário fixo 18h, tolerância de 10 min, etc.) é processada no backend (Ponto.gs e PontoEscala.gs).
+            </p>
+        </div>
+    </div>
+</body>
+</html>
