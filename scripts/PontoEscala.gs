@@ -32,6 +32,10 @@
 // =====================================================================
 // CONSTANTES - REGRAS PARA TEORIA
 // =====================================================================
+// NOTA: Estas constantes são duplicadas em script.js (cliente) porque
+// Google Apps Script e JavaScript do navegador rodam em ambientes diferentes
+// e não podem compartilhar código. Mantenha ambos sincronizados ao alterar.
+// =====================================================================
 var TEORIA_HORA_INICIO = '18:00:00';
 var TEORIA_HORA_LIMITE_PONTO = '18:10:00'; // Limite para não ser considerado atraso
 var TEORIA_TOLERANCIA_MINUTOS = 10;

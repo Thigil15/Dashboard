@@ -1587,7 +1587,7 @@ const appState = {
     }
 };
 
-const ATRASO_THRESHOLD_MINUTES = 10;
+const ATRASO_THRESHOLD_MINUTES = 10;  // General threshold for lateness in Prática (practice)
 const TOTAL_ESCALADOS = 25;
 const MAX_RECENT_ACTIVITIES = 10;
 // MAX_PENDING_STUDENTS removed - now shows all students
@@ -1600,6 +1600,11 @@ const MAX_RECENT_ACTIVITIES = 10;
 // - The class starts at a fixed time of 18:00 (6 PM) for ALL students
 // - Students have until 18:10 to clock in (10 min tolerance)
 // - Arriving after 18:10 is considered late (atraso)
+//
+// Note: TEORIA_TOLERANCE_MINUTES has the same value as ATRASO_THRESHOLD_MINUTES
+// (both 10 min) but they serve different purposes:
+// - ATRASO_THRESHOLD_MINUTES: tolerance for Prática based on individual schedules
+// - TEORIA_TOLERANCE_MINUTES: tolerance for Teoria based on fixed 18:00 start time
 // =====================================================================
 const TEORIA_FIXED_START_TIME = '18:00';
 const TEORIA_FIXED_START_MINUTES = 18 * 60; // 18:00 = 1080 minutes from midnight
