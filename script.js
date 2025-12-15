@@ -150,7 +150,7 @@
                         // Process PontoPratica data
                         try {
                             // PontoPratica data will be merged with Escalas data in extractAndPopulatePontoDates
-                            extractAndPopulatePontoDates(processed, true, false, 'pratica'); // fromPontoPratica=true, tipo='pratica'
+                            extractAndPopulatePontoDates(processed, true, false, 'pratica'); // fromPontoSheet=true, fromEscala=false, tipo='pratica'
                             updatePontoHojeMap();
                             console.log('[setupDatabaseListeners] ✅ PontoPratica data processado');
                         } catch (error) {
@@ -173,7 +173,7 @@
                         // Process PontoTeoria data
                         try {
                             // PontoTeoria data will be merged with Escalas data in extractAndPopulatePontoDates
-                            extractAndPopulatePontoDates(processed, true, false, 'teoria'); // fromPontoPratica=true (reusing flag), tipo='teoria'
+                            extractAndPopulatePontoDates(processed, true, false, 'teoria'); // fromPontoSheet=true, fromEscala=false, tipo='teoria'
                             updatePontoHojeMap();
                             console.log('[setupDatabaseListeners] ✅ PontoTeoria data processado');
                         } catch (error) {
@@ -2524,28 +2524,36 @@ const pontoState = {
             
             // Process these records into pontoState
             if (pontoRecords.length > 0) {
-                extractAndPopulatePontoDates(pontoRecords, false, true); // fromPontoPratica=false, fromEscala=true
+                extractAndPopulatePontoDates(pontoRecords, false, true); // fromPontoSheet=false, fromEscala=true
             }
             
             return pontoRecords;
         }
 
-        function extractAndPopulatePontoDates(pontoRows, fromPontoPratica = false, fromEscala = false, forceTipo = null) {
+        /**
+         * Extract and populate ponto dates from various data sources
+         * @param {Array} pontoRows - Array of attendance records
+         * @param {boolean} fromPontoSheet - True if data is from PontoPratica or PontoTeoria sheets
+         * @param {boolean} fromEscala - True if data is extracted from Escala sheets
+         * @param {string|null} forceTipo - Force tipo to 'pratica' or 'teoria' (overrides existing modalidade)
+         */
+        function extractAndPopulatePontoDates(pontoRows, fromPontoSheet = false, fromEscala = false, forceTipo = null) {
             if (!Array.isArray(pontoRows) || pontoRows.length === 0) {
                 console.log("[extractAndPopulatePontoDates] Nenhum registro de ponto para processar.");
                 return;
             }
 
-            const source = fromPontoPratica ? (forceTipo === 'teoria' ? 'PontoTeoria' : 'PontoPratica') : (fromEscala ? 'Escala' : 'Ponto');
+            const source = fromPontoSheet ? (forceTipo === 'teoria' ? 'PontoTeoria' : 'PontoPratica') : (fromEscala ? 'Escala' : 'Ponto');
             console.log(`[extractAndPopulatePontoDates] Processando ${pontoRows.length} registros de ${source}`);
             if (forceTipo) {
                 console.log(`[extractAndPopulatePontoDates] Tipo forçado: ${forceTipo}`);
+            }
 
             const dateSet = new Set(pontoState.dates); // Start with existing dates
             const groupedByDate = new Map();
             
             // First, copy existing data if we're merging
-            if (fromPontoPratica || fromEscala) {
+            if (fromPontoSheet || fromEscala) {
                 pontoState.byDate.forEach((records, date) => {
                     groupedByDate.set(date, [...records]);
                 });
@@ -2730,10 +2738,10 @@ const pontoState = {
                             extractAndPopulatePontoDates(appState.pontoStaticRows);
                         }
                         if (appState.pontoPraticaRows && appState.pontoPraticaRows.length > 0) {
-                            extractAndPopulatePontoDates(appState.pontoPraticaRows, true, false, 'pratica'); // fromPontoPratica = true, tipo = pratica
+                            extractAndPopulatePontoDates(appState.pontoPraticaRows, true, false, 'pratica'); // fromPontoSheet=true, tipo='pratica'
                         }
                         if (appState.pontoTeoriaRows && appState.pontoTeoriaRows.length > 0) {
-                            extractAndPopulatePontoDates(appState.pontoTeoriaRows, true, false, 'teoria'); // fromPontoPratica = true, tipo = teoria
+                            extractAndPopulatePontoDates(appState.pontoTeoriaRows, true, false, 'teoria'); // fromPontoSheet=true, tipo='teoria'
                         }
                         if (appState.escalas && Object.keys(appState.escalas).length > 0) {
                             extractPontoFromEscalas(appState.escalas);
