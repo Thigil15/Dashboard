@@ -889,8 +889,8 @@
         // These data types affect hours bank calculations and must trigger re-renders
         // - escalas: Contains student schedules and attendance status
         // - ausenciasReposicoes: Contains absence and makeup dates
-        // - pontoStaticRows/pontoPraticaRows: Contains daily attendance records
-        const STUDENT_DETAIL_REFRESH_KEYS = ['escalas', 'ausenciasReposicoes', 'pontoStaticRows', 'pontoPraticaRows'];
+        // - pontoStaticRows/pontoPraticaRows/pontoTeoriaRows: Contains daily attendance records
+        const STUDENT_DETAIL_REFRESH_KEYS = ['escalas', 'ausenciasReposicoes', 'pontoStaticRows', 'pontoPraticaRows', 'pontoTeoriaRows'];
         
         /**
          * Trigger UI updates based on data changes
@@ -952,6 +952,7 @@
                     
                 case 'pontoStaticRows':
                 case 'pontoPraticaRows':
+                case 'pontoTeoriaRows':
                     // Ponto data updated - refresh ponto view if on ponto tab
                     console.log(`[triggerUIUpdates] Dados de ${stateKey} atualizados, atualizando painel`);
                     
@@ -2716,6 +2717,7 @@ const pontoState = {
                 // Check if ponto data is already loaded (from any source)
                 const hasPontoData = (appState.pontoStaticRows && appState.pontoStaticRows.length > 0) ||
                                      (appState.pontoPraticaRows && appState.pontoPraticaRows.length > 0) ||
+                                     (appState.pontoTeoriaRows && appState.pontoTeoriaRows.length > 0) ||
                                      (pontoState.dates.length > 0);
                 
                 if (hasPontoData) {
@@ -2728,7 +2730,10 @@ const pontoState = {
                             extractAndPopulatePontoDates(appState.pontoStaticRows);
                         }
                         if (appState.pontoPraticaRows && appState.pontoPraticaRows.length > 0) {
-                            extractAndPopulatePontoDates(appState.pontoPraticaRows, true); // fromPontoPratica = true
+                            extractAndPopulatePontoDates(appState.pontoPraticaRows, true, false, 'pratica'); // fromPontoPratica = true, tipo = pratica
+                        }
+                        if (appState.pontoTeoriaRows && appState.pontoTeoriaRows.length > 0) {
+                            extractAndPopulatePontoDates(appState.pontoTeoriaRows, true, false, 'teoria'); // fromPontoPratica = true, tipo = teoria
                         }
                         if (appState.escalas && Object.keys(appState.escalas).length > 0) {
                             extractPontoFromEscalas(appState.escalas);
