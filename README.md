@@ -89,10 +89,8 @@ Dashboard/
 │   ├── VERIFICACAO_RAPIDA.md      # Checklist rápido
 │   ├── COMO_FUNCIONA_FIREBASE.md  # Guia Firebase
 │   └── ... (outros 36 documentos)
-├── 📁 scripts/                    # Google Apps Scripts (3 arquivos)
-│   ├── CodeFirebase.gs            # Script de exportação
-│   ├── Ponto.gs                   # Script de ponto
-│   └── PontoEscala/               # Gerenciamento de escalas
+├── 📁 scripts/                    # Google Apps Script (arquivo único)
+│   └── Code.gs                    # Script unificado (exportação, ponto, escalas, ausências)
 ├── 📁 tests/                      # Testes e validações (9 arquivos)
 │   ├── test-firebase-connection.html
 │   ├── test-login-system.html
