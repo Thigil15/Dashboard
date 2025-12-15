@@ -1664,6 +1664,41 @@ const pontoState = {
     isLoading: false
 };
 
+// Excel epoch dates used for time-only values from Google Sheets
+// When a cell contains only a time (no date), Google Sheets stores it with date 1899-12-30
+const EXCEL_EPOCH_DATE = '1899-12-30';
+const EXCEL_EPOCH_DATE_ALT = '1899-12-31';
+
+/**
+ * Check if an ISO date string represents an Excel time-only value (epoch date)
+ * @param {string} isoString - ISO date string
+ * @returns {boolean} - True if this is an Excel time-only value
+ */
+function isExcelTimeOnlyValue(isoString) {
+    if (!isoString || typeof isoString !== 'string') return false;
+    return isoString.startsWith(EXCEL_EPOCH_DATE) || isoString.startsWith(EXCEL_EPOCH_DATE_ALT);
+}
+
+/**
+ * Extract UTC time from an ISO datetime string
+ * @param {string} isoString - ISO datetime string (e.g., "1899-12-30T10:06:28.000Z" or "2025-12-15T14:30:00.000Z")
+ * @returns {object|null} - Object with hours and minutes, or null if invalid
+ */
+function extractTimeFromISO(isoString) {
+    if (!isoString || typeof isoString !== 'string' || !isoString.includes('T')) return null;
+    try {
+        const date = new Date(isoString);
+        if (isNaN(date.getTime())) return null;
+        return {
+            hours: date.getUTCHours(),
+            minutes: date.getUTCMinutes(),
+            formatted: `${String(date.getUTCHours()).padStart(2, '0')}:${String(date.getUTCMinutes()).padStart(2, '0')}`
+        };
+    } catch (e) {
+        return null;
+    }
+}
+
 // --- Função Helper para Normalização ---
         function normalizeString(str) {
             if (!str) return '';
@@ -4667,18 +4702,9 @@ const pontoState = {
             // The date 1899-12-30 is the Excel epoch date for time-only values
             // We only need to extract the time portion
             if (trimmed.includes('T')) {
-                try {
-                    // Parse as ISO date and extract time
-                    const date = new Date(trimmed);
-                    if (!isNaN(date.getTime())) {
-                        // Check if it's a time-only value (Excel epoch: 1899-12-30)
-                        // Or any valid ISO string - extract the time part
-                        const hours = date.getUTCHours();
-                        const minutes = date.getUTCMinutes();
-                        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-                    }
-                } catch (e) {
-                    // Fall through to regular parsing
+                const timeInfo = extractTimeFromISO(trimmed);
+                if (timeInfo) {
+                    return timeInfo.formatted;
                 }
             }
             
@@ -4700,17 +4726,11 @@ const pontoState = {
             const timeStr = String(time).trim();
             if (!timeStr) return null;
             
-            // Handle ISO time format: "1899-12-30T10:06:28.000Z"
+            // Handle ISO time format using the shared helper
             if (timeStr.includes('T')) {
-                try {
-                    const date = new Date(timeStr);
-                    if (!isNaN(date.getTime())) {
-                        const hours = date.getUTCHours();
-                        const minutes = date.getUTCMinutes();
-                        return hours * 60 + minutes;
-                    }
-                } catch (e) {
-                    // Fall through to regular parsing
+                const timeInfo = extractTimeFromISO(timeStr);
+                if (timeInfo) {
+                    return timeInfo.hours * 60 + timeInfo.minutes;
                 }
             }
             
@@ -4767,8 +4787,8 @@ const pontoState = {
             
             // Handle ISO format with time: "2025-12-15T03:00:00.000Z"
             if (str.includes('T')) {
-                // Skip time-only values (Excel epoch: 1899-12-30)
-                if (str.startsWith('1899-12-30') || str.startsWith('1899-12-31')) {
+                // Skip time-only values (Excel epoch dates)
+                if (isExcelTimeOnlyValue(str)) {
                     return ''; // This is a time-only value, not a real date
                 }
                 // Extract date portion from ISO string
