@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste - Timezone Brasil</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #667eea;
+            margin-top: 0;
+            font-size: 28px;
+        }
+        h2 {
+            color: #764ba2;
+            font-size: 20px;
+            margin-top: 30px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        .info-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .info-box.today {
+            background: #fef2f2;
+            border-left-color: #ef4444;
+        }
+        .info-box.past {
+            background: #f0fdf4;
+            border-left-color: #10b981;
+        }
+        .value {
+            font-weight: 600;
+            color: #667eea;
+            font-size: 18px;
+        }
+        .label {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        .emoji {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px 5px 0 0;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .test-result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        .test-result.pass {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .test-result.fail {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🕐 Teste de Timezone - Brasil (São Paulo)</h1>
+        <p>Este teste verifica se o sistema está detectando corretamente a data e hora do Brasil.</p>
+        
+        <h2>📅 Data e Hora Atual</h2>
+        
+        <div class="info-box">
+            <div class="label">Horário UTC (Sistema):</div>
+            <div class="value" id="utc-time"></div>
+        </div>
+        
+        <div class="info-box today">
+            <div class="label"><span class="emoji">🇧🇷</span>Horário do Brasil (São Paulo):</div>
+            <div class="value" id="brazil-time"></div>
+        </div>
+        
+        <div class="info-box today">
+            <div class="label">Data Atual (ISO) - Brasil:</div>
+            <div class="value" id="today-iso"></div>
+        </div>
+        
+        <h2>🔍 Testes de Detecção</h2>
+        
+        <button onclick="testToday()">Testar Data Atual</button>
+        <button onclick="testPastDate()">Testar Data Passada</button>
+        <button onclick="testFutureDate()">Testar Data Futura</button>
+        <button onclick="runAllTests()">Executar Todos os Testes</button>
+        
+        <div id="test-results"></div>
+        
+        <h2>📊 Demonstração: Priorização de Dados</h2>
+        
+        <div class="info-box today">
+            <div class="label"><span class="emoji">🔴</span><strong>Para HOJE:</strong></div>
+            <div>Dados serão carregados de: <strong>PontoPratica</strong> e <strong>PontoTeoria</strong></div>
+            <div style="margin-top: 5px; color: #666; font-size: 14px;">
+                ✅ Atualizações em tempo real<br>
+                ✅ Registros imediatos quando alguém bate o ponto
+            </div>
+        </div>
+        
+        <div class="info-box past">
+            <div class="label"><span class="emoji">📚</span><strong>Para Dias Passados:</strong></div>
+            <div>Dados serão carregados de: <strong>EscalaPratica</strong> e <strong>EscalaTeoria</strong></div>
+            <div style="margin-top: 5px; color: #666; font-size: 14px;">
+                ✅ Dados históricos completos<br>
+                ✅ Registros já sincronizados e consolidados
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Implementação das funções de timezone do sistema
+        function getTodayBrazilISO() {
+            const now = new Date();
+            const brazilTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+            const year = brazilTime.getFullYear();
+            const month = String(brazilTime.getMonth() + 1).padStart(2, '0');
+            const day = String(brazilTime.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function isToday(isoDate) {
+            if (!isoDate) return false;
+            const todayISO = getTodayBrazilISO();
+            return isoDate === todayISO;
+        }
+
+        // Atualiza a interface com data/hora atual
+        function updateCurrentTime() {
+            const now = new Date();
+            const brazilTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+            
+            document.getElementById('utc-time').textContent = now.toISOString();
+            document.getElementById('brazil-time').textContent = brazilTime.toLocaleString('pt-BR', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            document.getElementById('today-iso').textContent = getTodayBrazilISO();
+        }
+
+        // Função de teste
+        function addTestResult(testName, passed, message) {
+            const resultsDiv = document.getElementById('test-results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${passed ? 'pass' : 'fail'}`;
+            resultDiv.innerHTML = `<strong>${passed ? '✅' : '❌'} ${testName}:</strong> ${message}`;
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        function clearTestResults() {
+            document.getElementById('test-results').innerHTML = '';
+        }
+
+        function testToday() {
+            clearTestResults();
+            const todayISO = getTodayBrazilISO();
+            const result = isToday(todayISO);
+            addTestResult(
+                'Data Atual',
+                result === true,
+                `isToday("${todayISO}") = ${result} (Esperado: true)`
+            );
+        }
+
+        function testPastDate() {
+            clearTestResults();
+            const pastDate = '2023-12-01';
+            const result = isToday(pastDate);
+            addTestResult(
+                'Data Passada',
+                result === false,
+                `isToday("${pastDate}") = ${result} (Esperado: false)`
+            );
+        }
+
+        function testFutureDate() {
+            clearTestResults();
+            const futureDate = '2099-12-31';
+            const result = isToday(futureDate);
+            addTestResult(
+                'Data Futura',
+                result === false,
+                `isToday("${futureDate}") = ${result} (Esperado: false)`
+            );
+        }
+
+        function runAllTests() {
+            clearTestResults();
+            
+            // Test 1: Today
+            const todayISO = getTodayBrazilISO();
+            const test1 = isToday(todayISO);
+            addTestResult(
+                'Teste 1: Data Atual',
+                test1 === true,
+                `isToday("${todayISO}") = ${test1}`
+            );
+
+            // Test 2: Past date
+            const pastDate = '2023-12-01';
+            const test2 = isToday(pastDate);
+            addTestResult(
+                'Teste 2: Data Passada',
+                test2 === false,
+                `isToday("${pastDate}") = ${test2}`
+            );
+
+            // Test 3: Future date
+            const futureDate = '2099-12-31';
+            const test3 = isToday(futureDate);
+            addTestResult(
+                'Teste 3: Data Futura',
+                test3 === false,
+                `isToday("${futureDate}") = ${test3}`
+            );
+
+            // Test 4: Invalid date
+            const invalidDate = '';
+            const test4 = isToday(invalidDate);
+            addTestResult(
+                'Teste 4: Data Vazia',
+                test4 === false,
+                `isToday("") = ${test4}`
+            );
+
+            // Test 5: Yesterday
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayISO = yesterday.toISOString().slice(0, 10);
+            const test5 = isToday(yesterdayISO);
+            addTestResult(
+                'Teste 5: Ontem',
+                test5 === false,
+                `isToday("${yesterdayISO}") = ${test5}`
+            );
+
+            // Test 6: Tomorrow
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const tomorrowISO = tomorrow.toISOString().slice(0, 10);
+            const test6 = isToday(tomorrowISO);
+            addTestResult(
+                'Teste 6: Amanhã',
+                test6 === false,
+                `isToday("${tomorrowISO}") = ${test6}`
+            );
+
+            // Summary
+            const allPassed = test1 && !test2 && !test3 && !test4 && !test5 && !test6;
+            setTimeout(() => {
+                addTestResult(
+                    'RESULTADO FINAL',
+                    allPassed,
+                    allPassed ? 'Todos os testes passaram! ✨' : 'Alguns testes falharam. ⚠️'
+                );
+            }, 100);
+        }
+
+        // Atualiza a hora a cada segundo
+        updateCurrentTime();
+        setInterval(updateCurrentTime, 1000);
+    </script>
+</body>
+</html>

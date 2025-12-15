@@ -2541,7 +2541,16 @@ const pontoState = {
             const year = brazilTime.getFullYear();
             const month = String(brazilTime.getMonth() + 1).padStart(2, '0');
             const day = String(brazilTime.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
+            const todayISO = `${year}-${month}-${day}`;
+            
+            // Log for debugging (only once per page load to avoid spam)
+            if (!window._loggedBrazilTimezone) {
+                console.log(`[getTodayBrazilISO] Horário do Brasil (São Paulo): ${brazilTime.toLocaleString('pt-BR')}`);
+                console.log(`[getTodayBrazilISO] Data atual (ISO): ${todayISO}`);
+                window._loggedBrazilTimezone = true;
+            }
+            
+            return todayISO;
         }
 
         /**
@@ -2706,13 +2715,21 @@ const pontoState = {
             pontoState.dates = Array.from(dateSet).filter(Boolean).sort((a, b) => b.localeCompare(a));
             
             // Update byDate map and cache
+            const todayISO = getTodayBrazilISO();
+            let todayRecordsCount = 0;
             groupedByDate.forEach((rows, iso) => {
                 pontoState.byDate.set(iso, rows);
                 pontoState.cache.set(makePontoCacheKey(iso, 'all'), rows);
+                if (iso === todayISO) {
+                    todayRecordsCount = rows.length;
+                }
             });
 
             console.log(`[extractAndPopulatePontoDates] ${pontoState.dates.length} datas encontradas:`, pontoState.dates.slice(0, 5));
             console.log(`[extractAndPopulatePontoDates] ${pontoState.byDate.size} datas populadas no cache.`);
+            if (todayRecordsCount > 0) {
+                console.log(`[extractAndPopulatePontoDates] ✅ ${todayRecordsCount} registros encontrados para HOJE (${todayISO}) - Fonte: ${source}`);
+            }
         }
 
         // --- NAVEGAÇÃO PRINCIPAL ---
