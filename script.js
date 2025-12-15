@@ -150,11 +150,34 @@
                         // Process PontoPratica data
                         try {
                             // PontoPratica data will be merged with Escalas data in extractAndPopulatePontoDates
-                            extractAndPopulatePontoDates(processed, true); // true = from PontoPratica
+                            extractAndPopulatePontoDates(processed, true, false, 'pratica'); // fromPontoSheet=true, fromEscala=false, tipo='pratica'
                             updatePontoHojeMap();
                             console.log('[setupDatabaseListeners] ✅ PontoPratica data processado');
                         } catch (error) {
                             console.error('[setupDatabaseListeners] ❌ Erro ao processar PontoPratica:', error);
+                            console.error('[setupDatabaseListeners] Stack trace:', error.stack);
+                        }
+                    }
+                    
+                    return processed;
+                }},
+                // NEW: PontoTeoria - Theory attendance data
+                { path: 'exportAll/PontoTeoria/dados', stateKey: 'pontoTeoriaRows', processor: (data) => {
+                    const processed = (data || []).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
+                    
+                    if (processed.length > 0 && processed[0]) {
+                        const sampleFields = Object.keys(processed[0]);
+                        console.log(`[setupDatabaseListeners] ✅ PontoTeoria carregado com ${processed.length} registros`);
+                        console.log('[setupDatabaseListeners] Campos disponíveis no PontoTeoria:', sampleFields.slice(0, 15).join(', '));
+                        
+                        // Process PontoTeoria data
+                        try {
+                            // PontoTeoria data will be merged with Escalas data in extractAndPopulatePontoDates
+                            extractAndPopulatePontoDates(processed, true, false, 'teoria'); // fromPontoSheet=true, fromEscala=false, tipo='teoria'
+                            updatePontoHojeMap();
+                            console.log('[setupDatabaseListeners] ✅ PontoTeoria data processado');
+                        } catch (error) {
+                            console.error('[setupDatabaseListeners] ❌ Erro ao processar PontoTeoria:', error);
                             console.error('[setupDatabaseListeners] Stack trace:', error.stack);
                         }
                     }
@@ -866,8 +889,8 @@
         // These data types affect hours bank calculations and must trigger re-renders
         // - escalas: Contains student schedules and attendance status
         // - ausenciasReposicoes: Contains absence and makeup dates
-        // - pontoStaticRows/pontoPraticaRows: Contains daily attendance records
-        const STUDENT_DETAIL_REFRESH_KEYS = ['escalas', 'ausenciasReposicoes', 'pontoStaticRows', 'pontoPraticaRows'];
+        // - pontoStaticRows/pontoPraticaRows/pontoTeoriaRows: Contains daily attendance records
+        const STUDENT_DETAIL_REFRESH_KEYS = ['escalas', 'ausenciasReposicoes', 'pontoStaticRows', 'pontoPraticaRows', 'pontoTeoriaRows'];
         
         /**
          * Trigger UI updates based on data changes
@@ -929,6 +952,7 @@
                     
                 case 'pontoStaticRows':
                 case 'pontoPraticaRows':
+                case 'pontoTeoriaRows':
                     // Ponto data updated - refresh ponto view if on ponto tab
                     console.log(`[triggerUIUpdates] Dados de ${stateKey} atualizados, atualizando painel`);
                     
@@ -1560,6 +1584,7 @@ const appState = {
     notasPraticas: {},
     pontoStaticRows: [], // OLD: Legacy ponto data from exportAll/Ponto/dados
     pontoPraticaRows: [], // NEW: Current scale ponto data from PontoPratica
+    pontoTeoriaRows: [], // NEW: Theory attendance data from PontoTeoria
     currentScaleNumber: null, // Detected current scale number (e.g., 9 for Escala9)
     todayBR: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
     todayFullBR: new Date().toLocaleDateString('pt-BR'),
@@ -1580,6 +1605,7 @@ const appState = {
         notasPraticas: false,
         pontoStaticRows: false,
         pontoPraticaRows: false,
+        pontoTeoriaRows: false,
         escalas: false,
         escalaAtualEnfermaria: false,
         escalaAtualUTI: false,
@@ -2425,6 +2451,12 @@ const pontoState = {
                 const alunos = escala.alunos || [];
                 const headersDay = escala.headersDay || [];
                 
+                // Determine if this is a Teoria or Pratica scale based on the name
+                // Check for "EscalaTeoria" pattern (case-insensitive)
+                const isTeoriaScale = /escala\s*teoria/i.test(scalaName) || /teoria\s*\d+/i.test(scalaName);
+                const tipo = isTeoriaScale ? 'Teoria' : 'Prática';
+                console.log(`[extractPontoFromEscalas] ${scalaName}: Tipo determinado = ${tipo}`);
+                
                 // For each date in the scale
                 headersDay.forEach(dateStr => {
                     // dateStr is in format "DD/MM"
@@ -2449,7 +2481,7 @@ const pontoState = {
                                 SerialNumber: aluno.SerialNumber || aluno.Serial || aluno.ID || '',
                                 DataISO: isoDate,
                                 Escala: scalaName,
-                                'Pratica/Teorica': 'Prática',
+                                'Pratica/Teorica': tipo,
                                 _source: 'escala',
                                 _isRestDay: true // Mark as rest day
                             };
@@ -2476,7 +2508,7 @@ const pontoState = {
                                 HoraEntrada: horaEntrada,
                                 HoraSaida: horaSaida,
                                 Escala: scalaName,
-                                'Pratica/Teorica': 'Prática', // Default, as escalas are typically for practical work
+                                'Pratica/Teorica': tipo, // Determined based on escala name (EscalaTeoria vs EscalaPratica)
                                 _source: 'escala', // Mark the source as escala
                                 _scheduledEntrada: horaEntrada, // Store as scheduled time
                                 _scheduledSaida: horaSaida
@@ -2492,26 +2524,36 @@ const pontoState = {
             
             // Process these records into pontoState
             if (pontoRecords.length > 0) {
-                extractAndPopulatePontoDates(pontoRecords, false, true); // fromPontoPratica=false, fromEscala=true
+                extractAndPopulatePontoDates(pontoRecords, false, true); // fromPontoSheet=false, fromEscala=true
             }
             
             return pontoRecords;
         }
 
-        function extractAndPopulatePontoDates(pontoRows, fromPontoPratica = false, fromEscala = false) {
+        /**
+         * Extract and populate ponto dates from various data sources
+         * @param {Array} pontoRows - Array of attendance records
+         * @param {boolean} fromPontoSheet - True if data is from PontoPratica or PontoTeoria sheets
+         * @param {boolean} fromEscala - True if data is extracted from Escala sheets
+         * @param {string|null} forceTipo - Force tipo to 'pratica' or 'teoria' (overrides existing modalidade)
+         */
+        function extractAndPopulatePontoDates(pontoRows, fromPontoSheet = false, fromEscala = false, forceTipo = null) {
             if (!Array.isArray(pontoRows) || pontoRows.length === 0) {
                 console.log("[extractAndPopulatePontoDates] Nenhum registro de ponto para processar.");
                 return;
             }
 
-            const source = fromPontoPratica ? 'PontoPratica' : (fromEscala ? 'Escala' : 'Ponto');
+            const source = fromPontoSheet ? (forceTipo === 'teoria' ? 'PontoTeoria' : 'PontoPratica') : (fromEscala ? 'Escala' : 'Ponto');
             console.log(`[extractAndPopulatePontoDates] Processando ${pontoRows.length} registros de ${source}`);
+            if (forceTipo) {
+                console.log(`[extractAndPopulatePontoDates] Tipo forçado: ${forceTipo}`);
+            }
 
             const dateSet = new Set(pontoState.dates); // Start with existing dates
             const groupedByDate = new Map();
             
             // First, copy existing data if we're merging
-            if (fromPontoPratica || fromEscala) {
+            if (fromPontoSheet || fromEscala) {
                 pontoState.byDate.forEach((records, date) => {
                     groupedByDate.set(date, [...records]);
                 });
@@ -2552,6 +2594,11 @@ const pontoState = {
                     
                     // Mark the source
                     normalizedRow._source = source;
+                    
+                    // Override modalidade if forceTipo is specified
+                    if (forceTipo) {
+                        normalizedRow.modalidade = forceTipo === 'teoria' ? 'Teoria' : 'Prática';
+                    }
                     
                     // Group records by date for initial cache population
                     if (!groupedByDate.has(isoDate)) {
@@ -2678,6 +2725,7 @@ const pontoState = {
                 // Check if ponto data is already loaded (from any source)
                 const hasPontoData = (appState.pontoStaticRows && appState.pontoStaticRows.length > 0) ||
                                      (appState.pontoPraticaRows && appState.pontoPraticaRows.length > 0) ||
+                                     (appState.pontoTeoriaRows && appState.pontoTeoriaRows.length > 0) ||
                                      (pontoState.dates.length > 0);
                 
                 if (hasPontoData) {
@@ -2690,7 +2738,10 @@ const pontoState = {
                             extractAndPopulatePontoDates(appState.pontoStaticRows);
                         }
                         if (appState.pontoPraticaRows && appState.pontoPraticaRows.length > 0) {
-                            extractAndPopulatePontoDates(appState.pontoPraticaRows, true); // fromPontoPratica = true
+                            extractAndPopulatePontoDates(appState.pontoPraticaRows, true, false, 'pratica'); // fromPontoSheet=true, tipo='pratica'
+                        }
+                        if (appState.pontoTeoriaRows && appState.pontoTeoriaRows.length > 0) {
+                            extractAndPopulatePontoDates(appState.pontoTeoriaRows, true, false, 'teoria'); // fromPontoSheet=true, tipo='teoria'
                         }
                         if (appState.escalas && Object.keys(appState.escalas).length > 0) {
                             extractPontoFromEscalas(appState.escalas);
@@ -5423,6 +5474,35 @@ const pontoState = {
                 modalidadeContent = '<span class="ponto-tipo-badge ponto-tipo-outro">—</span>';
             }
             
+            // Look up student photo from appState.alunosMap
+            let studentInfo = null;
+            if (row.emailNormalized && appState.alunosMap.has(row.emailNormalized)) {
+                studentInfo = appState.alunosMap.get(row.emailNormalized);
+            } else if (row.email) {
+                // Try with original email
+                for (const [email, info] of appState.alunosMap) {
+                    if (normalizeString(email) === row.emailNormalized || email === row.email) {
+                        studentInfo = info;
+                        break;
+                    }
+                }
+            }
+            
+            // Build avatar HTML with photo or initials fallback
+            let avatarHTML;
+            if (studentInfo && studentInfo.FotoID) {
+                const photoUrl = `https://lh3.googleusercontent.com/d/${studentInfo.FotoID}=s96-c`;
+                const fallbackInitials = escapeHtml(initials);
+                avatarHTML = `
+                    <div class="ponto-avatar ponto-avatar-photo">
+                        <img src="${photoUrl}" alt="${escapeHtml(row.nome)}" loading="lazy" 
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="ponto-avatar-fallback" style="display: none;">${fallbackInitials}</div>
+                    </div>`;
+            } else {
+                avatarHTML = `<div class="ponto-avatar">${escapeHtml(initials)}</div>`;
+            }
+            
             const emailLine = row.email ? `<span class="ponto-person-email">${escapeHtml(row.email)}</span>` : '';
             const serialLine = row.rawSerial ? `<span class="ponto-person-extra">Crachá: ${escapeHtml(row.rawSerial)}</span>` : '';
 
@@ -5430,7 +5510,7 @@ const pontoState = {
                 <tr class="ponto-row" data-status="${row.status}" data-search="${row.searchKey}" data-tipo="${isTeoria ? 'teoria' : (isPratica ? 'pratica' : 'outro')}">
                     <td data-label="Nome">
                         <div class="ponto-person">
-                            <div class="ponto-avatar">${escapeHtml(initials)}</div>
+                            ${avatarHTML}
                             <div class="ponto-person-info">
                                 <span class="ponto-person-name">${escapeHtml(row.nome || '—')}</span>
                                 ${emailLine}
@@ -5455,8 +5535,28 @@ const pontoState = {
 
         function updatePontoMeta() {
             const dateLabel = document.getElementById('ponto-active-date');
+            const datePicker = document.getElementById('ponto-date-picker');
+            const todayISO = new Date().toISOString().slice(0, 10);
+            const isToday = pontoState.selectedDate === todayISO;
+            
             if (dateLabel) {
-                dateLabel.textContent = pontoState.selectedDate ? formatDateLabel(pontoState.selectedDate) : '--';
+                let displayText = pontoState.selectedDate ? formatDateLabel(pontoState.selectedDate) : '--';
+                // Add "Hoje" badge if viewing today
+                if (isToday) {
+                    displayText = '🔴 HOJE • ' + displayText;
+                }
+                dateLabel.textContent = displayText;
+            }
+            
+            // Add visual indicator to date picker when viewing today
+            if (datePicker) {
+                if (isToday) {
+                    datePicker.style.borderColor = 'var(--incor-red-400)';
+                    datePicker.style.background = 'linear-gradient(135deg, #fef2f2 0%, white 100%)';
+                } else {
+                    datePicker.style.borderColor = '';
+                    datePicker.style.background = '';
+                }
             }
             const syncLabel = document.getElementById('ponto-last-sync');
             if (syncLabel) {
@@ -5667,18 +5767,30 @@ const pontoState = {
             }
             
             const todayISO = new Date().toISOString().slice(0, 10);
+            
+            // ALWAYS ensure today is in the dates list, even if there are no records
+            if (!pontoState.dates.includes(todayISO)) {
+                pontoState.dates.push(todayISO);
+                pontoState.dates.sort((a, b) => b.localeCompare(a));
+                console.log('[initializePontoPanel] Adicionado dia atual à lista de datas:', todayISO);
+            }
+            
             const result = await ensurePontoData(todayISO, 'all', { useTodayEndpoint: true, adoptSelection: true });
             
             if (result && result.selectedDate) {
                 pontoState.selectedDate = result.selectedDate;
             } else if (!pontoState.selectedDate) {
+                // ALWAYS default to today if no date is selected
                 pontoState.selectedDate = todayISO;
+                console.log('[initializePontoPanel] Selecionado dia atual:', todayISO);
             }
             if (result && result.selectedScale) {
                 pontoState.selectedScale = result.selectedScale;
             } else if (!pontoState.selectedScale) {
                 pontoState.selectedScale = 'all';
             }
+            
+            // Double-check that selected date is in dates list
             if (!pontoState.dates.includes(pontoState.selectedDate)) {
                 pontoState.dates.push(pontoState.selectedDate);
                 pontoState.dates.sort((a, b) => b.localeCompare(a));
