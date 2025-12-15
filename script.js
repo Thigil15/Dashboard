@@ -5498,8 +5498,28 @@ const pontoState = {
 
         function updatePontoMeta() {
             const dateLabel = document.getElementById('ponto-active-date');
+            const datePicker = document.getElementById('ponto-date-picker');
+            const todayISO = new Date().toISOString().slice(0, 10);
+            const isToday = pontoState.selectedDate === todayISO;
+            
             if (dateLabel) {
-                dateLabel.textContent = pontoState.selectedDate ? formatDateLabel(pontoState.selectedDate) : '--';
+                let displayText = pontoState.selectedDate ? formatDateLabel(pontoState.selectedDate) : '--';
+                // Add "Hoje" badge if viewing today
+                if (isToday) {
+                    displayText = '🔴 HOJE • ' + displayText;
+                }
+                dateLabel.textContent = displayText;
+            }
+            
+            // Add visual indicator to date picker when viewing today
+            if (datePicker) {
+                if (isToday) {
+                    datePicker.style.borderColor = 'var(--incor-red-400)';
+                    datePicker.style.background = 'linear-gradient(135deg, #fef2f2 0%, white 100%)';
+                } else {
+                    datePicker.style.borderColor = '';
+                    datePicker.style.background = '';
+                }
             }
             const syncLabel = document.getElementById('ponto-last-sync');
             if (syncLabel) {
@@ -5710,18 +5730,30 @@ const pontoState = {
             }
             
             const todayISO = new Date().toISOString().slice(0, 10);
+            
+            // ALWAYS ensure today is in the dates list, even if there are no records
+            if (!pontoState.dates.includes(todayISO)) {
+                pontoState.dates.push(todayISO);
+                pontoState.dates.sort((a, b) => b.localeCompare(a));
+                console.log('[initializePontoPanel] Adicionado dia atual à lista de datas:', todayISO);
+            }
+            
             const result = await ensurePontoData(todayISO, 'all', { useTodayEndpoint: true, adoptSelection: true });
             
             if (result && result.selectedDate) {
                 pontoState.selectedDate = result.selectedDate;
             } else if (!pontoState.selectedDate) {
+                // ALWAYS default to today if no date is selected
                 pontoState.selectedDate = todayISO;
+                console.log('[initializePontoPanel] Selecionado dia atual:', todayISO);
             }
             if (result && result.selectedScale) {
                 pontoState.selectedScale = result.selectedScale;
             } else if (!pontoState.selectedScale) {
                 pontoState.selectedScale = 'all';
             }
+            
+            // Double-check that selected date is in dates list
             if (!pontoState.dates.includes(pontoState.selectedDate)) {
                 pontoState.dates.push(pontoState.selectedDate);
                 pontoState.dates.sort((a, b) => b.localeCompare(a));
