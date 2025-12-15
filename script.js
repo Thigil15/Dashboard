@@ -1664,6 +1664,58 @@ const pontoState = {
     isLoading: false
 };
 
+/**
+ * Excel Epoch Dates for Time-Only Values
+ * 
+ * When Google Sheets exports data to Firebase, cells that contain only time values
+ * (without a date component) are serialized with the Excel epoch date (December 30, 1899).
+ * This is because Excel/Google Sheets internally represents dates as serial numbers,
+ * where December 30, 1899 is day 0 (or day 1 depending on the system).
+ * 
+ * Example: A cell with just "10:06:28" becomes "1899-12-30T10:06:28.000Z" in Firebase.
+ * 
+ * We need to detect these values to:
+ * 1. Extract only the time portion for display (ignore the meaningless date)
+ * 2. Skip them when parsing date fields (they're not real dates)
+ */
+const EXCEL_EPOCH_DATE = '1899-12-30';
+const EXCEL_EPOCH_DATE_ALT = '1899-12-31'; // Some systems use day 1 instead of day 0
+
+/**
+ * Check if an ISO date string represents an Excel time-only value (epoch date)
+ * @param {string} isoString - ISO date string
+ * @returns {boolean} - True if this is an Excel time-only value
+ */
+function isExcelTimeOnlyValue(isoString) {
+    if (!isoString || typeof isoString !== 'string') return false;
+    return isoString.startsWith(EXCEL_EPOCH_DATE) || isoString.startsWith(EXCEL_EPOCH_DATE_ALT);
+}
+
+/**
+ * Extract UTC time from an ISO datetime string
+ * Works for both Excel time-only values (1899-12-30T10:06:28.000Z) and 
+ * regular ISO datetime strings (2025-12-15T14:30:00.000Z)
+ * 
+ * @param {string} isoString - ISO datetime string
+ * @returns {object|null} - Object with hours, minutes, and formatted time string, or null if invalid
+ */
+function extractTimeFromISO(isoString) {
+    if (!isoString || typeof isoString !== 'string' || !isoString.includes('T')) return null;
+    try {
+        const date = new Date(isoString);
+        if (isNaN(date.getTime())) return null;
+        const hours = date.getUTCHours();
+        const minutes = date.getUTCMinutes();
+        return {
+            hours,
+            minutes,
+            formatted: `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+        };
+    } catch (e) {
+        return null;
+    }
+}
+
 // --- Função Helper para Normalização ---
         function normalizeString(str) {
             if (!str) return '';
@@ -4412,6 +4464,8 @@ const pontoState = {
             if (!target) return [];
 
             const rosterMap = new Map();
+            
+            // First, get data from regular Escala sheets
             Object.values(appState.escalas || {}).forEach((escala = {}) => {
                 const headers = Array.isArray(escala.headersDay) ? escala.headersDay : [];
                 const matchesDate = headers.some((day) => normalizeHeaderDay(day) === target);
@@ -4438,6 +4492,63 @@ const pontoState = {
                     });
                 });
             });
+            
+            // Also incorporate EscalaAtual data (Enfermaria, UTI, Cardiopediatria)
+            // This ensures students scheduled for today appear even if not in regular Escala sheets
+            const dateKeys = getDateKeyVariants(iso);
+            if (dateKeys) {
+                const allEscalaAtual = [
+                    ...(appState.escalaAtualEnfermaria || []).map(s => ({ ...s, __unidade: 'Enfermaria' })),
+                    ...(appState.escalaAtualUTI || []).map(s => ({ ...s, __unidade: 'UTI' })),
+                    ...(appState.escalaAtualCardiopediatria || []).map(s => ({ ...s, __unidade: 'Cardiopediatria' }))
+                ];
+                
+                allEscalaAtual.forEach(student => {
+                    if (!student) return;
+                    
+                    const nomeNorm = normalizeString(student.NomeCompleto || student.nomeCompleto || student.Nome || student.nome || '');
+                    const emailNorm = normalizeString(student.EmailHC || student.Email || student.email || '');
+                    const serialRaw = student.SerialNumber || student.Serial || student.ID || student.Id || '';
+                    const serialNorm = normalizeString(serialRaw ? String(serialRaw) : '');
+                    const key = nomeNorm || emailNorm || serialNorm;
+                    
+                    if (!key) return;
+                    
+                    // Find the schedule value for this date
+                    let dateValue = student[dateKeys.dateDDMM] || 
+                                   student[dateKeys.dateUnderscore] || 
+                                   student[dateKeys.dateDDMMNoLeadingZero] || 
+                                   student[dateKeys.dateUnderscoreNoLeadingZero];
+                    
+                    // Try normalized key matching if direct keys don't work
+                    if (dateValue === undefined) {
+                        for (const propKey of Object.keys(student)) {
+                            const normalizedKey = propKey.replace(/[\/\-]/g, '_').replace(/^0/, '');
+                            if (normalizedKey === dateKeys.normalizedTarget) {
+                                dateValue = student[propKey];
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // Skip if student is on Folga (F) for this date
+                    if (isStudentOnFolga(dateValue)) return;
+                    
+                    // Skip if no active schedule
+                    if (!isActiveSchedule(dateValue)) return;
+                    
+                    // Only add if not already in roster (avoid duplicates)
+                    if (!rosterMap.has(key)) {
+                        rosterMap.set(key, {
+                            ...student,
+                            __escalaNome: student.__unidade || 'EscalaAtual',
+                            __headers: [target],
+                            __dateValue: dateValue || '',
+                            __fromEscalaAtual: true
+                        });
+                    }
+                });
+            }
 
             return Array.from(rosterMap.values());
         }
@@ -4600,18 +4711,48 @@ const pontoState = {
         }
 
         function sanitizeTime(value = '') {
-            const trimmed = value.trim();
+            if (value === null || value === undefined) return '';
+            let trimmed = String(value).trim();
             if (!trimmed) return '';
+            
+            // Handle ISO time format from Firebase: "1899-12-30T10:06:28.000Z"
+            // The date 1899-12-30 is the Excel epoch date for time-only values
+            // We only need to extract the time portion
+            if (trimmed.includes('T')) {
+                const timeInfo = extractTimeFromISO(trimmed);
+                if (timeInfo) {
+                    return timeInfo.formatted;
+                }
+            }
+            
+            // Handle HH:mm:ss or HH:mm format
             const parts = trimmed.split(':');
             if (parts.length >= 2) {
-                return `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`;
+                const hours = parseInt(parts[0], 10);
+                const minutes = parseInt(parts[1], 10);
+                if (!isNaN(hours) && !isNaN(minutes)) {
+                    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+                }
             }
             return trimmed;
         }
 
         function toMinutes(time = '') {
             if (!time) return null;
-            const parts = time.split(':');
+            
+            const timeStr = String(time).trim();
+            if (!timeStr) return null;
+            
+            // Handle ISO time format using the shared helper
+            if (timeStr.includes('T')) {
+                const timeInfo = extractTimeFromISO(timeStr);
+                if (timeInfo) {
+                    return timeInfo.hours * 60 + timeInfo.minutes;
+                }
+            }
+            
+            // Handle HH:mm or HH:mm:ss format
+            const parts = timeStr.split(':');
             if (parts.length < 2) return null;
             const hours = parseInt(parts[0], 10);
             const minutes = parseInt(parts[1], 10);
@@ -4660,8 +4801,26 @@ const pontoState = {
             }
             const str = String(value || '').trim();
             if (!str) return '';
+            
+            // Handle ISO format with time: "2025-12-15T03:00:00.000Z"
+            if (str.includes('T')) {
+                // Skip time-only values (Excel epoch dates)
+                if (isExcelTimeOnlyValue(str)) {
+                    return ''; // This is a time-only value, not a real date
+                }
+                // Extract date portion from ISO string
+                const datePart = str.split('T')[0];
+                if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+                    return datePart;
+                }
+            }
+            
+            // Handle pure ISO date: "2025-12-15"
             if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+            
+            // Handle BR format: "15/12/2025" or "15-12-2025"
             if (/^\d{2}[\/-]\d{2}[\/-]\d{4}$/.test(str)) return convertDateBRToISO(str);
+            
             return '';
         }
 
