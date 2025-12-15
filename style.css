@@ -2960,10 +2960,10 @@
         #app-footer {
             background: var(--surface-light);
             color: var(--content-text-secondary);
-            padding: 1rem 1.5rem;
+            padding: 1.25rem 1.5rem;
             font-size: 0.8125rem;
             border-top: 1px solid var(--border-subtle);
-            margin-top: auto;
+            margin-top: 2.5rem;
         }
         
         .footer-content {
