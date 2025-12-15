@@ -1664,10 +1664,22 @@ const pontoState = {
     isLoading: false
 };
 
-// Excel epoch dates used for time-only values from Google Sheets
-// When a cell contains only a time (no date), Google Sheets stores it with date 1899-12-30
+/**
+ * Excel Epoch Dates for Time-Only Values
+ * 
+ * When Google Sheets exports data to Firebase, cells that contain only time values
+ * (without a date component) are serialized with the Excel epoch date (December 30, 1899).
+ * This is because Excel/Google Sheets internally represents dates as serial numbers,
+ * where December 30, 1899 is day 0 (or day 1 depending on the system).
+ * 
+ * Example: A cell with just "10:06:28" becomes "1899-12-30T10:06:28.000Z" in Firebase.
+ * 
+ * We need to detect these values to:
+ * 1. Extract only the time portion for display (ignore the meaningless date)
+ * 2. Skip them when parsing date fields (they're not real dates)
+ */
 const EXCEL_EPOCH_DATE = '1899-12-30';
-const EXCEL_EPOCH_DATE_ALT = '1899-12-31';
+const EXCEL_EPOCH_DATE_ALT = '1899-12-31'; // Some systems use day 1 instead of day 0
 
 /**
  * Check if an ISO date string represents an Excel time-only value (epoch date)
@@ -1681,18 +1693,23 @@ function isExcelTimeOnlyValue(isoString) {
 
 /**
  * Extract UTC time from an ISO datetime string
- * @param {string} isoString - ISO datetime string (e.g., "1899-12-30T10:06:28.000Z" or "2025-12-15T14:30:00.000Z")
- * @returns {object|null} - Object with hours and minutes, or null if invalid
+ * Works for both Excel time-only values (1899-12-30T10:06:28.000Z) and 
+ * regular ISO datetime strings (2025-12-15T14:30:00.000Z)
+ * 
+ * @param {string} isoString - ISO datetime string
+ * @returns {object|null} - Object with hours, minutes, and formatted time string, or null if invalid
  */
 function extractTimeFromISO(isoString) {
     if (!isoString || typeof isoString !== 'string' || !isoString.includes('T')) return null;
     try {
         const date = new Date(isoString);
         if (isNaN(date.getTime())) return null;
+        const hours = date.getUTCHours();
+        const minutes = date.getUTCMinutes();
         return {
-            hours: date.getUTCHours(),
-            minutes: date.getUTCMinutes(),
-            formatted: `${String(date.getUTCHours()).padStart(2, '0')}:${String(date.getUTCMinutes()).padStart(2, '0')}`
+            hours,
+            minutes,
+            formatted: `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
         };
     } catch (e) {
         return null;
