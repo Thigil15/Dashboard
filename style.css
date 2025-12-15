@@ -92,6 +92,13 @@
             --radius-2xl: 1.25rem;
             --radius-3xl: 1.5rem;
             --radius-full: 9999px;
+            
+            /* === CORES MINIMALISTAS (Design 2025) === */
+            --surface-white: #ffffff;
+            --surface-light: #fafbfc;
+            --border-subtle: rgba(0, 51, 160, 0.06);
+            --border-light: rgba(0, 51, 160, 0.04);
+            --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.06);
         }
 
         /* === ESTILOS GLOBAIS PREMIUM === */
@@ -2951,11 +2958,11 @@
         
         /* === RODAPÉ INSTITUCIONAL PREMIUM === */
         #app-footer {
-            background: #fafbfc;
+            background: var(--surface-light);
             color: var(--content-text-secondary);
             padding: 1rem 1.5rem;
             font-size: 0.8125rem;
-            border-top: 1px solid rgba(0, 51, 160, 0.06);
+            border-top: 1px solid var(--border-subtle);
             margin-top: auto;
         }
         
@@ -8518,18 +8525,13 @@
    ════════════════════════════════════════════════════════════════════════════ */
 
 .incor-kpi-section {
-    background: #ffffff;
+    background: var(--surface-white);
     border-radius: var(--radius-xl);
     padding: 1.25rem 1.5rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-    border: 1px solid rgba(0, 51, 160, 0.06);
+    box-shadow: var(--shadow-subtle);
+    border: 1px solid var(--border-subtle);
     position: relative;
     overflow: hidden;
-}
-
-/* Decorative gradient overlay - removed for minimalism */
-.incor-kpi-section::before {
-    display: none;
 }
 
 .incor-kpi-header {
@@ -8538,7 +8540,7 @@
     justify-content: space-between;
     margin-bottom: 1rem;
     padding-bottom: 0.75rem;
-    border-bottom: 1px solid rgba(0, 51, 160, 0.06);
+    border-bottom: 1px solid var(--border-subtle);
     position: relative;
     z-index: 1;
 }
@@ -8607,7 +8609,7 @@
 
 /* KPI Card */
 .incor-kpi-card {
-    background: #fafbfc;
+    background: var(--surface-light);
     border-radius: var(--radius-lg);
     padding: 0.875rem 1rem;
     display: flex;
@@ -8616,7 +8618,7 @@
     position: relative;
     overflow: hidden;
     transition: all 0.2s ease;
-    border: 1px solid rgba(0, 51, 160, 0.04);
+    border: 1px solid var(--border-light);
 }
 
 .incor-kpi-card:hover {
@@ -9508,10 +9510,10 @@
    ════════════════════════════════════════════════════════════════════════════ */
 
 .incor-modules-section {
-    background: white;
+    background: var(--surface-white);
     border-radius: var(--radius-lg);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-    border: 1px solid rgba(0, 51, 160, 0.06);
+    box-shadow: var(--shadow-subtle);
+    border: 1px solid var(--border-subtle);
     overflow: hidden;
     margin-top: 1rem;
 }
@@ -9521,8 +9523,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 0.875rem 1.25rem;
-    background: #fafbfc;
-    border-bottom: 1px solid rgba(0, 51, 160, 0.04);
+    background: var(--surface-light);
+    border-bottom: 1px solid var(--border-light);
     gap: 0.75rem;
     flex-wrap: wrap;
 }
@@ -9590,10 +9592,6 @@
     min-width: 100px;
 }
 
-.incor-modules-tab::before {
-    display: none;
-}
-
 .incor-modules-tab svg {
     transition: all 0.2s ease;
     width: 14px;
@@ -9605,22 +9603,14 @@
     color: var(--incor-blue-600);
 }
 
-.incor-modules-tab:hover::before {
-    display: none;
-}
-
 .incor-modules-tab:hover svg {
     transform: scale(1.05);
 }
 
 .incor-modules-tab--active {
-    background: white;
+    background: var(--surface-white);
     color: var(--incor-blue-700);
-    box-shadow: 0 1px 3px rgba(0, 51, 160, 0.1);
-}
-
-.incor-modules-tab--active::before {
-    display: none;
+    box-shadow: var(--shadow-subtle);
 }
 
 .incor-modules-tab--active svg {
@@ -9628,7 +9618,7 @@
 }
 
 .incor-modules-tab--active:hover {
-    background: white;
+    background: var(--surface-white);
 }
 
 /* Tab with indicator badge */
@@ -9654,7 +9644,7 @@
 .incor-modules-content {
     padding: 1rem 1.25rem;
     min-height: 280px;
-    background: white;
+    background: var(--surface-white);
     width: 100%;
     box-sizing: border-box;
 }
@@ -9682,9 +9672,9 @@
     gap: 1.5rem;
     margin-bottom: 1rem;
     padding: 0.625rem 1.25rem;
-    background: #fafbfc;
+    background: var(--surface-light);
     border-radius: var(--radius-full);
-    border: 1px solid rgba(0, 51, 160, 0.06);
+    border: 1px solid var(--border-subtle);
 }
 
 .incor-modules-stat {
@@ -9757,10 +9747,10 @@
 
 /* Individual Grid Card - Redesigned */
 .incor-module-grid-card {
-    background: #fafbfc;
+    background: var(--surface-light);
     border-radius: var(--radius-md);
     padding: 0.875rem 1rem;
-    border: 1px solid rgba(0, 51, 160, 0.04);
+    border: 1px solid var(--border-light);
     transition: all 0.2s ease;
     display: flex;
     flex-direction: column;
@@ -9922,7 +9912,7 @@
     gap: 0.75rem;
     padding: 2rem 1.5rem;
     text-align: center;
-    background: #fafbfc;
+    background: var(--surface-light);
     border-radius: var(--radius-lg);
     border: 1px dashed rgba(0, 51, 160, 0.1);
     min-height: 200px;
