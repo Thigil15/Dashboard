@@ -2531,6 +2531,40 @@ const pontoState = {
         }
 
         /**
+         * Get current date and time in Brazil timezone (America/Sao_Paulo)
+         * Returns ISO date string for today
+         */
+        function getTodayBrazilISO() {
+            // Get current time in Brazil timezone
+            const now = new Date();
+            const brazilTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+            const year = brazilTime.getFullYear();
+            const month = String(brazilTime.getMonth() + 1).padStart(2, '0');
+            const day = String(brazilTime.getDate()).padStart(2, '0');
+            const todayISO = `${year}-${month}-${day}`;
+            
+            // Log for debugging (only once per page load to avoid spam)
+            if (!window._loggedBrazilTimezone) {
+                console.log(`[getTodayBrazilISO] Horário do Brasil (São Paulo): ${brazilTime.toLocaleString('pt-BR')}`);
+                console.log(`[getTodayBrazilISO] Data atual (ISO): ${todayISO}`);
+                window._loggedBrazilTimezone = true;
+            }
+            
+            return todayISO;
+        }
+
+        /**
+         * Check if a given ISO date is today in Brazil timezone
+         * @param {string} isoDate - Date in ISO format (YYYY-MM-DD)
+         * @returns {boolean} - True if the date is today
+         */
+        function isToday(isoDate) {
+            if (!isoDate) return false;
+            const todayISO = getTodayBrazilISO();
+            return isoDate === todayISO;
+        }
+
+        /**
          * Extract and populate ponto dates from various data sources
          * @param {Array} pontoRows - Array of attendance records
          * @param {boolean} fromPontoSheet - True if data is from PontoPratica or PontoTeoria sheets
@@ -2607,8 +2641,20 @@ const pontoState = {
                     
                     const existingRecords = groupedByDate.get(isoDate);
                     
-                    // If this is from PontoPratica, it should replace any existing record for the same person
-                    if (fromPontoPratica) {
+                    // PRIORITY LOGIC: For current day, use PontoPratica/PontoTeoria data
+                    // For past days, use Escala data
+                    const isCurrentDay = isToday(isoDate);
+                    const fromPontoPratica = fromPontoSheet && forceTipo === 'pratica';
+                    const fromPontoTeoria = fromPontoSheet && forceTipo === 'teoria';
+                    
+                    // Mark if this is current day data
+                    if (isCurrentDay) {
+                        normalizedRow._isCurrentDay = true;
+                    }
+                    
+                    if (fromPontoPratica || fromPontoTeoria) {
+                        // Data from PontoPratica or PontoTeoria sheets
+                        // Both types (pratica and teoria) follow the same merge logic
                         // Find and replace existing record for the same person
                         const existingIndex = existingRecords.findIndex(r => 
                             r.id === normalizedRow.id || 
@@ -2617,23 +2663,37 @@ const pontoState = {
                         );
                         
                         if (existingIndex >= 0) {
-                            // Replace existing record (PontoPratica takes precedence)
-                            existingRecords[existingIndex] = normalizedRow;
+                            const existing = existingRecords[existingIndex];
+                            // For current day: Ponto sheets (both Pratica and Teoria) take precedence over Escala
+                            // For past days: keep Escala data if it exists, unless Ponto data is newer
+                            if (isCurrentDay || existing._source === 'Escala' || existing._source === 'escala') {
+                                existingRecords[existingIndex] = normalizedRow;
+                                console.log(`[extractAndPopulatePontoDates] Substituído registro de ${existing._source} por ${source} para ${normalizedRow.nome} em ${isoDate}`);
+                            } else {
+                                // Keep existing Ponto data (either Pratica or Teoria)
+                                console.log(`[extractAndPopulatePontoDates] Mantido registro existente de ${existing._source} para ${normalizedRow.nome} em ${isoDate}`);
+                            }
                         } else {
-                            // Add new record
+                            // Add new record (either from PontoPratica or PontoTeoria)
                             existingRecords.push(normalizedRow);
                         }
                     } else if (fromEscala) {
-                        // Only add from Escala if no record exists for this person from PontoPratica
-                        const hasPontoPraticaRecord = existingRecords.some(r => 
-                            r._source === 'PontoPratica' && (
+                        // Data from Escala sheets (both EscalaPratica and EscalaTeoria)
+                        // For current day: Only add if no Ponto data exists
+                        // For past days: Add normally (Escala is the primary source)
+                        const hasPontoRecord = existingRecords.some(r => 
+                            (r._source === 'PontoPratica' || r._source === 'PontoTeoria') && (
                                 r.id === normalizedRow.id || 
                                 r.nomeId === normalizedRow.nomeId ||
                                 (r.emailNormalized && r.emailNormalized === normalizedRow.emailNormalized)
                             )
                         );
                         
-                        if (!hasPontoPraticaRecord) {
+                        if (isCurrentDay && hasPontoRecord) {
+                            // Current day: Skip Escala data if Ponto data already exists (either Pratica or Teoria)
+                            console.log(`[extractAndPopulatePontoDates] Ignorando dados de Escala para dia atual ${isoDate} (já existe em PontoPratica ou PontoTeoria)`);
+                        } else {
+                            // Add Escala data (for past days or when no Ponto data exists)
                             existingRecords.push(normalizedRow);
                         }
                     } else {
@@ -2656,13 +2716,21 @@ const pontoState = {
             pontoState.dates = Array.from(dateSet).filter(Boolean).sort((a, b) => b.localeCompare(a));
             
             // Update byDate map and cache
+            const todayISO = getTodayBrazilISO();
+            let todayRecordsCount = 0;
             groupedByDate.forEach((rows, iso) => {
                 pontoState.byDate.set(iso, rows);
                 pontoState.cache.set(makePontoCacheKey(iso, 'all'), rows);
+                if (iso === todayISO) {
+                    todayRecordsCount = rows.length;
+                }
             });
 
             console.log(`[extractAndPopulatePontoDates] ${pontoState.dates.length} datas encontradas:`, pontoState.dates.slice(0, 5));
             console.log(`[extractAndPopulatePontoDates] ${pontoState.byDate.size} datas populadas no cache.`);
+            if (todayRecordsCount > 0) {
+                console.log(`[extractAndPopulatePontoDates] ✅ ${todayRecordsCount} registros encontrados para HOJE (${todayISO}) - Fonte: ${source}`);
+            }
         }
 
         // --- NAVEGAÇÃO PRINCIPAL ---
@@ -4743,7 +4811,7 @@ const pontoState = {
         }
 
         function updatePontoHojeMap() {
-            const todayISO = new Date().toISOString().slice(0, 10);
+            const todayISO = getTodayBrazilISO(); // Use Brazil timezone for today
             appState.pontoHojeMap.clear();
             if (!appState.pontoHojeAliases) {
                 appState.pontoHojeAliases = new Map();
@@ -5536,21 +5604,21 @@ const pontoState = {
         function updatePontoMeta() {
             const dateLabel = document.getElementById('ponto-active-date');
             const datePicker = document.getElementById('ponto-date-picker');
-            const todayISO = new Date().toISOString().slice(0, 10);
-            const isToday = pontoState.selectedDate === todayISO;
+            const todayISO = getTodayBrazilISO(); // Use Brazil timezone
+            const isTodayView = pontoState.selectedDate === todayISO;
             
             if (dateLabel) {
                 let displayText = pontoState.selectedDate ? formatDateLabel(pontoState.selectedDate) : '--';
-                // Add "Hoje" badge if viewing today
-                if (isToday) {
-                    displayText = '🔴 HOJE • ' + displayText;
+                // Add "Hoje" badge if viewing today with real-time indicator
+                if (isTodayView) {
+                    displayText = '🔴 HOJE (Tempo Real) • ' + displayText;
                 }
                 dateLabel.textContent = displayText;
             }
             
             // Add visual indicator to date picker when viewing today
             if (datePicker) {
-                if (isToday) {
+                if (isTodayView) {
                     datePicker.style.borderColor = 'var(--incor-red-400)';
                     datePicker.style.background = 'linear-gradient(135deg, #fef2f2 0%, white 100%)';
                 } else {
@@ -5566,12 +5634,18 @@ const pontoState = {
                 const dateCount = pontoState.dates && pontoState.dates.length > 0
                     ? ` • ${pontoState.dates.length} ${pontoState.dates.length === 1 ? 'data disponível' : 'datas disponíveis'}`
                     : '';
+                
+                // Add data source indicator
+                const dataSource = isTodayView 
+                    ? ' • Fonte: PontoPratica/PontoTeoria' 
+                    : ' • Fonte: EscalaPratica/EscalaTeoria';
+                    
                 // Update the text span inside the badge
                 const textSpan = syncLabel.querySelector('span');
                 if (textSpan) {
-                    textSpan.textContent = timeStr + dateCount;
+                    textSpan.textContent = timeStr + dateCount + dataSource;
                 } else {
-                    syncLabel.textContent = timeStr + dateCount;
+                    syncLabel.textContent = timeStr + dateCount + dataSource;
                 }
             }
         }
@@ -5661,7 +5735,7 @@ const pontoState = {
                 refreshButton.classList.add('is-loading');
                 refreshButton.setAttribute('aria-busy', 'true');
             }
-            const todayISO = new Date().toISOString().slice(0, 10);
+            const todayISO = getTodayBrazilISO(); // Use Brazil timezone
             const dateIso = normalizeDateInput(pontoState.selectedDate) || todayISO;
             const scaleLabel = pontoState.selectedScale || 'all';
             const autoScale = pontoState.autoScaleByDate.get(dateIso);
@@ -5766,13 +5840,13 @@ const pontoState = {
                 emptyState.hidden = true;
             }
             
-            const todayISO = new Date().toISOString().slice(0, 10);
+            const todayISO = getTodayBrazilISO(); // Use Brazil timezone for today
             
             // ALWAYS ensure today is in the dates list, even if there are no records
             if (!pontoState.dates.includes(todayISO)) {
                 pontoState.dates.push(todayISO);
                 pontoState.dates.sort((a, b) => b.localeCompare(a));
-                console.log('[initializePontoPanel] Adicionado dia atual à lista de datas:', todayISO);
+                console.log('[initializePontoPanel] Adicionado dia atual (Brasil) à lista de datas:', todayISO);
             }
             
             const result = await ensurePontoData(todayISO, 'all', { useTodayEndpoint: true, adoptSelection: true });
@@ -5782,7 +5856,7 @@ const pontoState = {
             } else if (!pontoState.selectedDate) {
                 // ALWAYS default to today if no date is selected
                 pontoState.selectedDate = todayISO;
-                console.log('[initializePontoPanel] Selecionado dia atual:', todayISO);
+                console.log('[initializePontoPanel] Selecionado dia atual (Brasil):', todayISO);
             }
             if (result && result.selectedScale) {
                 pontoState.selectedScale = result.selectedScale;
