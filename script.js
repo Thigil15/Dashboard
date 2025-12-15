@@ -2654,6 +2654,7 @@ const pontoState = {
                     
                     if (fromPontoPratica || fromPontoTeoria) {
                         // Data from PontoPratica or PontoTeoria sheets
+                        // Both types (pratica and teoria) follow the same merge logic
                         // Find and replace existing record for the same person
                         const existingIndex = existingRecords.findIndex(r => 
                             r.id === normalizedRow.id || 
@@ -2663,21 +2664,21 @@ const pontoState = {
                         
                         if (existingIndex >= 0) {
                             const existing = existingRecords[existingIndex];
-                            // For current day: PontoPratica/PontoTeoria takes precedence over Escala
+                            // For current day: Ponto sheets (both Pratica and Teoria) take precedence over Escala
                             // For past days: keep Escala data if it exists, unless Ponto data is newer
                             if (isCurrentDay || existing._source === 'Escala' || existing._source === 'escala') {
                                 existingRecords[existingIndex] = normalizedRow;
                                 console.log(`[extractAndPopulatePontoDates] Substituído registro de ${existing._source} por ${source} para ${normalizedRow.nome} em ${isoDate}`);
                             } else {
-                                // Keep existing Ponto data
+                                // Keep existing Ponto data (either Pratica or Teoria)
                                 console.log(`[extractAndPopulatePontoDates] Mantido registro existente de ${existing._source} para ${normalizedRow.nome} em ${isoDate}`);
                             }
                         } else {
-                            // Add new record
+                            // Add new record (either from PontoPratica or PontoTeoria)
                             existingRecords.push(normalizedRow);
                         }
                     } else if (fromEscala) {
-                        // Data from Escala sheets
+                        // Data from Escala sheets (both EscalaPratica and EscalaTeoria)
                         // For current day: Only add if no Ponto data exists
                         // For past days: Add normally (Escala is the primary source)
                         const hasPontoRecord = existingRecords.some(r => 
@@ -2689,10 +2690,10 @@ const pontoState = {
                         );
                         
                         if (isCurrentDay && hasPontoRecord) {
-                            // Current day: Skip Escala data if Ponto data exists
-                            console.log(`[extractAndPopulatePontoDates] Ignorando dados de Escala para dia atual ${isoDate} (já existe em Ponto)`);
+                            // Current day: Skip Escala data if Ponto data already exists (either Pratica or Teoria)
+                            console.log(`[extractAndPopulatePontoDates] Ignorando dados de Escala para dia atual ${isoDate} (já existe em PontoPratica ou PontoTeoria)`);
                         } else {
-                            // Add Escala data
+                            // Add Escala data (for past days or when no Ponto data exists)
                             existingRecords.push(normalizedRow);
                         }
                     } else {

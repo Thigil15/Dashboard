@@ -266,10 +266,14 @@
                 `isToday("") = ${test4}`
             );
 
-            // Test 5: Yesterday
-            const yesterday = new Date();
+            // Test 5: Yesterday (Brazil timezone)
+            const todayBrazil = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+            const yesterday = new Date(todayBrazil);
             yesterday.setDate(yesterday.getDate() - 1);
-            const yesterdayISO = yesterday.toISOString().slice(0, 10);
+            const year5 = yesterday.getFullYear();
+            const month5 = String(yesterday.getMonth() + 1).padStart(2, '0');
+            const day5 = String(yesterday.getDate()).padStart(2, '0');
+            const yesterdayISO = `${year5}-${month5}-${day5}`;
             const test5 = isToday(yesterdayISO);
             addTestResult(
                 'Teste 5: Ontem',
@@ -277,10 +281,13 @@
                 `isToday("${yesterdayISO}") = ${test5}`
             );
 
-            // Test 6: Tomorrow
-            const tomorrow = new Date();
+            // Test 6: Tomorrow (Brazil timezone)
+            const tomorrow = new Date(todayBrazil);
             tomorrow.setDate(tomorrow.getDate() + 1);
-            const tomorrowISO = tomorrow.toISOString().slice(0, 10);
+            const year6 = tomorrow.getFullYear();
+            const month6 = String(tomorrow.getMonth() + 1).padStart(2, '0');
+            const day6 = String(tomorrow.getDate()).padStart(2, '0');
+            const tomorrowISO = `${year6}-${month6}-${day6}`;
             const test6 = isToday(tomorrowISO);
             addTestResult(
                 'Teste 6: Amanhã',
