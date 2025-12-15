@@ -4409,6 +4409,32 @@
     color: white;
     background: linear-gradient(135deg, var(--incor-blue-600) 0%, var(--incor-blue-500) 100%);
     border-radius: var(--radius-lg);
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.ponto-avatar-photo {
+    padding: 0;
+}
+
+.ponto-avatar-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.ponto-avatar-fallback {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: white;
+    background: linear-gradient(135deg, var(--incor-blue-600) 0%, var(--incor-blue-500) 100%);
 }
 
 .ponto-person-info {

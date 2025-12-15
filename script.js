@@ -5466,6 +5466,35 @@ const pontoState = {
                 modalidadeContent = '<span class="ponto-tipo-badge ponto-tipo-outro">—</span>';
             }
             
+            // Look up student photo from appState.alunosMap
+            let studentInfo = null;
+            if (row.emailNormalized && appState.alunosMap.has(row.emailNormalized)) {
+                studentInfo = appState.alunosMap.get(row.emailNormalized);
+            } else if (row.email) {
+                // Try with original email
+                for (const [email, info] of appState.alunosMap) {
+                    if (normalizeString(email) === row.emailNormalized || email === row.email) {
+                        studentInfo = info;
+                        break;
+                    }
+                }
+            }
+            
+            // Build avatar HTML with photo or initials fallback
+            let avatarHTML;
+            if (studentInfo && studentInfo.FotoID) {
+                const photoUrl = `https://lh3.googleusercontent.com/d/${studentInfo.FotoID}=s96-c`;
+                const fallbackInitials = escapeHtml(initials);
+                avatarHTML = `
+                    <div class="ponto-avatar ponto-avatar-photo">
+                        <img src="${photoUrl}" alt="${escapeHtml(row.nome)}" loading="lazy" 
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="ponto-avatar-fallback" style="display: none;">${fallbackInitials}</div>
+                    </div>`;
+            } else {
+                avatarHTML = `<div class="ponto-avatar">${escapeHtml(initials)}</div>`;
+            }
+            
             const emailLine = row.email ? `<span class="ponto-person-email">${escapeHtml(row.email)}</span>` : '';
             const serialLine = row.rawSerial ? `<span class="ponto-person-extra">Crachá: ${escapeHtml(row.rawSerial)}</span>` : '';
 
@@ -5473,7 +5502,7 @@ const pontoState = {
                 <tr class="ponto-row" data-status="${row.status}" data-search="${row.searchKey}" data-tipo="${isTeoria ? 'teoria' : (isPratica ? 'pratica' : 'outro')}">
                     <td data-label="Nome">
                         <div class="ponto-person">
-                            <div class="ponto-avatar">${escapeHtml(initials)}</div>
+                            ${avatarHTML}
                             <div class="ponto-person-info">
                                 <span class="ponto-person-name">${escapeHtml(row.nome || '—')}</span>
                                 ${emailLine}
