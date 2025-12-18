@@ -4713,31 +4713,38 @@ function extractTimeFromISO(isoString) {
             const { normalizedRecords, rosterEntries } = buildRosterNormalizedRecords(iso, scale);
             
             // Merge roster and actual ponto records, preserving scheduled times from roster
+            // IMPORTANT: Use getStudentIdentityKey (based on NomeCompleto) for matching,
+            // not getPontoRecordKey (which includes escala and can cause duplicates)
             let combined;
             if (normalizedRecords.length) {
-                // Create a map of roster records to get scheduled times
-                const rosterMap = new Map();
+                // Create a map of roster records using student identity key (NomeCompleto based)
+                // This allows matching between roster and actual ponto records even when
+                // escala or other fields differ
+                const rosterByIdentity = new Map();
                 normalizedRecords.forEach(record => {
-                    const key = getPontoRecordKey(record);
-                    rosterMap.set(key, record);
+                    const identityKey = getStudentIdentityKey(record);
+                    rosterByIdentity.set(identityKey, record);
                 });
                 
-                // Merge with base records, adding scheduled time info
+                // Merge with base records using identity key for matching
+                // Start with all roster records
                 const mergedMap = new Map();
-                
-                // First add all roster records
                 normalizedRecords.forEach(record => {
-                    mergedMap.set(getPontoRecordKey(record), record);
+                    const identityKey = getStudentIdentityKey(record);
+                    mergedMap.set(identityKey, record);
                 });
                 
-                // Then overlay actual ponto records, but preserve scheduled times
+                // Then overlay actual ponto records, matching by student identity (NomeCompleto)
+                // This ensures that if a student is both in roster AND has a ponto record,
+                // we merge them into one entry (preserving scheduled times from roster,
+                // actual times from ponto record)
                 baseRecords.forEach(record => {
-                    const key = getPontoRecordKey(record);
-                    const rosterRecord = rosterMap.get(key);
+                    const identityKey = getStudentIdentityKey(record);
+                    const rosterRecord = rosterByIdentity.get(identityKey);
                     
-                    // If we have a roster record with scheduled times, merge them
+                    // If we have a roster record for this student, merge them
                     if (rosterRecord) {
-                        mergedMap.set(key, {
+                        mergedMap.set(identityKey, {
                             ...record,
                             scheduledEntrada: rosterRecord.scheduledEntrada || record.scheduledEntrada,
                             scheduledEntradaMinutes: rosterRecord.scheduledEntradaMinutes || record.scheduledEntradaMinutes,
@@ -4745,7 +4752,8 @@ function extractTimeFromISO(isoString) {
                             isRestDay: rosterRecord.isRestDay || record.isRestDay
                         });
                     } else {
-                        mergedMap.set(key, record);
+                        // No roster record for this student - add the ponto record as-is
+                        mergedMap.set(identityKey, record);
                     }
                 });
                 
@@ -4909,6 +4917,33 @@ function extractTimeFromISO(isoString) {
             const email = row.emailNormalized || (row.email ? normalizeString(row.email) : '');
             const scale = normalizeString(row.escala || '');
             return `${datePart}|${nameKey}|${serial}|${email}|${scale}`;
+        }
+        
+        /**
+         * Get a unique identity key for a student based on NomeCompleto only.
+         * Used for merging roster records with actual attendance records to avoid duplicates.
+         * Unlike getPontoRecordKey, this does NOT include escala/scale in the key.
+         * @param {Object} row - The attendance record
+         * @returns {string} - Identity key based on normalized name (and date for uniqueness)
+         */
+        function getStudentIdentityKey(row) {
+            const datePart = row.isoDate || '';
+            // Normalize all name-related fields to ensure consistent key generation
+            // regardless of casing or diacritics
+            const nameKey = row.nomeId || normalizeString(row.id || '') || normalizeString(row.nome || '');
+            
+            // If we still don't have a name key, fall back to email or serial as identity
+            // This handles edge cases where name data is missing
+            const fallbackKey = !nameKey ? (
+                normalizeString(row.email || '') || 
+                normalizeString(row.rawSerial || '') || 
+                'unknown'
+            ) : '';
+            
+            const identity = nameKey || fallbackKey;
+            // Only use name for identity matching - this is the key fix
+            // Email and serial are secondary and should not prevent merging
+            return `${datePart}|${identity}`;
         }
 
         function mergeRecordLists(base = [], additions = []) {
