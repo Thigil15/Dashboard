@@ -517,10 +517,12 @@
             const email = student.EmailHC || student.Email || student.email || '';
             const emailNorm = normalizeString(email);
             
-            // First try to find by exact email match in alunosMap
-            if (email && appState.alunosMap.has(email)) {
+            // First try to find by exact email match in alunosMap (optimized: single get())
+            if (email) {
                 const alunoInfo = appState.alunosMap.get(email);
-                return alunoInfo && alunoInfo.Status === 'Ativo';
+                if (alunoInfo) {
+                    return alunoInfo.Status === 'Ativo';
+                }
             }
             
             // Try to find by normalized email
@@ -545,8 +547,15 @@
                 }
             }
             
-            // If student not found in alunosMap, default to including them
-            // (to avoid excluding students whose data hasn't been loaded yet)
+            // If student not found in alunosMap, check if alunos data has been loaded
+            // If alunos data is loaded but student not found, they may be inactive or removed
+            // If alunos data hasn't loaded yet, default to including them to avoid data loss
+            if (appState.dataLoadingState && appState.dataLoadingState.alunos) {
+                // Alunos data has been loaded - student not found means they're not in active list
+                return false;
+            }
+            
+            // Alunos data not yet loaded - include student to avoid premature exclusion
             return true;
         }
         
