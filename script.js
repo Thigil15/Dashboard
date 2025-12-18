@@ -8161,7 +8161,7 @@ function renderTabFaltas(faltas) {
                 </div>
             `;
 
-            // === MÓDULOS TEÓRICOS === //
+            // === MÓDULOS TEÓRICOS - DESIGN MODERNO SEM GAVETAS === //
             let modulesHtml = '<div class="nt-modules-grid">';
 
             Object.entries(mediaGroups).forEach(([groupName, groupData]) => {
@@ -8180,10 +8180,9 @@ function renderTabFaltas(faltas) {
                 });
                 const mediaValue = count > 0 ? sum / count : 0;
 
-                // Process disciplines with substitution logic
+                // Process disciplines with substitution logic - generate discipline cards
                 let disciplinasHtml = '';
                 const disciplineCount = materias.length;
-                const hasDetails = disciplineCount > 0;
                 
                 materias.forEach(materiaObj => {
                     const gradeInfo = getEffectiveGrade(materiaObj);
@@ -8195,47 +8194,46 @@ function renderTabFaltas(faltas) {
                     // Determine color based on grade (>= 7 is blue/green, < 7 is red/warning)
                     const gradeColor = getGradeColor(notaMateria, color);
                     
-                    // Build substitution indicator if applicable
-                    // When substitutive grade exists and is being used, show clear indicator
-                    let subIndicator = '';
+                    // Status badge for substitutive exam
+                    let statusBadge = '';
                     if (gradeInfo.wasSubstituted) {
-                        // Substitutive grade is being used in the average calculation
-                        subIndicator = ` <span class="nt-sub-indicator" title="Prova Substitutiva (nota original: ${formatarNota(gradeInfo.originalNota)}) - Nota ${formatarNota(gradeInfo.subNota)} usada no cálculo da média" aria-label="Prova Substitutiva aplicada">Sub</span>`;
-                    }
-                    
-                    disciplinasHtml += `
-                        <div class="nt-discipline-item" style="--nt-discipline-color: ${gradeColor};">
-                            <div class="nt-discipline-header">
-                                <span class="nt-discipline-name">${materiaObj.nome}${subIndicator}</span>
-                                <span class="nt-discipline-value" style="color: ${gradeColor};">${displayValue}</span>
-                            </div>
-                            <div class="nt-discipline-progress">
-                                <div class="nt-discipline-fill" style="width: ${percentage}%; background: ${gradeColor};"></div>
-                            </div>
-                        </div>
-                    `;
-                    
-                    // If student took the substitutive exam, show it as a separate item for clarity
-                    if (gradeInfo.wasSubstituted && materiaObj.subKey) {
-                        const subDisplayName = materiaObj.subKey.replace('Sub/', 'Prova Sub: ');
-                        const subGradeColor = getGradeColor(gradeInfo.subNota, '#6366F1'); // Indigo for sub exams
-                        const subPercentage = (gradeInfo.subNota / 10) * 100;
-                        
-                        disciplinasHtml += `
-                            <div class="nt-discipline-item nt-discipline-sub" style="--nt-discipline-color: ${subGradeColor}; margin-left: 1rem; border-left: 3px solid ${subGradeColor};">
-                                <div class="nt-discipline-header">
-                                    <span class="nt-discipline-name" style="font-style: italic;">
-                                        <span class="nt-sub-badge">SUB</span> ${subDisplayName}
-                                        <span class="nt-sub-note" title="Nota usada no cálculo da média (máx. 7)" aria-label="Nota aplicada na média">Aplicada</span>
-                                    </span>
-                                    <span class="nt-discipline-value" style="color: ${subGradeColor};">${formatarNota(gradeInfo.subNota)}</span>
-                                </div>
-                                <div class="nt-discipline-progress">
-                                    <div class="nt-discipline-fill" style="width: ${subPercentage}%; background: ${subGradeColor};"></div>
-                                </div>
+                        statusBadge = `
+                            <div class="nt-card-badge nt-card-badge-sub" title="Prova Substitutiva aplicada (nota original: ${formatarNota(gradeInfo.originalNota)})">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                <span>Sub</span>
                             </div>
                         `;
                     }
+                    
+                    // Status indicator based on grade
+                    let gradeStatus = '';
+                    if (isValidNota) {
+                        if (notaMateria >= 7) {
+                            gradeStatus = `<span class="nt-grade-status nt-grade-approved">Aprovado</span>`;
+                        } else {
+                            gradeStatus = `<span class="nt-grade-status nt-grade-attention">Atenção</span>`;
+                        }
+                    }
+                    
+                    disciplinasHtml += `
+                        <div class="nt-discipline-card" style="--nt-card-color: ${gradeColor};">
+                            <div class="nt-card-header">
+                                <span class="nt-card-title">${materiaObj.nome}</span>
+                                ${statusBadge}
+                            </div>
+                            <div class="nt-card-body">
+                                <div class="nt-card-grade" style="color: ${gradeColor};">
+                                    ${displayValue}
+                                </div>
+                                ${gradeStatus}
+                            </div>
+                            <div class="nt-card-progress">
+                                <div class="nt-card-progress-fill" style="width: ${percentage}%; background: ${gradeColor};"></div>
+                            </div>
+                        </div>
+                    `;
                 });
 
                 // Always show the card (show all disciplines even if average is 0)
@@ -8248,37 +8246,27 @@ function renderTabFaltas(faltas) {
                             <div class="nt-module-icon" style="background: linear-gradient(135deg, ${color}, ${color}cc);">
                                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="${icon}" />
-                                    </svg>
-                                </div>
-                                <div class="nt-module-title-group">
-                                    <h4 class="nt-module-title">${groupName}</h4>
-                                    <p class="nt-module-subtitle">${disciplineCount} disciplina${disciplineCount > 1 ? 's' : ''}</p>
-                                </div>
-                                <div class="nt-module-grade">
-                                    <div class="nt-grade-value" style="color: ${mediaColor};">${mediaValue > 0 ? formatarNota(mediaValue) : '-'}</div>
-                                    <div class="nt-grade-label">Média</div>
-                                </div>
+                                </svg>
                             </div>
-                            
-                            ${hasDetails ? `
-                                <div class="nt-module-progress-bar">
-                                    <div class="nt-module-progress-fill" style="width: ${percentage}%; background: ${mediaColor};"></div>
-                                </div>
-                                
-                                <details class="nt-module-details" open>
-                                    <summary class="nt-details-toggle">
-                                        <span>Ver disciplinas</span>
-                                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                                        </svg>
-                                    </summary>
-                                    <div class="nt-details-content">
-                                        ${disciplinasHtml}
-                                    </div>
-                                </details>
-                            ` : ''}
+                            <div class="nt-module-title-group">
+                                <h4 class="nt-module-title">${groupName}</h4>
+                                <p class="nt-module-subtitle">${disciplineCount} disciplina${disciplineCount > 1 ? 's' : ''}</p>
+                            </div>
+                            <div class="nt-module-grade">
+                                <div class="nt-grade-value" style="color: ${mediaColor};">${mediaValue > 0 ? formatarNota(mediaValue) : '-'}</div>
+                                <div class="nt-grade-label">Média</div>
+                            </div>
                         </div>
-                    `;
+                        
+                        <div class="nt-module-progress-bar">
+                            <div class="nt-module-progress-fill" style="width: ${percentage}%; background: ${mediaColor};"></div>
+                        </div>
+                        
+                        <div class="nt-disciplines-grid">
+                            ${disciplinasHtml}
+                        </div>
+                    </div>
+                `;
             });
 
             modulesHtml += '</div>';
