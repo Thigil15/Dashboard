@@ -505,6 +505,52 @@
         }
         
         /**
+         * Helper function to check if a student is active (not inactive)
+         * Looks up the student in appState.alunosMap by email or name
+         * @param {Object} student - Student object with EmailHC/Email/email or NomeCompleto/Nome/nome
+         * @returns {boolean} - True if student is active (Status === 'Ativo'), false if inactive or not found
+         */
+        function isStudentActive(student) {
+            if (!student) return false;
+            
+            // Get student email (try various field name variations)
+            const email = student.EmailHC || student.Email || student.email || '';
+            const emailNorm = normalizeString(email);
+            
+            // First try to find by exact email match in alunosMap
+            if (email && appState.alunosMap.has(email)) {
+                const alunoInfo = appState.alunosMap.get(email);
+                return alunoInfo && alunoInfo.Status === 'Ativo';
+            }
+            
+            // Try to find by normalized email
+            if (emailNorm) {
+                for (const [mapEmail, alunoInfo] of appState.alunosMap) {
+                    if (normalizeString(mapEmail) === emailNorm) {
+                        return alunoInfo && alunoInfo.Status === 'Ativo';
+                    }
+                }
+            }
+            
+            // Try to find by name if email lookup failed
+            const nome = student.NomeCompleto || student.nomeCompleto || student.Nome || student.nome || '';
+            const nomeNorm = normalizeString(nome);
+            
+            if (nomeNorm) {
+                for (const [, alunoInfo] of appState.alunosMap) {
+                    const alunoNome = alunoInfo.NomeCompleto || alunoInfo.Nome || '';
+                    if (normalizeString(alunoNome) === nomeNorm) {
+                        return alunoInfo && alunoInfo.Status === 'Ativo';
+                    }
+                }
+            }
+            
+            // If student not found in alunosMap, default to including them
+            // (to avoid excluding students whose data hasn't been loaded yet)
+            return true;
+        }
+        
+        /**
          * Convert a date to possible Firebase column key formats
          * @param {string} dateIso - Date in ISO format (YYYY-MM-DD) or DD/MM
          * @returns {object|null} - Object with various date key formats, or null if invalid
@@ -550,6 +596,7 @@
          * Calculate the real "Escalados" count for a given date
          * Uses EscalaAtual data from Firebase (Enfermaria, UTI, Cardiopediatria)
          * Excludes students with "F" (Folga) for that date
+         * Excludes inactive students (Status !== 'Ativo')
          * 
          * @param {string} dateIso - Date in ISO format (YYYY-MM-DD) or DD/MM
          * @returns {number} - Count of students scheduled (not on Folga) for that date
@@ -579,6 +626,9 @@
             // Count students who are NOT on Folga for the selected date
             allEscalaAtual.forEach(student => {
                 if (!student) return;
+                
+                // Skip inactive students - they should not be counted as "escalados"
+                if (!isStudentActive(student)) return;
                 
                 // Try to find the value for this date using pre-computed key variants
                 let dateValue = student[dateKeys.dateDDMM] || 
@@ -4473,6 +4523,10 @@ function extractTimeFromISO(isoString) {
 
                 (escala.alunos || []).forEach((aluno) => {
                     if (!aluno) return;
+                    
+                    // Skip inactive students - they should not be included in the roster
+                    if (!isStudentActive(aluno)) return;
+                    
                     const nomeNorm = normalizeString(aluno.NomeCompleto || aluno.nomeCompleto || aluno.Nome || aluno.nome);
                     const emailNorm = normalizeString(aluno.EmailHC || aluno.Email || aluno.email);
                     const serialRaw = aluno.SerialNumber || aluno.Serial || aluno.ID || aluno.Id || '';
@@ -4505,6 +4559,9 @@ function extractTimeFromISO(isoString) {
                 
                 allEscalaAtual.forEach(student => {
                     if (!student) return;
+                    
+                    // Skip inactive students - they should not be included in the roster
+                    if (!isStudentActive(student)) return;
                     
                     const nomeNorm = normalizeString(student.NomeCompleto || student.nomeCompleto || student.Nome || student.nome || '');
                     const emailNorm = normalizeString(student.EmailHC || student.Email || student.email || '');
