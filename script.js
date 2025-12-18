@@ -7225,6 +7225,15 @@ function renderTabEscala(escalas) {
         }
     });
     
+    // Sort scales numerically by the number in their name (1-12)
+    const sortByScaleNumber = (a, b) => {
+        const numA = parseInt((a.nomeEscala || '').match(/\d+/)?.[0] || '0', 10);
+        const numB = parseInt((b.nomeEscala || '').match(/\d+/)?.[0] || '0', 10);
+        return numA - numB;
+    };
+    escalasPraticas.sort(sortByScaleNumber);
+    escalasTeoricas.sort(sortByScaleNumber);
+    
     // Update counts
     if ($praticaCount) $praticaCount.textContent = escalasPraticas.length.toString();
     if ($teoriaCount) $teoriaCount.textContent = escalasTeoricas.length.toString();
