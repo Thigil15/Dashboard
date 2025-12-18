@@ -6854,6 +6854,40 @@
     background: linear-gradient(135deg, #6366f1, #4f46e5);
 }
 
+/* === Substitutive Exam Styles === */
+.nt-discipline-sub {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(79, 70, 229, 0.08));
+    padding-left: 0.75rem;
+}
+
+.nt-sub-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    font-weight: 800;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    margin-right: 0.4rem;
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.nt-sub-note {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.6rem;
+    font-weight: 600;
+    padding: 0.15rem 0.35rem;
+    border-radius: 4px;
+    margin-left: 0.4rem;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    letter-spacing: 0.02em;
+}
+
 /* === Empty State - InCor Blue Theme === */
 .nt-empty-state {
     text-align: center;

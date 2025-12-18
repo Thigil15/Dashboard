@@ -7983,15 +7983,17 @@ function renderTabFaltas(faltas) {
             };
             
             // Helper function to get the effective grade considering substitutive grades
-            // Substitutive grade replaces original ONLY if it's higher (always upward, never downward)
+            // If student took the substitutive exam (Sub/...), ALWAYS use that grade for average calculation
+            // The substitutive exam has a max weight of 7 (minimum to pass), but the actual grade is what's recorded
             const getEffectiveGrade = (materiaObj) => {
                 const { nome, subKey } = materiaObj;
                 const notaOriginal = parseNota(getNotaValue(nome));
                 
                 if (subKey) {
                     const notaSub = parseNota(getNotaValue(subKey));
-                    // Use substitutive grade only if it exists (> 0) and is higher than original
-                    if (notaSub > 0 && notaSub > notaOriginal) {
+                    // If student has a substitutive grade (> 0), ALWAYS use it instead of the original
+                    // This applies when student scored < 7 originally and took the substitutive exam
+                    if (notaSub > 0) {
                         return { 
                             nota: notaSub, 
                             wasSubstituted: true, 
@@ -8194,12 +8196,11 @@ function renderTabFaltas(faltas) {
                     const gradeColor = getGradeColor(notaMateria, color);
                     
                     // Build substitution indicator if applicable
+                    // When substitutive grade exists and is being used, show clear indicator
                     let subIndicator = '';
                     if (gradeInfo.wasSubstituted) {
-                        subIndicator = ` <span class="nt-sub-indicator" title="Nota substituída de ${formatarNota(gradeInfo.originalNota)} para ${formatarNota(gradeInfo.subNota)}">↑ Sub</span>`;
-                    } else if (materiaObj.subKey && gradeInfo.subNota > 0 && gradeInfo.subNota <= gradeInfo.originalNota) {
-                        // Has Sub grade but it wasn't used (original was higher or equal)
-                        subIndicator = ` <span class="nt-sub-indicator nt-sub-kept-original" title="Nota Sub (${formatarNota(gradeInfo.subNota)}) não aplicada pois original é maior ou igual">✓ Original</span>`;
+                        // Substitutive grade is being used in the average calculation
+                        subIndicator = ` <span class="nt-sub-indicator" title="Prova Substitutiva (nota original: ${formatarNota(gradeInfo.originalNota)}) - Nota ${formatarNota(gradeInfo.subNota)} usada no cálculo da média">📝 Sub</span>`;
                     }
                     
                     disciplinasHtml += `
@@ -8213,6 +8214,28 @@ function renderTabFaltas(faltas) {
                             </div>
                         </div>
                     `;
+                    
+                    // If student took the substitutive exam, show it as a separate item for clarity
+                    if (gradeInfo.wasSubstituted && materiaObj.subKey) {
+                        const subDisplayName = materiaObj.subKey.replace('Sub/', 'Prova Sub: ');
+                        const subGradeColor = getGradeColor(gradeInfo.subNota, '#6366F1'); // Indigo for sub exams
+                        const subPercentage = (gradeInfo.subNota / 10) * 100;
+                        
+                        disciplinasHtml += `
+                            <div class="nt-discipline-item nt-discipline-sub" style="--nt-discipline-color: ${subGradeColor}; margin-left: 1rem; border-left: 3px solid ${subGradeColor};">
+                                <div class="nt-discipline-header">
+                                    <span class="nt-discipline-name" style="font-style: italic;">
+                                        <span class="nt-sub-badge">SUB</span> ${subDisplayName}
+                                        <span class="nt-sub-note" title="Nota usada no cálculo da média (máx. 7)">✓ Usada na média</span>
+                                    </span>
+                                    <span class="nt-discipline-value" style="color: ${subGradeColor};">${formatarNota(gradeInfo.subNota)}</span>
+                                </div>
+                                <div class="nt-discipline-progress">
+                                    <div class="nt-discipline-fill" style="width: ${subPercentage}%; background: ${subGradeColor};"></div>
+                                </div>
+                            </div>
+                        `;
+                    }
                 });
 
                 // Always show the card (show all disciplines even if average is 0)
