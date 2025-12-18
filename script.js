@@ -7225,10 +7225,10 @@ function renderTabEscala(escalas) {
         }
     });
     
-    // Sort scales numerically by the number in their name (1-12)
+    // Sort scales numerically by the trailing number in their name (e.g., "EscalaPratica1" -> 1)
     const sortByScaleNumber = (a, b) => {
-        const numA = parseInt((a.nomeEscala || '').match(/\d+/)?.[0] || '0', 10);
-        const numB = parseInt((b.nomeEscala || '').match(/\d+/)?.[0] || '0', 10);
+        const numA = parseInt((a.nomeEscala || '').match(/(\d+)$/)?.[1] || '0', 10);
+        const numB = parseInt((b.nomeEscala || '').match(/(\d+)$/)?.[1] || '0', 10);
         return numA - numB;
     };
     escalasPraticas.sort(sortByScaleNumber);
@@ -8200,7 +8200,7 @@ function renderTabFaltas(faltas) {
                     let subIndicator = '';
                     if (gradeInfo.wasSubstituted) {
                         // Substitutive grade is being used in the average calculation
-                        subIndicator = ` <span class="nt-sub-indicator" title="Prova Substitutiva (nota original: ${formatarNota(gradeInfo.originalNota)}) - Nota ${formatarNota(gradeInfo.subNota)} usada no cálculo da média">📝 Sub</span>`;
+                        subIndicator = ` <span class="nt-sub-indicator" title="Prova Substitutiva (nota original: ${formatarNota(gradeInfo.originalNota)}) - Nota ${formatarNota(gradeInfo.subNota)} usada no cálculo da média" aria-label="Prova Substitutiva aplicada">Sub</span>`;
                     }
                     
                     disciplinasHtml += `
@@ -8226,7 +8226,7 @@ function renderTabFaltas(faltas) {
                                 <div class="nt-discipline-header">
                                     <span class="nt-discipline-name" style="font-style: italic;">
                                         <span class="nt-sub-badge">SUB</span> ${subDisplayName}
-                                        <span class="nt-sub-note" title="Nota usada no cálculo da média (máx. 7)">✓ Usada na média</span>
+                                        <span class="nt-sub-note" title="Nota usada no cálculo da média (máx. 7)" aria-label="Nota aplicada na média">Aplicada</span>
                                     </span>
                                     <span class="nt-discipline-value" style="color: ${subGradeColor};">${formatarNota(gradeInfo.subNota)}</span>
                                 </div>
