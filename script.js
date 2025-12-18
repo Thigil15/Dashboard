@@ -7225,6 +7225,15 @@ function renderTabEscala(escalas) {
         }
     });
     
+    // Sort scales numerically by the trailing number in their name (e.g., "EscalaPratica1" -> 1)
+    const sortByScaleNumber = (a, b) => {
+        const numA = parseInt((a.nomeEscala || '').match(/(\d+)$/)?.[1] || '0', 10);
+        const numB = parseInt((b.nomeEscala || '').match(/(\d+)$/)?.[1] || '0', 10);
+        return numA - numB;
+    };
+    escalasPraticas.sort(sortByScaleNumber);
+    escalasTeoricas.sort(sortByScaleNumber);
+    
     // Update counts
     if ($praticaCount) $praticaCount.textContent = escalasPraticas.length.toString();
     if ($teoriaCount) $teoriaCount.textContent = escalasTeoricas.length.toString();
@@ -7974,15 +7983,17 @@ function renderTabFaltas(faltas) {
             };
             
             // Helper function to get the effective grade considering substitutive grades
-            // Substitutive grade replaces original ONLY if it's higher (always upward, never downward)
+            // If student took the substitutive exam (Sub/...), ALWAYS use that grade for average calculation
+            // The substitutive exam has a max weight of 7 (minimum to pass), but the actual grade is what's recorded
             const getEffectiveGrade = (materiaObj) => {
                 const { nome, subKey } = materiaObj;
                 const notaOriginal = parseNota(getNotaValue(nome));
                 
                 if (subKey) {
                     const notaSub = parseNota(getNotaValue(subKey));
-                    // Use substitutive grade only if it exists (> 0) and is higher than original
-                    if (notaSub > 0 && notaSub > notaOriginal) {
+                    // If student has a substitutive grade (> 0), ALWAYS use it instead of the original
+                    // This applies when student scored < 7 originally and took the substitutive exam
+                    if (notaSub > 0) {
                         return { 
                             nota: notaSub, 
                             wasSubstituted: true, 
@@ -8150,7 +8161,7 @@ function renderTabFaltas(faltas) {
                 </div>
             `;
 
-            // === MÓDULOS TEÓRICOS === //
+            // === MÓDULOS TEÓRICOS - DESIGN MODERNO SEM GAVETAS === //
             let modulesHtml = '<div class="nt-modules-grid">';
 
             Object.entries(mediaGroups).forEach(([groupName, groupData]) => {
@@ -8169,10 +8180,9 @@ function renderTabFaltas(faltas) {
                 });
                 const mediaValue = count > 0 ? sum / count : 0;
 
-                // Process disciplines with substitution logic
+                // Process disciplines with substitution logic - generate discipline cards
                 let disciplinasHtml = '';
                 const disciplineCount = materias.length;
-                const hasDetails = disciplineCount > 0;
                 
                 materias.forEach(materiaObj => {
                     const gradeInfo = getEffectiveGrade(materiaObj);
@@ -8184,23 +8194,43 @@ function renderTabFaltas(faltas) {
                     // Determine color based on grade (>= 7 is blue/green, < 7 is red/warning)
                     const gradeColor = getGradeColor(notaMateria, color);
                     
-                    // Build substitution indicator if applicable
-                    let subIndicator = '';
+                    // Status badge for substitutive exam
+                    let statusBadge = '';
                     if (gradeInfo.wasSubstituted) {
-                        subIndicator = ` <span class="nt-sub-indicator" title="Nota substituída de ${formatarNota(gradeInfo.originalNota)} para ${formatarNota(gradeInfo.subNota)}">↑ Sub</span>`;
-                    } else if (materiaObj.subKey && gradeInfo.subNota > 0 && gradeInfo.subNota <= gradeInfo.originalNota) {
-                        // Has Sub grade but it wasn't used (original was higher or equal)
-                        subIndicator = ` <span class="nt-sub-indicator nt-sub-kept-original" title="Nota Sub (${formatarNota(gradeInfo.subNota)}) não aplicada pois original é maior ou igual">✓ Original</span>`;
+                        statusBadge = `
+                            <div class="nt-card-badge nt-card-badge-sub" title="Prova Substitutiva aplicada (nota original: ${formatarNota(gradeInfo.originalNota)})">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                <span>Sub</span>
+                            </div>
+                        `;
+                    }
+                    
+                    // Status indicator based on grade
+                    let gradeStatus = '';
+                    if (isValidNota) {
+                        if (notaMateria >= 7) {
+                            gradeStatus = `<span class="nt-grade-status nt-grade-approved">Aprovado</span>`;
+                        } else {
+                            gradeStatus = `<span class="nt-grade-status nt-grade-attention">Atenção</span>`;
+                        }
                     }
                     
                     disciplinasHtml += `
-                        <div class="nt-discipline-item" style="--nt-discipline-color: ${gradeColor};">
-                            <div class="nt-discipline-header">
-                                <span class="nt-discipline-name">${materiaObj.nome}${subIndicator}</span>
-                                <span class="nt-discipline-value" style="color: ${gradeColor};">${displayValue}</span>
+                        <div class="nt-discipline-card" style="--nt-card-color: ${gradeColor};">
+                            <div class="nt-card-header">
+                                <span class="nt-card-title">${materiaObj.nome}</span>
+                                ${statusBadge}
                             </div>
-                            <div class="nt-discipline-progress">
-                                <div class="nt-discipline-fill" style="width: ${percentage}%; background: ${gradeColor};"></div>
+                            <div class="nt-card-body">
+                                <div class="nt-card-grade" style="color: ${gradeColor};">
+                                    ${displayValue}
+                                </div>
+                                ${gradeStatus}
+                            </div>
+                            <div class="nt-card-progress">
+                                <div class="nt-card-progress-fill" style="width: ${percentage}%; background: ${gradeColor};"></div>
                             </div>
                         </div>
                     `;
@@ -8216,37 +8246,27 @@ function renderTabFaltas(faltas) {
                             <div class="nt-module-icon" style="background: linear-gradient(135deg, ${color}, ${color}cc);">
                                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="${icon}" />
-                                    </svg>
-                                </div>
-                                <div class="nt-module-title-group">
-                                    <h4 class="nt-module-title">${groupName}</h4>
-                                    <p class="nt-module-subtitle">${disciplineCount} disciplina${disciplineCount > 1 ? 's' : ''}</p>
-                                </div>
-                                <div class="nt-module-grade">
-                                    <div class="nt-grade-value" style="color: ${mediaColor};">${mediaValue > 0 ? formatarNota(mediaValue) : '-'}</div>
-                                    <div class="nt-grade-label">Média</div>
-                                </div>
+                                </svg>
                             </div>
-                            
-                            ${hasDetails ? `
-                                <div class="nt-module-progress-bar">
-                                    <div class="nt-module-progress-fill" style="width: ${percentage}%; background: ${mediaColor};"></div>
-                                </div>
-                                
-                                <details class="nt-module-details" open>
-                                    <summary class="nt-details-toggle">
-                                        <span>Ver disciplinas</span>
-                                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                                        </svg>
-                                    </summary>
-                                    <div class="nt-details-content">
-                                        ${disciplinasHtml}
-                                    </div>
-                                </details>
-                            ` : ''}
+                            <div class="nt-module-title-group">
+                                <h4 class="nt-module-title">${groupName}</h4>
+                                <p class="nt-module-subtitle">${disciplineCount} disciplina${disciplineCount > 1 ? 's' : ''}</p>
+                            </div>
+                            <div class="nt-module-grade">
+                                <div class="nt-grade-value" style="color: ${mediaColor};">${mediaValue > 0 ? formatarNota(mediaValue) : '-'}</div>
+                                <div class="nt-grade-label">Média</div>
+                            </div>
                         </div>
-                    `;
+                        
+                        <div class="nt-module-progress-bar">
+                            <div class="nt-module-progress-fill" style="width: ${percentage}%; background: ${mediaColor};"></div>
+                        </div>
+                        
+                        <div class="nt-disciplines-grid">
+                            ${disciplinasHtml}
+                        </div>
+                    </div>
+                `;
             });
 
             modulesHtml += '</div>';
