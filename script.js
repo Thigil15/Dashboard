@@ -137,52 +137,10 @@
                     
                     return processed;
                 }},
-                // NEW: PontoPratica - Current scale ponto data
-                { path: 'exportAll/PontoPratica/dados', stateKey: 'pontoPraticaRows', processor: (data) => {
-                    const processed = (data || []).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
-                    
-                    if (processed.length > 0 && processed[0]) {
-                        const sampleFields = Object.keys(processed[0]);
-                        console.log(`[setupDatabaseListeners] ✅ PontoPratica carregado com ${processed.length} registros`);
-                        console.log('[setupDatabaseListeners] Campos disponíveis no PontoPratica:', sampleFields.slice(0, 15).join(', '));
-                        
-                        // Process PontoPratica data
-                        try {
-                            // PontoPratica data will be merged with Escalas data in extractAndPopulatePontoDates
-                            extractAndPopulatePontoDates(processed, true, false, 'pratica'); // fromPontoSheet=true, fromEscala=false, tipo='pratica'
-                            updatePontoHojeMap();
-                            console.log('[setupDatabaseListeners] ✅ PontoPratica data processado');
-                        } catch (error) {
-                            console.error('[setupDatabaseListeners] ❌ Erro ao processar PontoPratica:', error);
-                            console.error('[setupDatabaseListeners] Stack trace:', error.stack);
-                        }
-                    }
-                    
-                    return processed;
-                }},
-                // NEW: PontoTeoria - Theory attendance data
-                { path: 'exportAll/PontoTeoria/dados', stateKey: 'pontoTeoriaRows', processor: (data) => {
-                    const processed = (data || []).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
-                    
-                    if (processed.length > 0 && processed[0]) {
-                        const sampleFields = Object.keys(processed[0]);
-                        console.log(`[setupDatabaseListeners] ✅ PontoTeoria carregado com ${processed.length} registros`);
-                        console.log('[setupDatabaseListeners] Campos disponíveis no PontoTeoria:', sampleFields.slice(0, 15).join(', '));
-                        
-                        // Process PontoTeoria data
-                        try {
-                            // PontoTeoria data will be merged with Escalas data in extractAndPopulatePontoDates
-                            extractAndPopulatePontoDates(processed, true, false, 'teoria'); // fromPontoSheet=true, fromEscala=false, tipo='teoria'
-                            updatePontoHojeMap();
-                            console.log('[setupDatabaseListeners] ✅ PontoTeoria data processado');
-                        } catch (error) {
-                            console.error('[setupDatabaseListeners] ❌ Erro ao processar PontoTeoria:', error);
-                            console.error('[setupDatabaseListeners] Stack trace:', error.stack);
-                        }
-                    }
-                    
-                    return processed;
-                }},
+                // NOTE: PontoPratica and PontoTeoria are NOT used to pull data
+                // They only serve for spreadsheet control - the information from these tabs
+                // goes directly into EscalaPratica or EscalaTeoria
+                // All schedule data should come from EscalaPratica/EscalaTeoria only
                 // Escalas - may need special handling
                 { path: 'exportAll', stateKey: 'escalas', processor: (data) => {
                     // Extract escala sheets (Escala1, Escala2, etc.)
@@ -947,8 +905,9 @@
         // These data types affect hours bank calculations and must trigger re-renders
         // - escalas: Contains student schedules and attendance status
         // - ausenciasReposicoes: Contains absence and makeup dates
-        // - pontoStaticRows/pontoPraticaRows/pontoTeoriaRows: Contains daily attendance records
-        const STUDENT_DETAIL_REFRESH_KEYS = ['escalas', 'ausenciasReposicoes', 'pontoStaticRows', 'pontoPraticaRows', 'pontoTeoriaRows'];
+        // - pontoStaticRows: Contains daily attendance records from legacy Ponto sheet
+        // NOTE: pontoPraticaRows/pontoTeoriaRows are NOT used - data comes from EscalaPratica/EscalaTeoria only
+        const STUDENT_DETAIL_REFRESH_KEYS = ['escalas', 'ausenciasReposicoes', 'pontoStaticRows'];
         
         /**
          * Trigger UI updates based on data changes
@@ -1009,8 +968,6 @@
                     break;
                     
                 case 'pontoStaticRows':
-                case 'pontoPraticaRows':
-                case 'pontoTeoriaRows':
                     // Ponto data updated - refresh ponto view if on ponto tab
                     console.log(`[triggerUIUpdates] Dados de ${stateKey} atualizados, atualizando painel`);
                     
@@ -1640,9 +1597,11 @@ const appState = {
     ausenciasReposicoes: [],
     notasTeoricas: {},
     notasPraticas: {},
-    pontoStaticRows: [], // OLD: Legacy ponto data from exportAll/Ponto/dados
-    pontoPraticaRows: [], // NEW: Current scale ponto data from PontoPratica
-    pontoTeoriaRows: [], // NEW: Theory attendance data from PontoTeoria
+    pontoStaticRows: [], // Legacy ponto data from exportAll/Ponto/dados
+    // NOTE: pontoPraticaRows and pontoTeoriaRows are NOT used for data display
+    // They only serve for spreadsheet control - all data comes from EscalaPratica/EscalaTeoria
+    pontoPraticaRows: [], // DEPRECATED: kept for backwards compatibility
+    pontoTeoriaRows: [], // DEPRECATED: kept for backwards compatibility
     currentScaleNumber: null, // Detected current scale number (e.g., 9 for Escala9)
     todayBR: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
     todayFullBR: new Date().toLocaleDateString('pt-BR'),
@@ -1662,8 +1621,7 @@ const appState = {
         notasTeoricas: false,
         notasPraticas: false,
         pontoStaticRows: false,
-        pontoPraticaRows: false,
-        pontoTeoriaRows: false,
+        // NOTE: pontoPraticaRows/pontoTeoriaRows loading state not tracked - they are not used
         escalas: false,
         escalaAtualEnfermaria: false,
         escalaAtualUTI: false,
@@ -2675,9 +2633,11 @@ function extractTimeFromISO(isoString) {
         }
 
         /**
-         * Extract and populate ponto dates from various data sources
+         * Extract and populate ponto dates from Escala data sources
+         * NOTE: PontoPratica and PontoTeoria are NOT used for data display
+         * They only serve for spreadsheet control - all data comes from EscalaPratica/EscalaTeoria
          * @param {Array} pontoRows - Array of attendance records
-         * @param {boolean} fromPontoSheet - True if data is from PontoPratica or PontoTeoria sheets
+         * @param {boolean} fromPontoSheet - DEPRECATED, kept for backwards compatibility
          * @param {boolean} fromEscala - True if data is extracted from Escala sheets
          * @param {string|null} forceTipo - Force tipo to 'pratica' or 'teoria' (overrides existing modalidade)
          */
@@ -2723,7 +2683,10 @@ function extractTimeFromISO(isoString) {
                 return;
             }
 
-            const source = fromPontoSheet ? (forceTipo === 'teoria' ? 'PontoTeoria' : 'PontoPratica') : (fromEscala ? 'Escala' : 'Ponto');
+            // NOTE: PontoPratica/PontoTeoria are NOT used for data display
+            // All data should come from EscalaPratica/EscalaTeoria (via fromEscala=true)
+            // or from the legacy Ponto sheet
+            const source = fromEscala ? 'Escala' : 'Ponto';
             console.log(`[extractAndPopulatePontoDates] Processando ${pontoRows.length} registros de ${source}`);
             if (forceTipo) {
                 console.log(`[extractAndPopulatePontoDates] Tipo forçado: ${forceTipo}`);
@@ -2733,7 +2696,7 @@ function extractTimeFromISO(isoString) {
             const groupedByDate = new Map();
             
             // First, copy existing data if we're merging
-            if (fromPontoSheet || fromEscala) {
+            if (fromEscala) {
                 pontoState.byDate.forEach((records, date) => {
                     groupedByDate.set(date, [...records]);
                 });
@@ -2787,54 +2750,20 @@ function extractTimeFromISO(isoString) {
                     
                     const existingRecords = groupedByDate.get(isoDate);
                     
-                    // PRIORITY LOGIC: For current day, use PontoPratica/PontoTeoria data
-                    // For past days, use Escala data
-                    const isCurrentDay = isToday(isoDate);
-                    const fromPontoPratica = fromPontoSheet && forceTipo === 'pratica';
-                    const fromPontoTeoria = fromPontoSheet && forceTipo === 'teoria';
-                    
                     // Mark if this is current day data
+                    const isCurrentDay = isToday(isoDate);
                     if (isCurrentDay) {
                         normalizedRow._isCurrentDay = true;
                     }
                     
-                    if (fromPontoPratica || fromPontoTeoria) {
-                        // Data from PontoPratica or PontoTeoria sheets
-                        // Both types (pratica and teoria) follow the same merge logic
-                        // Find and replace existing record for the same person AND same modalidade
-                        // This prevents Prática data from replacing Teoria data (and vice versa)
-                        const existingIndex = findExistingRecordIndex(existingRecords, normalizedRow);
-                        
-                        if (existingIndex >= 0) {
-                            const existing = existingRecords[existingIndex];
-                            // For current day: Ponto sheets (both Pratica and Teoria) take precedence over Escala
-                            // For past days: keep Escala data if it exists, unless Ponto data is newer
-                            if (isCurrentDay || existing._source === 'Escala' || existing._source === 'escala') {
-                                existingRecords[existingIndex] = normalizedRow;
-                                console.log(`[extractAndPopulatePontoDates] Substituído registro de ${existing._source} por ${source} para ${normalizedRow.nome} em ${isoDate}`);
-                            } else {
-                                // Keep existing Ponto data (either Pratica or Teoria)
-                                console.log(`[extractAndPopulatePontoDates] Mantido registro existente de ${existing._source} para ${normalizedRow.nome} em ${isoDate}`);
-                            }
-                        } else {
-                            // Add new record (either from PontoPratica or PontoTeoria)
-                            existingRecords.push(normalizedRow);
-                        }
-                    } else if (fromEscala) {
-                        // Data from Escala sheets (both EscalaPratica and EscalaTeoria)
+                    if (fromEscala) {
+                        // Data from Escala sheets (EscalaPratica and EscalaTeoria)
                         // Check if a record already exists for this student AND same modalidade
                         const existingIndex = findExistingRecordIndex(existingRecords, normalizedRow);
                         
                         if (existingIndex >= 0) {
-                            const existing = existingRecords[existingIndex];
-                            // If existing record is from Ponto (has actual attendance data), keep it
-                            if (existing._source === 'PontoPratica' || existing._source === 'PontoTeoria') {
-                                // Current day: Skip Escala data if Ponto data already exists
-                                console.log(`[extractAndPopulatePontoDates] Ignorando dados de Escala para ${normalizedRow.nome} em ${isoDate} (já existe em ${existing._source})`);
-                            } else {
-                                // Existing record is also from Escala - skip to avoid duplicates
-                                console.log(`[extractAndPopulatePontoDates] Ignorando duplicata de Escala para ${normalizedRow.nome} em ${isoDate}`);
-                            }
+                            // Existing record is also from Escala - skip to avoid duplicates
+                            console.log(`[extractAndPopulatePontoDates] Ignorando duplicata de Escala para ${normalizedRow.nome} em ${isoDate}`);
                         } else {
                             // No existing record - add Escala data
                             existingRecords.push(normalizedRow);
@@ -2940,10 +2869,9 @@ function extractTimeFromISO(isoString) {
             // Initialize ponto panel when switching to ponto tab
             if (tabName === 'ponto') {
                 console.log('[switchMainTab] Inicializando painel de ponto...');
-                // Check if ponto data is already loaded (from any source)
+                // Check if ponto data is already loaded (from Escalas only)
+                // NOTE: PontoPratica/PontoTeoria are NOT used - data comes from EscalaPratica/EscalaTeoria only
                 const hasPontoData = (appState.pontoStaticRows && appState.pontoStaticRows.length > 0) ||
-                                     (appState.pontoPraticaRows && appState.pontoPraticaRows.length > 0) ||
-                                     (appState.pontoTeoriaRows && appState.pontoTeoriaRows.length > 0) ||
                                      (pontoState.dates.length > 0);
                 
                 if (hasPontoData) {
@@ -2951,16 +2879,12 @@ function extractTimeFromISO(isoString) {
                     // Ensure ponto state is populated
                     if (pontoState.dates.length === 0) {
                         console.log('[switchMainTab] Processando dados de ponto pela primeira vez');
-                        // Process all available data sources
+                        // Process only Escala data sources (not PontoPratica/PontoTeoria)
                         if (appState.pontoStaticRows && appState.pontoStaticRows.length > 0) {
                             extractAndPopulatePontoDates(appState.pontoStaticRows);
                         }
-                        if (appState.pontoPraticaRows && appState.pontoPraticaRows.length > 0) {
-                            extractAndPopulatePontoDates(appState.pontoPraticaRows, true, false, 'pratica'); // fromPontoSheet=true, tipo='pratica'
-                        }
-                        if (appState.pontoTeoriaRows && appState.pontoTeoriaRows.length > 0) {
-                            extractAndPopulatePontoDates(appState.pontoTeoriaRows, true, false, 'teoria'); // fromPontoSheet=true, tipo='teoria'
-                        }
+                        // NOTE: Removed PontoPratica and PontoTeoria processing
+                        // These tabs only serve for spreadsheet control, not for data display
                         if (appState.escalas && Object.keys(appState.escalas).length > 0) {
                             extractPontoFromEscalas(appState.escalas);
                         }
@@ -5902,10 +5826,9 @@ function extractTimeFromISO(isoString) {
                     ? ` • ${pontoState.dates.length} ${pontoState.dates.length === 1 ? 'data disponível' : 'datas disponíveis'}`
                     : '';
                 
-                // Add data source indicator
-                const dataSource = isTodayView 
-                    ? ' • Fonte: PontoPratica/PontoTeoria' 
-                    : ' • Fonte: EscalaPratica/EscalaTeoria';
+                // Data source is always EscalaPratica/EscalaTeoria
+                // NOTE: PontoPratica/PontoTeoria are NOT used for data display
+                const dataSource = ' • Fonte: EscalaPratica/EscalaTeoria';
                     
                 // Update the text span inside the badge
                 const textSpan = syncLabel.querySelector('span');
@@ -7046,7 +6969,7 @@ function calcularBancoHoras(emailNorm, nomeNorm, escalas) {
                 
                 if (minutosAgendados !== null) {
                     // Buscar registro de ponto real do aluno para este dia
-                    // O ponto real está em pontoStaticRows ou pontoPraticaRows
+                    // O ponto real está em pontoStaticRows ou nos dados das EscalaPratica/EscalaTeoria
                     const pontoHoje = pontoState.byDate.get(iso);
                     if (pontoHoje) {
                         // Encontrar o registro do aluno
