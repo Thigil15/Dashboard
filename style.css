@@ -233,13 +233,13 @@
 
         /* ============================================================
            LOADING SCREEN - MINIMALIST PROFESSIONAL DESIGN
-           Clean, elegant loading experience with subtle sophistication
+           Clean, elegant loading experience with InCor branding
            ============================================================ */
         
         #loading-overlay { 
             position: fixed; 
             inset: 0; 
-            background: #0a0f1c;
+            background: var(--incor-blue-900);
             display: none; 
             opacity: 0; 
             justify-content: center; 
@@ -271,7 +271,7 @@
         .loading-logo-minimal svg {
             width: 40px;
             height: 40px;
-            color: #3b82f6;
+            color: var(--incor-red-500);
             stroke-width: 1.5;
         }
         
@@ -314,7 +314,7 @@
         /* Elegant Line Loader */
         .loading-line {
             width: 200px;
-            height: 1px;
+            height: 2px;
             background: rgba(255, 255, 255, 0.1);
             position: relative;
             overflow: hidden;
@@ -328,7 +328,7 @@
             left: 0;
             height: 100%;
             width: 40%;
-            background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+            background: linear-gradient(90deg, transparent, var(--incor-red-500), transparent);
             animation: lineMove 1.5s ease-in-out infinite;
         }
         
@@ -339,7 +339,7 @@
 
         /* ============================================================
            LOGIN SCREEN - MINIMALIST PROFESSIONAL DESIGN
-           Clean, elegant, and sophisticated login experience
+           Clean, elegant login with InCor institutional branding
            ============================================================ */
         
         #login-view {
@@ -349,7 +349,7 @@
             min-height: 100vh;
             flex-grow: 1;
             padding: var(--spacing-lg);
-            background: #0a0f1c;
+            background: var(--incor-blue-900);
             position: relative;
         }
         
@@ -390,7 +390,7 @@
         .login-logo-minimal svg {
             width: 32px;
             height: 32px;
-            color: #3b82f6;
+            color: var(--incor-red-500);
             stroke-width: 1.5;
         }
         
@@ -405,13 +405,13 @@
             font-size: 0.75rem;
             font-weight: 600;
             letter-spacing: 0.25em;
-            color: #0f172a;
+            color: var(--incor-blue-800);
         }
         
         .login-brand-divider {
             width: 1px;
             height: 14px;
-            background: #e2e8f0;
+            background: var(--incor-blue-200);
         }
         
         .login-brand-portal {
@@ -419,7 +419,7 @@
             font-size: 0.8125rem;
             font-weight: 400;
             letter-spacing: 0.01em;
-            color: #64748b;
+            color: var(--content-text-secondary);
         }
         
         /* Clean Form */
@@ -439,21 +439,21 @@
             padding: 0.75rem 0;
             background: transparent;
             border: none;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid var(--incor-blue-100);
             font-family: var(--font-main);
             font-size: 0.9375rem;
-            color: #0f172a;
+            color: var(--content-text-primary);
             transition: border-color 0.3s ease;
             outline: none;
         }
         
         .login-input-minimal::placeholder {
-            color: #94a3b8;
+            color: var(--content-text-muted);
             font-weight: 400;
         }
         
         .login-input-minimal:focus {
-            border-color: #3b82f6;
+            border-color: var(--incor-blue-500);
         }
         
         .login-input-minimal:focus + .login-input-line {
@@ -467,18 +467,18 @@
             left: 0;
             width: 100%;
             height: 2px;
-            background: #3b82f6;
+            background: var(--incor-blue-600);
             transform: scaleX(0);
             transform-origin: left;
             transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
-        /* Minimalist Button */
+        /* Minimalist Button - InCor Blue */
         .login-btn-minimal {
             width: 100%;
             padding: 1rem;
             margin-top: 1rem;
-            background: #0f172a;
+            background: var(--incor-blue-700);
             color: #ffffff;
             font-family: var(--font-display);
             font-weight: 500;
@@ -491,7 +491,7 @@
         }
         
         .login-btn-minimal:hover {
-            background: #1e293b;
+            background: var(--incor-blue-600);
         }
         
         .login-btn-minimal:active {
@@ -503,13 +503,13 @@
             cursor: not-allowed;
         }
         
-        /* Error Message */
+        /* Error Message - InCor Red */
         #login-error {
             display: none; 
-            background: #fef2f2;
-            color: #dc2626;
+            background: var(--incor-red-100);
+            color: var(--incor-red-700);
             border: none;
-            border-left: 3px solid #dc2626;
+            border-left: 3px solid var(--incor-red-500);
             padding: 0.875rem 1rem;
             font-size: 0.8125rem;
             font-weight: 500;
@@ -521,7 +521,7 @@
         .login-footer-minimal {
             margin-top: 2.5rem;
             padding-top: 1.5rem;
-            border-top: 1px solid #f1f5f9;
+            border-top: 1px solid var(--incor-blue-50);
             text-align: center;
             display: flex;
             flex-direction: column;
@@ -530,13 +530,13 @@
         
         .login-footer-minimal span {
             font-size: 0.6875rem;
-            color: #94a3b8;
+            color: var(--content-text-muted);
             letter-spacing: 0.02em;
         }
         
         .login-footer-institution {
             font-weight: 500;
-            color: #64748b !important;
+            color: var(--incor-blue-600) !important;
         }
         
         /* Responsive adjustments */
