@@ -2688,10 +2688,6 @@
             margin: 0;
         }
         
-        /* Contact section */
-        .footer-contact-section {
-        }
-        
         .footer-contact-list {
             display: flex;
             flex-direction: column;
@@ -2729,10 +2725,6 @@
         
         a.footer-contact-item:hover svg {
             color: var(--incor-blue-700);
-        }
-        
-        /* Social section */
-        .footer-social-section {
         }
         
         .footer-social-links {
