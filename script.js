@@ -569,13 +569,13 @@
          * @returns {number} - Count of students scheduled (not on Folga) for that date
          */
         function calculateEscaladosForDate(dateIso) {
-            // UPDATED: Per user requirement, escalados should be based on ACTIVE students count
-            // Not based on schedule templates (EscalaAtual) which can be outdated
-            // Count active students from the Alunos table
+            // ATUALIZADO: Por requisito do usuário, escalados devem ser baseados na contagem de alunos ATIVOS
+            // Não baseado em templates de escala (EscalaAtual) que podem estar desatualizados
+            // Conta alunos da tabela Alunos
             
             let activeCount = 0;
             
-            // Count students with Status = 'Ativo' from appState.alunosMap
+            // Conta alunos com Status = 'Ativo' do appState.alunosMap
             for (const [, alunoInfo] of appState.alunosMap) {
                 if (alunoInfo && alunoInfo.Status === 'Ativo') {
                     activeCount++;
@@ -587,7 +587,7 @@
                 return activeCount;
             }
             
-            // Fallback: if alunosMap is empty (data not loaded yet), return 0
+            // Fallback: se alunosMap estiver vazio (dados não carregados ainda), retorna 0
             console.log('[calculateEscaladosForDate] Nenhum aluno ativo encontrado (dados não carregados?)');
             return 0;
         }
@@ -4450,10 +4450,10 @@ function extractTimeFromISO(isoString) {
         }
 
         function getRosterForDate(dateIso) {
-            // UPDATED: Per user requirement, do NOT pre-populate roster from schedules
-            // Show ONLY actual attendance data from Firebase (via pontoState.byDate)
-            // The roster should contain only students who have actual attendance records
-            // This prevents duplication and ensures we show only what Firebase brings
+            // ATUALIZADO: Por requisito do usuário, NÃO pré-popular roster de templates de escala
+            // Mostrar APENAS dados reais de presença do Firebase (via pontoState.byDate)
+            // O roster deve conter apenas alunos que têm registros reais de presença
+            // Isso previne duplicação e garante que mostramos apenas o que o Firebase traz
             console.log('[getRosterForDate] Retornando roster vazio - apenas dados de ponto do Firebase serão exibidos');
             return [];
         }
