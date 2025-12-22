@@ -135,7 +135,6 @@
                         }
                     }
                     
-                    extractAndPopulatePontoDates(processed);
                     return processed;
                 }},
                 // NEW: PontoPratica - Current scale ponto data
@@ -2682,6 +2681,42 @@ function extractTimeFromISO(isoString) {
          * @param {boolean} fromEscala - True if data is extracted from Escala sheets
          * @param {string|null} forceTipo - Force tipo to 'pratica' or 'teoria' (overrides existing modalidade)
          */
+        /**
+         * Helper function to check if two records belong to the same student
+         * @param {Object} record1 - First record
+         * @param {Object} record2 - Second record
+         * @returns {boolean} - True if records are for the same student
+         */
+        function isSameStudent(record1, record2) {
+            return record1.id === record2.id || 
+                record1.nomeId === record2.nomeId ||
+                (record1.emailNormalized && record1.emailNormalized === record2.emailNormalized);
+        }
+
+        /**
+         * Helper function to check if two records have matching modalidade
+         * @param {string} modalidade1 - First modalidade
+         * @param {string} modalidade2 - Second modalidade
+         * @returns {boolean} - True if modalidades match (or either is empty)
+         */
+        function isSameModalidade(modalidade1, modalidade2) {
+            const norm1 = normalizeString(modalidade1 || '');
+            const norm2 = normalizeString(modalidade2 || '');
+            return norm1 === norm2 || !norm1 || !norm2;
+        }
+
+        /**
+         * Helper function to find existing record index for the same student and modalidade
+         * @param {Array} records - Array of existing records
+         * @param {Object} newRecord - New record to match against
+         * @returns {number} - Index of matching record, or -1 if not found
+         */
+        function findExistingRecordIndex(records, newRecord) {
+            return records.findIndex(r => 
+                isSameStudent(r, newRecord) && isSameModalidade(r.modalidade, newRecord.modalidade)
+            );
+        }
+
         function extractAndPopulatePontoDates(pontoRows, fromPontoSheet = false, fromEscala = false, forceTipo = null) {
             if (!Array.isArray(pontoRows) || pontoRows.length === 0) {
                 console.log("[extractAndPopulatePontoDates] Nenhum registro de ponto para processar.");
@@ -2766,12 +2801,9 @@ function extractTimeFromISO(isoString) {
                     if (fromPontoPratica || fromPontoTeoria) {
                         // Data from PontoPratica or PontoTeoria sheets
                         // Both types (pratica and teoria) follow the same merge logic
-                        // Find and replace existing record for the same person
-                        const existingIndex = existingRecords.findIndex(r => 
-                            r.id === normalizedRow.id || 
-                            r.nomeId === normalizedRow.nomeId ||
-                            (r.emailNormalized && r.emailNormalized === normalizedRow.emailNormalized)
-                        );
+                        // Find and replace existing record for the same person AND same modalidade
+                        // This prevents Prática data from replacing Teoria data (and vice versa)
+                        const existingIndex = findExistingRecordIndex(existingRecords, normalizedRow);
                         
                         if (existingIndex >= 0) {
                             const existing = existingRecords[existingIndex];
@@ -2790,26 +2822,33 @@ function extractTimeFromISO(isoString) {
                         }
                     } else if (fromEscala) {
                         // Data from Escala sheets (both EscalaPratica and EscalaTeoria)
-                        // For current day: Only add if no Ponto data exists
-                        // For past days: Add normally (Escala is the primary source)
-                        const hasPontoRecord = existingRecords.some(r => 
-                            (r._source === 'PontoPratica' || r._source === 'PontoTeoria') && (
-                                r.id === normalizedRow.id || 
-                                r.nomeId === normalizedRow.nomeId ||
-                                (r.emailNormalized && r.emailNormalized === normalizedRow.emailNormalized)
-                            )
-                        );
+                        // Check if a record already exists for this student AND same modalidade
+                        const existingIndex = findExistingRecordIndex(existingRecords, normalizedRow);
                         
-                        if (isCurrentDay && hasPontoRecord) {
-                            // Current day: Skip Escala data if Ponto data already exists (either Pratica or Teoria)
-                            console.log(`[extractAndPopulatePontoDates] Ignorando dados de Escala para dia atual ${isoDate} (já existe em PontoPratica ou PontoTeoria)`);
+                        if (existingIndex >= 0) {
+                            const existing = existingRecords[existingIndex];
+                            // If existing record is from Ponto (has actual attendance data), keep it
+                            if (existing._source === 'PontoPratica' || existing._source === 'PontoTeoria') {
+                                // Current day: Skip Escala data if Ponto data already exists
+                                console.log(`[extractAndPopulatePontoDates] Ignorando dados de Escala para ${normalizedRow.nome} em ${isoDate} (já existe em ${existing._source})`);
+                            } else {
+                                // Existing record is also from Escala - skip to avoid duplicates
+                                console.log(`[extractAndPopulatePontoDates] Ignorando duplicata de Escala para ${normalizedRow.nome} em ${isoDate}`);
+                            }
                         } else {
-                            // Add Escala data (for past days or when no Ponto data exists)
+                            // No existing record - add Escala data
                             existingRecords.push(normalizedRow);
                         }
                     } else {
-                        // Legacy Ponto data - just add it
-                        existingRecords.push(normalizedRow);
+                        // Legacy Ponto data - check for duplicates before adding
+                        const existingIndex = findExistingRecordIndex(existingRecords, normalizedRow);
+                        
+                        if (existingIndex >= 0) {
+                            // Update existing record with newer data
+                            existingRecords[existingIndex] = normalizedRow;
+                        } else {
+                            existingRecords.push(normalizedRow);
+                        }
                     }
                     
                     // Also track scales per date
