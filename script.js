@@ -4453,7 +4453,7 @@ function extractTimeFromISO(isoString) {
             // UPDATED: Per user requirement, do NOT pre-populate roster from schedules
             // Show ONLY actual attendance data from Firebase (via pontoState.byDate)
             // The roster should contain only students who have actual attendance records
-            // This prevents duplication and ensures escalados count matches active students
+            // This prevents duplication and ensures we show only what Firebase brings
             console.log('[getRosterForDate] Retornando roster vazio - apenas dados de ponto do Firebase serão exibidos');
             return [];
         }
