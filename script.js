@@ -5375,7 +5375,6 @@ function extractTimeFromISO(isoString) {
                 const searchKey = normalizeString([
                     row.nome,
                     row.escala,
-                    row.modalidade,
                     row.horaEntrada,
                     row.horaSaida,
                     row.email,
@@ -5776,39 +5775,6 @@ function extractTimeFromISO(isoString) {
                 ? `<span class="ponto-escala-pill">${escapeHtml(row.escala)}</span>`
                 : '<span class="ponto-escala-pill">Sem escala</span>';
             
-            // Determine modalidade (Prática vs Teoria) with distinct visual styling
-            // NOTE: Business logic (fixed 18h, tolerance) is in enrichPontoRows() function
-            // This section only provides visual distinction between Prática and Teoria
-            const modalidadeNorm = (row.modalidade || '').toLowerCase().trim();
-            const isTeoria = modalidadeNorm === 'teoria' || modalidadeNorm === 'teórica' || modalidadeNorm === 'teorica' || modalidadeNorm.includes('teoria');
-            const isPratica = modalidadeNorm === 'prática' || modalidadeNorm === 'pratica' || modalidadeNorm.includes('pratica') || modalidadeNorm.includes('prática');
-            
-            let modalidadeContent;
-            if (isTeoria) {
-                // Teoria badge - amber color (book icon)
-                modalidadeContent = `
-                    <span class="ponto-tipo-badge ponto-tipo-teoria">
-                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-                        </svg>
-                        Teoria
-                    </span>`;
-            } else if (isPratica) {
-                // Prática badge - cyan color (heart icon)
-                modalidadeContent = `
-                    <span class="ponto-tipo-badge ponto-tipo-pratica">
-                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
-                        </svg>
-                        Prática
-                    </span>`;
-            } else if (row.modalidade && row.modalidade.trim().length > 0) {
-                // Other modalidade - neutral color
-                modalidadeContent = `<span class="ponto-tipo-badge ponto-tipo-outro">${escapeHtml(row.modalidade)}</span>`;
-            } else {
-                modalidadeContent = '<span class="ponto-tipo-badge ponto-tipo-outro">—</span>';
-            }
-            
             // Look up student photo from appState.alunosMap
             let studentInfo = null;
             if (row.emailNormalized && appState.alunosMap.has(row.emailNormalized)) {
@@ -5842,7 +5808,7 @@ function extractTimeFromISO(isoString) {
             const serialLine = row.rawSerial ? `<span class="ponto-person-extra">Crachá: ${escapeHtml(row.rawSerial)}</span>` : '';
 
             return `
-                <tr class="ponto-row" data-status="${row.status}" data-search="${row.searchKey}" data-tipo="${isTeoria ? 'teoria' : (isPratica ? 'pratica' : 'outro')}">
+                <tr class="ponto-row" data-status="${row.status}" data-search="${row.searchKey}">
                     <td data-label="Nome">
                         <div class="ponto-person">
                             ${avatarHTML}
@@ -5857,11 +5823,6 @@ function extractTimeFromISO(isoString) {
                     <td data-label="Hora de Entrada">${escapeHtml(row.horaEntrada || '—')}</td>
                     <td data-label="Hora de Saída">${escapeHtml(row.horaSaida || '—')}</td>
                     <td data-label="Escala">${escalaContent}</td>
-                    <td data-label="Tipo">
-                        <div class="ponto-tipo-cell">
-                            ${modalidadeContent}
-                        </div>
-                    </td>
                     <td data-label="Status">
                         <span class="${row.badgeClass}">${escapeHtml(row.statusLabel)}</span>
                     </td>
