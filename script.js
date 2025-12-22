@@ -138,9 +138,10 @@
                     return processed;
                 }},
                 // NOTE: PontoPratica and PontoTeoria are NOT used to pull data
-                // They only serve for spreadsheet control - the information from these tabs
-                // goes directly into EscalaPratica or EscalaTeoria
-                // All schedule data should come from EscalaPratica/EscalaTeoria only
+                // They only serve for spreadsheet control in Google Sheets
+                // The Google Apps Script (Code.gs) synchronizes data from PontoPratica/PontoTeoria
+                // directly into EscalaPratica/EscalaTeoria tabs. See syncPontoToEscalas_() function.
+                // This website reads ONLY from EscalaPratica/EscalaTeoria to avoid duplicates
                 // Escalas - may need special handling
                 { path: 'exportAll', stateKey: 'escalas', processor: (data) => {
                     // Extract escala sheets (Escala1, Escala2, etc.)
@@ -2637,8 +2638,8 @@ function extractTimeFromISO(isoString) {
          * NOTE: PontoPratica and PontoTeoria are NOT used for data display
          * They only serve for spreadsheet control - all data comes from EscalaPratica/EscalaTeoria
          * @param {Array} pontoRows - Array of attendance records
-         * @param {boolean} fromPontoSheet - DEPRECATED, kept for backwards compatibility
-         * @param {boolean} fromEscala - True if data is extracted from Escala sheets
+         * @param {boolean} _fromPontoSheet - DEPRECATED and IGNORED. Kept for API compatibility but no longer used.
+         * @param {boolean} fromEscala - True if data is extracted from Escala sheets (triggers merge logic)
          * @param {string|null} forceTipo - Force tipo to 'pratica' or 'teoria' (overrides existing modalidade)
          */
         /**
@@ -2677,15 +2678,16 @@ function extractTimeFromISO(isoString) {
             );
         }
 
-        function extractAndPopulatePontoDates(pontoRows, fromPontoSheet = false, fromEscala = false, forceTipo = null) {
+        function extractAndPopulatePontoDates(pontoRows, _fromPontoSheet = false, fromEscala = false, forceTipo = null) {
+            // NOTE: _fromPontoSheet parameter is DEPRECATED and IGNORED
+            // It is kept for API compatibility but PontoPratica/PontoTeoria data is no longer processed
             if (!Array.isArray(pontoRows) || pontoRows.length === 0) {
                 console.log("[extractAndPopulatePontoDates] Nenhum registro de ponto para processar.");
                 return;
             }
 
-            // NOTE: PontoPratica/PontoTeoria are NOT used for data display
             // All data should come from EscalaPratica/EscalaTeoria (via fromEscala=true)
-            // or from the legacy Ponto sheet
+            // or from the legacy Ponto sheet (fromEscala=false)
             const source = fromEscala ? 'Escala' : 'Ponto';
             console.log(`[extractAndPopulatePontoDates] Processando ${pontoRows.length} registros de ${source}`);
             if (forceTipo) {
