@@ -2794,56 +2794,6 @@
                 font-size: 0.75rem;
             }
         }
-                text-align: center;
-            }
-            
-            .footer-description {
-                text-align: center;
-            }
-            
-            .footer-bottom-container {
-                flex-direction: column;
-                text-align: center;
-                padding: 0 1rem;
-            }
-            
-            .footer-institution-name {
-                font-size: 0.75rem;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .footer-main {
-                padding: 1.5rem 0 1rem;
-            }
-            
-            .footer-logo-icon {
-                width: 2.5rem;
-                height: 2.5rem;
-            }
-            
-            .footer-logo-icon svg {
-                width: 1.25rem;
-                height: 1.25rem;
-            }
-            
-            .footer-title {
-                font-size: 1rem;
-            }
-            
-            .footer-subtitle {
-                font-size: 0.75rem;
-            }
-            
-            .footer-social-links {
-                gap: 0.5rem;
-            }
-            
-            .footer-social-link {
-                padding: 0.625rem 0.875rem;
-                font-size: 0.8125rem;
-            }
-        }
 
         /* === MODAL DA API GEMINI === */
         #gemini-modal {
