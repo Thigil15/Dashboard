@@ -569,64 +569,27 @@
          * @returns {number} - Count of students scheduled (not on Folga) for that date
          */
         function calculateEscaladosForDate(dateIso) {
-            // Get all date key variants
-            const dateKeys = getDateKeyVariants(dateIso);
+            // UPDATED: Per user requirement, escalados should be based on ACTIVE students count
+            // Not based on schedule templates (EscalaAtual) which can be outdated
+            // Count active students from the Alunos table
             
-            if (!dateKeys) {
-                console.log('[calculateEscaladosForDate] Data inválida:', dateIso);
-                return 0;
+            let activeCount = 0;
+            
+            // Count students with Status = 'Ativo' from appState.alunosMap
+            for (const [, alunoInfo] of appState.alunosMap) {
+                if (alunoInfo && alunoInfo.Status === 'Ativo') {
+                    activeCount++;
+                }
             }
             
-            let escaladosCount = 0;
-            
-            // Combine all EscalaAtual data with null checks
-            const allEscalaAtual = [
-                ...(appState.escalaAtualEnfermaria || []),
-                ...(appState.escalaAtualUTI || []),
-                ...(appState.escalaAtualCardiopediatria || [])
-            ];
-            
-            if (allEscalaAtual.length === 0) {
-                return 0;
+            if (activeCount > 0) {
+                console.log(`[calculateEscaladosForDate] ${activeCount} alunos ativos encontrados`);
+                return activeCount;
             }
             
-            // Count students who are NOT on Folga for the selected date
-            allEscalaAtual.forEach(student => {
-                if (!student) return;
-                
-                // Skip inactive students - they should not be counted as "escalados"
-                if (!isStudentActive(student)) return;
-                
-                // Try to find the value for this date using pre-computed key variants
-                let dateValue = student[dateKeys.dateDDMM] || 
-                               student[dateKeys.dateUnderscore] || 
-                               student[dateKeys.dateDDMMNoLeadingZero] || 
-                               student[dateKeys.dateUnderscoreNoLeadingZero];
-                
-                // If no value found with direct keys, try normalized key matching
-                if (dateValue === undefined) {
-                    for (const key of Object.keys(student)) {
-                        const normalizedKey = key.replace(/[\/\-]/g, '_').replace(/^0/, '');
-                        if (normalizedKey === dateKeys.normalizedTarget) {
-                            dateValue = student[key];
-                            break;
-                        }
-                    }
-                }
-                
-                // No data for this date
-                if (dateValue === undefined) return;
-                
-                // Skip if student is on Folga
-                if (isStudentOnFolga(dateValue)) return;
-                
-                // Count if student has an active schedule
-                if (isActiveSchedule(dateValue)) {
-                    escaladosCount++;
-                }
-            });
-            
-            return escaladosCount;
+            // Fallback: if alunosMap is empty (data not loaded yet), return 0
+            console.log('[calculateEscaladosForDate] Nenhum aluno ativo encontrado (dados não carregados?)');
+            return 0;
         }
         
         /**
@@ -4487,106 +4450,12 @@ function extractTimeFromISO(isoString) {
         }
 
         function getRosterForDate(dateIso) {
-            const iso = normalizeDateInput(dateIso);
-            if (!iso) return [];
-            const target = isoToDayMonth(iso);
-            if (!target) return [];
-
-            const rosterMap = new Map();
-            
-            // First, get data from regular Escala sheets
-            Object.values(appState.escalas || {}).forEach((escala = {}) => {
-                const headers = Array.isArray(escala.headersDay) ? escala.headersDay : [];
-                const matchesDate = headers.some((day) => normalizeHeaderDay(day) === target);
-                if (!matchesDate) return;
-
-                (escala.alunos || []).forEach((aluno) => {
-                    if (!aluno) return;
-                    
-                    // Skip inactive students - they should not be included in the roster
-                    if (!isStudentActive(aluno)) return;
-                    
-                    const nomeNorm = normalizeString(aluno.NomeCompleto || aluno.nomeCompleto || aluno.Nome || aluno.nome);
-                    const emailNorm = normalizeString(aluno.EmailHC || aluno.Email || aluno.email);
-                    const serialRaw = aluno.SerialNumber || aluno.Serial || aluno.ID || aluno.Id || '';
-                    const serialNorm = normalizeString(serialRaw ? String(serialRaw) : '');
-                    const key = nomeNorm || emailNorm || serialNorm;
-                    if (!key || rosterMap.has(key)) return;
-                    
-                    // Extract the value for this specific date from the aluno's escala
-                    // The date column (e.g., "15/11") contains the schedule info like "08h às 13h" or "Folga"
-                    const dateValue = aluno[target] || '';
-                    
-                    rosterMap.set(key, {
-                        ...aluno,
-                        __escalaNome: escala.nomeEscala || escala.nome || '',
-                        __headers: headers,
-                        __dateValue: dateValue // Store the schedule value for this date
-                    });
-                });
-            });
-            
-            // Also incorporate EscalaAtual data (Enfermaria, UTI, Cardiopediatria)
-            // This ensures students scheduled for today appear even if not in regular Escala sheets
-            const dateKeys = getDateKeyVariants(iso);
-            if (dateKeys) {
-                const allEscalaAtual = [
-                    ...(appState.escalaAtualEnfermaria || []).map(s => ({ ...s, __unidade: 'Enfermaria' })),
-                    ...(appState.escalaAtualUTI || []).map(s => ({ ...s, __unidade: 'UTI' })),
-                    ...(appState.escalaAtualCardiopediatria || []).map(s => ({ ...s, __unidade: 'Cardiopediatria' }))
-                ];
-                
-                allEscalaAtual.forEach(student => {
-                    if (!student) return;
-                    
-                    // Skip inactive students - they should not be included in the roster
-                    if (!isStudentActive(student)) return;
-                    
-                    const nomeNorm = normalizeString(student.NomeCompleto || student.nomeCompleto || student.Nome || student.nome || '');
-                    const emailNorm = normalizeString(student.EmailHC || student.Email || student.email || '');
-                    const serialRaw = student.SerialNumber || student.Serial || student.ID || student.Id || '';
-                    const serialNorm = normalizeString(serialRaw ? String(serialRaw) : '');
-                    const key = nomeNorm || emailNorm || serialNorm;
-                    
-                    if (!key) return;
-                    
-                    // Find the schedule value for this date
-                    let dateValue = student[dateKeys.dateDDMM] || 
-                                   student[dateKeys.dateUnderscore] || 
-                                   student[dateKeys.dateDDMMNoLeadingZero] || 
-                                   student[dateKeys.dateUnderscoreNoLeadingZero];
-                    
-                    // Try normalized key matching if direct keys don't work
-                    if (dateValue === undefined) {
-                        for (const propKey of Object.keys(student)) {
-                            const normalizedKey = propKey.replace(/[\/\-]/g, '_').replace(/^0/, '');
-                            if (normalizedKey === dateKeys.normalizedTarget) {
-                                dateValue = student[propKey];
-                                break;
-                            }
-                        }
-                    }
-                    
-                    // Skip if student is on Folga (F) for this date
-                    if (isStudentOnFolga(dateValue)) return;
-                    
-                    // Skip if no active schedule
-                    if (!isActiveSchedule(dateValue)) return;
-                    
-                    // Only add if not already in roster (avoid duplicates)
-                    if (!rosterMap.has(key)) {
-                        rosterMap.set(key, {
-                            ...student,
-                            __escalaNome: student.__unidade || 'EscalaAtual',
-                            __headers: [target],
-                            __dateValue: dateValue || '',
-                            __fromEscalaAtual: true
-                        });
-                    }
-                });
-            }
-
-            return Array.from(rosterMap.values());
+            // UPDATED: Per user requirement, do NOT pre-populate roster from schedules
+            // Show ONLY actual attendance data from Firebase (via pontoState.byDate)
+            // The roster should contain only students who have actual attendance records
+            // This prevents duplication and ensures escalados count matches active students
+            console.log('[getRosterForDate] Retornando roster vazio - apenas dados de ponto do Firebase serão exibidos');
+            return [];
         }
 
         function getScaleForDate(dateIso) {
