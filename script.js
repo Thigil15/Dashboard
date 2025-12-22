@@ -135,7 +135,6 @@
                         }
                     }
                     
-                    extractAndPopulatePontoDates(processed);
                     return processed;
                 }},
                 // NEW: PontoPratica - Current scale ponto data
@@ -2682,6 +2681,42 @@ function extractTimeFromISO(isoString) {
          * @param {boolean} fromEscala - True if data is extracted from Escala sheets
          * @param {string|null} forceTipo - Force tipo to 'pratica' or 'teoria' (overrides existing modalidade)
          */
+        /**
+         * Helper function to check if two records belong to the same student
+         * @param {Object} record1 - First record
+         * @param {Object} record2 - Second record
+         * @returns {boolean} - True if records are for the same student
+         */
+        function isSameStudent(record1, record2) {
+            return record1.id === record2.id || 
+                record1.nomeId === record2.nomeId ||
+                (record1.emailNormalized && record1.emailNormalized === record2.emailNormalized);
+        }
+
+        /**
+         * Helper function to check if two records have matching modalidade
+         * @param {string} modalidade1 - First modalidade
+         * @param {string} modalidade2 - Second modalidade
+         * @returns {boolean} - True if modalidades match (or either is empty)
+         */
+        function isSameModalidade(modalidade1, modalidade2) {
+            const norm1 = normalizeString(modalidade1 || '');
+            const norm2 = normalizeString(modalidade2 || '');
+            return norm1 === norm2 || !norm1 || !norm2;
+        }
+
+        /**
+         * Helper function to find existing record index for the same student and modalidade
+         * @param {Array} records - Array of existing records
+         * @param {Object} newRecord - New record to match against
+         * @returns {number} - Index of matching record, or -1 if not found
+         */
+        function findExistingRecordIndex(records, newRecord) {
+            return records.findIndex(r => 
+                isSameStudent(r, newRecord) && isSameModalidade(r.modalidade, newRecord.modalidade)
+            );
+        }
+
         function extractAndPopulatePontoDates(pontoRows, fromPontoSheet = false, fromEscala = false, forceTipo = null) {
             if (!Array.isArray(pontoRows) || pontoRows.length === 0) {
                 console.log("[extractAndPopulatePontoDates] Nenhum registro de ponto para processar.");
@@ -2766,12 +2801,9 @@ function extractTimeFromISO(isoString) {
                     if (fromPontoPratica || fromPontoTeoria) {
                         // Data from PontoPratica or PontoTeoria sheets
                         // Both types (pratica and teoria) follow the same merge logic
-                        // Find and replace existing record for the same person
-                        const existingIndex = existingRecords.findIndex(r => 
-                            r.id === normalizedRow.id || 
-                            r.nomeId === normalizedRow.nomeId ||
-                            (r.emailNormalized && r.emailNormalized === normalizedRow.emailNormalized)
-                        );
+                        // Find and replace existing record for the same person AND same modalidade
+                        // This prevents Prática data from replacing Teoria data (and vice versa)
+                        const existingIndex = findExistingRecordIndex(existingRecords, normalizedRow);
                         
                         if (existingIndex >= 0) {
                             const existing = existingRecords[existingIndex];
@@ -2790,26 +2822,33 @@ function extractTimeFromISO(isoString) {
                         }
                     } else if (fromEscala) {
                         // Data from Escala sheets (both EscalaPratica and EscalaTeoria)
-                        // For current day: Only add if no Ponto data exists
-                        // For past days: Add normally (Escala is the primary source)
-                        const hasPontoRecord = existingRecords.some(r => 
-                            (r._source === 'PontoPratica' || r._source === 'PontoTeoria') && (
-                                r.id === normalizedRow.id || 
-                                r.nomeId === normalizedRow.nomeId ||
-                                (r.emailNormalized && r.emailNormalized === normalizedRow.emailNormalized)
-                            )
-                        );
+                        // Check if a record already exists for this student AND same modalidade
+                        const existingIndex = findExistingRecordIndex(existingRecords, normalizedRow);
                         
-                        if (isCurrentDay && hasPontoRecord) {
-                            // Current day: Skip Escala data if Ponto data already exists (either Pratica or Teoria)
-                            console.log(`[extractAndPopulatePontoDates] Ignorando dados de Escala para dia atual ${isoDate} (já existe em PontoPratica ou PontoTeoria)`);
+                        if (existingIndex >= 0) {
+                            const existing = existingRecords[existingIndex];
+                            // If existing record is from Ponto (has actual attendance data), keep it
+                            if (existing._source === 'PontoPratica' || existing._source === 'PontoTeoria') {
+                                // Current day: Skip Escala data if Ponto data already exists
+                                console.log(`[extractAndPopulatePontoDates] Ignorando dados de Escala para ${normalizedRow.nome} em ${isoDate} (já existe em ${existing._source})`);
+                            } else {
+                                // Existing record is also from Escala - skip to avoid duplicates
+                                console.log(`[extractAndPopulatePontoDates] Ignorando duplicata de Escala para ${normalizedRow.nome} em ${isoDate}`);
+                            }
                         } else {
-                            // Add Escala data (for past days or when no Ponto data exists)
+                            // No existing record - add Escala data
                             existingRecords.push(normalizedRow);
                         }
                     } else {
-                        // Legacy Ponto data - just add it
-                        existingRecords.push(normalizedRow);
+                        // Legacy Ponto data - check for duplicates before adding
+                        const existingIndex = findExistingRecordIndex(existingRecords, normalizedRow);
+                        
+                        if (existingIndex >= 0) {
+                            // Update existing record with newer data
+                            existingRecords[existingIndex] = normalizedRow;
+                        } else {
+                            existingRecords.push(normalizedRow);
+                        }
                     }
                     
                     // Also track scales per date
@@ -5375,7 +5414,6 @@ function extractTimeFromISO(isoString) {
                 const searchKey = normalizeString([
                     row.nome,
                     row.escala,
-                    row.modalidade,
                     row.horaEntrada,
                     row.horaSaida,
                     row.email,
@@ -5776,39 +5814,6 @@ function extractTimeFromISO(isoString) {
                 ? `<span class="ponto-escala-pill">${escapeHtml(row.escala)}</span>`
                 : '<span class="ponto-escala-pill">Sem escala</span>';
             
-            // Determine modalidade (Prática vs Teoria) with distinct visual styling
-            // NOTE: Business logic (fixed 18h, tolerance) is in enrichPontoRows() function
-            // This section only provides visual distinction between Prática and Teoria
-            const modalidadeNorm = (row.modalidade || '').toLowerCase().trim();
-            const isTeoria = modalidadeNorm === 'teoria' || modalidadeNorm === 'teórica' || modalidadeNorm === 'teorica' || modalidadeNorm.includes('teoria');
-            const isPratica = modalidadeNorm === 'prática' || modalidadeNorm === 'pratica' || modalidadeNorm.includes('pratica') || modalidadeNorm.includes('prática');
-            
-            let modalidadeContent;
-            if (isTeoria) {
-                // Teoria badge - amber color (book icon)
-                modalidadeContent = `
-                    <span class="ponto-tipo-badge ponto-tipo-teoria">
-                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-                        </svg>
-                        Teoria
-                    </span>`;
-            } else if (isPratica) {
-                // Prática badge - cyan color (heart icon)
-                modalidadeContent = `
-                    <span class="ponto-tipo-badge ponto-tipo-pratica">
-                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
-                        </svg>
-                        Prática
-                    </span>`;
-            } else if (row.modalidade && row.modalidade.trim().length > 0) {
-                // Other modalidade - neutral color
-                modalidadeContent = `<span class="ponto-tipo-badge ponto-tipo-outro">${escapeHtml(row.modalidade)}</span>`;
-            } else {
-                modalidadeContent = '<span class="ponto-tipo-badge ponto-tipo-outro">—</span>';
-            }
-            
             // Look up student photo from appState.alunosMap
             let studentInfo = null;
             if (row.emailNormalized && appState.alunosMap.has(row.emailNormalized)) {
@@ -5842,7 +5847,7 @@ function extractTimeFromISO(isoString) {
             const serialLine = row.rawSerial ? `<span class="ponto-person-extra">Crachá: ${escapeHtml(row.rawSerial)}</span>` : '';
 
             return `
-                <tr class="ponto-row" data-status="${row.status}" data-search="${row.searchKey}" data-tipo="${isTeoria ? 'teoria' : (isPratica ? 'pratica' : 'outro')}">
+                <tr class="ponto-row" data-status="${row.status}" data-search="${row.searchKey}">
                     <td data-label="Nome">
                         <div class="ponto-person">
                             ${avatarHTML}
@@ -5857,11 +5862,6 @@ function extractTimeFromISO(isoString) {
                     <td data-label="Hora de Entrada">${escapeHtml(row.horaEntrada || '—')}</td>
                     <td data-label="Hora de Saída">${escapeHtml(row.horaSaida || '—')}</td>
                     <td data-label="Escala">${escalaContent}</td>
-                    <td data-label="Tipo">
-                        <div class="ponto-tipo-cell">
-                            ${modalidadeContent}
-                        </div>
-                    </td>
                     <td data-label="Status">
                         <span class="${row.badgeClass}">${escapeHtml(row.statusLabel)}</span>
                     </td>
