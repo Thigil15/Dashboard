@@ -2694,11 +2694,23 @@ function extractTimeFromISO(isoString) {
                 console.log(`[extractAndPopulatePontoDates] Tipo forçado: ${forceTipo}`);
             }
 
-            const dateSet = new Set(pontoState.dates); // Start with existing dates
+            // BUGFIX: When processing Escala data (the source of truth), CLEAR existing ponto state
+            // to avoid duplicates when Firebase listener fires multiple times
+            // Escala data should completely REPLACE any previous ponto data
+            if (fromEscala) {
+                console.log('[extractAndPopulatePontoDates] Limpando dados anteriores - Escala é a fonte de verdade');
+                pontoState.byDate.clear();
+                pontoState.cache.clear();
+                pontoState.scalesByDate.clear();
+            }
+            
+            const dateSet = fromEscala ? new Set() : new Set(pontoState.dates);
             const groupedByDate = new Map();
             
-            // First, copy existing data if we're merging
-            if (fromEscala) {
+            // For legacy Ponto data (fromEscala=false), preserve existing Escala data if any
+            // For Escala data (fromEscala=true), start fresh (already cleared above)
+            if (!fromEscala && pontoState.byDate.size > 0) {
+                // Preserve existing data (from previous Escala loads)
                 pontoState.byDate.forEach((records, date) => {
                     groupedByDate.set(date, [...records]);
                 });
@@ -2758,28 +2770,21 @@ function extractTimeFromISO(isoString) {
                         normalizedRow._isCurrentDay = true;
                     }
                     
-                    if (fromEscala) {
-                        // Data from Escala sheets (EscalaPratica and EscalaTeoria)
-                        // Check if a record already exists for this student AND same modalidade
-                        const existingIndex = findExistingRecordIndex(existingRecords, normalizedRow);
-                        
-                        if (existingIndex >= 0) {
-                            // Existing record is also from Escala - skip to avoid duplicates
+                    // Check if a record already exists for this student AND same modalidade
+                    // This deduplicates within the current batch being processed
+                    const existingIndex = findExistingRecordIndex(existingRecords, normalizedRow);
+                    
+                    if (existingIndex >= 0) {
+                        if (fromEscala) {
+                            // For Escala data, skip duplicates (shouldn't happen but just in case)
                             console.log(`[extractAndPopulatePontoDates] Ignorando duplicata de Escala para ${normalizedRow.nome} em ${isoDate}`);
                         } else {
-                            // No existing record - add Escala data
-                            existingRecords.push(normalizedRow);
+                            // For legacy Ponto data, update with newer data
+                            existingRecords[existingIndex] = normalizedRow;
                         }
                     } else {
-                        // Legacy Ponto data - check for duplicates before adding
-                        const existingIndex = findExistingRecordIndex(existingRecords, normalizedRow);
-                        
-                        if (existingIndex >= 0) {
-                            // Update existing record with newer data
-                            existingRecords[existingIndex] = normalizedRow;
-                        } else {
-                            existingRecords.push(normalizedRow);
-                        }
+                        // No existing record - add new data
+                        existingRecords.push(normalizedRow);
                     }
                     
                     // Also track scales per date
