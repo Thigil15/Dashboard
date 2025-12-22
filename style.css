@@ -393,11 +393,11 @@
         .login-grid {
             position: relative;
             z-index: 1;
-            display: grid;
-            grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
-            gap: clamp(1.5rem, 3vw, 2.75rem);
-            width: min(1100px, 100%);
-            align-items: stretch;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            max-width: 480px;
         }
         
         .login-hero-panel {
@@ -767,15 +767,8 @@
         /* Responsive adjustments */
         @media (max-width: 980px) {
             .login-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            #login-card {
-                order: 1;
-            }
-            
-            .login-hero-panel {
-                order: 2;
+                max-width: 100%;
+                padding: 0 1rem;
             }
         }
         
