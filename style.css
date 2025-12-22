@@ -2586,7 +2586,7 @@
         }
         
         /* ════════════════════════════════════════════════════════════════
-           PROFESSIONAL FOOTER - Modern Redesigned InCor Footer 2025
+           PROFESSIONAL FOOTER - Modern Redesigned InCor Footer
            Clean, organized, and accessible footer design
            ════════════════════════════════════════════════════════════════ */
         #app-footer {
@@ -2606,7 +2606,7 @@
             margin: 0 auto;
             padding: 0 2rem;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 2.5rem;
         }
         
