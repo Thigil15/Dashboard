@@ -705,6 +705,11 @@
             opacity: 1;
         }
         
+        /* Main content area should grow to fill space and push footer down */
+        .main-content-area {
+            flex: 1 0 auto;
+        }
+        
         /* ════════════════════════════════════════════════════════════════
            PROFESSIONAL INCOR HEADER - Modern Minimalist Design 2025
            ════════════════════════════════════════════════════════════════ */
@@ -966,17 +971,6 @@
             }
         }
 
-        /* === DASHBOARD MODERN LAYOUT === */
-        .dashboard-layout-modern {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-        
-        /* Main content area should grow to fill space and push footer down */
-        .main-content-area {
-            flex: 1 0 auto;
-        }
         
         /* === DASHBOARD TOP BAR === */
         .dashboard-topbar {
