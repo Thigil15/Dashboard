@@ -447,27 +447,14 @@
 
                 <!-- View: Ponto - Modern InCor Design -->
                 <div id="content-ponto" class="view-container">
-                    <!-- Modern Header with Gradient -->
-                    <div class="ponto-modern-header">
-                        <div class="ponto-header-content">
-                            <div class="ponto-header-icon">
-                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-                            <div class="ponto-header-text">
-                                <h1>Registro de Ponto</h1>
-                                <p>Controle de frequência e presença dos alunos</p>
-                            </div>
-                        </div>
-                        <div class="ponto-header-meta">
-                            <span id="ponto-last-sync" class="ponto-sync-badge">
-                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <span>Dados não carregados</span>
-                            </span>
-                        </div>
+                    <!-- Sync Status Badge (moved from header) -->
+                    <div class="ponto-sync-status">
+                        <span id="ponto-last-sync" class="ponto-sync-badge">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>Dados não carregados</span>
+                        </span>
                     </div>
 
                     <!-- Prática/Teoria Type Tabs -->
@@ -616,6 +603,10 @@
                                 <button class="ponto-pill" data-filter="absent">
                                     <span>Faltas</span>
                                     <span class="ponto-pill-count" id="ponto-filter-absent">0</span>
+                                </button>
+                                <button class="ponto-pill" data-filter="off">
+                                    <span>Folgas</span>
+                                    <span class="ponto-pill-count" id="ponto-filter-off">0</span>
                                 </button>
                             </div>
                             <div class="ponto-search-box">

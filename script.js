@@ -4941,9 +4941,15 @@ function extractTimeFromISO(isoString) {
             ) : '';
             
             const identity = nameKey || fallbackKey;
-            // Only use name for identity matching - this is the key fix
-            // Email and serial are secondary and should not prevent merging
-            return `${datePart}|${identity}`;
+            
+            // Include modalidade (pratica/teoria) in the identity key to prevent
+            // Prática and Teoria records from being merged into one.
+            // A student can have both Prática (e.g., 7h-12h) and Teoria (e.g., 18h-22h)
+            // on the same day, so these should remain as separate records.
+            const modalidade = normalizeString(row.modalidade || '');
+            const modalidadeKey = modalidade ? `|${modalidade}` : '';
+            
+            return `${datePart}|${identity}${modalidadeKey}`;
         }
 
         function mergeRecordLists(base = [], additions = []) {
@@ -5705,7 +5711,8 @@ function extractTimeFromISO(isoString) {
                 'ponto-filter-total': rows.length,
                 'ponto-filter-present': rows.filter((row) => row.status === 'present' || row.status === 'late').length,
                 'ponto-filter-late': rows.filter((row) => row.status === 'late').length,
-                'ponto-filter-absent': rows.filter((row) => row.status === 'absent').length
+                'ponto-filter-absent': rows.filter((row) => row.status === 'absent').length,
+                'ponto-filter-off': rows.filter((row) => row.status === 'off').length
             };
 
             Object.entries(counters).forEach(([id, value]) => {
