@@ -1897,6 +1897,18 @@ function extractTimeFromISO(isoString) {
                 userMenuTrigger.addEventListener('click', toggleUserMenu);
             }
             
+            // Student view user menu toggle
+            const studentUserMenuTrigger = document.getElementById('student-user-menu-trigger');
+            if (studentUserMenuTrigger) {
+                studentUserMenuTrigger.addEventListener('click', toggleStudentUserMenu);
+            }
+            
+            // Student view logout button
+            const studentLogoutButton = document.getElementById('student-logout-button');
+            if (studentLogoutButton) {
+                studentLogoutButton.addEventListener('click', handleLogout);
+            }
+            
             // Close user menu when clicking outside
             document.addEventListener('click', (e) => {
                 const userMenu = document.getElementById('user-menu');
@@ -1906,6 +1918,17 @@ function extractTimeFromISO(isoString) {
                     // Update aria-expanded for accessibility
                     if (trigger) {
                         trigger.setAttribute('aria-expanded', 'false');
+                    }
+                }
+                
+                // Also close student user menu
+                const studentUserMenu = document.getElementById('student-user-menu');
+                const studentTrigger = document.getElementById('student-user-menu-trigger');
+                if (studentUserMenu && !studentUserMenu.contains(e.target)) {
+                    studentUserMenu.classList.remove('open');
+                    // Update aria-expanded for accessibility
+                    if (studentTrigger) {
+                        studentTrigger.setAttribute('aria-expanded', 'false');
                     }
                 }
             });
@@ -2344,6 +2367,20 @@ function extractTimeFromISO(isoString) {
             }
         }
         
+        // Toggle student view user menu
+        function toggleStudentUserMenu(event) {
+            event.stopPropagation();
+            const studentUserMenu = document.getElementById('student-user-menu');
+            const trigger = document.getElementById('student-user-menu-trigger');
+            if (studentUserMenu) {
+                const isOpen = studentUserMenu.classList.toggle('open');
+                // Update aria-expanded for accessibility
+                if (trigger) {
+                    trigger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                }
+            }
+        }
+        
         // Update user menu with logged-in user info
         function updateUserMenuInfo(user) {
             if (!user) return;
@@ -2351,13 +2388,13 @@ function extractTimeFromISO(isoString) {
             const userName = user.displayName || user.email.split('@')[0];
             const userEmail = user.email;
             
-            // Update topbar user info
+            // Update dashboard topbar user info
             const userNameEl = document.getElementById('user-name');
             if (userNameEl) {
                 userNameEl.textContent = userName;
             }
             
-            // Update dropdown user info
+            // Update dashboard dropdown user info
             const userMenuNameEl = document.getElementById('user-menu-name');
             if (userMenuNameEl) {
                 userMenuNameEl.textContent = userName;
@@ -2366,6 +2403,23 @@ function extractTimeFromISO(isoString) {
             const userMenuEmailEl = document.getElementById('user-menu-email');
             if (userMenuEmailEl) {
                 userMenuEmailEl.textContent = userEmail;
+            }
+            
+            // Update student view topbar user info
+            const studentUserNameEl = document.getElementById('student-user-name');
+            if (studentUserNameEl) {
+                studentUserNameEl.textContent = userName;
+            }
+            
+            // Update student view dropdown user info
+            const studentUserMenuNameEl = document.getElementById('student-user-menu-name');
+            if (studentUserMenuNameEl) {
+                studentUserMenuNameEl.textContent = userName;
+            }
+            
+            const studentUserMenuEmailEl = document.getElementById('student-user-menu-email');
+            if (studentUserMenuEmailEl) {
+                studentUserMenuEmailEl.textContent = userEmail;
             }
             
             console.log('[updateUserMenuInfo] User menu atualizado para:', userName);
@@ -6214,6 +6268,12 @@ function extractTimeFromISO(isoString) {
                  ? `https://lh3.googleusercontent.com/d/${info.FotoID}=s200-c` 
                  : fallbackPhotoUrl;
              const statusClass = info.Status === 'Ativo' ? 'student-status-badge--active' : 'student-status-badge--inactive';
+             
+             // Update navigation tab with student name
+             const studentNavName = document.getElementById('student-nav-name');
+             if (studentNavName) {
+                 studentNavName.textContent = info.NomeCompleto || 'Perfil do Aluno';
+             }
              
              p.innerHTML = `
                 <img src="${photoUrl}" alt="Foto de ${info.NomeCompleto}" class="student-profile-avatar" onerror="this.src='${fallbackPhotoUrl}'">
