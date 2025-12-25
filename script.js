@@ -6269,12 +6269,6 @@ function extractTimeFromISO(isoString) {
                  : fallbackPhotoUrl;
              const statusClass = info.Status === 'Ativo' ? 'student-status-badge--active' : 'student-status-badge--inactive';
              
-             // Update navigation tab with student name
-             const studentNavName = document.getElementById('student-nav-name');
-             if (studentNavName) {
-                 studentNavName.textContent = info.NomeCompleto || 'Perfil do Aluno';
-             }
-             
              p.innerHTML = `
                 <img src="${photoUrl}" alt="Foto de ${info.NomeCompleto}" class="student-profile-avatar" onerror="this.src='${fallbackPhotoUrl}'">
                 <div class="student-profile-info">

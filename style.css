@@ -833,6 +833,53 @@
             opacity: 1;
         }
         
+        /* Student Detail Page - Custom Header Navigation */
+        .student-header-nav-custom {
+            justify-content: space-between;
+            background: #fafbfc;
+        }
+        
+        /* Back button styling for student detail view */
+        .student-header-nav-custom .header-nav-link {
+            color: var(--incor-blue-600);
+            font-weight: 600;
+            background: transparent;
+        }
+        
+        .student-header-nav-custom .header-nav-link:hover {
+            color: var(--incor-blue-700);
+            background: rgba(0, 84, 180, 0.08);
+        }
+        
+        .student-header-nav-custom .header-nav-link .header-nav-icon {
+            opacity: 1;
+            color: var(--incor-blue-600);
+        }
+        
+        .student-header-nav-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--incor-blue-700);
+            white-space: nowrap;
+        }
+        
+        .student-header-nav-title .header-nav-icon {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+            opacity: 0.8;
+        }
+        
+        @media (max-width: 768px) {
+            .student-header-nav-title span:last-child {
+                display: none;
+            }
+        }
+        
         /* User Menu in Header - Minimalist Style */
         .header-professional .user-menu-trigger {
             display: flex;
