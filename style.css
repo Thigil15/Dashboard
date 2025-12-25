@@ -10569,10 +10569,9 @@
     position: sticky;
     top: 0;
     z-index: 100;
-    background: linear-gradient(135deg, var(--incor-blue-800) 0%, var(--incor-blue-700) 50%, var(--incor-blue-600) 100%);
-    background-color: #002470; /* Fallback color */
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 4px 20px rgba(0, 51, 160, 0.25), 0 2px 8px rgba(0, 0, 0, 0.1);
+    background: #ffffff;
+    border-bottom: 1px solid rgba(0, 51, 160, 0.08);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .student-profile-header-inner {
@@ -10584,53 +10583,49 @@
     justify-content: space-between;
 }
 
-/* Enhanced Back Button */
+/* Enhanced Back Button - Professional Style */
 .student-back-button {
     display: flex;
     align-items: center;
-    gap: 0.875rem;
-    padding: 0.625rem 1.25rem 0.625rem 0.625rem;
-    background: rgba(255, 255, 255, 0.12);
-    background-color: rgba(255, 255, 255, 0.12); /* Explicit fallback */
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 12px;
-    color: #ffffff; /* Explicit white color */
+    gap: 0.75rem;
+    padding: 0.5rem 1rem 0.5rem 0.5rem;
+    background: transparent;
+    border: 1px solid rgba(0, 51, 160, 0.12);
+    border-radius: var(--radius-lg);
+    color: var(--content-text-secondary);
     font-family: var(--font-display);
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s ease;
 }
 
 .student-back-button:hover {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.3);
-    transform: translateX(-4px);
+    background: rgba(0, 84, 180, 0.04);
+    border-color: rgba(0, 51, 160, 0.2);
+    transform: translateX(-2px);
 }
 
 .student-back-button-icon {
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.15);
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, var(--incor-blue-500), var(--incor-blue-600));
     border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
 }
 
 .student-back-button:hover .student-back-button-icon {
-    background: rgba(255, 255, 255, 0.25);
+    background: linear-gradient(135deg, var(--incor-blue-600), var(--incor-blue-700));
+    transform: translateX(-2px);
 }
 
 .student-back-button-icon svg {
-    width: 1.25rem;
-    height: 1.25rem;
-    color: #ffffff; /* Explicit white */
-    stroke: #ffffff; /* Explicit stroke color */
-    transition: transform 0.3s ease;
-}
-
-.student-back-button:hover .student-back-button-icon svg {
-    transform: translateX(-3px);
+    width: 1.125rem;
+    height: 1.125rem;
+    color: white;
+    stroke: white;
 }
 
 .student-back-button-text {
@@ -10640,20 +10635,20 @@
 }
 
 .student-back-button-label {
-    font-weight: 700;
+    font-weight: 600;
     font-size: 0.9375rem;
-    color: #ffffff; /* Explicit white */
+    color: var(--content-text-primary);
     line-height: 1.2;
 }
 
 .student-back-button-sublabel {
     font-size: 0.6875rem;
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--content-text-muted);
     letter-spacing: 0.02em;
 }
 
-/* Page Title Section */
+/* Page Title Section - Professional Style */
 .student-header-title-section {
     display: flex;
     flex-direction: column;
@@ -10664,25 +10659,26 @@
 .student-header-page-title {
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: 1.25rem;
-    color: white;
+    font-size: 1.125rem;
+    color: var(--incor-blue-800);
     margin: 0;
     line-height: 1.2;
     letter-spacing: -0.01em;
 }
 
 .student-header-breadcrumb {
-    font-size: 0.75rem;
+    font-size: 0.6875rem;
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.7);
-    letter-spacing: 0.02em;
+    color: var(--content-text-muted);
+    letter-spacing: 0.01em;
 }
 
 /* === HERO PROFILE SECTION === */
+/* === HERO PROFILE SECTION - Clean Professional Style === */
 .student-hero-section {
     position: relative;
     padding: 2rem 2rem 1.5rem;
-    overflow: hidden;
+    background: linear-gradient(135deg, #F0F4F8 0%, #E8EEF4 50%, #F5F8FB 100%);
 }
 
 .student-hero-background {
@@ -10694,15 +10690,15 @@
 .student-hero-gradient {
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, transparent 0%, rgba(0, 51, 160, 0.2) 50%, rgba(0, 36, 112, 0.4) 100%);
+    background: transparent;
 }
 
 .student-hero-pattern {
     position: absolute;
     inset: 0;
     background-image: 
-        radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.03) 0%, transparent 50%),
-        radial-gradient(circle at 75% 75%, rgba(226, 30, 38, 0.05) 0%, transparent 40%);
+        radial-gradient(circle at 25% 25%, rgba(0, 84, 180, 0.02) 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, rgba(226, 30, 38, 0.02) 0%, transparent 40%);
 }
 
 .student-hero-content {
@@ -10713,19 +10709,19 @@
 
 /* === PREMIUM PROFILE CARD === */
 .student-profile-card {
-    background: rgba(255, 255, 255, 0.98);
-    border-radius: 20px;
+    background: var(--card-bg);
+    border-radius: var(--radius-xl);
     padding: 2rem 2.5rem;
-    box-shadow: 
-        0 20px 50px rgba(0, 0, 0, 0.12),
-        0 10px 25px rgba(0, 51, 160, 0.08);
+    box-shadow: var(--card-shadow-md);
     display: flex;
     align-items: center;
     gap: 2rem;
     position: relative;
     overflow: hidden;
     animation: profile-card-enter 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: var(--card-border);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
 }
 
 @keyframes profile-card-enter {
@@ -10739,7 +10735,7 @@
     }
 }
 
-/* Gradient border effect at top */
+/* Gradient accent at top */
 .student-profile-card::before {
     content: '';
     position: absolute;
@@ -10748,8 +10744,9 @@
     right: 0;
     height: 3px;
     background: linear-gradient(90deg, 
-        var(--incor-blue-700), 
-        var(--incor-blue-500));
+        var(--incor-blue-600), 
+        var(--incor-blue-400),
+        var(--incor-red-500));
 }
 
 /* Profile picture styles */
@@ -10758,10 +10755,10 @@
     height: 100px;
     border-radius: 20px;
     object-fit: cover;
-    border: 4px solid white;
+    border: 3px solid white;
     box-shadow: 
-        0 8px 24px rgba(0, 51, 160, 0.18),
-        0 0 0 2px var(--incor-blue-500);
+        0 8px 24px rgba(0, 51, 160, 0.12),
+        0 0 0 1px rgba(0, 84, 180, 0.1);
     flex-shrink: 0;
     transition: all 0.3s ease;
 }
@@ -10769,8 +10766,8 @@
 .student-profile-card:hover .student-profile-avatar {
     transform: scale(1.03);
     box-shadow: 
-        0 10px 30px rgba(0, 51, 160, 0.22),
-        0 0 0 3px var(--incor-blue-400);
+        0 10px 30px rgba(0, 51, 160, 0.15),
+        0 0 0 2px var(--incor-blue-400);
 }
 
 .student-profile-info {
@@ -10856,11 +10853,12 @@
     border: 2px solid rgba(220, 38, 38, 0.3);
 }
 
-/* === KPI SECTION === */
+/* === KPI SECTION - Professional Clean Style === */
 .student-kpi-section {
     position: relative;
     padding: 0 2rem 2rem;
     margin-top: -1rem;
+    background: transparent;
 }
 
 .student-kpi-container {
@@ -10886,22 +10884,22 @@
     }
 }
 
-/* Premium KPI Cards */
+/* Premium KPI Cards - Cleaner Style */
 .student-kpi-card {
     position: relative;
-    background: rgba(255, 255, 255, 0.95);
-    border-radius: 12px;
-    padding: 1rem;
+    background: var(--card-bg);
+    border-radius: var(--radius-xl);
+    padding: 1.25rem;
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    box-shadow: 
-        0 4px 15px rgba(0, 0, 0, 0.08),
-        0 2px 6px rgba(0, 51, 160, 0.05);
-    border: 1px solid rgba(229, 233, 239, 0.8);
+    gap: 0.875rem;
+    box-shadow: var(--card-shadow);
+    border: var(--card-border);
     overflow: hidden;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     animation: kpi-card-enter 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
 }
 
 .student-kpi-card:nth-child(1) { animation-delay: 0.1s; }
@@ -10921,36 +10919,35 @@
 }
 
 .student-kpi-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 
-        0 8px 25px rgba(0, 0, 0, 0.12),
-        0 4px 10px rgba(0, 51, 160, 0.08);
+    transform: translateY(-3px);
+    box-shadow: var(--card-shadow-hover);
+    border: var(--card-border-hover);
 }
 
-/* KPI Glow effect */
+/* KPI Accent Line */
 .student-kpi-glow {
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
-    height: 3px;
-    border-radius: 12px 12px 0 0;
+    height: 2px;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
 }
 
 .student-kpi-card--danger .student-kpi-glow {
-    background: linear-gradient(90deg, #dc2626, #ef4444, #f87171);
+    background: linear-gradient(90deg, #dc2626, #f87171);
 }
 
 .student-kpi-card--warning .student-kpi-glow {
-    background: linear-gradient(90deg, #d97706, #f59e0b, #fbbf24);
+    background: linear-gradient(90deg, #f59e0b, #fbbf24);
 }
 
 .student-kpi-card--success .student-kpi-glow {
-    background: linear-gradient(90deg, #059669, #10b981, #34d399);
+    background: linear-gradient(90deg, #10b981, #34d399);
 }
 
 .student-kpi-card--info .student-kpi-glow {
-    background: linear-gradient(90deg, var(--incor-blue-700), var(--incor-blue-500), var(--incor-blue-400));
+    background: linear-gradient(90deg, var(--incor-blue-600), var(--incor-blue-400));
 }
 
 /* KPI Icon */
@@ -11045,11 +11042,11 @@
     background: linear-gradient(90deg, transparent, rgba(0, 51, 160, 0.1), transparent);
 }
 
-/* === CONTENT SECTION === */
+/* === CONTENT SECTION - Clean Professional Background === */
 .student-content-section {
     position: relative;
     padding: 1.5rem 2rem;
-    background: linear-gradient(180deg, rgba(0, 36, 112, 0.3) 0%, #f0f4f8 12%, #f0f4f8 100%);
+    background: linear-gradient(135deg, #F0F4F8 0%, #E8EEF4 50%, #F5F8FB 100%);
     min-height: 50vh;
 }
 
@@ -11886,42 +11883,131 @@
 
 /* === STUDENT PROFILE FOOTER === */
 .student-profile-footer {
-    background: linear-gradient(135deg, rgba(0, 36, 112, 0.95), rgba(0, 51, 160, 0.9));
-    padding: 2rem;
+    background: linear-gradient(135deg, var(--incor-blue-800) 0%, var(--incor-blue-700) 100%);
+    border-top: 3px solid var(--incor-red-500);
     margin-top: 3rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    font-family: var(--font-main);
+    flex-shrink: 0;
+    width: 100%;
 }
 
 .student-footer-content {
     max-width: 1400px;
     margin: 0 auto;
-    text-align: center;
+    padding: 1.5rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.student-footer-info {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+    flex: 1;
 }
 
 .student-footer-brand {
-    display: inline-flex;
+    display: flex;
     align-items: center;
     gap: 0.75rem;
-    margin-bottom: 0.75rem;
 }
 
-.student-footer-brand svg {
-    width: 24px;
-    height: 24px;
-    color: var(--incor-red-500);
+.student-footer-logo {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 8px;
+    background: var(--incor-red-500);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(226, 30, 38, 0.4);
 }
 
-.student-footer-brand span {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 1.125rem;
+.student-footer-logo svg {
+    width: 1.25rem;
+    height: 1.25rem;
     color: white;
 }
 
 .student-footer-text {
-    font-size: 0.875rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.student-footer-text strong {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: white;
+    line-height: 1.2;
+}
+
+.student-footer-text span {
+    font-size: 0.75rem;
     color: rgba(255, 255, 255, 0.7);
-    margin: 0;
+    font-weight: 400;
+}
+
+.student-footer-contact {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    font-size: 0.8125rem;
+}
+
+.student-footer-contact a {
+    color: rgba(255, 255, 255, 0.85);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.student-footer-contact a:hover {
+    color: white;
+    text-decoration: underline;
+}
+
+.student-footer-contact .separator {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.student-footer-social {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.student-footer-social a {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    transition: all 0.2s ease;
+}
+
+.student-footer-social a:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.student-footer-social svg {
+    width: 1rem;
+    height: 1rem;
+}
+
+.student-footer-copyright {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.6);
+    white-space: nowrap;
 }
 
 /* === RESPONSIVE ADJUSTMENTS === */
@@ -11947,6 +12033,37 @@
     .student-header-title-section {
         display: none;
     }
+    
+    .student-footer-content {
+        padding: 1.25rem 1rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .student-footer-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+        width: 100%;
+    }
+    
+    .student-footer-contact {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .student-footer-contact .separator {
+        display: none;
+    }
+    
+    .student-footer-copyright {
+        width: 100%;
+        text-align: center;
+        white-space: normal;
+    }
+}
     
     .student-hero-section {
         padding: 2rem 1rem 1.5rem;
