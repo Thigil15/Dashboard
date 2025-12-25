@@ -6401,10 +6401,7 @@ function extractTimeFromISO(isoString) {
                 <img src="${photoUrl}" alt="Foto de ${info.NomeCompleto}" class="student-profile-avatar" onerror="this.src='${fallbackPhotoUrl}'">
                 <div class="student-profile-info">
                     <h2 class="student-profile-name">${info.NomeCompleto || 'Nome não disponível'}</h2>
-                    <span class="student-status-badge ${statusClass}">
-                        <span class="status-indicator"></span>
-                        ${info.Status || 'Indefinido'}
-                    </span>
+                    <span class="student-status-badge ${statusClass}">${info.Status || 'Indefinido'}</span>
                     <span class="student-profile-course">${info.Curso || 'Curso não informado'}</span>
                 </div>
                 <div class="student-profile-institution-badge">

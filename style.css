@@ -10789,15 +10789,6 @@
    Clean centered layout with status badge and course
    ════════════════════════════════════════════════════════════════════════════════ */
 
-.student-status-badge--active .status-indicator {
-    background: #059669;
-    animation: status-pulse 2s ease-in-out infinite;
-}
-
-.student-status-badge--inactive .status-indicator {
-    background: #dc2626;
-}
-
 /* Institution Badge */
 .student-profile-institution-badge {
     position: absolute;
