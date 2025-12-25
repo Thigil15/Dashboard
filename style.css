@@ -10533,145 +10533,21 @@
 
 /* === BASE LAYOUT === */
 .student-profile-view {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #F0F4F8 0%, #E8EEF4 50%, #F5F8FB 100%);
+    background-attachment: fixed;
     position: fixed;
     inset: 0;
-    background: linear-gradient(135deg, #001A52 0%, #002470 15%, #0033A0 35%, #0054B4 50%, #0033A0 65%, #002470 85%, #001A52 100%);
-    background-attachment: fixed;
     z-index: 50;
     overflow-y: auto;
     overflow-x: hidden;
 }
 
-/* Animated background pattern */
-.student-profile-view::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: 
-        radial-gradient(ellipse at 20% 20%, rgba(226, 30, 38, 0.08) 0%, transparent 50%),
-        radial-gradient(ellipse at 80% 80%, rgba(30, 111, 217, 0.1) 0%, transparent 50%),
-        radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0.02) 0%, transparent 60%);
-    pointer-events: none;
-    animation: student-bg-float 20s ease-in-out infinite;
-}
-
-@keyframes student-bg-float {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    33% { transform: translate(1%, 1%) scale(1.01); }
-    66% { transform: translate(-0.5%, 0.5%) scale(1.005); }
-}
-
-/* === PREMIUM HEADER === */
-.student-profile-header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: #ffffff;
-    border-bottom: 1px solid rgba(0, 51, 160, 0.08);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-}
-
-.student-profile-header-inner {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 0.875rem 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-/* Enhanced Back Button - Professional Style */
-.student-back-button {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.5rem 1rem 0.5rem 0.5rem;
-    background: transparent;
-    border: 1px solid rgba(0, 51, 160, 0.12);
-    border-radius: var(--radius-lg);
-    color: var(--content-text-secondary);
-    font-family: var(--font-display);
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.student-back-button:hover {
-    background: rgba(0, 84, 180, 0.04);
-    border-color: rgba(0, 51, 160, 0.2);
-    transform: translateX(-2px);
-}
-
-.student-back-button-icon {
-    width: 36px;
-    height: 36px;
-    background: linear-gradient(135deg, var(--incor-blue-500), var(--incor-blue-600));
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-    flex-shrink: 0;
-}
-
-.student-back-button:hover .student-back-button-icon {
-    background: linear-gradient(135deg, var(--incor-blue-600), var(--incor-blue-700));
-    transform: translateX(-2px);
-}
-
-.student-back-button-icon svg {
-    width: 1.125rem;
-    height: 1.125rem;
-    color: white;
-    stroke: white;
-}
-
-.student-back-button-text {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-}
-
-.student-back-button-label {
-    font-weight: 600;
-    font-size: 0.9375rem;
-    color: var(--content-text-primary);
-    line-height: 1.2;
-}
-
-.student-back-button-sublabel {
-    font-size: 0.6875rem;
-    font-weight: 500;
-    color: var(--content-text-muted);
-    letter-spacing: 0.02em;
-}
-
-/* Page Title Section - Professional Style */
-.student-header-title-section {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    text-align: right;
-}
-
-.student-header-page-title {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 1.125rem;
-    color: var(--incor-blue-800);
-    margin: 0;
-    line-height: 1.2;
-    letter-spacing: -0.01em;
-}
-
-.student-header-breadcrumb {
-    font-size: 0.6875rem;
-    font-weight: 500;
-    color: var(--content-text-muted);
-    letter-spacing: 0.01em;
-}
+/* === HEADER === */
+/* Student profile view now uses the same .header-professional class as dashboard */
+/* No additional header styles needed - reusing dashboard header component */
 
 /* === HERO PROFILE SECTION === */
 /* === HERO PROFILE SECTION - Clean Professional Style === */
@@ -12012,59 +11888,7 @@
 
 /* === RESPONSIVE ADJUSTMENTS === */
 @media (max-width: 768px) {
-    .student-profile-header-inner {
-        padding: 0.75rem 1rem;
-    }
-    
-    .student-back-button {
-        padding: 0.5rem 0.875rem 0.5rem 0.5rem;
-        gap: 0.625rem;
-    }
-    
-    .student-back-button-icon {
-        width: 36px;
-        height: 36px;
-    }
-    
-    .student-back-button-sublabel {
-        display: none;
-    }
-    
-    .student-header-title-section {
-        display: none;
-    }
-    
-    .student-footer-content {
-        padding: 1.25rem 1rem;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-    }
-    
-    .student-footer-info {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-        width: 100%;
-    }
-    
-    .student-footer-contact {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
-    }
-    
-    .student-footer-contact .separator {
-        display: none;
-    }
-    
-    .student-footer-copyright {
-        width: 100%;
-        text-align: center;
-        white-space: normal;
-    }
-}
-    
+    /* Responsive styles for hero section and other elements */
     .student-hero-section {
         padding: 2rem 1rem 1.5rem;
     }
@@ -12105,6 +11929,37 @@
     .student-tab-button svg {
         width: 1.375rem;
         height: 1.375rem;
+    }
+    
+    /* Footer responsive styles */
+    .student-footer-content {
+        padding: 1.25rem 1rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .student-footer-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+        width: 100%;
+    }
+    
+    .student-footer-contact {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .student-footer-contact .separator {
+        display: none;
+    }
+    
+    .student-footer-copyright {
+        width: 100%;
+        text-align: center;
+        white-space: normal;
     }
 }
 
