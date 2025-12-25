@@ -1618,6 +1618,7 @@ const appState = {
 // STATE PERSISTENCE - Save/Restore Navigation State on Refresh
 // =====================================================================
 const NAV_STATE_KEY = 'incor_nav_state';
+const NAV_STATE_EXPIRY_MS = 4 * 60 * 60 * 1000; // 4 hours in milliseconds
 
 /**
  * Save current navigation state to localStorage
@@ -1646,9 +1647,8 @@ function loadNavigationState() {
         
         const state = JSON.parse(stored);
         
-        // Expire state after 4 hours (to avoid stale state issues)
-        const EXPIRY_MS = 4 * 60 * 60 * 1000;
-        if (Date.now() - state.timestamp > EXPIRY_MS) {
+        // Expire state after configured time (to avoid stale state issues)
+        if (Date.now() - state.timestamp > NAV_STATE_EXPIRY_MS) {
             localStorage.removeItem(NAV_STATE_KEY);
             console.log('[loadNavigationState] Estado expirado, removido');
             return null;
@@ -6397,7 +6397,10 @@ function extractTimeFromISO(isoString) {
              const formatDate = (dateStr) => {
                  if (!dateStr) return null;
                  try {
-                     return new Date(dateStr).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+                     // Parse date and format without timezone conversion issues
+                     const date = new Date(dateStr);
+                     if (isNaN(date.getTime())) return null;
+                     return date.toLocaleDateString('pt-BR');
                  } catch (e) {
                      return null;
                  }
