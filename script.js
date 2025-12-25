@@ -862,6 +862,27 @@
                 console.log('[checkAndHideLoadingOverlay] Alunos carregados:', appState.alunos.length);
                 console.log('[checkAndHideLoadingOverlay] Escalas carregadas:', Object.keys(appState.escalas).length);
                 console.log('[checkAndHideLoadingOverlay] Ausências carregadas:', appState.ausenciasReposicoes.length);
+                
+                // Check for pending state restore (student detail view after refresh)
+                if (appState._pendingStateRestore) {
+                    const savedState = appState._pendingStateRestore;
+                    delete appState._pendingStateRestore; // Clear flag
+                    
+                    if (savedState.view === 'student-detail' && savedState.studentEmail) {
+                        console.log('[checkAndHideLoadingOverlay] Restaurando vista de detalhe do aluno:', savedState.studentEmail);
+                        // Verify student still exists
+                        if (appState.alunosMap.has(savedState.studentEmail)) {
+                            showStudentDetail(savedState.studentEmail);
+                            // Restore specific tab if saved
+                            if (savedState.studentTab) {
+                                setTimeout(() => switchStudentTab(savedState.studentTab), 100);
+                            }
+                        } else {
+                            console.warn('[checkAndHideLoadingOverlay] Aluno não encontrado, mostrando lista');
+                            switchMainTab('alunos');
+                        }
+                    }
+                }
             }
         }
         
@@ -1593,6 +1614,66 @@ const appState = {
     }
 };
 
+// =====================================================================
+// STATE PERSISTENCE - Save/Restore Navigation State on Refresh
+// =====================================================================
+const NAV_STATE_KEY = 'incor_nav_state';
+
+/**
+ * Save current navigation state to localStorage
+ * @param {Object} state - Navigation state object
+ */
+function saveNavigationState(state) {
+    try {
+        localStorage.setItem(NAV_STATE_KEY, JSON.stringify({
+            ...state,
+            timestamp: Date.now()
+        }));
+        console.log('[saveNavigationState] Estado salvo:', state);
+    } catch (e) {
+        console.warn('[saveNavigationState] Erro ao salvar estado:', e);
+    }
+}
+
+/**
+ * Load saved navigation state from localStorage
+ * @returns {Object|null} Saved state or null if not found/expired
+ */
+function loadNavigationState() {
+    try {
+        const stored = localStorage.getItem(NAV_STATE_KEY);
+        if (!stored) return null;
+        
+        const state = JSON.parse(stored);
+        
+        // Expire state after 4 hours (to avoid stale state issues)
+        const EXPIRY_MS = 4 * 60 * 60 * 1000;
+        if (Date.now() - state.timestamp > EXPIRY_MS) {
+            localStorage.removeItem(NAV_STATE_KEY);
+            console.log('[loadNavigationState] Estado expirado, removido');
+            return null;
+        }
+        
+        console.log('[loadNavigationState] Estado carregado:', state);
+        return state;
+    } catch (e) {
+        console.warn('[loadNavigationState] Erro ao carregar estado:', e);
+        return null;
+    }
+}
+
+/**
+ * Clear saved navigation state
+ */
+function clearNavigationState() {
+    try {
+        localStorage.removeItem(NAV_STATE_KEY);
+        console.log('[clearNavigationState] Estado limpo');
+    } catch (e) {
+        console.warn('[clearNavigationState] Erro ao limpar estado:', e);
+    }
+}
+
 const ATRASO_THRESHOLD_MINUTES = 10;  // General threshold for lateness in Prática
 const TOTAL_ESCALADOS = 25;
 const MAX_RECENT_ACTIVITIES = 10;
@@ -1788,8 +1869,24 @@ function extractTimeFromISO(isoString) {
                 // Setup database listeners - data will arrive asynchronously
                 setupDatabaseListeners();
                 
-                // Initial UI setup
-                switchMainTab('dashboard');
+                // Check for saved navigation state to restore on refresh
+                const savedState = loadNavigationState();
+                
+                // Initial UI setup - restore previous state if available
+                if (savedState && savedState.view === 'student-detail' && savedState.studentEmail) {
+                    console.log('[initDashboard] Restaurando estado anterior - vista de aluno:', savedState.studentEmail);
+                    // We need to wait for data to load before showing student detail
+                    // Set a flag to restore after data loads
+                    appState._pendingStateRestore = savedState;
+                    // Start with dashboard view while data loads
+                    switchMainTab('dashboard');
+                } else if (savedState && savedState.mainTab) {
+                    console.log('[initDashboard] Restaurando estado anterior - aba:', savedState.mainTab);
+                    switchMainTab(savedState.mainTab);
+                } else {
+                    switchMainTab('dashboard');
+                }
+                
                 document.querySelector('#dashboard-view').style.opacity = '1';
                 
                 // Loading will be hidden when critical data arrives (via checkAndHideLoadingOverlay)
@@ -2344,6 +2441,9 @@ function extractTimeFromISO(isoString) {
                 userMenu.classList.remove('open');
             }
             
+            // Clear saved navigation state on logout
+            clearNavigationState();
+            
             window.firebase.signOut(fbAuth).then(() => {
                 console.log("[handleLogout] Logout bem-sucedido.");
                 // onAuthStateChanged will handle cleanup and redirect to login
@@ -2872,6 +2972,13 @@ function extractTimeFromISO(isoString) {
         
         function switchMainTab(tabName) {
             console.log("[switchMainTab] Trocando para aba principal:", tabName);
+            
+            // Save navigation state for persistence on refresh
+            saveNavigationState({
+                view: 'dashboard',
+                mainTab: tabName,
+                studentEmail: null
+            });
             
             // Update all navigation links (both header and legacy sidebar)
             document.querySelectorAll('.header-nav-link, .sidebar-link').forEach(l => {
@@ -6186,6 +6293,15 @@ function extractTimeFromISO(isoString) {
                 content.style.display = isActive ? 'block' : 'none';
                 content.classList.toggle('active', isActive);
             });
+            
+            // Update saved state with current student tab
+            const currentState = loadNavigationState();
+            if (currentState && currentState.view === 'student-detail') {
+                saveNavigationState({
+                    ...currentState,
+                    studentTab: tabName
+                });
+            }
         }
 
         function switchStudentSubTab(subTabId) {
@@ -6249,7 +6365,15 @@ function extractTimeFromISO(isoString) {
                 renderTabNotasPraticas(notasP); 
 
                 showView('student-detail-view');
-                switchStudentTab('info'); 
+                switchStudentTab('info');
+                
+                // Save navigation state for persistence on refresh
+                saveNavigationState({
+                    view: 'student-detail',
+                    studentEmail: email,
+                    studentTab: 'info'
+                });
+                
                 window.scrollTo(0, 0); 
                 console.log("[showStudentDetail] View de detalhe exibida.");
              } catch (e) {
@@ -6269,16 +6393,80 @@ function extractTimeFromISO(isoString) {
                  : fallbackPhotoUrl;
              const statusClass = info.Status === 'Ativo' ? 'student-status-badge--active' : 'student-status-badge--inactive';
              
+             // Format enrollment date if available
+             const formatDate = (dateStr) => {
+                 if (!dateStr) return null;
+                 try {
+                     return new Date(dateStr).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+                 } catch (e) {
+                     return null;
+                 }
+             };
+             
+             const enrollmentDate = formatDate(info.DataMatricula || info.DataIngresso);
+             const sector = info.Setor || info.Unidade || null;
+             const supervisor = info.Supervisor || null;
+             
              p.innerHTML = `
-                <img src="${photoUrl}" alt="Foto de ${info.NomeCompleto}" class="student-profile-avatar" onerror="this.src='${fallbackPhotoUrl}'">
-                <div class="student-profile-info">
-                    <h2 class="student-profile-name">${info.NomeCompleto || 'Nome não disponível'}</h2>
-                    <p class="student-profile-course">${info.Curso || 'Curso não informado'}</p>
-                    <div class="student-profile-status">
-                        <span class="student-status-badge ${statusClass}">
-                            ${info.Status || 'Indefinido'}
-                        </span>
+                <div class="student-profile-header-content">
+                    <img src="${photoUrl}" alt="Foto de ${info.NomeCompleto}" class="student-profile-avatar" onerror="this.src='${fallbackPhotoUrl}'">
+                    <div class="student-profile-info">
+                        <div class="student-profile-name-row">
+                            <h2 class="student-profile-name">${info.NomeCompleto || 'Nome não disponível'}</h2>
+                            <span class="student-status-badge ${statusClass}">
+                                <span class="status-indicator"></span>
+                                ${info.Status || 'Indefinido'}
+                            </span>
+                        </div>
+                        <div class="student-profile-meta">
+                            <span class="student-profile-course">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5" />
+                                </svg>
+                                ${info.Curso || 'Curso não informado'}
+                            </span>
+                            <span class="student-profile-email">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                                </svg>
+                                ${info.EmailHC || 'Email não disponível'}
+                            </span>
+                        </div>
+                        ${(sector || supervisor || enrollmentDate) ? `
+                        <div class="student-profile-details">
+                            ${sector ? `
+                            <span class="student-profile-detail">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" />
+                                </svg>
+                                ${sector}
+                            </span>
+                            ` : ''}
+                            ${supervisor ? `
+                            <span class="student-profile-detail">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                                </svg>
+                                ${supervisor}
+                            </span>
+                            ` : ''}
+                            ${enrollmentDate ? `
+                            <span class="student-profile-detail">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                                </svg>
+                                Desde ${enrollmentDate}
+                            </span>
+                            ` : ''}
+                        </div>
+                        ` : ''}
                     </div>
+                </div>
+                <div class="student-profile-institution-badge">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    </svg>
+                    <span>InCor • HC FMUSP</span>
                 </div>
              `;
         }
