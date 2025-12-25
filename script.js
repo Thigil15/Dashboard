@@ -6009,7 +6009,7 @@ function extractTimeFromISO(isoString) {
                      groupDiv.appendChild(header);
                      
                      const grid = document.createElement('div');
-                     grid.className = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 p-1';
+                     grid.className = 'grid';
                      
                      grouped[c].forEach(s => { 
                          const card = document.createElement('div');
