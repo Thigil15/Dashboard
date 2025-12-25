@@ -1727,20 +1727,7 @@
             box-shadow: 0 0 0 4px rgba(0, 84, 180, 0.1);
         }
         
-        /* Legacy support for ID selector */
-        #search-student { 
-            width: 100%;
-            padding: 0.75rem 1rem 0.75rem 2.75rem;
-            background: var(--surface-light);
-            border: 2px solid rgba(0, 51, 160, 0.08);
-            border-radius: var(--radius-lg);
-            font-family: var(--font-main);
-            font-size: 0.875rem;
-            color: var(--content-text-primary);
-            transition: var(--transition-fast);
-            box-shadow: var(--shadow-subtle);
-        }
-        
+        /* Legacy ID selector - inherits from class */
         #search-student:focus {
             outline: none;
             border-color: var(--incor-blue-400);
@@ -1761,6 +1748,7 @@
             color: white;
             background: linear-gradient(135deg, var(--incor-blue-700) 0%, var(--incor-blue-600) 100%);
             padding: 0.875rem 1.25rem;
+            padding-left: 3rem;
             margin-top: 1.75rem;
             margin-bottom: 1.25rem;
             border-radius: var(--radius-lg);
@@ -1775,7 +1763,9 @@
         }
         
         .student-group-header::before {
-            content: '';
+            content: '📚';
+            position: absolute;
+            left: 1.25rem;
             width: 28px;
             height: 28px;
             background: rgba(255, 255, 255, 0.2);
@@ -1783,16 +1773,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            flex-shrink: 0;
-        }
-        
-        .student-group-header::after {
-            content: '📚';
             font-size: 1rem;
-            position: absolute;
-            left: 1.25rem;
-            width: 28px;
-            text-align: center;
+            flex-shrink: 0;
         }
         
         .student-group:first-child .student-group-header {
