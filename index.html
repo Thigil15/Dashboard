@@ -384,14 +384,34 @@
 
                 </div>
 
-                <!-- View: Lista de Alunos -->
-                 <div id="content-alunos" class="view-container">
-                     <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-                         <h1>Alunos</h1>
-                         <input type="text" id="search-student" placeholder="Buscar aluno pelo nome..." class="border border-slate-300 rounded-lg px-4 py-2.5 text-sm w-full sm:w-auto max-w-xs transition shadow-sm">
-                     </div>
-                     <div id="student-list-panel" class="max-h-[calc(100vh-200px)] overflow-y-auto"></div>
-                 </div>
+                <!-- View: Lista de Alunos - InCor Design System -->
+                <div id="content-alunos" class="view-container alunos-view">
+                    <!-- Header Section - InCor Professional Style -->
+                    <header class="alunos-header">
+                        <div class="alunos-header-content">
+                            <div class="alunos-header-left">
+                                <div class="alunos-header-icon">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h1 class="alunos-header-title">Lista de Alunos</h1>
+                                    <p class="alunos-header-subtitle">Gestão e acompanhamento do corpo discente</p>
+                                </div>
+                            </div>
+                            <div class="alunos-search-wrapper">
+                                <svg class="alunos-search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                                </svg>
+                                <input type="text" id="search-student" placeholder="Buscar aluno pelo nome..." class="alunos-search-input">
+                            </div>
+                        </div>
+                    </header>
+                    
+                    <!-- Student List Panel - Natural page scroll -->
+                    <div id="student-list-panel" class="alunos-list-panel"></div>
+                </div>
 
                 <!-- View: Ponto - Modern InCor Design -->
                 <div id="content-ponto" class="view-container">
