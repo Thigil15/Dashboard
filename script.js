@@ -176,8 +176,9 @@
                                 const alunos = escalaData.dados || [];
                                 
                                 // Extract headersDay from the first student record
+                                // Support both DD_MM and DD_MM_YY formats (e.g., "10_03" and "10_03_25")
                                 const headersDay = [];
-                                const dayKeyRegex = /^(\d{1,2})_(\d{2})$/;
+                                const dayKeyRegex = /^(\d{1,2})_(\d{2})(?:_(\d{2}))?$/;
                                 
                                 if (alunos.length > 0 && alunos[0]) {
                                     const firstRow = alunos[0];
@@ -188,7 +189,9 @@
                                         if (match) {
                                             const day = match[1].padStart(2, '0');
                                             const month = match[2].padStart(2, '0');
-                                            const pretty = `${day}/${month}`;
+                                            const yearSuffix = match[3]; // Optional 2-digit year (e.g., "25" for 2025)
+                                            // Store with year info if available
+                                            const pretty = yearSuffix ? `${day}/${month}/${yearSuffix}` : `${day}/${month}`;
                                             if (!dayKeyMap.has(rowKey)) {
                                                 dayKeyMap.set(rowKey, pretty);
                                             }
@@ -2544,14 +2547,34 @@ function extractTimeFromISO(isoString) {
         }
 
         /**
-         * Helper function to convert DD/MM date string to ISO format (YYYY-MM-DD)
-         * Uses current year for year inference
+         * Helper function to convert DD/MM or DD/MM/YY date string to ISO format (YYYY-MM-DD)
+         * Supports formats: "10/03" (uses current year), "10/03/25" (2-digit year becomes 2025)
+         * @param {string} dateStr - Date string in DD/MM or DD/MM/YY format
+         * @returns {string} ISO date string (YYYY-MM-DD) or empty string if invalid
          */
         function convertDDMMToISO(dateStr) {
             if (!dateStr || typeof dateStr !== 'string') return '';
-            const [day, month] = dateStr.split('/');
+            const parts = dateStr.split('/');
+            if (parts.length < 2) return '';
+            
+            const day = parts[0];
+            const month = parts[1];
+            let year;
+            
+            if (parts.length === 3) {
+                // Has year suffix (e.g., "10/03/25")
+                const yearPart = parts[2];
+                // Convert 2-digit year to 4-digit (25 → 2025, 26 → 2026)
+                year = parseInt(yearPart, 10);
+                if (year < 100) {
+                    year += 2000;
+                }
+            } else {
+                // No year suffix, use current year
+                year = new Date().getFullYear();
+            }
+            
             if (!day || !month) return '';
-            const year = new Date().getFullYear();
             return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
         }
 
