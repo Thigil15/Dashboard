@@ -4178,7 +4178,7 @@ function extractTimeFromISO(isoString) {
                         
                         // Fallback to direct lookup
                         if (!todayValue) {
-                            todayValue = aluno[today] || aluno[today.replace('/', '_')];
+                            todayValue = aluno[today] || aluno[today.replace(/\//g, '_')];
                         }
                         
                         if (todayValue && !['off', 'folga', '-', ''].includes(String(todayValue).toLowerCase().trim())) {
