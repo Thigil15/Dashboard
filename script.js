@@ -3629,7 +3629,8 @@ function extractTimeFromISO(isoString) {
             html += '<tr>';
             html += '<th class="col-nome">Nome do Aluno</th>';
             dayInfo.forEach(info => {
-                const isToday = info.date === todayBR;
+                // Use flexible comparison to check if this date is today
+                const isToday = compareDatesFlexible(info.date, todayBR);
                 const weekendClass = info.isWeekend ? 'weekend' : '';
                 const holidayClass = '';  // TODO: Add holiday detection if needed
                 const todayClass = isToday ? 'today-col' : '';
@@ -3641,7 +3642,8 @@ function extractTimeFromISO(isoString) {
             html += '<tr>';
             html += '<th class="col-nome"></th>';
             dayInfo.forEach(info => {
-                const isToday = info.date === todayBR;
+                // Use flexible comparison to check if this date is today
+                const isToday = compareDatesFlexible(info.date, todayBR);
                 const weekendClass = info.isWeekend ? 'weekend' : '';
                 const holidayClass = '';
                 const todayClass = isToday ? 'today-col' : '';
@@ -3702,7 +3704,9 @@ function extractTimeFromISO(isoString) {
                     
                     // Day cells
                     dayInfo.forEach(info => {
-                        const isToday = info.date === todayBR;
+                        // Use flexible comparison to check if this date is today
+                        // This handles both DD/MM and DD/MM/YY formats
+                        const isToday = compareDatesFlexible(info.date, todayBR);
                         const weekendClass = info.isWeekend ? 'weekend' : '';
                         const holidayClass = '';
                         const todayClass = isToday ? 'today-col' : '';
@@ -4155,15 +4159,28 @@ function extractTimeFromISO(isoString) {
             Object.values(appState.escalas || {}).forEach(escala => {
                 if (!escala || !escala.headersDay || !escala.alunos) return;
                 
-                const hasToday = escala.headersDay.some(day => {
-                    const normalizedDay = String(day || '').trim();
-                    return normalizedDay === today;
-                });
+                // Use flexible date comparison to check if today is in this scale
+                const hasToday = dateInArrayFlexible(today, escala.headersDay);
                 
                 if (hasToday) {
                     escala.alunos.forEach(aluno => {
                         if (!aluno) return;
-                        const todayValue = aluno[today] || aluno[today.replace('/', '_')];
+                        // Try multiple key formats to find today's value
+                        let todayValue = null;
+                        
+                        // Find the matching date key in headersDay
+                        for (const dateKey of escala.headersDay) {
+                            if (compareDatesFlexible(dateKey, today)) {
+                                todayValue = aluno[dateKey] || aluno[dateKey.replace(/\//g, '_')];
+                                break;
+                            }
+                        }
+                        
+                        // Fallback to direct lookup
+                        if (!todayValue) {
+                            todayValue = aluno[today] || aluno[today.replace('/', '_')];
+                        }
+                        
                         if (todayValue && !['off', 'folga', '-', ''].includes(String(todayValue).toLowerCase().trim())) {
                             totalShifts++;
                         }
@@ -4727,7 +4744,17 @@ function extractTimeFromISO(isoString) {
         }
 
         function findActiveScale() {
-             for(const n in appState.escalas){const e=appState.escalas[n]; if(e.headersDay?.includes(appState.todayBR))return e;} console.warn(`Nenhuma escala hoje (${appState.todayBR})`); return null;
+            // Use flexible date comparison to find active scale
+            // This handles both DD/MM and DD/MM/YY formats in headersDay
+            const todayBR = appState.todayBR || '';
+            for (const n in appState.escalas) {
+                const e = appState.escalas[n];
+                if (e.headersDay && dateInArrayFlexible(todayBR, e.headersDay)) {
+                    return e;
+                }
+            }
+            console.warn(`Nenhuma escala hoje (${todayBR})`);
+            return null;
         }
 
 
@@ -5031,8 +5058,28 @@ function extractTimeFromISO(isoString) {
             // Handle pure ISO date: "2025-12-15"
             if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
             
-            // Handle BR format: "15/12/2025" or "15-12-2025"
+            // Handle BR format with 4-digit year: "15/12/2025" or "15-12-2025"
             if (/^\d{2}[\/-]\d{2}[\/-]\d{4}$/.test(str)) return convertDateBRToISO(str);
+            
+            // Handle BR format with 2-digit year: "15/12/25" -> "2025-12-15"
+            const shortYearMatch = str.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2})$/);
+            if (shortYearMatch) {
+                const day = shortYearMatch[1].padStart(2, '0');
+                const month = shortYearMatch[2].padStart(2, '0');
+                // Convert 2-digit year to 4-digit (25 → 2025, 26 → 2026)
+                const yearPart = parseInt(shortYearMatch[3], 10);
+                const year = yearPart < 100 ? yearPart + 2000 : yearPart;
+                return `${year}-${month}-${day}`;
+            }
+            
+            // Handle DD/MM format without year (uses current year) - backward compatibility
+            const ddmmMatch = str.match(/^(\d{1,2})[\/-](\d{1,2})$/);
+            if (ddmmMatch) {
+                const day = ddmmMatch[1].padStart(2, '0');
+                const month = ddmmMatch[2].padStart(2, '0');
+                const year = new Date().getFullYear();
+                return `${year}-${month}-${day}`;
+            }
             
             return '';
         }
