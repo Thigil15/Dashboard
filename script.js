@@ -1206,11 +1206,12 @@
         }
 
         /**
-         * Parses semicolon-separated dates in DD/MM format
+         * Parses semicolon-separated dates in DD/MM or DD/MM/YY format
          * e.g., "06/08; 07/08; 09/08" -> ["06/08", "07/08", "09/08"]
+         * e.g., "06/08/25; 07/08/25" -> ["06/08/25", "07/08/25"]
          * Also handles typos like "09;08" (should be "09/08")
          * @param {string} dateString - The date string to parse
-         * @returns {Array<string>} - Array of normalized DD/MM dates
+         * @returns {Array<string>} - Array of normalized DD/MM or DD/MM/YY dates
          */
         function parseSemicolonDates(dateString) {
             if (!dateString || typeof dateString !== 'string') return [];
@@ -1222,12 +1223,18 @@
             for (let i = 0; i < parts.length; i++) {
                 const part = parts[i];
                 
-                // Check if it's a valid DD/MM format
-                const ddmmMatch = part.match(/^(\d{1,2})\/(\d{2})$/);
-                if (ddmmMatch) {
-                    const day = ddmmMatch[1].padStart(2, '0');
-                    const month = ddmmMatch[2].padStart(2, '0');
-                    dates.push(`${day}/${month}`);
+                // Check if it's a valid DD/MM/YY format (with optional year)
+                const ddmmyyMatch = part.match(/^(\d{1,2})\/(\d{2})(?:\/(\d{2,4}))?$/);
+                if (ddmmyyMatch) {
+                    const day = ddmmyyMatch[1].padStart(2, '0');
+                    const month = ddmmyyMatch[2].padStart(2, '0');
+                    if (ddmmyyMatch[3]) {
+                        // Has year suffix
+                        const year = ddmmyyMatch[3].length === 4 ? ddmmyyMatch[3].slice(-2) : ddmmyyMatch[3];
+                        dates.push(`${day}/${month}/${year}`);
+                    } else {
+                        dates.push(`${day}/${month}`);
+                    }
                     continue;
                 }
                 
@@ -1250,9 +1257,14 @@
                     // If we can't find a month, try to use the last known month
                     if (dates.length > 0) {
                         const lastDate = dates[dates.length - 1];
-                        const lastMonth = lastDate.split('/')[1];
+                        const lastParts = lastDate.split('/');
                         const day = dayOnlyMatch[1].padStart(2, '0');
-                        dates.push(`${day}/${lastMonth}`);
+                        // Preserve the year from the last date if present
+                        if (lastParts.length === 3) {
+                            dates.push(`${day}/${lastParts[1]}/${lastParts[2]}`);
+                        } else {
+                            dates.push(`${day}/${lastParts[1]}`);
+                        }
                     }
                 }
             }
@@ -1261,39 +1273,96 @@
         }
         
         /**
-         * Converts a date string to normalized DD/MM format (with zero padding)
-         * Accepts: D/M, DD/M, D/MM, DD/MM, D_M, DD_MM formats
-         * @param {string} dateStr - The date string in DD/MM or D_M format
-         * @returns {string} - Normalized DD/MM date (e.g., "06/08")
+         * Converts a date string to normalized format (with zero padding)
+         * Accepts: D/M, DD/M, D/MM, DD/MM, D_M, DD_MM, D/M/YY, DD/MM/YY, D_M_YY, DD_MM_YY formats
+         * @param {string} dateStr - The date string in DD/MM or D_M format (with optional year)
+         * @returns {string} - Normalized date (e.g., "06/08" or "06/08/25" if year present)
          */
         function normalizeDDMM(dateStr) {
             if (!dateStr) return '';
-            const match = String(dateStr).match(/^(\d{1,2})\/(\d{1,2})$/);
-            if (match) {
-                const day = match[1].padStart(2, '0');
-                const month = match[2].padStart(2, '0');
+            
+            // Try slash format with optional year: DD/MM or DD/MM/YY
+            const slashMatch = String(dateStr).match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?$/);
+            if (slashMatch) {
+                const day = slashMatch[1].padStart(2, '0');
+                const month = slashMatch[2].padStart(2, '0');
+                if (slashMatch[3]) {
+                    // Has year suffix
+                    const year = slashMatch[3].length === 4 ? slashMatch[3].slice(-2) : slashMatch[3];
+                    return `${day}/${month}/${year}`;
+                }
                 return `${day}/${month}`;
             }
-            // Try underscore format (from Firebase keys like "06_08" or "6_8")
-            const underscoreMatch = String(dateStr).match(/^(\d{1,2})_(\d{1,2})$/);
+            
+            // Try underscore format with optional year: DD_MM or DD_MM_YY
+            const underscoreMatch = String(dateStr).match(/^(\d{1,2})_(\d{1,2})(?:_(\d{2,4}))?$/);
             if (underscoreMatch) {
                 const day = underscoreMatch[1].padStart(2, '0');
                 const month = underscoreMatch[2].padStart(2, '0');
+                if (underscoreMatch[3]) {
+                    // Has year suffix
+                    const year = underscoreMatch[3].length === 4 ? underscoreMatch[3].slice(-2) : underscoreMatch[3];
+                    return `${day}/${month}/${year}`;
+                }
                 return `${day}/${month}`;
             }
             return '';
         }
         
         /**
-         * Converts ISO date (YYYY-MM-DD) to DD/MM format
+         * Compares two dates that might be in different formats (DD/MM or DD/MM/YY)
+         * Handles cases where one date has year and the other doesn't
+         * @param {string} date1 - First date in DD/MM or DD/MM/YY format
+         * @param {string} date2 - Second date in DD/MM or DD/MM/YY format
+         * @returns {boolean} - True if dates match (day/month match, year ignored if either doesn't have it)
+         */
+        function compareDatesFlexible(date1, date2) {
+            if (!date1 || !date2) return false;
+            
+            const parts1 = date1.split('/');
+            const parts2 = date2.split('/');
+            
+            // Extract day and month
+            const day1 = parts1[0], month1 = parts1[1];
+            const day2 = parts2[0], month2 = parts2[1];
+            
+            // Days and months must match
+            if (day1 !== day2 || month1 !== month2) return false;
+            
+            // If both have years, years must also match
+            if (parts1.length === 3 && parts2.length === 3) {
+                const year1 = parts1[2];
+                const year2 = parts2[2];
+                return year1 === year2;
+            }
+            
+            // If only one has a year (or neither), consider it a match (backward compatibility)
+            return true;
+        }
+        
+        /**
+         * Checks if a date is contained in an array of dates (flexible comparison)
+         * @param {string} date - Date to find in DD/MM or DD/MM/YY format
+         * @param {Array<string>} dateArray - Array of dates to search in
+         * @returns {boolean} - True if date is found in array
+         */
+        function dateInArrayFlexible(date, dateArray) {
+            if (!date || !dateArray || !Array.isArray(dateArray)) return false;
+            return dateArray.some(d => compareDatesFlexible(date, d));
+        }
+        
+        /**
+         * Converts ISO date (YYYY-MM-DD) to DD/MM/YY format (with 2-digit year)
          * @param {string} isoDate - The ISO date string
-         * @returns {string} - Date in DD/MM format
+         * @returns {string} - Date in DD/MM/YY format (e.g., "15/03/25" for 2025-03-15)
          */
         function isoToDDMM(isoDate) {
             if (!isoDate) return '';
             const match = String(isoDate).match(/^(\d{4})-(\d{2})-(\d{2})/);
             if (match) {
-                return `${match[3]}/${match[2]}`;
+                // Include 2-digit year for proper date identification
+                const year = match[1].slice(-2); // Get last 2 digits of year
+                return `${match[3]}/${match[2]}/${year}`;
             }
             return '';
         }
@@ -1412,8 +1481,8 @@
                 result.studentEscalaDates = [...new Set(studentDates)];
                 
                 // Check if the absence date is in the student's schedule
-                // No need to normalize again since studentEscalaDates already contains normalized dates
-                result.isInSchedule = result.studentEscalaDates.includes(absenceDDMM);
+                // Use flexible comparison to handle dates with/without year suffix
+                result.isInSchedule = dateInArrayFlexible(absenceDDMM, result.studentEscalaDates);
             }
             
             return result;
@@ -2610,7 +2679,7 @@ function extractTimeFromISO(isoString) {
         /**
          * Extract theory class days (Tuesdays and Thursdays) from header days
          * Theory classes only happen on Terças (Tuesdays) and Quintas (Thursdays)
-         * @param {Array} headersDay - Array of dates in DD/MM format
+         * @param {Array} headersDay - Array of dates in DD/MM or DD/MM/YY format
          * @returns {Array} - Array of dates that are Tuesdays or Thursdays
          */
         function extractTheoryClassDays(headersDay) {
@@ -2620,12 +2689,23 @@ function extractTimeFromISO(isoString) {
             const theoryDays = [];
             
             headersDay.forEach(dateStr => {
-                // Parse DD/MM format
+                // Parse DD/MM or DD/MM/YY format
                 const parts = dateStr.split('/');
-                if (parts.length === 2) {
+                if (parts.length >= 2) {
                     const day = parseInt(parts[0], 10);
                     const month = parseInt(parts[1], 10) - 1; // JS months are 0-indexed
-                    const date = new Date(currentYear, month, day);
+                    
+                    // Extract year: use provided year if present (DD/MM/YY), otherwise current year
+                    let year;
+                    if (parts.length === 3) {
+                        // Convert 2-digit year to 4-digit (25 → 2025, 26 → 2026)
+                        const yearPart = parseInt(parts[2], 10);
+                        year = yearPart < 100 ? yearPart + 2000 : yearPart;
+                    } else {
+                        year = currentYear;
+                    }
+                    
+                    const date = new Date(year, month, day);
                     const dayOfWeek = date.getDay();
                     
                     // Tuesday = 2, Thursday = 4
@@ -2671,7 +2751,7 @@ function extractTimeFromISO(isoString) {
                 
                 // For each date in the scale
                 headersDay.forEach(dateStr => {
-                    // dateStr is in format "DD/MM"
+                    // dateStr is in format "DD/MM" or "DD/MM/YY"
                     // We need to find the corresponding field in aluno records
                     
                     alunos.forEach(aluno => {
@@ -2708,7 +2788,7 @@ function extractTimeFromISO(isoString) {
                         if (timeInfo) {
                             const { horaEntrada, horaSaida } = timeInfo;
                             
-                            // Convert DD/MM to ISO date (current year)
+                            // Convert DD/MM or DD/MM/YY to ISO date
                             const isoDate = convertDDMMToISO(dateStr);
                             if (!isoDate) return;
                             // Create a ponto record
@@ -3281,18 +3361,31 @@ function extractTimeFromISO(isoString) {
         }
         
         /**
-         * Parse DD/MM date string and calculate day of week for current year
-         * @param {string} ddmm - Date in DD/MM format
-         * @returns {object} { day, month, dayOfWeek, isWeekend, isHoliday }
+         * Parse DD/MM or DD/MM/YY date string and calculate day of week
+         * @param {string} ddmm - Date in DD/MM or DD/MM/YY format
+         * @returns {object} { day, month, year, dayOfWeek, isWeekend, isHoliday }
          */
         function parseDayMonth(ddmm) {
-            const [day, month] = ddmm.split('/').map(Number);
-            const year = new Date().getFullYear();
+            const parts = ddmm.split('/');
+            const day = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10);
+            
+            // Extract year: use provided year if present (DD/MM/YY), otherwise current year
+            let year;
+            if (parts.length === 3) {
+                // Convert 2-digit year to 4-digit (25 → 2025, 26 → 2026)
+                const yearPart = parseInt(parts[2], 10);
+                year = yearPart < 100 ? yearPart + 2000 : yearPart;
+            } else {
+                year = new Date().getFullYear();
+            }
+            
             const date = new Date(year, month - 1, day);
             const dayOfWeek = date.getDay();
             return {
                 day,
                 month,
+                year,
                 dayOfWeek,
                 isWeekend: isWeekend(dayOfWeek),
                 isHoliday: isBrazilianHoliday(day, month, year),
@@ -3413,11 +3506,24 @@ function extractTimeFromISO(isoString) {
                 }
             });
             
-            // Sort dates chronologically
+            // Sort dates chronologically (supports DD/MM and DD/MM/YY formats)
             const sortedDates = Array.from(allDates).sort((a, b) => {
-                const [dayA, monthA] = a.split('/').map(Number);
-                const [dayB, monthB] = b.split('/').map(Number);
+                const partsA = a.split('/').map(Number);
+                const partsB = b.split('/').map(Number);
+                const dayA = partsA[0], monthA = partsA[1];
+                const dayB = partsB[0], monthB = partsB[1];
+                
+                // Extract years (use 0 if not present - will be sorted by month/day first)
+                const yearA = partsA.length === 3 ? (partsA[2] < 100 ? partsA[2] + 2000 : partsA[2]) : 0;
+                const yearB = partsB.length === 3 ? (partsB[2] < 100 ? partsB[2] + 2000 : partsB[2]) : 0;
+                
+                // Sort by year first if both have years
+                if (yearA && yearB && yearA !== yearB) return yearA - yearB;
+                
+                // Then by month
                 if (monthA !== monthB) return monthA - monthB;
+                
+                // Then by day
                 return dayA - dayB;
             });
             
@@ -3425,19 +3531,26 @@ function extractTimeFromISO(isoString) {
             if (sortedDates.length > 0) {
                 const firstDate = sortedDates[0];
                 const lastDate = sortedDates[sortedDates.length - 1];
-                const [, firstMonth] = firstDate.split('/').map(Number);
-                const [, lastMonth] = lastDate.split('/').map(Number);
+                const firstParts = firstDate.split('/').map(Number);
+                const lastParts = lastDate.split('/').map(Number);
+                const firstMonth = firstParts[1];
+                const lastMonth = lastParts[1];
                 
-                // Get current year dynamically
-                const currentYear = new Date().getFullYear();
+                // Extract year from dates if available, otherwise use current year
+                let displayYear;
+                if (firstParts.length === 3) {
+                    displayYear = firstParts[2] < 100 ? firstParts[2] + 2000 : firstParts[2];
+                } else {
+                    displayYear = new Date().getFullYear();
+                }
                 
                 const monthNames = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
                                    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
                 
                 if (firstMonth === lastMonth) {
-                    periodLabel = `${monthNames[firstMonth]} ${currentYear} (${firstDate} a ${lastDate})`;
+                    periodLabel = `${monthNames[firstMonth]} ${displayYear} (${firstDate} a ${lastDate})`;
                 } else {
-                    periodLabel = `${monthNames[firstMonth]}-${monthNames[lastMonth]} ${currentYear} (${firstDate} a ${lastDate})`;
+                    periodLabel = `${monthNames[firstMonth]}-${monthNames[lastMonth]} ${displayYear} (${firstDate} a ${lastDate})`;
                 }
             }
             
