@@ -2617,7 +2617,7 @@ function extractTimeFromISO(isoString) {
 
         /**
          * Helper function to convert DD/MM or DD/MM/YY date string to ISO format (YYYY-MM-DD)
-         * Supports formats: "10/03" (uses current year), "10/03/25" (2-digit year becomes 2025)
+         * Supports formats: "10/03" (uses intelligent year inference), "10/03/25" (2-digit year becomes 2025)
          * @param {string} dateStr - Date string in DD/MM or DD/MM/YY format
          * @returns {string} ISO date string (YYYY-MM-DD) or empty string if invalid
          */
@@ -2639,8 +2639,10 @@ function extractTimeFromISO(isoString) {
                     year += 2000;
                 }
             } else {
-                // No year suffix, use current year
-                year = new Date().getFullYear();
+                // No year suffix - use intelligent year inference
+                const dayNum = parseInt(day, 10);
+                const monthNum = parseInt(month, 10);
+                year = inferYearFromDayMonth(dayNum, monthNum);
             }
             
             if (!day || !month) return '';
@@ -2685,7 +2687,6 @@ function extractTimeFromISO(isoString) {
         function extractTheoryClassDays(headersDay) {
             if (!headersDay || !Array.isArray(headersDay)) return [];
             
-            const currentYear = new Date().getFullYear();
             const theoryDays = [];
             
             headersDay.forEach(dateStr => {
@@ -2693,19 +2694,20 @@ function extractTimeFromISO(isoString) {
                 const parts = dateStr.split('/');
                 if (parts.length >= 2) {
                     const day = parseInt(parts[0], 10);
-                    const month = parseInt(parts[1], 10) - 1; // JS months are 0-indexed
+                    const month = parseInt(parts[1], 10); // 1-12 for inferYearFromDayMonth
                     
-                    // Extract year: use provided year if present (DD/MM/YY), otherwise current year
+                    // Extract year: use provided year if present (DD/MM/YY), otherwise infer from context
                     let year;
                     if (parts.length === 3) {
                         // Convert 2-digit year to 4-digit (25 → 2025, 26 → 2026)
                         const yearPart = parseInt(parts[2], 10);
                         year = yearPart < 100 ? yearPart + 2000 : yearPart;
                     } else {
-                        year = currentYear;
+                        // Use intelligent year inference for DD/MM format
+                        year = inferYearFromDayMonth(day, month);
                     }
                     
-                    const date = new Date(year, month, day);
+                    const date = new Date(year, month - 1, day); // JS months are 0-indexed
                     const dayOfWeek = date.getDay();
                     
                     // Tuesday = 2, Thursday = 4
@@ -3370,14 +3372,15 @@ function extractTimeFromISO(isoString) {
             const day = parseInt(parts[0], 10);
             const month = parseInt(parts[1], 10);
             
-            // Extract year: use provided year if present (DD/MM/YY), otherwise current year
+            // Extract year: use provided year if present (DD/MM/YY), otherwise use intelligent inference
             let year;
             if (parts.length === 3) {
                 // Convert 2-digit year to 4-digit (25 → 2025, 26 → 2026)
                 const yearPart = parseInt(parts[2], 10);
                 year = yearPart < 100 ? yearPart + 2000 : yearPart;
             } else {
-                year = new Date().getFullYear();
+                // Use intelligent year inference for DD/MM format
+                year = inferYearFromDayMonth(day, month);
             }
             
             const date = new Date(year, month - 1, day);
@@ -3536,12 +3539,14 @@ function extractTimeFromISO(isoString) {
                 const firstMonth = firstParts[1];
                 const lastMonth = lastParts[1];
                 
-                // Extract year from dates if available, otherwise use current year
+                // Extract year from dates if available, otherwise use intelligent inference
                 let displayYear;
                 if (firstParts.length === 3) {
                     displayYear = firstParts[2] < 100 ? firstParts[2] + 2000 : firstParts[2];
                 } else {
-                    displayYear = new Date().getFullYear();
+                    // Use intelligent year inference based on the first month
+                    const day = firstParts[0] || 1;
+                    displayYear = inferYearFromDayMonth(day, firstMonth);
                 }
                 
                 const monthNames = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -5022,6 +5027,39 @@ function extractTimeFromISO(isoString) {
             }
         }
 
+        /**
+         * Infer the correct year for a date with only day and month (DD/MM format).
+         * Uses intelligent logic to determine the most likely year based on context:
+         * - If we're in Jan-Feb and the data month is Oct-Dec, use previous year (end of previous year data)
+         * - If we're in Oct-Dec and the data month is Jan-Feb, use next year (planning ahead)
+         * - Otherwise, use current year
+         * This function ensures that dates from spreadsheet data are correctly interpreted
+         * even when the year is not explicitly provided.
+         * @param {number} _day - Day of the month (1-31). Currently unused but kept for future validation.
+         * @param {number} month - Month (1-12)
+         * @param {Date} refDate - Reference date (defaults to current date)
+         * @returns {number} - The inferred 4-digit year
+         */
+        function inferYearFromDayMonth(_day, month, refDate = new Date()) {
+            const nowYear = refDate.getFullYear();
+            const nowMonth = refDate.getMonth() + 1; // 1-12
+            
+            // If we're in January or February and the data month is October, November, or December
+            // then it's likely from the previous year (end of year data from previous period)
+            if (nowMonth <= 2 && month >= 10) {
+                return nowYear - 1;
+            }
+            
+            // If we're in October, November, or December and the data month is January or February
+            // then it's likely planning for next year
+            if (nowMonth >= 10 && month <= 2) {
+                return nowYear + 1;
+            }
+            
+            // Default: use current year
+            return nowYear;
+        }
+
         function convertDateBRToISO(value = '') {
             const sanitized = String(value || '').trim();
             if (!sanitized) return '';
@@ -5072,12 +5110,15 @@ function extractTimeFromISO(isoString) {
                 return `${year}-${month}-${day}`;
             }
             
-            // Handle DD/MM format without year (uses current year) - backward compatibility
+            // Handle DD/MM format without year - use intelligent year inference
+            // This ensures dates from spreadsheet data are correctly interpreted
             const ddmmMatch = str.match(/^(\d{1,2})[\/-](\d{1,2})$/);
             if (ddmmMatch) {
                 const day = ddmmMatch[1].padStart(2, '0');
                 const month = ddmmMatch[2].padStart(2, '0');
-                const year = new Date().getFullYear();
+                const monthNum = parseInt(ddmmMatch[2], 10);
+                const dayNum = parseInt(ddmmMatch[1], 10);
+                const year = inferYearFromDayMonth(dayNum, monthNum);
                 return `${year}-${month}-${day}`;
             }
             
@@ -9266,6 +9307,14 @@ function renderTabFaltas(faltas) {
                     enableLoginButton('timeout (5s), Firebase may still be loading');
                 }
             }, 5000);
+            
+            // Update footer years dynamically
+            // Note: This sets the year based on the browser's current date
+            // The application data dates are handled separately in date parsing functions
+            const currentYear = new Date().getFullYear();
+            document.querySelectorAll('.current-year').forEach(el => {
+                el.textContent = currentYear;
+            });
             
             // Setup event handlers first
             setupEventHandlers();
