@@ -6822,6 +6822,13 @@
     }
 }
 
+/* Respect user's motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    .nt-card-badge-sub {
+        animation: none;
+    }
+}
+
 .nt-card-body {
     text-align: center;
     margin-bottom: 0.75rem;
@@ -6850,6 +6857,11 @@
     font-size: 1.5rem;
     font-weight: 800;
     line-height: 1;
+}
+
+.nt-grade-original span {
+    text-decoration: line-through;
+    opacity: 0.6;
 }
 
 .nt-grade-sub {

@@ -8529,7 +8529,7 @@ function renderTabFaltas(faltas) {
                         gradeDisplay = `
                             <div class="nt-grade-comparison">
                                 <div class="nt-grade-original" style="color: ${originalColor};">
-                                    <span style="text-decoration: line-through; opacity: 0.6;">${formatarNota(gradeInfo.originalNota)}</span>
+                                    <span>${formatarNota(gradeInfo.originalNota)}</span>
                                 </div>
                                 <svg class="nt-arrow-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />

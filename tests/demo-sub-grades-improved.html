@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo: Improved SUB Grades Display</title>
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        body {
+            background: #f5f7fa;
+            padding: 2rem;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+        .demo-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .demo-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .demo-header h1 {
+            color: #0054B4;
+            margin: 0 0 0.5rem 0;
+            font-size: 2rem;
+        }
+        .demo-header p {
+            color: #666;
+            margin: 0;
+        }
+        .demo-section {
+            margin-bottom: 2rem;
+        }
+        .demo-section h2 {
+            color: #333;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #0054B4;
+        }
+        .demo-description {
+            background: #e3f2fd;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border-left: 4px solid #0054B4;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-header">
+            <h1>🎓 Improved SUB Grades Display</h1>
+            <p>Demonstração das melhorias no estilo de exibição de notas teóricas com notas substitutivas</p>
+        </div>
+
+        <div class="demo-section">
+            <h2>📊 Exemplo 1: Aluno com Nota Vermelha e Nota SUB</h2>
+            <div class="demo-description">
+                <strong>Cenário:</strong> Aluno tirou nota 5,5 em Anatomopatologia (nota vermelha) e fez a prova substitutiva, tirando 7,0.
+                A nota final considerada é a SUB (7,0) e ambas são exibidas com indicação clara.
+            </div>
+            <div id="demo-1-content"></div>
+        </div>
+
+        <div class="demo-section">
+            <h2>📊 Exemplo 2: Aluno com Nota Aprovada (Sem SUB)</h2>
+            <div class="demo-description">
+                <strong>Cenário:</strong> Aluno tirou nota 8,5 em Bases (nota verde) e não precisou fazer prova substitutiva.
+            </div>
+            <div id="demo-2-content"></div>
+        </div>
+
+        <div class="demo-section">
+            <h2>📊 Exemplo 3: Múltiplas Disciplinas com Mix de Notas</h2>
+            <div class="demo-description">
+                <strong>Cenário:</strong> Módulo Fisioterapia I completo com várias disciplinas, incluindo algumas com notas SUB.
+            </div>
+            <div id="demo-3-content"></div>
+        </div>
+    </div>
+
+    <script>
+        // Helper functions
+        function parseNota(notaStr) {
+            if (notaStr === null || notaStr === undefined) return 0;
+            const str = String(notaStr).trim();
+            if (str === '') return 0;
+            const n = parseFloat(str.replace('R$', '').replace(/\s/g, '').replace(',', '.'));
+            return isNaN(n) ? 0 : n;
+        }
+        
+        function formatarNota(value, decimals = 1) {
+            if (value == null || isNaN(value)) return 'N/A';
+            return value.toLocaleString('pt-BR', { 
+                minimumFractionDigits: decimals, 
+                maximumFractionDigits: decimals 
+            });
+        }
+        
+        function getGradeColor(nota, defaultColor) {
+            if (nota <= 0) return defaultColor;
+            if (nota >= 7) return '#10b981';
+            return '#ef4444';
+        }
+
+        function getEffectiveGrade(materiaObj, notasData) {
+            const { nome, subKey } = materiaObj;
+            const notaOriginal = parseNota(notasData[nome]);
+            
+            if (subKey) {
+                const notaSub = parseNota(notasData[subKey]);
+                if (notaSub > 0) {
+                    return { 
+                        nota: notaSub, 
+                        wasSubstituted: true, 
+                        originalNota: notaOriginal,
+                        subNota: notaSub 
+                    };
+                }
+            }
+            
+            return { 
+                nota: notaOriginal, 
+                wasSubstituted: false, 
+                originalNota: notaOriginal,
+                subNota: subKey ? parseNota(notasData[subKey]) : 0
+            };
+        }
+
+        function renderDisciplineCard(materiaObj, notasData, color) {
+            const gradeInfo = getEffectiveGrade(materiaObj, notasData);
+            const notaMateria = gradeInfo.nota;
+            const isValidNota = notaMateria > 0;
+            const percentage = isValidNota ? (notaMateria / 10) * 100 : 0;
+            const displayValue = isValidNota ? formatarNota(notaMateria) : '-';
+            const gradeColor = getGradeColor(notaMateria, color);
+            
+            let statusBadge = '';
+            let gradeDisplay = '';
+            
+            if (gradeInfo.wasSubstituted) {
+                statusBadge = `
+                    <div class="nt-card-badge nt-card-badge-sub" title="Prova Substitutiva aplicada (nota original: ${formatarNota(gradeInfo.originalNota)})">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        <span>SUB</span>
+                    </div>
+                `;
+                
+                const originalColor = getGradeColor(gradeInfo.originalNota, color);
+                gradeDisplay = `
+                    <div class="nt-grade-comparison">
+                        <div class="nt-grade-original" style="color: ${originalColor};">
+                            <span>${formatarNota(gradeInfo.originalNota)}</span>
+                        </div>
+                        <svg class="nt-arrow-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        </svg>
+                        <div class="nt-grade-sub" style="color: ${gradeColor};">
+                            ${displayValue}
+                        </div>
+                    </div>
+                `;
+            } else {
+                gradeDisplay = `
+                    <div class="nt-card-grade" style="color: ${gradeColor};">
+                        ${displayValue}
+                    </div>
+                `;
+            }
+            
+            let gradeStatus = '';
+            if (isValidNota) {
+                if (notaMateria >= 7) {
+                    gradeStatus = `<span class="nt-grade-status nt-grade-approved">Aprovado</span>`;
+                } else {
+                    gradeStatus = `<span class="nt-grade-status nt-grade-attention">Atenção</span>`;
+                }
+            }
+            
+            return `
+                <div class="nt-discipline-card" style="--nt-card-color: ${gradeColor};">
+                    <div class="nt-card-header">
+                        <span class="nt-card-title">${materiaObj.nome}</span>
+                        ${statusBadge}
+                    </div>
+                    <div class="nt-card-body">
+                        ${gradeDisplay}
+                        ${gradeStatus}
+                    </div>
+                    <div class="nt-card-progress">
+                        <div class="nt-card-progress-fill" style="width: ${percentage}%; background: ${gradeColor};"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Demo 1: Nota vermelha com SUB
+        const demo1Data = {
+            'Anatomopatologia': 5.5,
+            'Sub/Anatomopatologia': 7.0
+        };
+        document.getElementById('demo-1-content').innerHTML = `
+            <div class="nt-disciplines-grid" style="max-width: 400px;">
+                ${renderDisciplineCard({ nome: 'Anatomopatologia', subKey: 'Sub/Anatomopatologia' }, demo1Data, '#0054B4')}
+            </div>
+        `;
+
+        // Demo 2: Nota verde sem SUB
+        const demo2Data = {
+            'Bases': 8.5
+        };
+        document.getElementById('demo-2-content').innerHTML = `
+            <div class="nt-disciplines-grid" style="max-width: 400px;">
+                ${renderDisciplineCard({ nome: 'Bases', subKey: 'Sub/Bases' }, demo2Data, '#0054B4')}
+            </div>
+        `;
+
+        // Demo 3: Múltiplas disciplinas
+        const demo3Data = {
+            'Anatomopatologia': 5.5,
+            'Sub/Anatomopatologia': 7.0,
+            'Bases': 6.0,
+            'Sub/Bases': 7.5,
+            'Doenças Pulmonares': 8.5,
+            'Doenças Cardíacas': 9.0,
+            'Proc. Cirurgico': 7.2,
+            'Avaliação': 6.5,
+            'Sub/Avaliação': 7.0,
+            'VM': 8.0
+        };
+        
+        const materias = [
+            { nome: 'Anatomopatologia', subKey: 'Sub/Anatomopatologia' },
+            { nome: 'Bases', subKey: 'Sub/Bases' },
+            { nome: 'Doenças Pulmonares', subKey: null },
+            { nome: 'Doenças Cardíacas', subKey: null },
+            { nome: 'Proc. Cirurgico', subKey: null },
+            { nome: 'Avaliação', subKey: 'Sub/Avaliação' },
+            { nome: 'VM', subKey: 'Sub/VM' }
+        ];
+        
+        let demo3Html = '<div class="nt-disciplines-grid">';
+        materias.forEach(materia => {
+            demo3Html += renderDisciplineCard(materia, demo3Data, '#0054B4');
+        });
+        demo3Html += '</div>';
+        document.getElementById('demo-3-content').innerHTML = demo3Html;
+    </script>
+</body>
+</html>
