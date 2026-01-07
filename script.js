@@ -8509,15 +8509,41 @@ function renderTabFaltas(faltas) {
                     // Determine color based on grade (>= 7 is blue/green, < 7 is red/warning)
                     const gradeColor = getGradeColor(notaMateria, color);
                     
-                    // Status badge for substitutive exam
+                    // Status badge for substitutive exam - improved to show both grades
                     let statusBadge = '';
+                    let gradeDisplay = '';
+                    
                     if (gradeInfo.wasSubstituted) {
+                        // Show SUB badge with original grade info
                         statusBadge = `
                             <div class="nt-card-badge nt-card-badge-sub" title="Prova Substitutiva aplicada (nota original: ${formatarNota(gradeInfo.originalNota)})">
                                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                 </svg>
-                                <span>Sub</span>
+                                <span>SUB</span>
+                            </div>
+                        `;
+                        
+                        // Show both original (crossed out) and SUB grade for better clarity
+                        const originalColor = getGradeColor(gradeInfo.originalNota, color);
+                        gradeDisplay = `
+                            <div class="nt-grade-comparison">
+                                <div class="nt-grade-original" style="color: ${originalColor};">
+                                    <span>${formatarNota(gradeInfo.originalNota)}</span>
+                                </div>
+                                <svg class="nt-arrow-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                </svg>
+                                <div class="nt-grade-sub" style="color: ${gradeColor};">
+                                    ${displayValue}
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        // Just show the single grade
+                        gradeDisplay = `
+                            <div class="nt-card-grade" style="color: ${gradeColor};">
+                                ${displayValue}
                             </div>
                         `;
                     }
@@ -8539,9 +8565,7 @@ function renderTabFaltas(faltas) {
                                 ${statusBadge}
                             </div>
                             <div class="nt-card-body">
-                                <div class="nt-card-grade" style="color: ${gradeColor};">
-                                    ${displayValue}
-                                </div>
+                                ${gradeDisplay}
                                 ${gradeStatus}
                             </div>
                             <div class="nt-card-progress">
