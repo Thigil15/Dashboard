@@ -5030,18 +5030,17 @@ function extractTimeFromISO(isoString) {
         /**
          * Infer the correct year for a date with only day and month (DD/MM format).
          * Uses intelligent logic to determine the most likely year based on context:
-         * - If the month is in the future relative to today (within 2 months), use current year
-         * - If we're in Jan-Feb and the month is Oct-Dec, use previous year (end of previous year data)
-         * - If we're in Oct-Dec and the month is Jan-Feb, use next year (planning ahead)
+         * - If we're in Jan-Feb and the data month is Oct-Dec, use previous year (end of previous year data)
+         * - If we're in Oct-Dec and the data month is Jan-Feb, use next year (planning ahead)
          * - Otherwise, use current year
          * This function ensures that dates from spreadsheet data are correctly interpreted
          * even when the year is not explicitly provided.
-         * @param {number} day - Day of the month (1-31)
+         * @param {number} _day - Day of the month (1-31). Currently unused but kept for future validation.
          * @param {number} month - Month (1-12)
          * @param {Date} refDate - Reference date (defaults to current date)
          * @returns {number} - The inferred 4-digit year
          */
-        function inferYearFromDayMonth(day, month, refDate = new Date()) {
+        function inferYearFromDayMonth(_day, month, refDate = new Date()) {
             const nowYear = refDate.getFullYear();
             const nowMonth = refDate.getMonth() + 1; // 1-12
             
