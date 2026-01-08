@@ -7173,11 +7173,11 @@
 
 /* === SUB Disciplines Section - New Layout === */
 .nt-sub-section {
-    background: linear-gradient(135deg, #fafaff 0%, #f8f9ff 100%);
+    background: linear-gradient(135deg, #f5f5ff 0%, #eef0ff 100%);
     border-radius: 16px;
     padding: 1.75rem;
     margin-top: 2rem;
-    border: 1px solid rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.2);
     box-shadow: 0 4px 16px rgba(99, 102, 241, 0.08);
 }
 
