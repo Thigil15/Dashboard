@@ -7171,6 +7171,160 @@
     color: var(--incor-blue-600);
 }
 
+/* === SUB Disciplines Section - New Layout === */
+.nt-sub-section {
+    background: linear-gradient(135deg, #fafaff 0%, #f8f9ff 100%);
+    border-radius: 16px;
+    padding: 1.75rem;
+    margin-top: 2rem;
+    border: 1px solid rgba(99, 102, 241, 0.15);
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.08);
+}
+
+.nt-sub-section-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(99, 102, 241, 0.12);
+}
+
+.nt-sub-section-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+}
+
+.nt-sub-section-icon svg {
+    width: 24px;
+    height: 24px;
+    color: white;
+}
+
+.nt-sub-section-title {
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--content-text-primary);
+    margin: 0 0 0.25rem 0;
+}
+
+.nt-sub-section-subtitle {
+    font-size: 0.875rem;
+    color: var(--content-text-secondary);
+    margin: 0;
+}
+
+.nt-sub-table {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.nt-sub-table-header {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background: rgba(99, 102, 241, 0.08);
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #6366f1;
+}
+
+.nt-sub-table-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: white;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+}
+
+.nt-sub-table-row:hover {
+    background: #fefeff;
+    border-color: rgba(99, 102, 241, 0.15);
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.08);
+}
+
+.nt-sub-discipline-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+.nt-sub-discipline-name {
+    font-weight: 600;
+    color: var(--content-text-primary);
+    font-size: 0.9375rem;
+}
+
+.nt-sub-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.625rem;
+    border-radius: 999px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.nt-sub-approved {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.2));
+    color: #059669;
+    border: 1px solid rgba(5, 150, 105, 0.2);
+}
+
+.nt-sub-attention {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(220, 38, 38, 0.2));
+    color: #dc2626;
+    border: 1px solid rgba(220, 38, 38, 0.2);
+}
+
+.nt-sub-grade {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 800;
+    min-width: 60px;
+    text-align: right;
+}
+
+/* Responsive for SUB section */
+@media (max-width: 480px) {
+    .nt-sub-section {
+        padding: 1.25rem;
+    }
+    
+    .nt-sub-section-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.75rem;
+    }
+    
+    .nt-sub-table-row {
+        flex-direction: column;
+        gap: 0.75rem;
+        text-align: center;
+    }
+    
+    .nt-sub-discipline-info {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
+
 /* === Responsive Refinements === */
 @media (max-width: 768px) {
     .nt-hero-section {
