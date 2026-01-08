@@ -8181,12 +8181,18 @@ function renderTabFaltas(faltas) {
          * Design glorioso digno do Portal de Ensino da USP
          */
         function renderTabNotasTeoricas(notas) {
-            console.log('[renderTabNotasTeoricas v36 - InCor Professional] Dados recebidos:', notas);
+            console.log('[renderTabNotasTeoricas v37 - InCor Professional Redesign] Dados recebidos:', notas);
             
             // Constants for grade validation
             const MIN_GRADE = 0;
             const MAX_GRADE = 10;
             const MIN_FIELDS_FOR_TABLE = 5;
+            
+            // SUB prefix patterns for substitutive exams - shared constant to avoid duplication
+            const SUB_PREFIXES = ['Sub/', 'Sub-', 'SUB/', 'SUB-', 'Sub_', 'SUB_', 'sub/', 'sub-', 'sub_'];
+            
+            // Helper function to generate subKey from discipline name
+            const generateSubKey = (disciplineName) => `Sub/${disciplineName}`;
             
             // Helper function to check if a value is a valid grade
             const isValidGrade = (value) => {
@@ -8196,6 +8202,7 @@ function renderTabFaltas(faltas) {
             };
             
             // Helper function to get value from notas object with accent-insensitive key matching
+            // Enhanced to find SUB disciplines with multiple naming conventions
             const getNotaValue = (materia) => {
                 if (!notas) return undefined;
                 // Try exact match first
@@ -8210,8 +8217,31 @@ function renderTabFaltas(faltas) {
                     return kNormalized.toUpperCase() === materiaNormalized.toUpperCase();
                 });
                 
-                return matchingKey ? notas[matchingKey] : undefined;
+                if (matchingKey) return notas[matchingKey];
+                
+                // For SUB keys, try alternative patterns (Sub/, Sub-, SUB_, etc.)
+                if (materia.startsWith('Sub/')) {
+                    const disciplineName = materia.replace('Sub/', '');
+                    const disciplineNormalized = disciplineName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+                    
+                    // Try different SUB prefixes (using shared constant)
+                    for (const prefix of SUB_PREFIXES) {
+                        const altKey = Object.keys(notas).find(k => {
+                            const kNormalized = k.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                            return kNormalized.toUpperCase().startsWith(prefix.toUpperCase()) && 
+                                   kNormalized.toUpperCase().includes(disciplineNormalized);
+                        });
+                        if (altKey && notas[altKey] !== undefined && notas[altKey] !== null) {
+                            return notas[altKey];
+                        }
+                    }
+                }
+                
+                return undefined;
             };
+            
+            // Debug: Log all available keys to help diagnose SUB discipline issues
+            console.log('[renderTabNotasTeoricas v37] All available keys in notas:', Object.keys(notas || {}));
             
             const tabContainer = document.getElementById('notas-t-content-wrapper');
             if (!tabContainer) {
@@ -8243,54 +8273,93 @@ function renderTabFaltas(faltas) {
                 return;
             }
 
+            // === FUNÇÃO PARA DESCOBRIR DISCIPLINAS SUB DO DADOS === //
+            // Find all SUB discipline keys from the data dynamically
+            const findSubDisciplinesFromData = () => {
+                const subDisciplines = [];
+                
+                if (!notas) return subDisciplines;
+                
+                Object.keys(notas).forEach(key => {
+                    for (const prefix of SUB_PREFIXES) {
+                        if (key.startsWith(prefix) || key.toUpperCase().startsWith(prefix.toUpperCase())) {
+                            // Use literal string replacement instead of RegExp to avoid injection
+                            let disciplineName = key;
+                            for (const p of SUB_PREFIXES) {
+                                if (key.toLowerCase().startsWith(p.toLowerCase())) {
+                                    disciplineName = key.substring(p.length);
+                                    break;
+                                }
+                            }
+                            const value = notas[key];
+                            if (value !== undefined && value !== null && value !== '') {
+                                subDisciplines.push({
+                                    originalKey: key,
+                                    disciplineName: disciplineName,
+                                    value: value,
+                                    parsedValue: parseNota(value)
+                                });
+                            }
+                            break;
+                        }
+                    }
+                });
+                
+                console.log('[renderTabNotasTeoricas v37] SUB disciplines found from data:', subDisciplines);
+                return subDisciplines;
+            };
+            
+            const discoveredSubDisciplines = findSubDisciplinesFromData();
+            
             // === DEFINIÇÃO DOS GRUPOS DE MÓDULOS - INCOR === //
-            // Disciplinas com seus pares substitutivos (Sub/) - a nota Sub substitui a original APENAS se for maior
+            // Disciplinas com seus pares substitutivos - usando generateSubKey para consistência
+            // Note: Some disciplines have special subKey mappings (e.g., 'Avaliação' -> 'Sub/Avaliacao')
             const mediaGroups = {
                 'Fisioterapia I': {
                     // Formato: { nome, subKey } onde subKey é a chave da nota substitutiva
                     materias: [
-                        { nome: 'Anatomopatologia', subKey: 'Sub/Anatomopatologia' },
-                        { nome: 'Bases', subKey: 'Sub/Bases' },
-                        { nome: 'Doenças Pulmonares', subKey: null },
-                        { nome: 'Doenças Cardíacas', subKey: null },
-                        { nome: 'Proc. Cirurgico', subKey: null },
-                        { nome: 'Avaliação', subKey: 'Sub/Avaliacao' },
-                        { nome: 'VM', subKey: 'Sub/VM' }
+                        { nome: 'Anatomopatologia', subKey: generateSubKey('Anatomopatologia') },
+                        { nome: 'Bases', subKey: generateSubKey('Bases') },
+                        { nome: 'Doenças Pulmonares', subKey: generateSubKey('Doenças Pulmonares') },
+                        { nome: 'Doenças Cardíacas', subKey: generateSubKey('Doenças Cardíacas') },
+                        { nome: 'Proc. Cirurgico', subKey: generateSubKey('Proc. Cirurgico') },
+                        { nome: 'Avaliação', subKey: 'Sub/Avaliacao' }, // Special case: accent removed in SUB key
+                        { nome: 'VM', subKey: generateSubKey('VM') }
                     ],
                     icon: 'M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25',
                     color: '#0054B4' // InCor Blue
                 },
                 'Fisioterapia II': {
                     materias: [
-                        { nome: 'Técnicas e Recursos', subKey: null },
-                        { nome: 'Diag. Imagem', subKey: null }
+                        { nome: 'Técnicas e Recursos', subKey: generateSubKey('Técnicas e Recursos') },
+                        { nome: 'Diag. Imagem', subKey: generateSubKey('Diag. Imagem') }
                     ],
                     icon: 'M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
                     color: '#0891B2' // Cyan
                 },
                 'Fisioterapia III': {
                     materias: [
-                        { nome: 'Fisio aplicada', subKey: null },
-                        { nome: 'UTI', subKey: null }
+                        { nome: 'Fisio aplicada', subKey: generateSubKey('Fisio aplicada') },
+                        { nome: 'UTI', subKey: generateSubKey('UTI') }
                     ],
                     icon: 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z',
                     color: '#E21E26' // InCor Red
                 },
                 'Fisioterapia IV': {
                     materias: [
-                        { nome: 'Pediatria', subKey: null },
-                        { nome: 'Mobilização', subKey: null },
-                        { nome: 'Reab. Pulmonar', subKey: null }
+                        { nome: 'Pediatria', subKey: generateSubKey('Pediatria') },
+                        { nome: 'Mobilização', subKey: generateSubKey('Mobilização') },
+                        { nome: 'Reab. Pulmonar', subKey: generateSubKey('Reab. Pulmonar') }
                     ],
                     icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
                     color: '#059669' // Green
                 },
                 'Disciplinas Complementares': {
                     materias: [
-                        { nome: 'M. Cientifica', subKey: null },
-                        { nome: 'Saúde e politicas', subKey: null },
-                        { nome: 'Farmacoterapia', subKey: null },
-                        { nome: 'Bioética', subKey: null }
+                        { nome: 'M. Cientifica', subKey: generateSubKey('M. Cientifica') },
+                        { nome: 'Saúde e politicas', subKey: generateSubKey('Saúde e politicas') },
+                        { nome: 'Farmacoterapia', subKey: generateSubKey('Farmacoterapia') },
+                        { nome: 'Bioética', subKey: generateSubKey('Bioética') }
                     ],
                     icon: 'M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z',
                     color: '#6366F1' // Indigo
@@ -8610,8 +8679,50 @@ function renderTabFaltas(faltas) {
 
             modulesHtml += '</div>';
 
+            // === SEÇÃO DE DISCIPLINAS SUBSTITUTIVAS ENCONTRADAS === //
+            let subDisciplinesHtml = '';
+            if (discoveredSubDisciplines.length > 0) {
+                subDisciplinesHtml = `
+                    <div class="nt-sub-section">
+                        <div class="nt-sub-section-header">
+                            <div class="nt-sub-section-icon">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="nt-sub-section-title">Provas Substitutivas</h3>
+                                <p class="nt-sub-section-subtitle">${discoveredSubDisciplines.length} disciplina${discoveredSubDisciplines.length > 1 ? 's' : ''} com prova substitutiva</p>
+                            </div>
+                        </div>
+                        <div class="nt-sub-table">
+                            <div class="nt-sub-table-header">
+                                <span>Disciplina</span>
+                                <span>Nota SUB</span>
+                            </div>
+                            ${discoveredSubDisciplines.map(sub => {
+                                const subGradeColor = sub.parsedValue >= 7 ? '#10b981' : '#ef4444';
+                                const statusText = sub.parsedValue >= 7 ? 'Aprovado' : 'Atenção';
+                                const statusClass = sub.parsedValue >= 7 ? 'nt-sub-approved' : 'nt-sub-attention';
+                                return `
+                                    <div class="nt-sub-table-row">
+                                        <div class="nt-sub-discipline-info">
+                                            <span class="nt-sub-discipline-name">${sub.disciplineName}</span>
+                                            <span class="nt-sub-badge ${statusClass}">${statusText}</span>
+                                        </div>
+                                        <div class="nt-sub-grade" style="color: ${subGradeColor};">
+                                            ${formatarNota(sub.parsedValue)}
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
             // === MONTAGEM FINAL === //
-            tabContainer.innerHTML = heroHtml + dashboardHtml + sectionHeaderHtml + modulesHtml;
+            tabContainer.innerHTML = heroHtml + dashboardHtml + sectionHeaderHtml + modulesHtml + subDisciplinesHtml;
         }
 
         function calculatePracticeSummary(notasP) {
