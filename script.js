@@ -8541,7 +8541,7 @@ function renderTabFaltas(faltas) {
             let sectionHeaderHtml = `
                 <div class="nt-section-header">
                     <h3>Módulos Teóricos</h3>
-                    <p>Clique em cada módulo para expandir e visualizar todas as disciplinas, incluindo provas substitutivas (SUB)</p>
+                    <p>Clique nos módulos para expandir e visualizar disciplinas e SUB</p>
                 </div>
             `;
 
@@ -8645,7 +8645,7 @@ function renderTabFaltas(faltas) {
                                 <h4 class="nt-accordion-title">${groupName}</h4>
                                 <p class="nt-accordion-subtitle">
                                     ${disciplineCount} disciplina${disciplineCount > 1 ? 's' : ''}
-                                    <span class="nt-accordion-subtitle-muted">• Clique para ${index === 0 ? 'visualizar' : 'expandir'}</span>
+                                    <span class="nt-accordion-subtitle-muted">• Clique para expandir</span>
                                 </p>
                             </div>
                             <div class="nt-accordion-grade-display">

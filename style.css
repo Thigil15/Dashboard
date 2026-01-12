@@ -99,6 +99,9 @@
             --border-subtle: rgba(0, 51, 160, 0.06);
             --border-light: rgba(0, 51, 160, 0.04);
             --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.06);
+            
+            /* === ACCORDION SETTINGS === */
+            --accordion-max-height: 3000px;
         }
 
         /* === ESTILOS GLOBAIS PREMIUM === */
@@ -7473,7 +7476,7 @@
 }
 
 .nt-accordion-module.expanded .nt-accordion-content {
-    max-height: 3000px; /* Large enough for most content, adjust if needed */
+    max-height: var(--accordion-max-height);
 }
 
 .nt-accordion-inner {
