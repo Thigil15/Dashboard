@@ -8719,12 +8719,15 @@ function renderTabFaltas(faltas) {
             // === MONTAGEM FINAL === //
             tabContainer.innerHTML = heroHtml + dashboardHtml + sectionHeaderHtml + modulesHtml + subDisciplinesHtml;
             
-            // Auto-expand first module on load using requestAnimationFrame for better reliability
+            // Auto-expand first module on load using double requestAnimationFrame 
+            // for better reliability (ensures elements are fully rendered)
             requestAnimationFrame(() => {
-                const firstModule = document.querySelector('.nt-accordion-module');
-                if (firstModule) {
-                    firstModule.classList.add('expanded');
-                }
+                requestAnimationFrame(() => {
+                    const firstModule = document.querySelector('.nt-accordion-module');
+                    if (firstModule) {
+                        firstModule.classList.add('expanded');
+                    }
+                });
             });
         }
         
@@ -8732,6 +8735,8 @@ function renderTabFaltas(faltas) {
          * Toggle function for NotasTeoricas accordion modules
          * Makes modules collapsible/expandable
          * Note: Attached to window for inline onclick compatibility with dynamic HTML
+         * 
+         * @param {string} moduleId - The ID of the module to toggle
          */
         window.toggleNotasModule = function(moduleId) {
             const module = document.getElementById(moduleId);
@@ -8740,16 +8745,16 @@ function renderTabFaltas(faltas) {
             // Toggle expanded class
             module.classList.toggle('expanded');
             
-            // Optional: Close other modules (accordion behavior)
-            // Uncomment the code below if you want only one module open at a time
-            /*
-            const allModules = document.querySelectorAll('.nt-accordion-module');
-            allModules.forEach(m => {
-                if (m.id !== moduleId) {
-                    m.classList.remove('expanded');
-                }
-            });
-            */
+            /* Optional: Exclusive accordion mode (only one module open at a time)
+             * Uncomment below to enable this behavior:
+             * 
+             * const allModules = document.querySelectorAll('.nt-accordion-module');
+             * allModules.forEach(m => {
+             *     if (m.id !== moduleId) {
+             *         m.classList.remove('expanded');
+             *     }
+             * });
+             */
         };
 
         function calculatePracticeSummary(notasP) {

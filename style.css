@@ -6724,6 +6724,13 @@
     100% { transform: translateX(100%); }
 }
 
+/* Respect user's motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    .nt-accordion-progress-fill::after {
+        animation: none;
+    }
+}
+
 /* === Disciplines Grid - Modern Card Layout === */
 .nt-disciplines-grid {
     display: grid;
