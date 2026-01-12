@@ -8541,15 +8541,16 @@ function renderTabFaltas(faltas) {
             let sectionHeaderHtml = `
                 <div class="nt-section-header">
                     <h3>Módulos Teóricos</h3>
-                    <p>Desempenho por módulo e disciplina</p>
+                    <p>Clique em cada módulo para expandir e visualizar todas as disciplinas, incluindo provas substitutivas (SUB)</p>
                 </div>
             `;
 
-            // === MÓDULOS TEÓRICOS - DESIGN MODERNO SEM GAVETAS === //
-            let modulesHtml = '<div class="nt-modules-grid">';
+            // === MÓDULOS TEÓRICOS - NEW COLLAPSIBLE ACCORDION LAYOUT === //
+            let modulesHtml = '<div class="nt-modules-accordion">';
 
-            Object.entries(mediaGroups).forEach(([groupName, groupData]) => {
+            Object.entries(mediaGroups).forEach(([groupName, groupData], index) => {
                 const { materias, icon, color } = groupData;
+                const moduleId = `nt-module-${index}`;
                 
                 // Calculate group average using effective grades (with substitution logic)
                 // Only count disciplines with valid numeric grades (exclude blanks)
@@ -8563,115 +8564,109 @@ function renderTabFaltas(faltas) {
                     }
                 });
                 const mediaValue = count > 0 ? sum / count : 0;
-
-                // Process disciplines with substitution logic - generate discipline cards
-                let disciplinasHtml = '';
+                const percentage = (mediaValue / 10) * 100;
+                const mediaColor = getGradeColor(mediaValue, color);
                 const disciplineCount = materias.length;
+                
+                // Process disciplines with substitution logic - generate discipline rows
+                // ALWAYS show ALL disciplines with SUB column (even if blank)
+                let disciplinasHtml = '';
                 
                 materias.forEach(materiaObj => {
                     const gradeInfo = getEffectiveGrade(materiaObj);
-                    const notaMateria = gradeInfo.nota;
-                    const isValidNota = notaMateria > 0;
-                    const percentage = isValidNota ? (notaMateria / 10) * 100 : 0;
-                    const displayValue = isValidNota ? formatarNota(notaMateria) : '-';
+                    const notaOriginal = gradeInfo.originalNota;
+                    const notaSub = gradeInfo.subNota;
+                    const notaFinal = gradeInfo.nota; // This is the effective grade used for average
                     
-                    // Determine color based on grade (>= 7 is blue/green, < 7 is red/warning)
-                    const gradeColor = getGradeColor(notaMateria, color);
+                    const hasOriginal = notaOriginal > 0;
+                    const hasSub = notaSub > 0;
                     
-                    // Status badge for substitutive exam - improved to show both grades
+                    const displayOriginal = hasOriginal ? formatarNota(notaOriginal) : '-';
+                    const displaySub = hasSub ? formatarNota(notaSub) : '-';
+                    
+                    // Determine colors
+                    const originalColor = getGradeColor(notaOriginal, color);
+                    const subColor = getGradeColor(notaSub, color);
+                    
+                    // Status badge - show final status
                     let statusBadge = '';
-                    let gradeDisplay = '';
+                    if (notaFinal > 0) {
+                        if (notaFinal >= 7) {
+                            statusBadge = `<span class="nt-accordion-status-badge nt-grade-approved">Aprovado</span>`;
+                        } else {
+                            statusBadge = `<span class="nt-accordion-status-badge nt-grade-attention">Atenção</span>`;
+                        }
+                    }
                     
+                    // SUB indicator badge
+                    let subIndicator = '';
                     if (gradeInfo.wasSubstituted) {
-                        // Show SUB badge with original grade info
-                        statusBadge = `
-                            <div class="nt-card-badge nt-card-badge-sub" title="Prova Substitutiva aplicada (nota original: ${formatarNota(gradeInfo.originalNota)})">
-                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        subIndicator = `
+                            <div class="nt-card-badge nt-card-badge-sub" title="Nota substitutiva aplicada">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                 </svg>
                                 <span>SUB</span>
                             </div>
                         `;
-                        
-                        // Show both original (crossed out) and SUB grade for better clarity
-                        const originalColor = getGradeColor(gradeInfo.originalNota, color);
-                        gradeDisplay = `
-                            <div class="nt-grade-comparison">
-                                <div class="nt-grade-original" style="color: ${originalColor};">
-                                    <span>${formatarNota(gradeInfo.originalNota)}</span>
-                                </div>
-                                <svg class="nt-arrow-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                                </svg>
-                                <div class="nt-grade-sub" style="color: ${gradeColor};">
-                                    ${displayValue}
-                                </div>
-                            </div>
-                        `;
-                    } else {
-                        // Just show the single grade
-                        gradeDisplay = `
-                            <div class="nt-card-grade" style="color: ${gradeColor};">
-                                ${displayValue}
-                            </div>
-                        `;
-                    }
-                    
-                    // Status indicator based on grade
-                    let gradeStatus = '';
-                    if (isValidNota) {
-                        if (notaMateria >= 7) {
-                            gradeStatus = `<span class="nt-grade-status nt-grade-approved">Aprovado</span>`;
-                        } else {
-                            gradeStatus = `<span class="nt-grade-status nt-grade-attention">Atenção</span>`;
-                        }
                     }
                     
                     disciplinasHtml += `
-                        <div class="nt-discipline-card" style="--nt-card-color: ${gradeColor};">
-                            <div class="nt-card-header">
-                                <span class="nt-card-title">${materiaObj.nome}</span>
+                        <div class="nt-accordion-discipline-row" style="--nt-card-color: ${notaFinal > 0 ? getGradeColor(notaFinal, color) : color};">
+                            <div class="nt-accordion-discipline-name-wrapper">
+                                <span class="nt-accordion-discipline-name">${materiaObj.nome}</span>
+                                ${subIndicator}
                                 ${statusBadge}
                             </div>
-                            <div class="nt-card-body">
-                                ${gradeDisplay}
-                                ${gradeStatus}
-                            </div>
-                            <div class="nt-card-progress">
-                                <div class="nt-card-progress-fill" style="width: ${percentage}%; background: ${gradeColor};"></div>
+                            <div class="nt-accordion-grades-wrapper">
+                                <div class="nt-accordion-grade-box">
+                                    <span class="nt-accordion-grade-box-label">Original</span>
+                                    <span class="nt-accordion-grade-box-value" style="color: ${originalColor};">${displayOriginal}</span>
+                                </div>
+                                <div class="nt-accordion-grade-box nt-accordion-grade-box-sub">
+                                    <span class="nt-accordion-grade-box-label">SUB</span>
+                                    <span class="nt-accordion-grade-box-value" style="color: ${subColor};">${displaySub}</span>
+                                </div>
                             </div>
                         </div>
                     `;
                 });
-
-                // Always show the card (show all disciplines even if average is 0)
-                const percentage = (mediaValue / 10) * 100;
-                const mediaColor = getGradeColor(mediaValue, color);
                 
+                // Create the accordion module
                 modulesHtml += `
-                    <div class="nt-module-card" style="--nt-module-color: ${color};">
-                        <div class="nt-module-header">
-                            <div class="nt-module-icon" style="background: linear-gradient(135deg, ${color}, ${color}cc);">
+                    <div class="nt-accordion-module" id="${moduleId}" style="--nt-module-color: ${color};">
+                        <button class="nt-accordion-button" onclick="toggleNotasModule('${moduleId}')" type="button">
+                            <div class="nt-accordion-icon-wrapper" style="background: linear-gradient(135deg, ${color}, ${color}cc);">
                                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="${icon}" />
                                 </svg>
                             </div>
-                            <div class="nt-module-title-group">
-                                <h4 class="nt-module-title">${groupName}</h4>
-                                <p class="nt-module-subtitle">${disciplineCount} disciplina${disciplineCount > 1 ? 's' : ''}</p>
+                            <div class="nt-accordion-title-group">
+                                <h4 class="nt-accordion-title">${groupName}</h4>
+                                <p class="nt-accordion-subtitle">
+                                    ${disciplineCount} disciplina${disciplineCount > 1 ? 's' : ''}
+                                    <span style="color: var(--content-text-muted);">• Clique para ${index === 0 ? 'visualizar' : 'expandir'}</span>
+                                </p>
                             </div>
-                            <div class="nt-module-grade">
-                                <div class="nt-grade-value" style="color: ${mediaColor};">${mediaValue > 0 ? formatarNota(mediaValue) : '-'}</div>
-                                <div class="nt-grade-label">Média</div>
+                            <div class="nt-accordion-grade-display">
+                                <div class="nt-accordion-grade">
+                                    <div class="nt-accordion-grade-value" style="color: ${mediaColor};">${mediaValue > 0 ? formatarNota(mediaValue) : '-'}</div>
+                                    <div class="nt-accordion-grade-label">Média</div>
+                                </div>
+                                <svg class="nt-accordion-chevron" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                                </svg>
                             </div>
-                        </div>
-                        
-                        <div class="nt-module-progress-bar">
-                            <div class="nt-module-progress-fill" style="width: ${percentage}%; background: ${mediaColor};"></div>
-                        </div>
-                        
-                        <div class="nt-disciplines-grid">
-                            ${disciplinasHtml}
+                        </button>
+                        <div class="nt-accordion-content">
+                            <div class="nt-accordion-inner">
+                                <div class="nt-accordion-progress-bar">
+                                    <div class="nt-accordion-progress-fill" style="width: ${percentage}%; background: ${mediaColor};"></div>
+                                </div>
+                                <div class="nt-accordion-disciplines-table">
+                                    ${disciplinasHtml}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -8723,7 +8718,38 @@ function renderTabFaltas(faltas) {
 
             // === MONTAGEM FINAL === //
             tabContainer.innerHTML = heroHtml + dashboardHtml + sectionHeaderHtml + modulesHtml + subDisciplinesHtml;
+            
+            // Auto-expand first module on load
+            setTimeout(() => {
+                const firstModule = document.querySelector('.nt-accordion-module');
+                if (firstModule) {
+                    firstModule.classList.add('expanded');
+                }
+            }, 100);
         }
+        
+        /**
+         * Toggle function for NotasTeoricas accordion modules
+         * Makes modules collapsible/expandable
+         */
+        window.toggleNotasModule = function(moduleId) {
+            const module = document.getElementById(moduleId);
+            if (!module) return;
+            
+            // Toggle expanded class
+            module.classList.toggle('expanded');
+            
+            // Optional: Close other modules (accordion behavior)
+            // Uncomment the code below if you want only one module open at a time
+            /*
+            const allModules = document.querySelectorAll('.nt-accordion-module');
+            allModules.forEach(m => {
+                if (m.id !== moduleId) {
+                    m.classList.remove('expanded');
+                }
+            });
+            */
+        };
 
         function calculatePracticeSummary(notasP) {
             console.log('[calculatePracticeSummary] Calculating with', notasP ? notasP.length : 0, 'evaluations');
