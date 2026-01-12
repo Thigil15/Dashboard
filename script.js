@@ -8645,7 +8645,7 @@ function renderTabFaltas(faltas) {
                                 <h4 class="nt-accordion-title">${groupName}</h4>
                                 <p class="nt-accordion-subtitle">
                                     ${disciplineCount} disciplina${disciplineCount > 1 ? 's' : ''}
-                                    <span style="color: var(--content-text-muted);">• Clique para ${index === 0 ? 'visualizar' : 'expandir'}</span>
+                                    <span class="nt-accordion-subtitle-muted">• Clique para ${index === 0 ? 'visualizar' : 'expandir'}</span>
                                 </p>
                             </div>
                             <div class="nt-accordion-grade-display">
@@ -8719,18 +8719,19 @@ function renderTabFaltas(faltas) {
             // === MONTAGEM FINAL === //
             tabContainer.innerHTML = heroHtml + dashboardHtml + sectionHeaderHtml + modulesHtml + subDisciplinesHtml;
             
-            // Auto-expand first module on load
-            setTimeout(() => {
+            // Auto-expand first module on load using requestAnimationFrame for better reliability
+            requestAnimationFrame(() => {
                 const firstModule = document.querySelector('.nt-accordion-module');
                 if (firstModule) {
                     firstModule.classList.add('expanded');
                 }
-            }, 100);
+            });
         }
         
         /**
          * Toggle function for NotasTeoricas accordion modules
          * Makes modules collapsible/expandable
+         * Note: Attached to window for inline onclick compatibility with dynamic HTML
          */
         window.toggleNotasModule = function(moduleId) {
             const module = document.getElementById(moduleId);

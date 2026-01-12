@@ -7421,6 +7421,10 @@
     gap: 0.5rem;
 }
 
+.nt-accordion-subtitle-muted {
+    color: var(--content-text-muted);
+}
+
 .nt-accordion-grade-display {
     display: flex;
     align-items: center;
@@ -7469,7 +7473,7 @@
 }
 
 .nt-accordion-module.expanded .nt-accordion-content {
-    max-height: 5000px;
+    max-height: 3000px; /* Large enough for most content, adjust if needed */
 }
 
 .nt-accordion-inner {
