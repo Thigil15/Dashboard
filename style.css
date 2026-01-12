@@ -99,6 +99,9 @@
             --border-subtle: rgba(0, 51, 160, 0.06);
             --border-light: rgba(0, 51, 160, 0.04);
             --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.06);
+            
+            /* === ACCORDION SETTINGS === */
+            --accordion-max-height: 3000px;
         }
 
         /* === ESTILOS GLOBAIS PREMIUM === */
@@ -6721,6 +6724,13 @@
     100% { transform: translateX(100%); }
 }
 
+/* Respect user's motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    .nt-accordion-progress-fill::after {
+        animation: none;
+    }
+}
+
 /* === Disciplines Grid - Modern Card Layout === */
 .nt-disciplines-grid {
     display: grid;
@@ -7322,6 +7332,314 @@
     .nt-sub-discipline-info {
         flex-direction: column;
         gap: 0.5rem;
+    }
+}
+
+/* === New Collapsible Accordion Module Layout === */
+.nt-accordion-module {
+    background: white;
+    border-radius: 14px;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(0, 51, 160, 0.08);
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+.nt-accordion-module::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--nt-module-color, var(--incor-blue-500));
+    transition: all 0.3s ease;
+}
+
+.nt-accordion-module.expanded {
+    box-shadow: 0 8px 30px rgba(0, 51, 160, 0.12);
+    border-color: var(--nt-module-color, var(--incor-blue-400));
+}
+
+.nt-accordion-module.expanded::before {
+    height: 5px;
+}
+
+.nt-accordion-button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.2s ease;
+}
+
+.nt-accordion-button:hover {
+    background: rgba(0, 51, 160, 0.02);
+}
+
+.nt-accordion-button:active {
+    background: rgba(0, 51, 160, 0.04);
+}
+
+.nt-accordion-icon-wrapper {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+}
+
+.nt-accordion-module.expanded .nt-accordion-icon-wrapper {
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.nt-accordion-icon-wrapper svg {
+    width: 24px;
+    height: 24px;
+    color: white;
+}
+
+.nt-accordion-title-group {
+    flex: 1;
+    min-width: 0;
+}
+
+.nt-accordion-title {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--content-text-primary);
+    margin-bottom: 0.125rem;
+    line-height: 1.3;
+}
+
+.nt-accordion-subtitle {
+    font-size: 0.75rem;
+    color: var(--content-text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.nt-accordion-subtitle-muted {
+    color: var(--content-text-muted);
+}
+
+.nt-accordion-grade-display {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-shrink: 0;
+}
+
+.nt-accordion-grade {
+    text-align: center;
+    padding: 0.5rem 0.75rem;
+    background: linear-gradient(135deg, rgba(0, 51, 160, 0.04), rgba(0, 84, 180, 0.06));
+    border-radius: 10px;
+}
+
+.nt-accordion-grade-value {
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.nt-accordion-grade-label {
+    font-size: 0.625rem;
+    font-weight: 700;
+    color: var(--content-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 0.125rem;
+}
+
+.nt-accordion-chevron {
+    width: 24px;
+    height: 24px;
+    color: var(--content-text-secondary);
+    transition: transform 0.3s ease;
+}
+
+.nt-accordion-module.expanded .nt-accordion-chevron {
+    transform: rotate(180deg);
+}
+
+.nt-accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nt-accordion-module.expanded .nt-accordion-content {
+    max-height: var(--accordion-max-height);
+}
+
+.nt-accordion-inner {
+    padding: 0 1.5rem 1.5rem 1.5rem;
+    border-top: 1px solid rgba(0, 51, 160, 0.08);
+}
+
+.nt-accordion-progress-bar {
+    height: 8px;
+    background: rgba(0, 51, 160, 0.08);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+    margin-top: 1rem;
+}
+
+.nt-accordion-progress-fill {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+.nt-accordion-progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+    animation: nt-shimmer 2s ease-in-out infinite;
+}
+
+/* Disciplines table inside accordion */
+.nt-accordion-disciplines-table {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.nt-accordion-discipline-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 1rem;
+    align-items: center;
+    background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
+    border-radius: 12px;
+    padding: 1rem;
+    border: 1px solid rgba(0, 51, 160, 0.08);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nt-accordion-discipline-row:hover {
+    border-color: var(--nt-card-color, rgba(0, 51, 160, 0.15));
+    box-shadow: 0 4px 16px rgba(0, 51, 160, 0.08);
+    transform: translateX(4px);
+}
+
+.nt-accordion-discipline-name-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.nt-accordion-discipline-name {
+    font-weight: 600;
+    color: var(--content-text-primary);
+    font-size: 0.9375rem;
+}
+
+.nt-accordion-grades-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.nt-accordion-grade-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 80px;
+    padding: 0.5rem 0.75rem;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 51, 160, 0.08);
+}
+
+.nt-accordion-grade-box-label {
+    font-size: 0.625rem;
+    font-weight: 700;
+    color: var(--content-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.25rem;
+}
+
+.nt-accordion-grade-box-value {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.nt-accordion-grade-box-sub {
+    border-color: rgba(99, 102, 241, 0.2);
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(79, 70, 229, 0.08));
+}
+
+.nt-accordion-status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.625rem;
+    border-radius: 999px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+/* Responsive for accordion */
+@media (max-width: 768px) {
+    .nt-accordion-button {
+        padding: 1.25rem;
+        flex-wrap: wrap;
+    }
+    
+    .nt-accordion-grade-display {
+        flex-basis: 100%;
+        justify-content: space-between;
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid rgba(0, 51, 160, 0.08);
+    }
+    
+    .nt-accordion-discipline-row {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+    
+    .nt-accordion-grades-wrapper {
+        justify-content: space-between;
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .nt-accordion-inner {
+        padding: 0 1rem 1rem 1rem;
+    }
+    
+    .nt-accordion-grade-box {
+        min-width: 70px;
+        padding: 0.4rem 0.6rem;
+    }
+    
+    .nt-accordion-grade-box-value {
+        font-size: 1.125rem;
     }
 }
 
