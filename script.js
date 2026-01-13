@@ -8182,6 +8182,27 @@ function renderTabFaltas(faltas) {
          */
         function renderTabNotasTeoricas(notas) {
             console.log('[renderTabNotasTeoricas v37 - InCor Professional Redesign] Dados recebidos:', notas);
+            console.log('[renderTabNotasTeoricas v37] Type of notas:', typeof notas);
+            console.log('[renderTabNotasTeoricas v37] Is notas an object?', typeof notas === 'object' && notas !== null);
+            if (notas && typeof notas === 'object') {
+                console.log('[renderTabNotasTeoricas v37] Keys in notas:', Object.keys(notas));
+                console.log('[renderTabNotasTeoricas v37] Number of keys:', Object.keys(notas).length);
+                
+                // Log all SUB-prefixed keys found
+                const subKeys = Object.keys(notas).filter(key => 
+                    key.toLowerCase().startsWith('sub/')  ||
+                    key.toLowerCase().startsWith('sub-')  ||
+                    key.toLowerCase().startsWith('sub_')
+                );
+                console.log('[renderTabNotasTeoricas v37] 🔍 SUB-prefixed keys found:', subKeys);
+                if (subKeys.length > 0) {
+                    subKeys.forEach(key => {
+                        console.log(`[renderTabNotasTeoricas v37] 📝 SUB key "${key}" = ${notas[key]}`);
+                    });
+                } else {
+                    console.warn('[renderTabNotasTeoricas v37] ⚠️ No SUB-prefixed keys found in data!');
+                }
+            }
             
             // Constants for grade validation
             const MIN_GRADE = 0;
@@ -8280,10 +8301,14 @@ function renderTabFaltas(faltas) {
                 
                 if (!notas) return subDisciplines;
                 
+                // Log all keys to help debug
+                console.log('[findSubDisciplinesFromData] Analyzing all keys in notas:', Object.keys(notas));
+                
                 Object.keys(notas).forEach(key => {
+                    // Check if key starts with any SUB prefix (case-insensitive)
                     for (const prefix of SUB_PREFIXES) {
-                        if (key.startsWith(prefix) || key.toUpperCase().startsWith(prefix.toUpperCase())) {
-                            // Use literal string replacement instead of RegExp to avoid injection
+                        if (key.toLowerCase().startsWith(prefix.toLowerCase())) {
+                            // Extract discipline name by removing the prefix
                             let disciplineName = key;
                             for (const p of SUB_PREFIXES) {
                                 if (key.toLowerCase().startsWith(p.toLowerCase())) {
@@ -8292,20 +8317,30 @@ function renderTabFaltas(faltas) {
                                 }
                             }
                             const value = notas[key];
-                            if (value !== undefined && value !== null && value !== '') {
+                            const parsedValue = parseNota(value);
+                            
+                            // Log each SUB key found
+                            console.log(`[findSubDisciplinesFromData] Found SUB key: "${key}" -> discipline: "${disciplineName}", value: ${value}, parsed: ${parsedValue}`);
+                            
+                            // Only add if it has a valid numeric value
+                            if (value !== undefined && value !== null && value !== '' && parsedValue > 0) {
                                 subDisciplines.push({
                                     originalKey: key,
                                     disciplineName: disciplineName,
                                     value: value,
-                                    parsedValue: parseNota(value)
+                                    parsedValue: parsedValue
                                 });
+                                console.log(`[findSubDisciplinesFromData] ✅ Added SUB discipline: ${disciplineName} with grade ${parsedValue}`);
+                            } else {
+                                console.log(`[findSubDisciplinesFromData] ⚠️ Skipped SUB key "${key}" - no valid grade (value: ${value}, parsed: ${parsedValue})`);
                             }
                             break;
                         }
                     }
                 });
                 
-                console.log('[renderTabNotasTeoricas v37] SUB disciplines found from data:', subDisciplines);
+                console.log(`[findSubDisciplinesFromData] ✅ Total SUB disciplines found: ${subDisciplines.length}`);
+                console.log('[findSubDisciplinesFromData] SUB disciplines details:', subDisciplines);
                 return subDisciplines;
             };
             
