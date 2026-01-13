@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste - Notas SUB (Substitutivas)</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #0054B4;
+            border-bottom: 3px solid #E21E26;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .test-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .test-description {
+            color: #666;
+            margin-bottom: 15px;
+        }
+        .data-preview {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+        }
+        .result {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 10px 15px;
+            margin: 10px 0;
+        }
+        .result.error {
+            background: #ffebee;
+            border-left-color: #f44336;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin: 0 5px;
+        }
+        .badge-sub {
+            background: #0891B2;
+            color: white;
+        }
+        .badge-approved {
+            background: #10b981;
+            color: white;
+        }
+        .badge-attention {
+            background: #ef4444;
+            color: white;
+        }
+        .grade-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .grade-row:last-child {
+            border-bottom: none;
+        }
+        button {
+            background: #0054B4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #003d8a;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        #console-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 15px 0;
+        }
+        .console-line {
+            margin: 2px 0;
+            line-height: 1.4;
+        }
+        .console-info { color: #4fc3f7; }
+        .console-success { color: #81c784; }
+        .console-warn { color: #ffb74d; }
+        .console-error { color: #e57373; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Teste do Sistema de Notas SUB (Substitutivas)</h1>
+    
+    <div class="test-section">
+        <div class="test-title">📊 Dados de Teste</div>
+        <div class="test-description">
+            Simula os dados que chegam do Firebase para um aluno com várias disciplinas e notas substitutivas.
+        </div>
+        
+        <div class="data-preview" id="test-data-display"></div>
+        
+        <button onclick="runTests()">▶️ Executar Testes</button>
+        <button onclick="clearConsole()">🗑️ Limpar Console</button>
+    </div>
+    
+    <div class="test-section">
+        <div class="test-title">📝 Console de Saída</div>
+        <div id="console-output"></div>
+    </div>
+    
+    <div class="test-section" id="results-section" style="display: none;">
+        <div class="test-title">✅ Resultados dos Testes</div>
+        <div id="test-results"></div>
+    </div>
+
+    <script>
+        // Mock console for UI
+        const consoleOutput = document.getElementById('console-output');
+        const originalConsoleLog = console.log;
+        
+        function addConsoleLog(message, type = 'info') {
+            const line = document.createElement('div');
+            line.className = `console-line console-${type}`;
+            line.textContent = message;
+            consoleOutput.appendChild(line);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            
+            // Also log to real console
+            originalConsoleLog(message);
+        }
+        
+        // Override console.log for UI
+        console.log = function(...args) {
+            addConsoleLog(args.join(' '), 'info');
+        };
+        
+        console.warn = function(...args) {
+            addConsoleLog('⚠️ ' + args.join(' '), 'warn');
+        };
+        
+        console.error = function(...args) {
+            addConsoleLog('❌ ' + args.join(' '), 'error');
+        };
+        
+        function clearConsole() {
+            consoleOutput.innerHTML = '';
+        }
+        
+        // Test data - simulates Firebase data structure
+        const testData = {
+            EmailHC: 'aluno.teste@hc.fm.usp.br',
+            NomeCompleto: 'João da Silva Santos',
+            // Caso 1: Nota baixa com SUB aplicada (melhorou)
+            'Anatomopatologia': '5,5',
+            'SubAnatomopatologia': '7,0',
+            // Caso 2: Nota boa, SUB vazia (não precisou)
+            'Bases': '8,5',
+            'SubBases': '',
+            // Caso 3: Nota baixa, SUB pior que original (não substitui)
+            'Doenças Pulmonares': '6,5',
+            'SubDoençasPulmonares': '5,0',
+            // Caso 4: Nota baixa sem SUB (não fez a prova)
+            'Doenças Cardíacas': '6,0',
+            'SubDoençasCardíacas': '',
+            // Caso 5: Nota muito boa, SUB zero explícito
+            'VM': '9,0',
+            'SubVM': '0',
+            // Caso 6: Nota média-baixa com SUB excelente
+            'Proc. Cirurgico': '6,5',
+            'SubProc.Cirurgico': '9,5',
+            // Caso 7: Melhoria pequena (0,1) - ainda substitui
+            'Avaliação': '6,9',
+            'SubAvaliacao': '7,0'
+        };
+        
+        // Display test data
+        document.getElementById('test-data-display').textContent = JSON.stringify(testData, null, 2);
+        
+        // Copy SUB detection logic from script.js
+        const SUB_PREFIXES = ['Sub/', 'Sub-', 'SUB/', 'SUB-', 'Sub_', 'SUB_', 'sub/', 'sub-', 'sub_', 'Sub', 'SUB', 'sub'];
+        
+        function parseNota(value) {
+            if (value === undefined || value === null || value === '') return 0;
+            if (typeof value === 'number') return value;
+            const str = String(value).replace(',', '.');
+            const parsed = parseFloat(str);
+            return isNaN(parsed) ? 0 : parsed;
+        }
+        
+        function formatarNota(nota) {
+            return nota > 0 ? nota.toFixed(1).replace('.', ',') : '-';
+        }
+        
+        function findSubDisciplinesFromData(notas) {
+            const subDisciplines = [];
+            
+            if (!notas) return subDisciplines;
+            
+            console.log('🔍 [findSubDisciplinesFromData] Analisando todas as chaves...');
+            console.log('    Chaves encontradas:', Object.keys(notas).join(', '));
+            
+            Object.keys(notas).forEach(key => {
+                for (const prefix of SUB_PREFIXES) {
+                    if (key.toLowerCase().startsWith(prefix.toLowerCase())) {
+                        let disciplineName = key;
+                        for (const p of SUB_PREFIXES) {
+                            if (key.toLowerCase().startsWith(p.toLowerCase())) {
+                                disciplineName = key.substring(p.length);
+                                break;
+                            }
+                        }
+                        const value = notas[key];
+                        const parsedValue = parseNota(value);
+                        
+                        console.log(`📋 Chave SUB encontrada: "${key}"`);
+                        console.log(`    → Disciplina: "${disciplineName}"`);
+                        console.log(`    → Valor bruto: "${value}"`);
+                        console.log(`    → Valor parseado: ${parsedValue}`);
+                        
+                        if (value !== undefined && value !== null && value !== '' && parsedValue > 0) {
+                            subDisciplines.push({
+                                originalKey: key,
+                                disciplineName: disciplineName,
+                                value: value,
+                                parsedValue: parsedValue
+                            });
+                            console.log(`    ✅ Adicionada! (${parsedValue})`);
+                        } else {
+                            console.log(`    ⏭️ Ignorada (sem nota válida)`);
+                        }
+                        break;
+                    }
+                }
+            });
+            
+            console.log('');
+            console.log(`📊 Total de disciplinas SUB encontradas: ${subDisciplines.length}`);
+            return subDisciplines;
+        }
+        
+        function getEffectiveGrade(disciplineName, notas) {
+            const notaOriginal = parseNota(notas[disciplineName]);
+            const subKey = `Sub${disciplineName}`;
+            const notaSub = parseNota(notas[subKey]);
+            
+            // NEW RULE: Only use SUB if it exists (> 0) AND is GREATER than original
+            if (notaSub > 0 && notaSub > notaOriginal) {
+                return {
+                    nota: notaSub,
+                    wasSubstituted: true,
+                    originalNota: notaOriginal,
+                    subNota: notaSub
+                };
+            }
+            
+            return {
+                nota: notaOriginal,
+                wasSubstituted: false,
+                originalNota: notaOriginal,
+                subNota: notaSub
+            };
+        }
+        
+        function runTests() {
+            clearConsole();
+            document.getElementById('results-section').style.display = 'block';
+            
+            console.log('🚀 Iniciando testes do sistema de notas SUB...');
+            console.log('');
+            console.log('='.repeat(60));
+            console.log('DADOS DE ENTRADA');
+            console.log('='.repeat(60));
+            console.log('Aluno:', testData.NomeCompleto);
+            console.log('Email:', testData.EmailHC);
+            console.log('');
+            
+            // Test 1: Find SUB disciplines
+            console.log('='.repeat(60));
+            console.log('TESTE 1: Descoberta de Disciplinas SUB');
+            console.log('='.repeat(60));
+            const subDisciplines = findSubDisciplinesFromData(testData);
+            console.log('');
+            
+            // Test 2: Grade calculation logic
+            console.log('='.repeat(60));
+            console.log('TESTE 2: Lógica de Cálculo de Notas Efetivas');
+            console.log('='.repeat(60));
+            console.log('');
+            
+            const disciplines = ['Anatomopatologia', 'Bases', 'Doenças Pulmonares', 
+                               'Doenças Cardíacas', 'VM', 'Proc. Cirurgico', 'Avaliação'];
+            
+            let resultsHTML = '';
+            
+            disciplines.forEach(disc => {
+                const gradeInfo = getEffectiveGrade(disc, testData);
+                const status = gradeInfo.nota >= 7 ? 'Aprovado' : 'Atenção';
+                const statusBadge = gradeInfo.nota >= 7 ? 'approved' : 'attention';
+                
+                console.log(`📚 ${disc}:`);
+                console.log(`    Nota Original: ${formatarNota(gradeInfo.originalNota)}`);
+                console.log(`    Nota SUB: ${formatarNota(gradeInfo.subNota)}`);
+                console.log(`    Nota Efetiva: ${formatarNota(gradeInfo.nota)}`);
+                console.log(`    SUB Aplicada? ${gradeInfo.wasSubstituted ? 'SIM ✅' : 'NÃO'}`);
+                console.log(`    Status: ${status}`);
+                console.log('');
+                
+                resultsHTML += `
+                    <div class="grade-row">
+                        <div>
+                            <strong>${disc}</strong>
+                            ${gradeInfo.wasSubstituted ? '<span class="badge badge-sub">SUB</span>' : ''}
+                            <span class="badge badge-${statusBadge}">${status}</span>
+                        </div>
+                        <div>
+                            Original: ${formatarNota(gradeInfo.originalNota)} | 
+                            SUB: ${formatarNota(gradeInfo.subNota)} | 
+                            <strong>Efetiva: ${formatarNota(gradeInfo.nota)}</strong>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('test-results').innerHTML = resultsHTML;
+            
+            // Test 3: Calculate average with SUB
+            console.log('='.repeat(60));
+            console.log('TESTE 3: Cálculo de Média com Notas SUB');
+            console.log('='.repeat(60));
+            
+            let sum = 0;
+            let count = 0;
+            disciplines.forEach(disc => {
+                const gradeInfo = getEffectiveGrade(disc, testData);
+                if (gradeInfo.nota > 0) {
+                    sum += gradeInfo.nota;
+                    count++;
+                }
+            });
+            const average = count > 0 ? sum / count : 0;
+            
+            console.log('');
+            console.log(`📊 Disciplinas consideradas: ${count}`);
+            console.log(`📊 Soma das notas efetivas: ${sum.toFixed(2)}`);
+            console.log(`📊 Média geral: ${formatarNota(average)}`);
+            console.log('');
+            
+            // Summary
+            console.log('='.repeat(60));
+            console.log('RESUMO');
+            console.log('='.repeat(60));
+            console.log(`✅ Testes concluídos com sucesso!`);
+            console.log(`📋 ${subDisciplines.length} disciplinas com prova SUB encontradas`);
+            console.log(`📊 Média geral calculada: ${formatarNota(average)}`);
+            console.log('');
+            
+            const subApplied = disciplines.filter(d => getEffectiveGrade(d, testData).wasSubstituted).length;
+            console.log(`🔄 ${subApplied} nota(s) SUB aplicada(s) no cálculo`);
+            console.log('');
+        }
+    </script>
+</body>
+</html>
