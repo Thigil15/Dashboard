@@ -8,64 +8,69 @@ Este guia explica como o sistema de notas substitutivas (SUB) funciona e como ga
 
 ### Prefixos Reconhecidos
 
-O sistema reconhece automaticamente colunas com os seguintes prefixos (case-insensitive):
-- `Sub/` (preferido)
-- `Sub-`
-- `SUB/`
-- `SUB-`
-- `Sub_`
-- `SUB_`
-- `sub/`
-- `sub-`
-- `sub_`
+O sistema reconhece automaticamente colunas com os seguintes formatos (case-insensitive):
+- `Sub` seguido diretamente pelo nome da disciplina: `SubAnatomopatologia`, `SubDoencasCardiacas` **(formato usado no Firebase)**
+- `Sub/` com barra: `Sub/Anatomopatologia`
+- `Sub-` com hífen: `Sub-Anatomopatologia`
+- `Sub_` com underscore: `Sub_Anatomopatologia`
 
 ### Exemplo de Estrutura Correta
 
 Na planilha **NotasTeoricas** do Google Sheets, as colunas devem estar nomeadas assim:
 
-| EmailHC | NomeCompleto | Anatomopatologia | Sub/Anatomopatologia | Bases | Sub/Bases | VM | Sub/VM |
-|---------|--------------|------------------|---------------------|-------|-----------|----|---------
+| EmailHC | NomeCompleto | Anatomopatologia | SubAnatomopatologia | Bases | SubBases | VM | SubVM |
+|---------|--------------|------------------|---------------------|-------|----------|----|---------
 | aluno@hc.fm.usp.br | João Silva | 5,5 | 7,0 | 8,5 | | 6,0 | 7,5 |
 
 **Importante**: 
 - Coluna da disciplina normal: `Anatomopatologia`
-- Coluna da prova SUB: `Sub/Anatomopatologia` (com prefixo "Sub/")
+- Coluna da prova SUB: `SubAnatomopatologia` (sem separador, formato do Firebase)
+- Também aceito: `Sub/Anatomopatologia`, `Sub-Anatomopatologia`, `Sub_Anatomopatologia`
 
 ## 🎯 Lógica de Substituição
 
 O sistema aplica a seguinte lógica:
 
-1. **Se existe nota SUB com valor > 0**: A nota SUB **substitui completamente** a nota original
-2. **Se nota SUB está vazia ou = 0**: Usa a nota original
-3. **Para cálculo de médias**: Sempre usa a nota efetiva (SUB se aplicável, senão original)
+1. **Se nota SUB existe (> 0) E é MAIOR que a original**: A nota SUB **substitui** a nota original
+2. **Se nota SUB não existe, é zero, ou é MENOR/IGUAL à original**: Usa a nota original
+3. **Para cálculo de médias**: Sempre usa a nota efetiva (SUB se for maior, senão original)
 
 ### Exemplos
 
-#### Caso 1: Aluno fez prova SUB
+#### Caso 1: Aluno melhorou na SUB
 ```
-Anatomopatologia: 5,5 (original, abaixo de 7)
-Sub/Anatomopatologia: 7,0 (SUB aplicada)
+Anatomopatologia: 5,5 (original)
+SubAnatomopatologia: 7,0 (SUB é maior)
 → Nota exibida: 7,0
 → Nota usada para média: 7,0
 → Badge "SUB" exibido ✅
 ```
 
-#### Caso 2: Aluno não precisou de SUB
+#### Caso 2: SUB não melhorou (igual ou pior)
+```
+Bases: 6,0 (original)
+SubBases: 5,5 (SUB é menor)
+→ Nota exibida: 6,0 (mantém original)
+→ Nota usada para média: 6,0
+→ Sem badge SUB (SUB foi pior)
+```
+
+#### Caso 3: Melhoria pequena conta
+```
+VM: 5,5 (original)
+SubVM: 5,6 (SUB é 0,1 maior)
+→ Nota exibida: 5,6
+→ Nota usada para média: 5,6
+→ Badge "SUB" exibido ✅
+```
+
+#### Caso 4: Aluno não precisou de SUB
 ```
 Bases: 8,5 (original, >= 7)
-Sub/Bases: (vazio)
+SubBases: (vazio)
 → Nota exibida: 8,5
 → Nota usada para média: 8,5
 → Sem badge SUB
-```
-
-#### Caso 3: Aluno faltou à prova SUB
-```
-VM: 6,0 (original, abaixo de 7)
-Sub/VM: (vazio ou 0)
-→ Nota exibida: 6,0
-→ Nota usada para média: 6,0
-→ Sem badge SUB (mas nota vermelha)
 ```
 
 ## 📊 Onde as Notas SUB Aparecem no Site
@@ -102,16 +107,16 @@ As médias por módulo já consideram automaticamente as notas SUB na conta.
 
 **✅ CORRETO:**
 ```
-| Anatomopatologia | Sub/Anatomopatologia |
-| Bases | Sub/Bases |
-| VM | Sub/VM |
+| Anatomopatologia | SubAnatomopatologia |
+| Bases | SubBases |
+| VM | SubVM |
 ```
 
 **❌ INCORRETO:**
 ```
-| Anatomopatologia | Anatomopatologia SUB |  ← Sem prefixo "Sub/"
-| Bases | SUBBases |                        ← Sem barra "/"
-| VM | Sub VM |                             ← Espaço em vez de "/"
+| Anatomopatologia | Anatomopatologia SUB |  ← Sem prefixo "Sub"
+| Bases | SUBBases |                        ← Sem capitalização correta
+| VM | Sub VM |                             ← Espaço em vez de juntar
 ```
 
 ### Passo 3: Preencher Dados
@@ -181,11 +186,11 @@ Ou configure o trigger automático para export a cada 5 minutos.
           "EmailHC": "aluno@hc.fm.usp.br",
           "NomeCompleto": "João Silva",
           "Anatomopatologia": "5,5",
-          "Sub/Anatomopatologia": "7,0",
+          "SubAnatomopatologia": "7,0",
           "Bases": "8,5",
-          "Sub/Bases": "",
+          "SubBases": "",
           "VM": "6,0",
-          "Sub/VM": "7,5"
+          "SubVM": "5,5"
         }
       ]
     }
@@ -198,32 +203,32 @@ Ou configure o trigger automático para export a cada 5 minutos.
 O sistema já está configurado para procurar SUB nas seguintes disciplinas:
 
 ### Fisioterapia I
-- Anatomopatologia → `Sub/Anatomopatologia`
-- Bases → `Sub/Bases`
-- Doenças Pulmonares → `Sub/Doenças Pulmonares`
-- Doenças Cardíacas → `Sub/Doenças Cardíacas`
-- Proc. Cirurgico → `Sub/Proc. Cirurgico`
-- Avaliação → `Sub/Avaliacao` (sem acento)
-- VM → `Sub/VM`
+- Anatomopatologia → `SubAnatomopatologia`
+- Bases → `SubBases`
+- Doenças Pulmonares → `SubDoençasPulmonares` ou `SubDoencasPulmonares`
+- Doenças Cardíacas → `SubDoençasCardíacas` ou `SubDoencasCardiacas`
+- Proc. Cirurgico → `SubProc.Cirurgico`
+- Avaliação → `SubAvaliacao` (sem acento)
+- VM → `SubVM`
 
 ### Fisioterapia II
-- Técnicas e Recursos → `Sub/Técnicas e Recursos`
-- Diag. Imagem → `Sub/Diag. Imagem`
+- Técnicas e Recursos → `SubTécnicaseRecursos` ou `SubTecnicaseRecursos`
+- Diag. Imagem → `SubDiag.Imagem`
 
 ### Fisioterapia III
-- Fisio aplicada → `Sub/Fisio aplicada`
-- UTI → `Sub/UTI`
+- Fisio aplicada → `SubFisioaplicada`
+- UTI → `SubUTI`
 
 ### Fisioterapia IV
-- Pediatria → `Sub/Pediatria`
-- Mobilização → `Sub/Mobilização`
-- Reab. Pulmonar → `Sub/Reab. Pulmonar`
+- Pediatria → `SubPediatria`
+- Mobilização → `SubMobilização` ou `SubMobilizacao`
+- Reab. Pulmonar → `SubReab.Pulmonar`
 
 ### Disciplinas Complementares
-- M. Cientifica → `Sub/M. Cientifica`
-- Saúde e politicas → `Sub/Saúde e politicas`
-- Farmacoterapia → `Sub/Farmacoterapia`
-- Bioética → `Sub/Bioética`
+- M. Cientifica → `SubM.Cientifica`
+- Saúde e politicas → `SubSaúdeepoliticas` ou `SubSaudeepoliticas`
+- Farmacoterapia → `SubFarmacoterapia`
+- Bioética → `SubBioética` ou `SubBioetica`
 
 ## 🔄 Adicionando Novas Disciplinas SUB
 

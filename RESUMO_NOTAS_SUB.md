@@ -23,8 +23,8 @@ Se as notas SUB não estão aparecendo, é porque:
 
 1. **❌ Problema de Configuração no Google Sheets**
    - As colunas não têm o prefixo correto
-   - Deve ser: `Sub/Anatomopatologia` (com barra "/")
-   - NÃO pode ser: `SubAnatomopatologia` ou `Anatomopatologia SUB`
+   - Deve ser: `SubAnatomopatologia` (formato do Firebase, sem separador)
+   - Também aceito: `Sub/Anatomopatologia`, `Sub-Anatomopatologia`, `Sub_Anatomopatologia`
 
 2. **❌ Dados Não Exportados**
    - Os dados do Google Sheets não foram exportados para o Firebase
@@ -73,15 +73,15 @@ Abra a planilha **NotasTeoricas** e verifique:
 **❌ INCORRETO:**
 ```
 | Anatomopatologia | Anatomopatologia SUB |
-| Bases | SubBases |
+| Bases | Bases Sub |
 | VM | Sub VM |
 ```
 
 **✅ CORRETO:**
 ```
-| Anatomopatologia | Sub/Anatomopatologia |
-| Bases | Sub/Bases |
-| VM | Sub/VM |
+| Anatomopatologia | SubAnatomopatologia |
+| Bases | SubBases |
+| VM | SubVM |
 ```
 
 ### Passo 2: Preencher Notas SUB
@@ -138,14 +138,19 @@ Ou configure o trigger automático para executar a cada 5 minutos.
 ### Lógica de Substituição
 
 ```
-SE notaSUB > 0:
-    → Usa a nota SUB (substitui a original)
+SE notaSUB > 0 E notaSUB > notaOriginal:
+    → Usa a nota SUB (substitui porque é maior)
     → Mostra badge "SUB"
     → Lista na seção "Provas Substitutivas"
 SENÃO:
     → Usa a nota original
     → Sem badge SUB
 ```
+
+**Exemplos:**
+- Original: 5,5 | SUB: 7,0 → Usa 7,0 ✅ (SUB é maior)
+- Original: 6,0 | SUB: 5,5 → Usa 6,0 (original é melhor)
+- Original: 5,5 | SUB: 5,6 → Usa 5,6 ✅ (melhoria de 0,1 conta!)
 
 ### Exemplo Visual
 

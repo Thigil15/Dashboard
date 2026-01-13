@@ -8191,9 +8191,10 @@ function renderTabFaltas(faltas) {
             const MIN_FIELDS_FOR_TABLE = 5;
             
             // SUB prefix patterns for substitutive exams - shared constant to avoid duplication
-            // Includes multiple variations to support different naming conventions in Google Sheets
-            // Comparisons are done case-insensitively, so both uppercase and lowercase variants work
-            const SUB_PREFIXES = ['Sub/', 'Sub-', 'SUB/', 'SUB-', 'Sub_', 'SUB_', 'sub/', 'sub-', 'sub_'];
+            // IMPORTANT: Firebase uses format "SubDoencasCardiacas" (no separator after Sub)
+            // We need to detect keys that start with "Sub" followed by an uppercase letter
+            // Comparisons are done case-insensitively
+            const SUB_PREFIXES = ['Sub/', 'Sub-', 'SUB/', 'SUB-', 'Sub_', 'SUB_', 'sub/', 'sub-', 'sub_', 'Sub', 'SUB', 'sub'];
             
             if (notas && typeof notas === 'object') {
                 console.log('[renderTabNotasTeoricas v37] Keys in notas:', Object.keys(notas));
@@ -8214,7 +8215,8 @@ function renderTabFaltas(faltas) {
             }
             
             // Helper function to generate subKey from discipline name
-            const generateSubKey = (disciplineName) => `Sub/${disciplineName}`;
+            // Firebase format: "SubDisciplineName" (no separator)
+            const generateSubKey = (disciplineName) => `Sub${disciplineName}`;
             
             // Helper function to check if a value is a valid grade
             const isValidGrade = (value) => {
@@ -8225,6 +8227,7 @@ function renderTabFaltas(faltas) {
             
             // Helper function to get value from notas object with accent-insensitive key matching
             // Enhanced to find SUB disciplines with multiple naming conventions
+            // Firebase format: "SubDoencasCardiacas" (no separator after Sub)
             const getNotaValue = (materia) => {
                 if (!notas) return undefined;
                 // Try exact match first
@@ -8241,9 +8244,20 @@ function renderTabFaltas(faltas) {
                 
                 if (matchingKey) return notas[matchingKey];
                 
-                // For SUB keys, try alternative patterns (Sub/, Sub-, SUB_, etc.)
-                if (materia.startsWith('Sub/')) {
-                    const disciplineName = materia.replace('Sub/', '');
+                // For SUB keys, try alternative patterns
+                // Check if materia starts with "Sub" (case-insensitive)
+                if (materia.toLowerCase().startsWith('sub')) {
+                    // Extract discipline name after "Sub" prefix
+                    let disciplineName = materia;
+                    
+                    // Try to find the discipline name after various SUB prefixes
+                    for (const prefix of SUB_PREFIXES) {
+                        if (materia.toLowerCase().startsWith(prefix.toLowerCase())) {
+                            disciplineName = materia.substring(prefix.length);
+                            break;
+                        }
+                    }
+                    
                     const disciplineNormalized = disciplineName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
                     
                     // Try different SUB prefixes (using shared constant)
@@ -8359,7 +8373,7 @@ function renderTabFaltas(faltas) {
                         { nome: 'Doenças Pulmonares', subKey: generateSubKey('Doenças Pulmonares') },
                         { nome: 'Doenças Cardíacas', subKey: generateSubKey('Doenças Cardíacas') },
                         { nome: 'Proc. Cirurgico', subKey: generateSubKey('Proc. Cirurgico') },
-                        { nome: 'Avaliação', subKey: 'Sub/Avaliacao' }, // Special case: accent removed in SUB key
+                        { nome: 'Avaliação', subKey: 'SubAvaliacao' }, // Special case: accent removed in SUB key
                         { nome: 'VM', subKey: generateSubKey('VM') }
                     ],
                     icon: 'M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25',
@@ -8403,17 +8417,17 @@ function renderTabFaltas(faltas) {
             };
             
             // Helper function to get the effective grade considering substitutive grades
-            // If student took the substitutive exam (Sub/...), ALWAYS use that grade for average calculation
-            // The substitutive exam has a max weight of 7 (minimum to pass), but the actual grade is what's recorded
+            // NEW RULE: SUB grade only replaces original if it's GREATER than the original
+            // Example: Original 5.5, SUB 5.6 -> uses 5.6 (SUB is greater)
+            // Example: Original 5.5, SUB 5.0 -> uses 5.5 (original is better)
             const getEffectiveGrade = (materiaObj) => {
                 const { nome, subKey } = materiaObj;
                 const notaOriginal = parseNota(getNotaValue(nome));
                 
                 if (subKey) {
                     const notaSub = parseNota(getNotaValue(subKey));
-                    // If student has a substitutive grade (> 0), ALWAYS use it instead of the original
-                    // This applies when student scored < 7 originally and took the substitutive exam
-                    if (notaSub > 0) {
+                    // Only use SUB grade if it exists (> 0) AND is GREATER than the original
+                    if (notaSub > 0 && notaSub > notaOriginal) {
                         return { 
                             nota: notaSub, 
                             wasSubstituted: true, 

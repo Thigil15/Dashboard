@@ -184,29 +184,32 @@
             NomeCompleto: 'João da Silva Santos',
             // Caso 1: Nota baixa com SUB aplicada (melhorou)
             'Anatomopatologia': '5,5',
-            'Sub/Anatomopatologia': '7,0',
+            'SubAnatomopatologia': '7,0',
             // Caso 2: Nota boa, SUB vazia (não precisou)
             'Bases': '8,5',
-            'Sub/Bases': '',
-            // Caso 3: Nota baixa, SUB também baixa (ainda reprovado)
-            'Doenças Pulmonares': '5,0',
-            'Sub/Doenças Pulmonares': '6,5',
+            'SubBases': '',
+            // Caso 3: Nota baixa, SUB pior que original (não substitui)
+            'Doenças Pulmonares': '6,5',
+            'SubDoençasPulmonares': '5,0',
             // Caso 4: Nota baixa sem SUB (não fez a prova)
             'Doenças Cardíacas': '6,0',
-            'Sub/Doenças Cardíacas': '',
+            'SubDoençasCardíacas': '',
             // Caso 5: Nota muito boa, SUB zero explícito
             'VM': '9,0',
-            'Sub/VM': '0',
+            'SubVM': '0',
             // Caso 6: Nota média-baixa com SUB excelente
             'Proc. Cirurgico': '6,5',
-            'Sub/Proc. Cirurgico': '9,5'
+            'SubProc.Cirurgico': '9,5',
+            // Caso 7: Melhoria pequena (0,1) - ainda substitui
+            'Avaliação': '6,9',
+            'SubAvaliacao': '7,0'
         };
         
         // Display test data
         document.getElementById('test-data-display').textContent = JSON.stringify(testData, null, 2);
         
         // Copy SUB detection logic from script.js
-        const SUB_PREFIXES = ['Sub/', 'Sub-', 'SUB/', 'SUB-', 'Sub_', 'SUB_', 'sub/', 'sub-', 'sub_'];
+        const SUB_PREFIXES = ['Sub/', 'Sub-', 'SUB/', 'SUB-', 'Sub_', 'SUB_', 'sub/', 'sub-', 'sub_', 'Sub', 'SUB', 'sub'];
         
         function parseNota(value) {
             if (value === undefined || value === null || value === '') return 0;
@@ -269,10 +272,11 @@
         
         function getEffectiveGrade(disciplineName, notas) {
             const notaOriginal = parseNota(notas[disciplineName]);
-            const subKey = `Sub/${disciplineName}`;
+            const subKey = `Sub${disciplineName}`;
             const notaSub = parseNota(notas[subKey]);
             
-            if (notaSub > 0) {
+            // NEW RULE: Only use SUB if it exists (> 0) AND is GREATER than original
+            if (notaSub > 0 && notaSub > notaOriginal) {
                 return {
                     nota: notaSub,
                     wasSubstituted: true,
@@ -316,7 +320,7 @@
             console.log('');
             
             const disciplines = ['Anatomopatologia', 'Bases', 'Doenças Pulmonares', 
-                               'Doenças Cardíacas', 'VM', 'Proc. Cirurgico'];
+                               'Doenças Cardíacas', 'VM', 'Proc. Cirurgico', 'Avaliação'];
             
             let resultsHTML = '';
             
