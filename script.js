@@ -8190,9 +8190,10 @@ function renderTabFaltas(faltas) {
             const MAX_GRADE = 10;
             const MIN_FIELDS_FOR_TABLE = 5;
             
-            // SUB prefix patterns for substitutive exams - using lowercase only since comparison is case-insensitive
-            // This constant is shared across all SUB detection logic
-            const SUB_PREFIXES = ['sub/', 'sub-', 'sub_'];
+            // SUB prefix patterns for substitutive exams - shared constant to avoid duplication
+            // Includes multiple variations to support different naming conventions in Google Sheets
+            // Comparisons are done case-insensitively, so both uppercase and lowercase variants work
+            const SUB_PREFIXES = ['Sub/', 'Sub-', 'SUB/', 'SUB-', 'Sub_', 'SUB_', 'sub/', 'sub-', 'sub_'];
             
             if (notas && typeof notas === 'object') {
                 console.log('[renderTabNotasTeoricas v37] Keys in notas:', Object.keys(notas));
@@ -8200,7 +8201,7 @@ function renderTabFaltas(faltas) {
                 
                 // Log all SUB-prefixed keys found - using the SUB_PREFIXES constant
                 const subKeys = Object.keys(notas).filter(key => 
-                    SUB_PREFIXES.some(prefix => key.toLowerCase().startsWith(prefix))
+                    SUB_PREFIXES.some(prefix => key.toLowerCase().startsWith(prefix.toLowerCase()))
                 );
                 console.log('[renderTabNotasTeoricas v37] 🔍 SUB-prefixed keys found:', subKeys);
                 if (subKeys.length > 0) {
