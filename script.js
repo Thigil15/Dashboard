@@ -8184,15 +8184,23 @@ function renderTabFaltas(faltas) {
             console.log('[renderTabNotasTeoricas v37 - InCor Professional Redesign] Dados recebidos:', notas);
             console.log('[renderTabNotasTeoricas v37] Type of notas:', typeof notas);
             console.log('[renderTabNotasTeoricas v37] Is notas an object?', typeof notas === 'object' && notas !== null);
+            
+            // Constants for grade validation
+            const MIN_GRADE = 0;
+            const MAX_GRADE = 10;
+            const MIN_FIELDS_FOR_TABLE = 5;
+            
+            // SUB prefix patterns for substitutive exams - using lowercase only since comparison is case-insensitive
+            // This constant is shared across all SUB detection logic
+            const SUB_PREFIXES = ['sub/', 'sub-', 'sub_'];
+            
             if (notas && typeof notas === 'object') {
                 console.log('[renderTabNotasTeoricas v37] Keys in notas:', Object.keys(notas));
                 console.log('[renderTabNotasTeoricas v37] Number of keys:', Object.keys(notas).length);
                 
-                // Log all SUB-prefixed keys found
+                // Log all SUB-prefixed keys found - using the SUB_PREFIXES constant
                 const subKeys = Object.keys(notas).filter(key => 
-                    key.toLowerCase().startsWith('sub/')  ||
-                    key.toLowerCase().startsWith('sub-')  ||
-                    key.toLowerCase().startsWith('sub_')
+                    SUB_PREFIXES.some(prefix => key.toLowerCase().startsWith(prefix))
                 );
                 console.log('[renderTabNotasTeoricas v37] 🔍 SUB-prefixed keys found:', subKeys);
                 if (subKeys.length > 0) {
@@ -8203,14 +8211,6 @@ function renderTabFaltas(faltas) {
                     console.warn('[renderTabNotasTeoricas v37] ⚠️ No SUB-prefixed keys found in data!');
                 }
             }
-            
-            // Constants for grade validation
-            const MIN_GRADE = 0;
-            const MAX_GRADE = 10;
-            const MIN_FIELDS_FOR_TABLE = 5;
-            
-            // SUB prefix patterns for substitutive exams - shared constant to avoid duplication
-            const SUB_PREFIXES = ['Sub/', 'Sub-', 'SUB/', 'SUB-', 'Sub_', 'SUB_', 'sub/', 'sub-', 'sub_'];
             
             // Helper function to generate subKey from discipline name
             const generateSubKey = (disciplineName) => `Sub/${disciplineName}`;
