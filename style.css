@@ -2094,7 +2094,7 @@
         
         /* Back button with white text for visibility on blue header */
         #student-detail-view #back-to-dashboard {
-            color: #ffffff;
+            color: var(--incor-blue-600);
             font-family: var(--font-display);
             font-weight: 600;
             background: rgba(255, 255, 255, 0.12);
@@ -3091,130 +3091,6 @@
             }
         }
 
-        /* === MODAL DA API GEMINI === */
-        #gemini-modal {
-            position: fixed;
-            inset: 0;
-            background-color: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            z-index: 10000;
-            display: none; 
-            align-items: center;
-            justify-content: center;
-            padding: 1rem;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-        .gemini-modal-box {
-            background-color: #ffffff;
-            border-radius: 1rem;
-            padding: 1.5rem;
-            width: 100%;
-            max-width: 40rem;
-            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-            transform: scale(0.95);
-            transition: transform 0.3s ease;
-        }
-        #gemini-modal.show {
-            opacity: 1;
-        }
-        #gemini-modal.show .gemini-modal-box {
-            transform: scale(1);
-        }
-        .gemini-modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--card-border);
-            padding-bottom: 0.75rem;
-            margin-bottom: 1rem;
-        }
-        .gemini-modal-header h2 {
-            font-family: var(--font-display);
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--accent-blue);
-        }
-        #gemini-modal-close {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--content-text-secondary);
-            cursor: pointer;
-            transition: var(--transition-fast);
-        }
-        #gemini-modal-close:hover {
-            color: var(--accent-red);
-        }
-        #gemini-modal-content {
-            max-height: 60vh;
-            overflow-y: auto;
-            padding-right: 0.5rem; 
-        }
-        #gemini-modal-content h3 {
-            font-family: var(--font-display);
-            font-size: 1rem;
-            font-weight: 700;
-            color: #0033A0;
-            margin-top: 1rem;
-            margin-bottom: 0.5rem;
-            border-bottom: 1px solid var(--card-border);
-            padding-bottom: 0.25rem;
-        }
-        #gemini-modal-content ul {
-            list-style-type: disc;
-            padding-left: 1.25rem;
-            font-size: 0.9rem;
-            line-height: 1.6;
-        }
-        #gemini-modal-content ul li {
-            margin-bottom: 0.25rem;
-        }
-        #gemini-modal-content p {
-            font-size: 0.9rem;
-            line-height: 1.6;
-            font-style: italic;
-        }
-        .gemini-loader {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            border: 3px solid var(--accent-blue);
-            border-top-color: transparent;
-            animation: spin 0.8s linear infinite;
-            margin: 2rem auto;
-        }
-
-        /* --- Botão de Análise --- */
-        .gemini-analysis-button {
-            font-family: var(--font-display);
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--accent-blue);
-            background-color: rgba(0, 84, 180, 0.1);
-            border: 1px solid rgba(0, 84, 180, 0.2);
-            border-radius: 0.5rem;
-            padding: 0.4rem 0.8rem;
-            transition: var(--transition-fast);
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            margin-left: 1rem; 
-        }
-        .gemini-analysis-button:hover {
-            background-color: rgba(0, 84, 180, 0.2);
-            color: #0033A0;
-            transform: translateY(-1px);
-        }
-        .gemini-analysis-button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            background-color: rgba(100, 116, 139, 0.1);
-            color: var(--content-text-secondary);
-        }
-        
         /* === [ESCALAS] Calendário Pro === */
         #escala-calendar-shell {
         display: grid;
@@ -5900,58 +5776,6 @@
 @keyframes np-shimmer {
     from { transform: translateX(-100%); }
     to { transform: translateX(400%); }
-}
-
-/* === Gemini Analysis Button - Premium Edition === */
-.gemini-analysis-button {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.625rem;
-    padding: 0.875rem 1.75rem;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border: none;
-    border-radius: 12px;
-    font-family: var(--font-display);
-    font-size: 0.9375rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.35);
-    position: relative;
-    overflow: hidden;
-}
-
-.gemini-analysis-button::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, transparent 100%);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.gemini-analysis-button:hover::before {
-    opacity: 1;
-}
-
-.gemini-analysis-button:hover {
-    transform: translateY(-3px) scale(1.02);
-    box-shadow: 0 12px 32px rgba(102, 126, 234, 0.45);
-}
-
-.gemini-analysis-button:active {
-    transform: translateY(-1px) scale(0.98);
-}
-
-.gemini-analysis-button svg {
-    width: 1.125rem;
-    height: 1.125rem;
-    transition: transform 0.3s ease;
-}
-
-.gemini-analysis-button:hover svg {
-    transform: rotate(15deg) scale(1.1);
 }
 
 /* === Empty State - Artístico === */

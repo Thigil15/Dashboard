@@ -2035,22 +2035,6 @@ function extractTimeFromISO(isoString) {
                 }
             });
 
-            // [ORION] Event Delegation para botões Gemini (caso existam múltiplos)
-            document.getElementById('student-tabs-content').addEventListener('click', (e) => {
-                 const button = e.target.closest('.gemini-analysis-button');
-                 if(button) {
-                    const comment = button.getAttribute('data-comment');
-                    handleAnalisarComentario(button, comment);
-                 }
-            });
-
-            document.getElementById('gemini-modal-close').addEventListener('click', closeGeminiModal);
-            document.getElementById('gemini-modal').addEventListener('click', (e) => {
-                if (e.target.id === 'gemini-modal') {
-                    closeGeminiModal();
-                }
-            });
-            
             // Logout button
             const logoutButton = document.getElementById('logout-button');
             if (logoutButton) {
@@ -6533,7 +6517,7 @@ function extractTimeFromISO(isoString) {
 
         function switchStudentSubTab(subTabId) {
             console.log(`[switchStudentSubTab] Trocando para sub-aba: ${subTabId}`);
-            const subNavContainer = document.getElementById('student-detail-subnav-container') || document.querySelector('.np-tab-nav');
+            const subNavContainer = document.querySelector('#student-detail-subnav-container, .np-tab-nav-pro, .np-tab-nav');
             const subContentContainer = document.getElementById('student-detail-subnav-content');
             
             if (subNavContainer) {
@@ -9118,7 +9102,6 @@ function renderTabFaltas(faltas) {
                 
                 const mediaFinal = parseNota(n[keyM]);
                 const comentario = n[keyC] || 'Sem comentários registrados.';
-                const comentarioEscapado = comentario.replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/\n/g, "\\n");
                 // Handle different variations of the date/time field
                 const dataHoraValue = n['Data/Hora'] || n['DataHora'] || n.dataHora;
                 const dataFormatada = dataHoraValue ? new Date(String(dataHoraValue).replace(/-/g,'/')).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : 'N/A';
@@ -9285,12 +9268,6 @@ function renderTabFaltas(faltas) {
                                                 </svg>
                                                 <span>Feedback do Supervisor</span>
                                             </div>
-                                            <button class="np-analyze-btn-pro gemini-analysis-button" data-loading="false" data-comment="${comentarioEscapado}">
-                                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                                                </svg>
-                                                Analisar com IA
-                                            </button>
                                         </div>
                                         <div class="np-feedback-content-pro">${comentario}</div>
                                     </div>
@@ -9336,155 +9313,6 @@ function renderTabFaltas(faltas) {
             if (notasP.length > 0) {
                 switchStudentSubTab('subtab-np-0');
             }
-        }
-
-        
-        // --- [ORION] Funções da API Gemini (Versão LOCAL INSEGURA) ---
-        
-        function showGeminiModal(title, content) {
-            const modal = document.getElementById('gemini-modal');
-            document.getElementById('gemini-modal-title').innerText = title;
-            document.getElementById('gemini-modal-content').innerHTML = content;
-            modal.style.display = 'flex';
-            setTimeout(() => modal.classList.add('show'), 10);
-        }
-
-        function closeGeminiModal() {
-            const modal = document.getElementById('gemini-modal');
-            modal.classList.remove('show');
-            setTimeout(() => {
-                modal.style.display = 'none';
-                document.getElementById('gemini-modal-content').innerHTML = ''; 
-            }, 300); 
-        }
-
-        async function handleAnalisarComentario(button, commentText) {
-            if (button.dataset.loading === 'true') return;
-
-            button.dataset.loading = 'true';
-            button.disabled = true;
-            button.innerHTML = 'A analisar...';
-
-            showGeminiModal('✨ A analisar Avaliação', '<div class="gemini-loader"></div>');
-
-            const systemPrompt = `
-                Aja como um coordenador de ensino de fisioterapia altamente experiente. 
-                A sua tarefa é analisar o comentário de avaliação de um supervisor sobre um aluno. 
-                Extraia os pontos-chave de forma concisa.
-                Responda APENAS com um objeto JSON válido, sem \`\`\`json ou qualquer outro texto.
-                O formato deve ser:
-                {
-                  "pontosFortes": ["lista de elogios ou habilidades dominadas"],
-                  "pontosAMelhorar": ["lista de críticas ou áreas de dificuldade"],
-                  "feedbackGeral": "um resumo de uma frase sobre a avaliação"
-                }
-                Se uma categoria (pontosFortes ou pontosAMelhorar) não for mencionada, retorne um array vazio [].
-            `;
-
-            try {
-                // [ORION] Chamada local, como solicitado
-                const analysisJsonString = await callGeminiAPI(systemPrompt, commentText);
-                const analysis = JSON.parse(analysisJsonString);
-                
-                let html = '';
-
-                if (analysis.pontosFortes && analysis.pontosFortes.length > 0) {
-                    html += '<h3>Pontos Fortes</h3><ul>';
-                    analysis.pontosFortes.forEach(p => { html += `<li>${p}</li>`; });
-                    html += '</ul>';
-                } else {
-                    html += '<h3>Pontos Fortes</h3><p>Nenhum ponto forte específico mencionado.</p>';
-                }
-
-                if (analysis.pontosAMelhorar && analysis.pontosAMelhorar.length > 0) {
-                    html += '<h3>Pontos a Melhorar</h3><ul>';
-                    analysis.pontosAMelhorar.forEach(p => { html += `<li>${p}</li>`; });
-                    html += '</ul>';
-                } else {
-                    html += '<h3>Pontos a Melhorar</h3><p>Nenhum ponto a melhorar específico mencionado.</p>';
-                }
-
-                html += '<h3>Feedback Geral</h3>';
-                html += `<p>${analysis.feedbackGeral || 'Não foi possível gerar um resumo.'}</p>`;
-
-                showGeminiModal('✨ Análise da Avaliação', html);
-
-            } catch (error) {
-                console.error("Erro ao analisar comentário:", error);
-                showGeminiModal('Erro na Análise', `<p>Não foi possível analisar o comentário. Verifique a consola para mais detalhes. Erro: ${error.message}</p>`);
-            } finally {
-                button.dataset.loading = 'false';
-                button.disabled = false;
-                button.innerHTML = '✨ Analisar Comentário';
-            }
-        }
-
-        async function callGeminiAPI(systemPrompt, userQuery) {
-            
-            // [ORION - ALERTA DE SEGURANÇA CRÍTICO]
-            // Como solicitado, a API Key está local.
-            // ISTO É INSEGURO. NÃO USE EM PRODUÇÃO.
-            // A chave será visível para qualquer pessoa no navegador.
-            // Substitua a string abaixo pela sua chave.
-            const apiKey = "AIzaSyAKZVcyv3ELzll3WG4cz4z0NuKU3rzfGqc";
-
-            if (apiKey === "SUA_API_KEY_COMPLETA_VAI_AQUI") {
-                 throw new Error("API Key não configurada. Substitua 'SUA_API_KEY_COMPLETA_VAI_AQUI' no código.");
-            }
-
-            // [ORION - CORREÇÃO DE MODELO]
-            // Este é o nome de modelo correto para o endpoint v1beta que resolve os erros 404
-            const modelName = "gemini-2.5-flash-preview-09-2025";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
-
-            const payload = {
-                contents: [{ parts: [{ text: userQuery }] }],
-                systemInstruction: { parts: [{ text: systemPrompt }] },
-                generationConfig: {
-                    responseMimeType: "application/json",
-                    temperature: 0.2
-                }
-            };
-
-            const options = {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            };
-
-            const response = await fetchWithRetry(apiUrl, options);
-            
-            if (!response.ok) {
-                 const errData = await response.json();
-                 const errMsg = errData.error?.message || response.statusText;
-                 throw new Error(`Falha na API: ${errMsg}`);
-            }
-            
-            const result = await response.json();
-            const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-            
-            if (!text) {
-                throw new Error("Resposta da API vazia ou mal formatada.");
-            }
-            return text;
-        }
-
-        async function fetchWithRetry(url, options, retries = 3, delay = 1000) {
-            for (let i = 0; i < retries; i++) {
-                try {
-                    const response = await fetch(url, options);
-                    if (response.ok || (response.status >= 400 && response.status < 500)) {
-                        return response;
-                    }
-                    // Se for 5xx, tenta novamente
-                } catch (error) {
-                    // Erro de rede, tenta novamente
-                }
-                await new Promise(resolve => setTimeout(resolve, delay));
-                delay *= 2; 
-            }
-            // Tenta a última vez
-            return fetch(url, options);
         }
 
         // --- Inicia ---
