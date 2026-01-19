@@ -4436,6 +4436,7 @@ function extractTimeFromISO(isoString) {
             };
             
             const MEDIA_FISIO_PREFIX = 'MEDIAFISIO';
+            const MEDIA_LABEL_PREFIX_PATTERN = /^[\s_-]*M[EÉ]DIA\s*/i;
 
             const theoreticalDisplayNames = {
                 ANATOMOPATOLOGIA: 'Anatomopatologia',
@@ -4491,7 +4492,7 @@ function extractTimeFromISO(isoString) {
                     }
                 }
                 if (normalized.startsWith('MEDIA')) {
-                    const suffix = label.replace(/^[\s_-]*M[EÉ]DIA\s*/i, '');
+                    const suffix = label.replace(MEDIA_LABEL_PREFIX_PATTERN, '');
                     return suffix ? `Média ${formatReadableLabel(suffix)}` : 'Média';
                 }
                 return formatReadableLabel(label);
