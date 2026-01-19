@@ -8403,6 +8403,27 @@ function renderTabFaltas(faltas) {
             // - Especialização Paga: NÃO fazem Saúde e Políticas, Farmacoterapia, Bioética
             // - Especialização Com Bolsa: NÃO fazem Educação em Saúde, Farmacoterapia, Bioética
             // - Residentes: fazem TODAS as matérias (exceto R2 que já concluiu o curso teórico)
+            
+            // Configuration for course-based discipline exclusions
+            const COURSE_DISCIPLINE_RULES = {
+                'especializacao_paga': {
+                    patterns: [/especializa[çc][aã]o.*paga/i],
+                    excludedKeys: ['SaudePoliticas', 'Farmacoterapia', 'Bioetica']
+                },
+                'especializacao_bolsa': {
+                    patterns: [/especializa[çc][aã]o.*bolsa/i, /\bcom\s*bolsa\b/i],
+                    excludedKeys: ['EducacaoEmSaude', 'Farmacoterapia', 'Bioetica']
+                },
+                'residente_r2': {
+                    patterns: [/resid[eê]ncia.*2.*ano/i, /\br2\b/i, /2[ºo]\s*ano/i],
+                    excludeAll: true
+                },
+                'residente': {
+                    patterns: [/resid[eê]n/i],
+                    excludedKeys: [] // Residentes (except R2) see all disciplines
+                }
+            };
+            
             const filterDisciplinesByStudentCourse = (disciplines) => {
                 if (!studentInfo) {
                     console.log('[renderTabNotasTeoricas] Sem informações do aluno - mostrando todas as disciplinas');
@@ -8412,33 +8433,35 @@ function renderTabFaltas(faltas) {
                 const curso = (studentInfo.Curso || '').toLowerCase().trim();
                 console.log('[renderTabNotasTeoricas] Filtrando disciplinas para curso:', curso);
                 
-                // R2 (segundo ano de residência) já concluiu o curso teórico - não mostra nenhuma disciplina teórica
-                if (/resid[eê]ncia.*2.*ano/i.test(curso) || /r2/i.test(curso) || curso.includes('2º ano')) {
+                // Check R2 first (they don't see any theoretical subjects)
+                const r2Rule = COURSE_DISCIPLINE_RULES['residente_r2'];
+                if (r2Rule.patterns.some(pattern => pattern.test(curso))) {
                     console.log('[renderTabNotasTeoricas] Aluno R2 - curso teórico já concluído');
                     return [];
                 }
                 
-                // Residentes (exceto R2) fazem todas as matérias
-                if (/resid[eê]n/i.test(curso)) {
+                // Check regular residents (they see all subjects)
+                const residenteRule = COURSE_DISCIPLINE_RULES['residente'];
+                if (residenteRule.patterns.some(pattern => pattern.test(curso))) {
                     console.log('[renderTabNotasTeoricas] Residente - mostrando todas as disciplinas');
                     return disciplines;
                 }
                 
-                // Especialização Paga - NÃO fazem: Saúde e Políticas, Farmacoterapia, Bioética
-                if (/especializa[çc][aã]o.*paga/i.test(curso) || /paga/i.test(curso)) {
-                    const excludedKeys = ['SaudePoliticas', 'Farmacoterapia', 'Bioetica'];
-                    console.log('[renderTabNotasTeoricas] Especialização Paga - excluindo:', excludedKeys);
-                    return disciplines.filter(d => !excludedKeys.includes(d.key));
+                // Check Especialização Paga
+                const pagaRule = COURSE_DISCIPLINE_RULES['especializacao_paga'];
+                if (pagaRule.patterns.some(pattern => pattern.test(curso))) {
+                    console.log('[renderTabNotasTeoricas] Especialização Paga - excluindo:', pagaRule.excludedKeys);
+                    return disciplines.filter(d => !pagaRule.excludedKeys.includes(d.key));
                 }
                 
-                // Especialização Com Bolsa - NÃO fazem: Educação em Saúde, Farmacoterapia, Bioética
-                if (/especializa[çc][aã]o.*bolsa/i.test(curso) || /bolsa/i.test(curso)) {
-                    const excludedKeys = ['EducacaoEmSaude', 'Farmacoterapia', 'Bioetica'];
-                    console.log('[renderTabNotasTeoricas] Especialização Com Bolsa - excluindo:', excludedKeys);
-                    return disciplines.filter(d => !excludedKeys.includes(d.key));
+                // Check Especialização Com Bolsa
+                const bolsaRule = COURSE_DISCIPLINE_RULES['especializacao_bolsa'];
+                if (bolsaRule.patterns.some(pattern => pattern.test(curso))) {
+                    console.log('[renderTabNotasTeoricas] Especialização Com Bolsa - excluindo:', bolsaRule.excludedKeys);
+                    return disciplines.filter(d => !bolsaRule.excludedKeys.includes(d.key));
                 }
                 
-                // Default: mostra todas as disciplinas
+                // Default: show all disciplines
                 console.log('[renderTabNotasTeoricas] Curso não identificado - mostrando todas as disciplinas');
                 return disciplines;
             };
