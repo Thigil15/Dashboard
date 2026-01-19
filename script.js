@@ -4469,7 +4469,7 @@ function extractTimeFromISO(isoString) {
                     .trim()
                     .split(/\s+/)
                     .map(word => {
-                        if (word.length > 1 && word === word.toUpperCase()) {
+                        if (word === word.toUpperCase()) {
                             return word;
                         }
                         return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
@@ -4484,9 +4484,9 @@ function extractTimeFromISO(isoString) {
                     return theoreticalDisplayNames[normalized];
                 }
                 if (normalized.startsWith(MEDIA_FISIO_PREFIX)) {
-                    const numero = normalized.slice(MEDIA_FISIO_PREFIX.length);
-                    if (numero && !Number.isNaN(Number(numero))) {
-                        return `Média Fisio ${parseInt(numero, 10)}`;
+                    const moduleNumber = normalized.slice(MEDIA_FISIO_PREFIX.length);
+                    if (moduleNumber && !Number.isNaN(Number(moduleNumber))) {
+                        return `Média Fisio ${parseInt(moduleNumber, 10)}`;
                     }
                 }
                 if (normalized.startsWith('MEDIA')) {
