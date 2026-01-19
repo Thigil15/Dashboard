@@ -8174,6 +8174,9 @@ function renderTabFaltas(faltas) {
             // Constants for grade validation
             const MIN_GRADE = 0;
             const MAX_GRADE = 10;
+            const RED_GRADE_THRESHOLD = 7;
+            const VERY_GOOD_THRESHOLD = 8;
+            const EXCELLENCE_THRESHOLD = 9;
             const MIN_FIELDS_FOR_TABLE = 5;
             
             // SUB prefix patterns for substitutive exams - shared constant to avoid duplication
@@ -8546,7 +8549,7 @@ function renderTabFaltas(faltas) {
             // Blue/Green for >= 7 (approved), Red/Warning for < 7
             const getGradeColor = (nota, defaultColor) => {
                 if (nota <= 0) return defaultColor; // No grade
-                if (nota >= 7) return '#10b981'; // Green - approved
+                if (nota >= RED_GRADE_THRESHOLD) return '#10b981'; // Green - approved
                 return '#ef4444'; // Red - needs improvement
             };
 
@@ -8554,7 +8557,23 @@ function renderTabFaltas(faltas) {
             let totalSum = 0;
             let totalCount = 0;
             let highestGrade = 0;
-            let lowestGrade = 10;
+            let lowestGrade = null; // Null indicates no minimum grade calculated yet.
+            let hasRedGrade = false;
+            const disciplineGrades = [];
+            const collectEffectiveGrades = (materias) => {
+                materias.forEach(materiaObj => {
+                    const gradeInfo = getEffectiveGrade(materiaObj);
+                    if (gradeInfo.nota > 0) {
+                        disciplineGrades.push(gradeInfo.nota);
+                    }
+                });
+            };
+
+            Object.values(mediaGroups).forEach(group => {
+                collectEffectiveGrades(group.materias);
+            });
+
+            collectEffectiveGrades(disciplinasIndividuais);
 
             // Processa todas as médias (chaves que contêm "MÉDIA" ou "MEDIA")
             const mediaKeys = Object.keys(notas).filter(k => {
@@ -8563,31 +8582,18 @@ function renderTabFaltas(faltas) {
                 return keyUpper.includes('MÉDIA') || keyNormalized.includes('MEDIA');
             });
 
+            const mediaGrades = [];
+
             // Processa cada média encontrada
             mediaKeys.forEach(key => {
                 const mediaValue = parseNota(notas[key]);
                 if (mediaValue > 0) {
-                    totalSum += mediaValue;
-                    totalCount++;
-                    highestGrade = Math.max(highestGrade, mediaValue);
-                    lowestGrade = Math.min(lowestGrade, mediaValue);
+                    mediaGrades.push(mediaValue);
                 }
             });
 
             // Verifica se há alguma nota individual nos grupos ou nas disciplinas individuais (using new structure with effective grades)
-            const hasIndividualGrades = 
-                // Check Média Fisio groups
-                Object.entries(mediaGroups).some(([groupName, group]) => 
-                    group.materias.some(materiaObj => {
-                        const gradeInfo = getEffectiveGrade(materiaObj);
-                        return gradeInfo.nota > 0;
-                    })
-                ) ||
-                // Check individual disciplines
-                disciplinasIndividuais.some(disciplina => {
-                    const gradeInfo = getEffectiveGrade(disciplina);
-                    return gradeInfo.nota > 0;
-                });
+            const hasIndividualGrades = disciplineGrades.length > 0;
 
             // Se não há médias NEM notas individuais, mostra mensagem
             if (mediaKeys.length === 0 && !hasIndividualGrades) {
@@ -8607,16 +8613,33 @@ function renderTabFaltas(faltas) {
                 return;
             }
 
+            // Prefer effective discipline grades (includes SUB adjustments), fallback to média fields when none exist.
+            const usedGrades = disciplineGrades.length > 0 ? disciplineGrades : mediaGrades;
+
+            usedGrades.forEach(grade => {
+                totalSum += grade;
+                totalCount++;
+                highestGrade = Math.max(highestGrade, grade);
+                lowestGrade = lowestGrade === null ? grade : Math.min(lowestGrade, grade);
+                if (grade < RED_GRADE_THRESHOLD) {
+                    hasRedGrade = true;
+                }
+            });
+
             const overallAvg = totalCount > 0 ? totalSum / totalCount : 0;
             const progressPercent = overallAvg * 10;
 
             // Determina a mensagem de performance
             let performanceMessage = 'Precisa de atenção';
-            if (overallAvg >= 9.0) {
+            // Any grade below the threshold marks the student as not approved, per business requirement,
+            // even when the overall average is high.
+            if (hasRedGrade) {
+                performanceMessage = 'Não aprovado';
+            } else if (overallAvg >= EXCELLENCE_THRESHOLD) {
                 performanceMessage = 'Excelência Acadêmica';
-            } else if (overallAvg >= 8.0) {
+            } else if (overallAvg >= VERY_GOOD_THRESHOLD) {
                 performanceMessage = 'Muito Bom';
-            } else if (overallAvg >= 7.0) {
+            } else if (overallAvg >= RED_GRADE_THRESHOLD) {
                 performanceMessage = 'Bom Desempenho';
             }
 
@@ -8632,7 +8655,7 @@ function renderTabFaltas(faltas) {
                             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5" />
                             </svg>
-                            ${totalCount > 0 ? `${totalCount} Módulo${totalCount > 1 ? 's' : ''} Avaliado${totalCount > 1 ? 's' : ''}` : 'Dados Disponíveis'}
+                            ${totalCount > 0 ? `${totalCount} Disciplina${totalCount > 1 ? 's' : ''} Avaliada${totalCount > 1 ? 's' : ''}` : 'Dados Disponíveis'}
                         </div>
                     </div>
                 </div>
@@ -8657,7 +8680,7 @@ function renderTabFaltas(faltas) {
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                                     </svg>
                                     <span class="nt-progress-stats">
-                                        ${totalCount > 0 ? `Baseado em <strong>${totalCount}</strong> módulo${totalCount > 1 ? 's' : ''}` : 'Calculando...'}
+                                        ${totalCount > 0 ? `Baseado em <strong>${totalCount}</strong> disciplina${totalCount > 1 ? 's' : ''}` : 'Calculando...'}
                                     </span>
                                 </div>
                             </div>
@@ -8683,7 +8706,7 @@ function renderTabFaltas(faltas) {
                                 </svg>
                             </div>
                             <div>
-                                <div class="nt-stat-value">${lowestGrade < 10 && lowestGrade > 0 ? formatarNota(lowestGrade) : '-'}</div>
+                                <div class="nt-stat-value">${lowestGrade !== null ? formatarNota(lowestGrade) : '-'}</div>
                                 <div class="nt-stat-label">Menor Nota</div>
                             </div>
                         </div>
@@ -8717,7 +8740,7 @@ function renderTabFaltas(faltas) {
                 // Status badge
                 let statusBadge = '';
                 if (notaFinal > 0) {
-                    if (notaFinal >= 7) {
+                    if (notaFinal >= RED_GRADE_THRESHOLD) {
                         statusBadge = `<span class="nt-modern-status nt-modern-status--approved">Aprovado</span>`;
                     } else {
                         statusBadge = `<span class="nt-modern-status nt-modern-status--attention">Atenção</span>`;
@@ -8853,7 +8876,7 @@ function renderTabFaltas(faltas) {
                 // Status for the group
                 let groupStatus = '';
                 if (mediaValue > 0) {
-                    if (mediaValue >= 7) {
+                    if (mediaValue >= RED_GRADE_THRESHOLD) {
                         groupStatus = `<span class="nt-modern-status nt-modern-status--approved">Aprovado</span>`;
                     } else {
                         groupStatus = `<span class="nt-modern-status nt-modern-status--attention">Atenção</span>`;
