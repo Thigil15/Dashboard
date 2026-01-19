@@ -8346,57 +8346,94 @@ function renderTabFaltas(faltas) {
             const discoveredSubDisciplines = findSubDisciplinesFromData();
             
             // === DEFINIÇÃO DOS GRUPOS DE MÓDULOS - INCOR === //
-            // Disciplinas com seus pares substitutivos - usando generateSubKey para consistência
-            // Note: Some disciplines have special subKey mappings (e.g., 'Avaliação' -> 'Sub/Avaliacao')
+            // ATUALIZADO conforme requisitos do usuário:
+            // - Disciplinas individuais: não fazem média em conjunto
+            // - Média Fisio1: Avaliacao + VM
+            // - Média Fisio2: TecnicasRecursos + DiagnosticoImagem
+            // - Média Fisio3: FisioAplicada + UTI
+            // - Média Fisio4: Pediatria + Mobilizacao + ReabilitacaoPulmonar
+            
+            // Firebase field mappings for disciplines
+            // Using normalized keys that match Firebase: Anatomopatologia, SubAnatomopatologia, etc.
+            const FIELD_MAPPINGS = {
+                // Individual disciplines
+                'Anatomopatologia': { key: 'Anatomopatologia', subKey: 'SubAnatomopatologia', displayName: 'Anatomopatologia' },
+                'Bases': { key: 'Bases', subKey: 'SubBases', displayName: 'Bases Fisiopatológicas' },
+                'DoencasPulmonares': { key: 'DoencasPulmonares', subKey: 'SubDoencasPulmonares', displayName: 'Doenças Pulmonares' },
+                'DoencasCardiacas': { key: 'DoencasCardiacas', subKey: 'SubDoencasCardiacas', displayName: 'Doenças Cardíacas' },
+                'TerapeuticaCirurgica': { key: 'TerapeuticaCirurgica', subKey: 'SubTerapeuticaCirurgica', displayName: 'Terapêutica Cirúrgica' },
+                'MCientifica': { key: 'MCientifica', subKey: 'SubMCientifica', displayName: 'Metodologia Científica' },
+                'SaudePoliticas': { key: 'SaudePoliticas', subKey: 'SubSaudePoliticas', displayName: 'Saúde e Políticas' },
+                'EducacaoEmSaude': { key: 'EducacaoEmSaude', subKey: null, displayName: 'Educação em Saúde' },
+                'Farmacoterapia': { key: 'Farmacoterapia', subKey: 'SubFarmacoterapia', displayName: 'Farmacoterapia' },
+                'Bioetica': { key: 'Bioetica', subKey: 'SubBioetica', displayName: 'Bioética' },
+                // Fisio1 disciplines
+                'Avaliacao': { key: 'Avaliacao', subKey: 'SubAvaliacao', displayName: 'Avaliação' },
+                'VM': { key: 'VM', subKey: 'SubVM', displayName: 'Ventilação Mecânica' },
+                // Fisio2 disciplines
+                'TecnicasRecursos': { key: 'TecnicasRecursos', subKey: 'SubTecnicasRecursos', displayName: 'Técnicas e Recursos' },
+                'DiagnosticoImagem': { key: 'DiagnosticoImagem', subKey: 'SubDiagnosticoImagem', displayName: 'Diagnóstico por Imagem' },
+                // Fisio3 disciplines
+                'FisioAplicada': { key: 'FisioAplicada', subKey: 'SubFisioAplicada', displayName: 'Fisioterapia Aplicada' },
+                'UTI': { key: 'UTI', subKey: 'SubUTI', displayName: 'UTI' },
+                // Fisio4 disciplines
+                'Pediatria': { key: 'Pediatria', subKey: 'SubPediatria', displayName: 'Pediatria' },
+                'Mobilizacao': { key: 'Mobilizacao', subKey: 'SubMobilizacao', displayName: 'Mobilização' },
+                'ReabilitacaoPulmonar': { key: 'ReabilitacaoPulmonar', subKey: 'SubReabilitacaoPulmonar', displayName: 'Reabilitação Pulmonar' }
+            };
+            
+            // Individual disciplines - shown as standalone cards (no averaging)
+            const disciplinasIndividuais = [
+                { ...FIELD_MAPPINGS['Anatomopatologia'], icon: 'M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z', color: '#0054B4' },
+                { ...FIELD_MAPPINGS['Bases'], icon: 'M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z', color: '#0891B2' },
+                { ...FIELD_MAPPINGS['DoencasPulmonares'], icon: 'M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25', color: '#059669' },
+                { ...FIELD_MAPPINGS['DoencasCardiacas'], icon: 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z', color: '#E21E26' },
+                { ...FIELD_MAPPINGS['TerapeuticaCirurgica'], icon: 'M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z', color: '#7C3AED' },
+                { ...FIELD_MAPPINGS['MCientifica'], icon: 'M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z', color: '#6366F1' },
+                { ...FIELD_MAPPINGS['SaudePoliticas'], icon: 'M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z', color: '#0891B2' },
+                { ...FIELD_MAPPINGS['EducacaoEmSaude'], icon: 'M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5', color: '#059669' },
+                { ...FIELD_MAPPINGS['Farmacoterapia'], icon: 'M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5', color: '#EC4899' },
+                { ...FIELD_MAPPINGS['Bioetica'], icon: 'M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z', color: '#F59E0B' }
+            ];
+            
+            // Grouped disciplines that form averages (Média Fisio 1-4)
             const mediaGroups = {
-                'Fisioterapia I': {
-                    // Formato: { nome, subKey } onde subKey é a chave da nota substitutiva
+                'Média Fisio 1': {
+                    // Avaliação + VM
                     materias: [
-                        { nome: 'Anatomopatologia', subKey: generateSubKey('Anatomopatologia') },
-                        { nome: 'Bases', subKey: generateSubKey('Bases') },
-                        { nome: 'Doenças Pulmonares', subKey: generateSubKey('Doenças Pulmonares') },
-                        { nome: 'Doenças Cardíacas', subKey: generateSubKey('Doenças Cardíacas') },
-                        { nome: 'Proc. Cirurgico', subKey: generateSubKey('Proc. Cirurgico') },
-                        { nome: 'Avaliação', subKey: 'SubAvaliacao' }, // Special case: accent removed in SUB key
-                        { nome: 'VM', subKey: generateSubKey('VM') }
+                        { nome: FIELD_MAPPINGS['Avaliacao'].displayName, key: FIELD_MAPPINGS['Avaliacao'].key, subKey: FIELD_MAPPINGS['Avaliacao'].subKey },
+                        { nome: FIELD_MAPPINGS['VM'].displayName, key: FIELD_MAPPINGS['VM'].key, subKey: FIELD_MAPPINGS['VM'].subKey }
                     ],
                     icon: 'M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25',
                     color: '#0054B4' // InCor Blue
                 },
-                'Fisioterapia II': {
+                'Média Fisio 2': {
+                    // TecnicasRecursos + DiagnosticoImagem
                     materias: [
-                        { nome: 'Técnicas e Recursos', subKey: generateSubKey('Técnicas e Recursos') },
-                        { nome: 'Diag. Imagem', subKey: generateSubKey('Diag. Imagem') }
+                        { nome: FIELD_MAPPINGS['TecnicasRecursos'].displayName, key: FIELD_MAPPINGS['TecnicasRecursos'].key, subKey: FIELD_MAPPINGS['TecnicasRecursos'].subKey },
+                        { nome: FIELD_MAPPINGS['DiagnosticoImagem'].displayName, key: FIELD_MAPPINGS['DiagnosticoImagem'].key, subKey: FIELD_MAPPINGS['DiagnosticoImagem'].subKey }
                     ],
                     icon: 'M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
                     color: '#0891B2' // Cyan
                 },
-                'Fisioterapia III': {
+                'Média Fisio 3': {
+                    // FisioAplicada + UTI
                     materias: [
-                        { nome: 'Fisio aplicada', subKey: generateSubKey('Fisio aplicada') },
-                        { nome: 'UTI', subKey: generateSubKey('UTI') }
+                        { nome: FIELD_MAPPINGS['FisioAplicada'].displayName, key: FIELD_MAPPINGS['FisioAplicada'].key, subKey: FIELD_MAPPINGS['FisioAplicada'].subKey },
+                        { nome: FIELD_MAPPINGS['UTI'].displayName, key: FIELD_MAPPINGS['UTI'].key, subKey: FIELD_MAPPINGS['UTI'].subKey }
                     ],
                     icon: 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z',
                     color: '#E21E26' // InCor Red
                 },
-                'Fisioterapia IV': {
+                'Média Fisio 4': {
+                    // Pediatria + Mobilizacao + ReabilitacaoPulmonar
                     materias: [
-                        { nome: 'Pediatria', subKey: generateSubKey('Pediatria') },
-                        { nome: 'Mobilização', subKey: generateSubKey('Mobilização') },
-                        { nome: 'Reab. Pulmonar', subKey: generateSubKey('Reab. Pulmonar') }
+                        { nome: FIELD_MAPPINGS['Pediatria'].displayName, key: FIELD_MAPPINGS['Pediatria'].key, subKey: FIELD_MAPPINGS['Pediatria'].subKey },
+                        { nome: FIELD_MAPPINGS['Mobilizacao'].displayName, key: FIELD_MAPPINGS['Mobilizacao'].key, subKey: FIELD_MAPPINGS['Mobilizacao'].subKey },
+                        { nome: FIELD_MAPPINGS['ReabilitacaoPulmonar'].displayName, key: FIELD_MAPPINGS['ReabilitacaoPulmonar'].key, subKey: FIELD_MAPPINGS['ReabilitacaoPulmonar'].subKey }
                     ],
                     icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
                     color: '#059669' // Green
-                },
-                'Disciplinas Complementares': {
-                    materias: [
-                        { nome: 'M. Cientifica', subKey: generateSubKey('M. Cientifica') },
-                        { nome: 'Saúde e politicas', subKey: generateSubKey('Saúde e politicas') },
-                        { nome: 'Farmacoterapia', subKey: generateSubKey('Farmacoterapia') },
-                        { nome: 'Bioética', subKey: generateSubKey('Bioética') }
-                    ],
-                    icon: 'M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z',
-                    color: '#6366F1' // Indigo
                 }
             };
             
@@ -8404,9 +8441,12 @@ function renderTabFaltas(faltas) {
             // NEW RULE: SUB grade only replaces original if it's GREATER than the original
             // Example: Original 5.5, SUB 5.6 -> uses 5.6 (SUB is greater)
             // Example: Original 5.5, SUB 5.0 -> uses 5.5 (original is better)
+            // Supports both formats: { nome, subKey } and { key, subKey }
             const getEffectiveGrade = (materiaObj) => {
-                const { nome, subKey } = materiaObj;
-                const notaOriginal = parseNota(getNotaValue(nome));
+                // Support both old format (nome) and new format (key)
+                const gradeKey = materiaObj.key || materiaObj.nome;
+                const { subKey } = materiaObj;
+                const notaOriginal = parseNota(getNotaValue(gradeKey));
                 
                 if (subKey) {
                     const notaSub = parseNota(getNotaValue(subKey));
@@ -8461,13 +8501,20 @@ function renderTabFaltas(faltas) {
                 }
             });
 
-            // Verifica se há alguma nota individual nos grupos (using new structure with effective grades)
-            const hasIndividualGrades = Object.entries(mediaGroups).some(([groupName, group]) => 
-                group.materias.some(materiaObj => {
-                    const gradeInfo = getEffectiveGrade(materiaObj);
+            // Verifica se há alguma nota individual nos grupos ou nas disciplinas individuais (using new structure with effective grades)
+            const hasIndividualGrades = 
+                // Check Média Fisio groups
+                Object.entries(mediaGroups).some(([groupName, group]) => 
+                    group.materias.some(materiaObj => {
+                        const gradeInfo = getEffectiveGrade(materiaObj);
+                        return gradeInfo.nota > 0;
+                    })
+                ) ||
+                // Check individual disciplines
+                disciplinasIndividuais.some(disciplina => {
+                    const gradeInfo = getEffectiveGrade(disciplina);
                     return gradeInfo.nota > 0;
-                })
-            );
+                });
 
             // Se não há médias NEM notas individuais, mostra mensagem
             if (mediaKeys.length === 0 && !hasIndividualGrades) {
@@ -8574,20 +8621,129 @@ function renderTabFaltas(faltas) {
             // === SECTION HEADER === //
             let sectionHeaderHtml = `
                 <div class="nt-section-header">
-                    <h3>Módulos Teóricos</h3>
-                    <p>Clique nos módulos para expandir e visualizar disciplinas e SUB</p>
+                    <h3>Disciplinas Teóricas</h3>
+                    <p>Notas individuais e médias por módulo</p>
                 </div>
             `;
 
-            // === MÓDULOS TEÓRICOS - NEW COLLAPSIBLE ACCORDION LAYOUT === //
-            let modulesHtml = '<div class="nt-modules-accordion">';
-
-            Object.entries(mediaGroups).forEach(([groupName, groupData], index) => {
-                const { materias, icon, color } = groupData;
-                const moduleId = `nt-module-${index}`;
+            // === DISCIPLINAS INDIVIDUAIS - MODERN CARD GRID === //
+            // Helper function to create a discipline card
+            const createDisciplineCard = (disciplina) => {
+                const gradeInfo = getEffectiveGrade(disciplina);
+                const notaOriginal = gradeInfo.originalNota;
+                const notaSub = gradeInfo.subNota;
+                const notaFinal = gradeInfo.nota;
+                const hasOriginal = notaOriginal > 0;
+                const hasSub = notaSub > 0;
+                const hasAnyGrade = hasOriginal || hasSub;
                 
-                // Calculate group average using effective grades (with substitution logic)
-                // Only count disciplines with valid numeric grades (exclude blanks)
+                const displayGrade = notaFinal > 0 ? formatarNota(notaFinal) : '-';
+                const gradeColor = notaFinal > 0 ? getGradeColor(notaFinal, disciplina.color) : disciplina.color;
+                const percentage = notaFinal > 0 ? (notaFinal / 10) * 100 : 0;
+                
+                // Status badge
+                let statusBadge = '';
+                if (notaFinal > 0) {
+                    if (notaFinal >= 7) {
+                        statusBadge = `<span class="nt-modern-status nt-modern-status--approved">Aprovado</span>`;
+                    } else {
+                        statusBadge = `<span class="nt-modern-status nt-modern-status--attention">Atenção</span>`;
+                    }
+                }
+                
+                // SUB indicator
+                let subBadge = '';
+                if (gradeInfo.wasSubstituted) {
+                    subBadge = `<span class="nt-modern-sub-badge">SUB</span>`;
+                }
+                
+                // Sub grade display (only if exists)
+                let subDisplay = '';
+                if (hasSub && disciplina.subKey) {
+                    subDisplay = `
+                        <div class="nt-modern-sub-row">
+                            <span class="nt-modern-sub-label">SUB:</span>
+                            <span class="nt-modern-sub-value" style="color: ${getGradeColor(notaSub, disciplina.color)};">
+                                ${formatarNota(notaSub)}
+                            </span>
+                        </div>
+                    `;
+                }
+                
+                return `
+                    <div class="nt-modern-card" style="--nt-card-accent: ${disciplina.color};">
+                        <div class="nt-modern-card-header">
+                            <div class="nt-modern-card-icon" style="background: linear-gradient(135deg, ${disciplina.color}20, ${disciplina.color}10);">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="${disciplina.color}" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="${disciplina.icon}" />
+                                </svg>
+                            </div>
+                            ${subBadge}
+                        </div>
+                        <div class="nt-modern-card-body">
+                            <h4 class="nt-modern-card-title">${disciplina.displayName}</h4>
+                            <div class="nt-modern-grade-display">
+                                <span class="nt-modern-grade-value" style="color: ${gradeColor};">
+                                    ${displayGrade}
+                                </span>
+                                ${statusBadge}
+                            </div>
+                            ${subDisplay}
+                            <div class="nt-modern-progress">
+                                <div class="nt-modern-progress-bar" style="width: ${percentage}%; background: ${gradeColor};"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            };
+            
+            // Generate individual discipline cards
+            let individualCardsHtml = `
+                <div class="nt-modern-section">
+                    <div class="nt-modern-section-header">
+                        <div class="nt-modern-section-icon" style="background: linear-gradient(135deg, var(--incor-blue-500), var(--incor-blue-600));">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="nt-modern-section-title">Disciplinas Individuais</h3>
+                            <p class="nt-modern-section-subtitle">Avaliações independentes - sem média em conjunto</p>
+                        </div>
+                    </div>
+                    <div class="nt-modern-cards-grid">
+            `;
+            
+            disciplinasIndividuais.forEach(disciplina => {
+                individualCardsHtml += createDisciplineCard(disciplina);
+            });
+            
+            individualCardsHtml += `
+                    </div>
+                </div>
+            `;
+
+            // === MÉDIAS FISIO (1-4) - MODERN GROUPED CARDS === //
+            let mediaGroupsHtml = `
+                <div class="nt-modern-section nt-modern-section--media">
+                    <div class="nt-modern-section-header">
+                        <div class="nt-modern-section-icon" style="background: linear-gradient(135deg, #059669, #10b981);">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="nt-modern-section-title">Médias por Módulo</h3>
+                            <p class="nt-modern-section-subtitle">Disciplinas agrupadas que formam média conjunta</p>
+                        </div>
+                    </div>
+                    <div class="nt-modern-media-grid">
+            `;
+
+            Object.entries(mediaGroups).forEach(([groupName, groupData]) => {
+                const { materias, icon, color } = groupData;
+                
+                // Calculate group average
                 let sum = 0;
                 let count = 0;
                 materias.forEach(materiaObj => {
@@ -8600,113 +8756,91 @@ function renderTabFaltas(faltas) {
                 const mediaValue = count > 0 ? sum / count : 0;
                 const percentage = (mediaValue / 10) * 100;
                 const mediaColor = getGradeColor(mediaValue, color);
-                const disciplineCount = materias.length;
                 
-                // Process disciplines with substitution logic - generate discipline rows
-                // ALWAYS show ALL disciplines with SUB column (even if blank)
-                let disciplinasHtml = '';
+                // Status for the group
+                let groupStatus = '';
+                if (mediaValue > 0) {
+                    if (mediaValue >= 7) {
+                        groupStatus = `<span class="nt-modern-status nt-modern-status--approved">Aprovado</span>`;
+                    } else {
+                        groupStatus = `<span class="nt-modern-status nt-modern-status--attention">Atenção</span>`;
+                    }
+                }
                 
-                materias.forEach(materiaObj => {
+                // Generate discipline rows
+                let disciplinasHtml = materias.map(materiaObj => {
                     const gradeInfo = getEffectiveGrade(materiaObj);
                     const notaOriginal = gradeInfo.originalNota;
                     const notaSub = gradeInfo.subNota;
-                    const notaFinal = gradeInfo.nota; // This is the effective grade used for average
+                    const notaFinal = gradeInfo.nota;
+                    const displayName = materiaObj.nome;
                     
-                    const hasOriginal = notaOriginal > 0;
-                    const hasSub = notaSub > 0;
+                    // Colors for original and sub
+                    const originalColor = notaOriginal > 0 ? getGradeColor(notaOriginal, color) : '#94a3b8';
+                    const subColor = notaSub > 0 ? getGradeColor(notaSub, color) : '#94a3b8';
+                    const finalColor = notaFinal > 0 ? getGradeColor(notaFinal, color) : '#94a3b8';
                     
-                    const displayOriginal = hasOriginal ? formatarNota(notaOriginal) : '-';
-                    const displaySub = hasSub ? formatarNota(notaSub) : '-';
+                    // SUB indicator
+                    let subIndicator = gradeInfo.wasSubstituted ? 
+                        `<span class="nt-modern-discipline-sub">SUB</span>` : '';
                     
-                    // Determine colors
-                    const originalColor = getGradeColor(notaOriginal, color);
-                    const subColor = getGradeColor(notaSub, color);
-                    
-                    // Status badge - show final status
-                    let statusBadge = '';
-                    if (notaFinal > 0) {
-                        if (notaFinal >= 7) {
-                            statusBadge = `<span class="nt-accordion-status-badge nt-grade-approved">Aprovado</span>`;
-                        } else {
-                            statusBadge = `<span class="nt-accordion-status-badge nt-grade-attention">Atenção</span>`;
-                        }
-                    }
-                    
-                    // SUB indicator badge
-                    let subIndicator = '';
-                    if (gradeInfo.wasSubstituted) {
-                        subIndicator = `
-                            <div class="nt-card-badge nt-card-badge-sub" title="Nota substitutiva aplicada">
-                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                </svg>
-                                <span>SUB</span>
-                            </div>
-                        `;
-                    }
-                    
-                    disciplinasHtml += `
-                        <div class="nt-accordion-discipline-row" style="--nt-card-color: ${notaFinal > 0 ? getGradeColor(notaFinal, color) : color};">
-                            <div class="nt-accordion-discipline-name-wrapper">
-                                <span class="nt-accordion-discipline-name">${materiaObj.nome}</span>
+                    return `
+                        <div class="nt-modern-discipline-row">
+                            <div class="nt-modern-discipline-name">
+                                ${displayName}
                                 ${subIndicator}
-                                ${statusBadge}
                             </div>
-                            <div class="nt-accordion-grades-wrapper">
-                                <div class="nt-accordion-grade-box">
-                                    <span class="nt-accordion-grade-box-label">Original</span>
-                                    <span class="nt-accordion-grade-box-value" style="color: ${originalColor};">${displayOriginal}</span>
+                            <div class="nt-modern-discipline-grades">
+                                <div class="nt-modern-discipline-grade" title="Nota Original">
+                                    <span class="nt-modern-discipline-grade-label">Orig:</span>
+                                    <span class="nt-modern-discipline-grade-value" style="color: ${originalColor};">
+                                        ${notaOriginal > 0 ? formatarNota(notaOriginal) : '-'}
+                                    </span>
                                 </div>
-                                <div class="nt-accordion-grade-box nt-accordion-grade-box-sub">
-                                    <span class="nt-accordion-grade-box-label">SUB</span>
-                                    <span class="nt-accordion-grade-box-value" style="color: ${subColor};">${displaySub}</span>
+                                <div class="nt-modern-discipline-grade nt-modern-discipline-grade--sub" title="Nota SUB">
+                                    <span class="nt-modern-discipline-grade-label">SUB:</span>
+                                    <span class="nt-modern-discipline-grade-value" style="color: ${subColor};">
+                                        ${notaSub > 0 ? formatarNota(notaSub) : '-'}
+                                    </span>
                                 </div>
                             </div>
                         </div>
                     `;
-                });
+                }).join('');
                 
-                // Create the accordion module
-                modulesHtml += `
-                    <div class="nt-accordion-module" id="${moduleId}" style="--nt-module-color: ${color};">
-                        <button class="nt-accordion-button" onclick="toggleNotasModule('${moduleId}')" type="button">
-                            <div class="nt-accordion-icon-wrapper" style="background: linear-gradient(135deg, ${color}, ${color}cc);">
+                mediaGroupsHtml += `
+                    <div class="nt-modern-media-card" style="--nt-media-color: ${color};">
+                        <div class="nt-modern-media-header">
+                            <div class="nt-modern-media-icon" style="background: linear-gradient(135deg, ${color}, ${color}cc);">
                                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="${icon}" />
                                 </svg>
                             </div>
-                            <div class="nt-accordion-title-group">
-                                <h4 class="nt-accordion-title">${groupName}</h4>
-                                <p class="nt-accordion-subtitle">
-                                    ${disciplineCount} disciplina${disciplineCount > 1 ? 's' : ''}
-                                    <span class="nt-accordion-subtitle-muted">• Clique para expandir</span>
-                                </p>
+                            <div class="nt-modern-media-title-group">
+                                <h4 class="nt-modern-media-title">${groupName}</h4>
+                                <span class="nt-modern-media-count">${materias.length} disciplina${materias.length > 1 ? 's' : ''}</span>
                             </div>
-                            <div class="nt-accordion-grade-display">
-                                <div class="nt-accordion-grade">
-                                    <div class="nt-accordion-grade-value" style="color: ${mediaColor};">${mediaValue > 0 ? formatarNota(mediaValue) : '-'}</div>
-                                    <div class="nt-accordion-grade-label">Média</div>
-                                </div>
-                                <svg class="nt-accordion-chevron" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                                </svg>
+                            <div class="nt-modern-media-grade">
+                                <span class="nt-modern-media-value" style="color: ${mediaColor};">
+                                    ${mediaValue > 0 ? formatarNota(mediaValue) : '-'}
+                                </span>
+                                ${groupStatus}
                             </div>
-                        </button>
-                        <div class="nt-accordion-content">
-                            <div class="nt-accordion-inner">
-                                <div class="nt-accordion-progress-bar">
-                                    <div class="nt-accordion-progress-fill" style="width: ${percentage}%; background: ${mediaColor};"></div>
-                                </div>
-                                <div class="nt-accordion-disciplines-table">
-                                    ${disciplinasHtml}
-                                </div>
-                            </div>
+                        </div>
+                        <div class="nt-modern-media-progress">
+                            <div class="nt-modern-media-progress-bar" style="width: ${percentage}%; background: ${mediaColor};"></div>
+                        </div>
+                        <div class="nt-modern-media-disciplines">
+                            ${disciplinasHtml}
                         </div>
                     </div>
                 `;
             });
 
-            modulesHtml += '</div>';
+            mediaGroupsHtml += `
+                    </div>
+                </div>
+            `;
 
             // === SEÇÃO DE DISCIPLINAS SUBSTITUTIVAS ENCONTRADAS === //
             let subDisciplinesHtml = '';
@@ -8751,46 +8885,8 @@ function renderTabFaltas(faltas) {
             }
 
             // === MONTAGEM FINAL === //
-            tabContainer.innerHTML = heroHtml + dashboardHtml + sectionHeaderHtml + modulesHtml + subDisciplinesHtml;
-            
-            // Auto-expand first module on load using double requestAnimationFrame 
-            // for better reliability (ensures elements are fully rendered)
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                    const firstModule = document.querySelector('.nt-accordion-module');
-                    if (firstModule) {
-                        firstModule.classList.add('expanded');
-                    }
-                });
-            });
+            tabContainer.innerHTML = heroHtml + dashboardHtml + sectionHeaderHtml + individualCardsHtml + mediaGroupsHtml + subDisciplinesHtml;
         }
-        
-        /**
-         * Toggle function for NotasTeoricas accordion modules
-         * Makes modules collapsible/expandable
-         * Note: Attached to window for inline onclick compatibility with dynamic HTML
-         * 
-         * @param {string} moduleId - The ID of the module to toggle
-         */
-        window.toggleNotasModule = function(moduleId) {
-            const module = document.getElementById(moduleId);
-            if (!module) return;
-            
-            // Toggle expanded class
-            module.classList.toggle('expanded');
-            
-            /* Optional: Exclusive accordion mode (only one module open at a time)
-             * Uncomment below to enable this behavior:
-             * 
-             * const allModules = document.querySelectorAll('.nt-accordion-module');
-             * allModules.forEach(m => {
-             *     if (m.id !== moduleId) {
-             *         m.classList.remove('expanded');
-             *     }
-             * });
-             */
-        };
-
         function calculatePracticeSummary(notasP) {
             console.log('[calculatePracticeSummary] Calculating with', notasP ? notasP.length : 0, 'evaluations');
             
