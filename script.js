@@ -8887,33 +8887,6 @@ function renderTabFaltas(faltas) {
             // === MONTAGEM FINAL === //
             tabContainer.innerHTML = heroHtml + dashboardHtml + sectionHeaderHtml + individualCardsHtml + mediaGroupsHtml + subDisciplinesHtml;
         }
-        
-        /**
-         * Toggle function for NotasTeoricas accordion modules
-         * Makes modules collapsible/expandable
-         * Note: Attached to window for inline onclick compatibility with dynamic HTML
-         * 
-         * @param {string} moduleId - The ID of the module to toggle
-         */
-        window.toggleNotasModule = function(moduleId) {
-            const module = document.getElementById(moduleId);
-            if (!module) return;
-            
-            // Toggle expanded class
-            module.classList.toggle('expanded');
-            
-            /* Optional: Exclusive accordion mode (only one module open at a time)
-             * Uncomment below to enable this behavior:
-             * 
-             * const allModules = document.querySelectorAll('.nt-accordion-module');
-             * allModules.forEach(m => {
-             *     if (m.id !== moduleId) {
-             *         m.classList.remove('expanded');
-             *     }
-             * });
-             */
-        };
-
         function calculatePracticeSummary(notasP) {
             console.log('[calculatePracticeSummary] Calculating with', notasP ? notasP.length : 0, 'evaluations');
             
