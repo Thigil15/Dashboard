@@ -4485,8 +4485,9 @@ function extractTimeFromISO(isoString) {
                 }
                 if (normalized.startsWith(MEDIA_FISIO_PREFIX)) {
                     const moduleNumber = normalized.slice(MEDIA_FISIO_PREFIX.length);
-                    if (moduleNumber && !Number.isNaN(Number(moduleNumber))) {
-                        return `Média Fisio ${parseInt(moduleNumber, 10)}`;
+                    const parsedNumber = moduleNumber ? parseInt(moduleNumber, 10) : NaN;
+                    if (!Number.isNaN(parsedNumber)) {
+                        return `Média Fisio ${parsedNumber}`;
                     }
                 }
                 if (normalized.startsWith('MEDIA')) {
