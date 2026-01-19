@@ -7672,6 +7672,39 @@
     font-weight: 700;
 }
 
+/* === Grades Detail Section (Original and SUB display) === */
+.nt-modern-grades-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background: rgba(0, 51, 160, 0.03);
+    border-radius: 0.5rem;
+    border: 1px solid rgba(0, 51, 160, 0.08);
+}
+
+.nt-modern-grade-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+}
+
+.nt-modern-grade-label {
+    color: var(--content-text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-size: 0.65rem;
+}
+
+.nt-modern-grade-value-small {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.875rem;
+}
+
 .nt-modern-progress {
     height: 4px;
     background: rgba(0, 51, 160, 0.08);

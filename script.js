@@ -6572,7 +6572,7 @@ function extractTimeFromISO(isoString) {
                 renderTabInfo(info);
                 renderTabEscala(escalas);
                 renderTabFaltas(faltas);
-                renderTabNotasTeoricas(notasT); 
+                renderTabNotasTeoricas(notasT, info); 
                 renderTabNotasPraticas(notasP); 
 
                 showView('student-detail-view');
@@ -8163,8 +8163,10 @@ function renderTabFaltas(faltas) {
          * [MASTERPIECE] Renderiza a aba de Notas Teóricas com design revolucionário e artístico
          * Versão v35 - Theoretical Excellence Edition
          * Design glorioso digno do Portal de Ensino da USP
+         * @param {Object} notas - Notas teóricas do aluno
+         * @param {Object} studentInfo - Informações do aluno (opcional) para filtrar disciplinas por curso
          */
-        function renderTabNotasTeoricas(notas) {
+        function renderTabNotasTeoricas(notas, studentInfo = null) {
             console.log('[renderTabNotasTeoricas v37 - InCor Professional Redesign] Dados recebidos:', notas);
             console.log('[renderTabNotasTeoricas v37] Type of notas:', typeof notas);
             console.log('[renderTabNotasTeoricas v37] Is notas an object?', typeof notas === 'object' && notas !== null);
@@ -8383,7 +8385,7 @@ function renderTabFaltas(faltas) {
             };
             
             // Individual disciplines - shown as standalone cards (no averaging)
-            const disciplinasIndividuais = [
+            const allDisciplinasIndividuais = [
                 { ...FIELD_MAPPINGS['Anatomopatologia'], icon: 'M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z', color: '#0054B4' },
                 { ...FIELD_MAPPINGS['Bases'], icon: 'M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z', color: '#0891B2' },
                 { ...FIELD_MAPPINGS['DoencasPulmonares'], icon: 'M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25', color: '#059669' },
@@ -8395,6 +8397,54 @@ function renderTabFaltas(faltas) {
                 { ...FIELD_MAPPINGS['Farmacoterapia'], icon: 'M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5', color: '#EC4899' },
                 { ...FIELD_MAPPINGS['Bioetica'], icon: 'M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z', color: '#F59E0B' }
             ];
+            
+            // === FILTRAR DISCIPLINAS POR CURSO DO ALUNO ===
+            // Regras de filtro:
+            // - Especialização Paga: NÃO fazem Saúde e Políticas, Farmacoterapia, Bioética
+            // - Especialização Com Bolsa: NÃO fazem Educação em Saúde, Farmacoterapia, Bioética
+            // - Residentes: fazem TODAS as matérias (exceto R2 que já concluiu o curso teórico)
+            const filterDisciplinesByStudentCourse = (disciplines) => {
+                if (!studentInfo) {
+                    console.log('[renderTabNotasTeoricas] Sem informações do aluno - mostrando todas as disciplinas');
+                    return disciplines;
+                }
+                
+                const curso = (studentInfo.Curso || '').toLowerCase().trim();
+                console.log('[renderTabNotasTeoricas] Filtrando disciplinas para curso:', curso);
+                
+                // R2 (segundo ano de residência) já concluiu o curso teórico - não mostra nenhuma disciplina teórica
+                if (/resid[eê]ncia.*2.*ano/i.test(curso) || /r2/i.test(curso) || curso.includes('2º ano')) {
+                    console.log('[renderTabNotasTeoricas] Aluno R2 - curso teórico já concluído');
+                    return [];
+                }
+                
+                // Residentes (exceto R2) fazem todas as matérias
+                if (/resid[eê]n/i.test(curso)) {
+                    console.log('[renderTabNotasTeoricas] Residente - mostrando todas as disciplinas');
+                    return disciplines;
+                }
+                
+                // Especialização Paga - NÃO fazem: Saúde e Políticas, Farmacoterapia, Bioética
+                if (/especializa[çc][aã]o.*paga/i.test(curso) || /paga/i.test(curso)) {
+                    const excludedKeys = ['SaudePoliticas', 'Farmacoterapia', 'Bioetica'];
+                    console.log('[renderTabNotasTeoricas] Especialização Paga - excluindo:', excludedKeys);
+                    return disciplines.filter(d => !excludedKeys.includes(d.key));
+                }
+                
+                // Especialização Com Bolsa - NÃO fazem: Educação em Saúde, Farmacoterapia, Bioética
+                if (/especializa[çc][aã]o.*bolsa/i.test(curso) || /bolsa/i.test(curso)) {
+                    const excludedKeys = ['EducacaoEmSaude', 'Farmacoterapia', 'Bioetica'];
+                    console.log('[renderTabNotasTeoricas] Especialização Com Bolsa - excluindo:', excludedKeys);
+                    return disciplines.filter(d => !excludedKeys.includes(d.key));
+                }
+                
+                // Default: mostra todas as disciplinas
+                console.log('[renderTabNotasTeoricas] Curso não identificado - mostrando todas as disciplinas');
+                return disciplines;
+            };
+            
+            // Apply course-based filtering to individual disciplines
+            const disciplinasIndividuais = filterDisciplinesByStudentCourse(allDisciplinasIndividuais);
             
             // Grouped disciplines that form averages (Média Fisio 1-4)
             const mediaGroups = {
@@ -8651,19 +8701,37 @@ function renderTabFaltas(faltas) {
                     }
                 }
                 
-                // SUB indicator
+                // SUB indicator - only show if SUB is the final grade (was substituted)
                 let subBadge = '';
                 if (gradeInfo.wasSubstituted) {
                     subBadge = `<span class="nt-modern-sub-badge">SUB</span>`;
                 }
                 
-                // Sub grade display (only if exists)
-                let subDisplay = '';
+                // ATUALIZADO: Mostrar ambas as notas - Original e SUB
+                // Se a nota SUB é maior, ela fica como principal, e a original abaixo
+                // Se não tem SUB, ou a original é maior, mostra só a original
+                let gradesDisplay = '';
+                
+                // Sempre mostrar a nota Original se existe
+                if (hasOriginal) {
+                    const originalColor = getGradeColor(notaOriginal, disciplina.color);
+                    gradesDisplay += `
+                        <div class="nt-modern-grade-row">
+                            <span class="nt-modern-grade-label">Original:</span>
+                            <span class="nt-modern-grade-value-small" style="color: ${originalColor};">
+                                ${formatarNota(notaOriginal)}
+                            </span>
+                        </div>
+                    `;
+                }
+                
+                // Mostrar a nota SUB se existe
                 if (hasSub && disciplina.subKey) {
-                    subDisplay = `
-                        <div class="nt-modern-sub-row">
-                            <span class="nt-modern-sub-label">SUB:</span>
-                            <span class="nt-modern-sub-value" style="color: ${getGradeColor(notaSub, disciplina.color)};">
+                    const subColor = getGradeColor(notaSub, disciplina.color);
+                    gradesDisplay += `
+                        <div class="nt-modern-grade-row">
+                            <span class="nt-modern-grade-label">SUB:</span>
+                            <span class="nt-modern-grade-value-small" style="color: ${subColor};">
                                 ${formatarNota(notaSub)}
                             </span>
                         </div>
@@ -8688,7 +8756,9 @@ function renderTabFaltas(faltas) {
                                 </span>
                                 ${statusBadge}
                             </div>
-                            ${subDisplay}
+                            <div class="nt-modern-grades-detail">
+                                ${gradesDisplay}
+                            </div>
                             <div class="nt-modern-progress">
                                 <div class="nt-modern-progress-bar" style="width: ${percentage}%; background: ${gradeColor};"></div>
                             </div>
@@ -8842,50 +8912,13 @@ function renderTabFaltas(faltas) {
                 </div>
             `;
 
-            // === SEÇÃO DE DISCIPLINAS SUBSTITUTIVAS ENCONTRADAS === //
-            let subDisciplinesHtml = '';
-            if (discoveredSubDisciplines.length > 0) {
-                subDisciplinesHtml = `
-                    <div class="nt-sub-section">
-                        <div class="nt-sub-section-header">
-                            <div class="nt-sub-section-icon">
-                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                </svg>
-                            </div>
-                            <div>
-                                <h3 class="nt-sub-section-title">Provas Substitutivas</h3>
-                                <p class="nt-sub-section-subtitle">${discoveredSubDisciplines.length} disciplina${discoveredSubDisciplines.length > 1 ? 's' : ''} com prova substitutiva</p>
-                            </div>
-                        </div>
-                        <div class="nt-sub-table">
-                            <div class="nt-sub-table-header">
-                                <span>Disciplina</span>
-                                <span>Nota SUB</span>
-                            </div>
-                            ${discoveredSubDisciplines.map(sub => {
-                                const subGradeColor = sub.parsedValue >= 7 ? '#10b981' : '#ef4444';
-                                const statusText = sub.parsedValue >= 7 ? 'Aprovado' : 'Atenção';
-                                const statusClass = sub.parsedValue >= 7 ? 'nt-sub-approved' : 'nt-sub-attention';
-                                return `
-                                    <div class="nt-sub-table-row">
-                                        <div class="nt-sub-discipline-info">
-                                            <span class="nt-sub-discipline-name">${sub.disciplineName}</span>
-                                            <span class="nt-sub-badge ${statusClass}">${statusText}</span>
-                                        </div>
-                                        <div class="nt-sub-grade" style="color: ${subGradeColor};">
-                                            ${formatarNota(sub.parsedValue)}
-                                        </div>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    </div>
-                `;
-            }
+            // === SEÇÃO DE DISCIPLINAS SUBSTITUTIVAS REMOVIDA ===
+            // Conforme requisito do usuário, esta seção foi removida.
+            // As notas SUB agora são exibidas diretamente nos cards de Disciplinas Individuais,
+            // junto com a nota Original, para que ambas as notas sejam visíveis.
 
             // === MONTAGEM FINAL === //
-            tabContainer.innerHTML = heroHtml + dashboardHtml + sectionHeaderHtml + individualCardsHtml + mediaGroupsHtml + subDisciplinesHtml;
+            tabContainer.innerHTML = heroHtml + dashboardHtml + sectionHeaderHtml + individualCardsHtml + mediaGroupsHtml;
         }
         function calculatePracticeSummary(notasP) {
             console.log('[calculatePracticeSummary] Calculating with', notasP ? notasP.length : 0, 'evaluations');
