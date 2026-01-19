@@ -4466,9 +4466,9 @@ function extractTimeFromISO(isoString) {
                 if (!label) return '';
                 return label
                     .replace(/[_-]+/g, ' ')
-                    .replace(/([a-zÁ-ú])([A-Z])/g, '$1 $2')
-                    .replace(/([A-Za-zÁ-ú])(\d)/g, '$1 $2')
-                    .replace(/(\d)([A-Za-zÁ-ú])/g, '$1 $2')
+                    .replace(/([a-zà-ÿ])([A-ZÀ-Þ])/g, '$1 $2')
+                    .replace(/([A-Za-zÀ-ÿ])(\d)/g, '$1 $2')
+                    .replace(/(\d)([A-Za-zÀ-ÿ])/g, '$1 $2')
                     .trim()
                     .split(/\s+/)
                     .map(word => {
@@ -4486,9 +4486,11 @@ function extractTimeFromISO(isoString) {
                 if (theoreticalDisplayNames[normalized]) {
                     return theoreticalDisplayNames[normalized];
                 }
-                const mediaMatch = normalized.match(/^MEDIAFISIO(\d+)$/);
-                if (mediaMatch) {
-                    return `Média Fisio ${parseInt(mediaMatch[1], 10)}`;
+                if (normalized.startsWith('MEDIAFISIO')) {
+                    const numero = normalized.slice('MEDIAFISIO'.length);
+                    if (numero && !Number.isNaN(Number(numero))) {
+                        return `Média Fisio ${parseInt(numero, 10)}`;
+                    }
                 }
                 if (normalized.startsWith('MEDIA')) {
                     const suffix = label.replace(/^[\s_-]*M[EÉ]DIA\s*/i, '');
