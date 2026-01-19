@@ -4439,6 +4439,63 @@ function extractTimeFromISO(isoString) {
             const normalizeKey = (key) => {
                 return key.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
             };
+
+            const theoreticalDisplayNames = {
+                ANATOMOPATOLOGIA: 'Anatomopatologia',
+                BASES: 'Bases Fisiopatológicas',
+                DOENCASPULMONARES: 'Doenças Pulmonares',
+                DOENCASCARDIACAS: 'Doenças Cardíacas',
+                TERAPEUTICACIRURGICA: 'Terapêutica Cirúrgica',
+                MCIENTIFICA: 'Metodologia Científica',
+                SAUDEPOLITICAS: 'Saúde e Políticas',
+                EDUCACAOEMSAUDE: 'Educação em Saúde',
+                FARMACOTERAPIA: 'Farmacoterapia',
+                BIOETICA: 'Bioética',
+                AVALIACAO: 'Avaliação',
+                VM: 'Ventilação Mecânica',
+                TECNICASRECURSOS: 'Técnicas e Recursos',
+                DIAGNOSTICOIMAGEM: 'Diagnóstico por Imagem',
+                FISIOAPLICADA: 'Fisioterapia Aplicada',
+                UTI: 'UTI',
+                PEDIATRIA: 'Pediatria',
+                MOBILIZACAO: 'Mobilização',
+                REABILITACAOPULMONAR: 'Reabilitação Pulmonar'
+            };
+
+            const formatReadableLabel = (label) => {
+                if (!label) return '';
+                return label
+                    .replace(/[_-]+/g, ' ')
+                    .replace(/([a-zÁ-ú])([A-Z])/g, '$1 $2')
+                    .replace(/([A-Za-zÁ-ú])(\d)/g, '$1 $2')
+                    .replace(/(\d)([A-Za-zÁ-ú])/g, '$1 $2')
+                    .trim()
+                    .split(/\s+/)
+                    .map(word => {
+                        if (word.length > 1 && word === word.toUpperCase()) {
+                            return word;
+                        }
+                        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+                    })
+                    .join(' ');
+            };
+
+            const formatTheoreticalLabel = (label) => {
+                if (!label) return '';
+                const normalized = normalizeKeyForDeduplication(label);
+                if (theoreticalDisplayNames[normalized]) {
+                    return theoreticalDisplayNames[normalized];
+                }
+                const mediaMatch = normalized.match(/^MEDIAFISIO(\d+)$/);
+                if (mediaMatch) {
+                    return `Média Fisio ${parseInt(mediaMatch[1], 10)}`;
+                }
+                if (normalized.startsWith('MEDIA')) {
+                    const suffix = label.replace(/^[\s_-]*M[EÉ]DIA\s*/i, '');
+                    return suffix ? `Média ${formatReadableLabel(suffix)}` : 'Média';
+                }
+                return formatReadableLabel(label);
+            };
             
             // Separate MÉDIA entries from individual discipline entries
             const mediaEntries = Object.entries(tAvgs)
@@ -4510,13 +4567,14 @@ function extractTimeFromISO(isoString) {
                             const percentage = (value / 10) * 100;
                             const count = tCounts[key] || 0;
                             const gradeClass = value >= 7 ? 'good' : value >= 5 ? 'warning' : 'danger';
+                            const displayLabel = formatTheoreticalLabel(key);
                             return `
                                 <div class="incor-module-grid-card incor-module-grid-card--theoretical">
                                     <div class="incor-module-grid-card__header">
                                         <span class="incor-module-grid-card__badge">Teórica ${index + 1}</span>
                                         ${count > 0 ? `<span class="incor-module-grid-card__count">${count} aluno${count > 1 ? 's' : ''}</span>` : ''}
                                     </div>
-                                    <h4 class="incor-module-grid-card__title" title="${escapeHtml(key)}">${escapeHtml(key)}</h4>
+                                    <h4 class="incor-module-grid-card__title" title="${escapeHtml(displayLabel)}">${escapeHtml(displayLabel)}</h4>
                                     <div class="incor-module-grid-card__grade incor-module-grid-card__grade--${gradeClass}">
                                         <span class="incor-module-grid-card__value">${value.toFixed(1)}</span>
                                         <span class="incor-module-grid-card__max">/10</span>
