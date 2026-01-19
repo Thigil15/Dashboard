@@ -4435,10 +4435,7 @@ function extractTimeFromISO(isoString) {
                 return match ? parseInt(match[0], 10) : 999;
             };
             
-            // Helper to normalize key for comparison
-            const normalizeKey = (key) => {
-                return key.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
-            };
+            const MEDIA_FISIO_PREFIX = 'MEDIAFISIO';
 
             const theoreticalDisplayNames = {
                 ANATOMOPATOLOGIA: 'Anatomopatologia',
@@ -4486,8 +4483,8 @@ function extractTimeFromISO(isoString) {
                 if (theoreticalDisplayNames[normalized]) {
                     return theoreticalDisplayNames[normalized];
                 }
-                if (normalized.startsWith('MEDIAFISIO')) {
-                    const numero = normalized.slice('MEDIAFISIO'.length);
+                if (normalized.startsWith(MEDIA_FISIO_PREFIX)) {
+                    const numero = normalized.slice(MEDIA_FISIO_PREFIX.length);
                     if (numero && !Number.isNaN(Number(numero))) {
                         return `Média Fisio ${parseInt(numero, 10)}`;
                     }
@@ -4502,16 +4499,16 @@ function extractTimeFromISO(isoString) {
             // Separate MÉDIA entries from individual discipline entries
             const mediaEntries = Object.entries(tAvgs)
                 .filter(([key, value]) => {
-                    const keyNorm = normalizeKey(key);
-                    return (keyNorm.includes('MEDIA') || keyNorm.includes('MÉDIA')) && value > 0;
+                    const keyNorm = normalizeKeyForDeduplication(key);
+                    return keyNorm.includes('MEDIA') && value > 0;
                 })
                 .map(([key, value]) => ({ key, value, sortNum: extractModuleNumber(key) }))
                 .sort((a, b) => a.sortNum - b.sortNum);
             
             const disciplineEntries = Object.entries(tAvgs)
                 .filter(([key, value]) => {
-                    const keyNorm = normalizeKey(key);
-                    return !(keyNorm.includes('MEDIA') || keyNorm.includes('MÉDIA')) && value > 0;
+                    const keyNorm = normalizeKeyForDeduplication(key);
+                    return !keyNorm.includes('MEDIA') && value > 0;
                 })
                 .map(([key, value]) => ({ key, value }))
                 .sort((a, b) => a.key.localeCompare(b.key));
