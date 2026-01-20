@@ -1747,7 +1747,7 @@ function clearNavigationState() {
 }
 
 const ATRASO_THRESHOLD_MINUTES = 10;  // General threshold for lateness in Prática
-const GRADE_MAX_VALUE = 12;  // Maximum grade value (notas práticas e teóricas vão até 12)
+const GRADE_MAX_VALUE = 10;  // Maximum grade value (notas práticas e teóricas vão até 10)
 const TOTAL_ESCALADOS = 25;
 const MAX_RECENT_ACTIVITIES = 10;
 // MAX_PENDING_STUDENTS removed - now shows all students
@@ -1775,7 +1775,7 @@ const INCOR_KPI_THRESHOLDS = {
     PENDING_CRITICAL: 10,          // 10+ pending = Critical
     PENDING_ALERT: 5,              // 5+ pending = Alert
     
-    // Grade averages (max 12)
+    // Grade averages (max 10)
     GRADE_CRITICAL: 6.0,           // Below 6.0 = Critical
     GRADE_ALERT: 7.0,              // Below 7.0 = Alert
     GRADE_EXCELLENT: 8.0           // 8.0+ = Excellent
@@ -4583,7 +4583,7 @@ function extractTimeFromISO(isoString) {
                                     <h4 class="incor-module-grid-card__title" title="${escapeHtml(displayLabel)}">${escapeHtml(displayLabel)}</h4>
                                     <div class="incor-module-grid-card__grade incor-module-grid-card__grade--${gradeClass}">
                                         <span class="incor-module-grid-card__value">${value.toFixed(1)}</span>
-                                        <span class="incor-module-grid-card__max">/12</span>
+                                        <span class="incor-module-grid-card__max">/10</span>
                                     </div>
                                     <div class="incor-module-grid-card__progress">
                                         <div class="incor-module-grid-card__progress-fill incor-module-grid-card__progress-fill--theoretical" style="width: ${percentage}%;"></div>
@@ -4634,7 +4634,7 @@ function extractTimeFromISO(isoString) {
                                     <h4 class="incor-module-grid-card__title" title="${escapeHtml(key)}">${escapeHtml(key)}</h4>
                                     <div class="incor-module-grid-card__grade incor-module-grid-card__grade--${gradeClass}">
                                         <span class="incor-module-grid-card__value">${value.toFixed(1)}</span>
-                                        <span class="incor-module-grid-card__max">/12</span>
+                                        <span class="incor-module-grid-card__max">/10</span>
                                     </div>
                                     <div class="incor-module-grid-card__progress">
                                         <div class="incor-module-grid-card__progress-fill incor-module-grid-card__progress-fill--practical" style="width: ${percentage}%;"></div>
