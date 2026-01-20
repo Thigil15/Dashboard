@@ -1781,6 +1781,10 @@ const INCOR_KPI_THRESHOLDS = {
     GRADE_EXCELLENT: 8.0           // 8.0+ = Excellent
 };
 
+const RED_GRADE_THRESHOLD = INCOR_KPI_THRESHOLDS.GRADE_ALERT;
+const VERY_GOOD_THRESHOLD = INCOR_KPI_THRESHOLDS.GRADE_EXCELLENT;
+const EXCELLENCE_THRESHOLD = 9;
+
 const pontoState = {
     rawRows: [],
     byDate: new Map(),
@@ -8234,9 +8238,6 @@ function renderTabFaltas(faltas) {
             // Constants for grade validation
             const MIN_GRADE = 0;
             const MAX_GRADE = GRADE_MAX_VALUE;
-            const RED_GRADE_THRESHOLD = 7;
-            const VERY_GOOD_THRESHOLD = 8;
-            const EXCELLENCE_THRESHOLD = 9;
             const MIN_FIELDS_FOR_TABLE = 5;
             
             // SUB prefix patterns for substitutive exams - shared constant to avoid duplication
@@ -9105,9 +9106,6 @@ function renderTabFaltas(faltas) {
             }
             
             // === CÁLCULO E PREPARAÇÃO DOS DADOS === //
-            const RED_GRADE_THRESHOLD = 7;
-            const VERY_GOOD_THRESHOLD = 8;
-            const EXCELLENCE_THRESHOLD = 9;
             const summary = calculatePracticeSummary(notasP);
             const hasValidatedData = notasP.some(n => n._uniqueId);
             const totalValidated = hasValidatedData ? notasP.filter(n => n._uniqueId).length : 0;
