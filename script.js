@@ -4568,7 +4568,7 @@ function extractTimeFromISO(isoString) {
                         ${allTheoreticalEntries.map(([key, value], index) => {
                             const percentage = (value / GRADE_MAX_VALUE) * 100;
                             const count = tCounts[key] || 0;
-                            const gradeClass = value >= 8.4 ? 'good' : value >= 6 ? 'warning' : 'danger';
+                            const gradeClass = value >= INCOR_KPI_THRESHOLDS.GRADE_ALERT ? 'good' : value >= INCOR_KPI_THRESHOLDS.GRADE_CRITICAL ? 'warning' : 'danger';
                             const displayLabel = formatTheoreticalLabel(key);
                             return `
                                 <div class="incor-module-grid-card incor-module-grid-card--theoretical">
@@ -4620,7 +4620,7 @@ function extractTimeFromISO(isoString) {
                         ${practicalEntries.map(({ key, value }, index) => {
                             const percentage = (value / GRADE_MAX_VALUE) * 100;
                             const count = pCounts[key] || 0;
-                            const gradeClass = value >= 8.4 ? 'good' : value >= 6 ? 'warning' : 'danger';
+                            const gradeClass = value >= INCOR_KPI_THRESHOLDS.GRADE_ALERT ? 'good' : value >= INCOR_KPI_THRESHOLDS.GRADE_CRITICAL ? 'warning' : 'danger';
                             return `
                                 <div class="incor-module-grid-card incor-module-grid-card--practical">
                                     <div class="incor-module-grid-card__header">
@@ -9256,12 +9256,12 @@ function renderTabFaltas(faltas) {
                     <div class="np-chart-canvas-pro">
                         ${summary.last5Notes.length > 0 ? summary.last5Notes.map((note, i) => {
                             let barColor = '#0891B2';
-                            if (note.value >= 10.8) barColor = '#059669';
-                            else if (note.value >= 9.6) barColor = '#0891B2';
-                            else if (note.value < 9.6) barColor = '#f59e0b';
+                            if (note.value >= EXCELLENCE_THRESHOLD) barColor = '#059669';
+                            else if (note.value >= VERY_GOOD_THRESHOLD) barColor = '#0891B2';
+                            else if (note.value < VERY_GOOD_THRESHOLD) barColor = '#f59e0b';
                             return `
                             <div class="np-chart-bar-pro">
-                                <div class="np-bar-fill-pro" style="height: ${Math.max(note.value * 22, 35)}px; background: linear-gradient(180deg, ${barColor}, ${barColor}dd);">
+                                <div class="np-bar-fill-pro" style="height: ${Math.max(note.value * (220 / GRADE_MAX_VALUE), 35)}px; background: linear-gradient(180deg, ${barColor}, ${barColor}dd);">
                                     <div class="np-bar-value-pro">${formatarNota(note.value)}</div>
                                 </div>
                                 <div class="np-bar-label-pro">${note.label && note.label.length > 15 ? note.label.substring(0, 15) + '...' : (note.label || `Aval. ${i+1}`)}</div>
