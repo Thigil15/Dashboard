@@ -1747,7 +1747,7 @@ function clearNavigationState() {
 }
 
 const ATRASO_THRESHOLD_MINUTES = 10;  // General threshold for lateness in Prática
-const GRADE_MAX_VALUE = 12;
+const GRADE_MAX_VALUE = 10;
 const TOTAL_ESCALADOS = 25;
 const MAX_RECENT_ACTIVITIES = 10;
 // MAX_PENDING_STUDENTS removed - now shows all students
@@ -1775,11 +1775,15 @@ const INCOR_KPI_THRESHOLDS = {
     PENDING_CRITICAL: 10,          // 10+ pending = Critical
     PENDING_ALERT: 5,              // 5+ pending = Alert
     
-    // Grade averages (max 12)
-    GRADE_CRITICAL: 7.2,           // Below 7.2 = Critical
-    GRADE_ALERT: 8.4,              // Below 8.4 = Alert
-    GRADE_EXCELLENT: 9.6           // 9.6+ = Excellent
+    // Grade averages (max 10)
+    GRADE_CRITICAL: 6.0,           // Below 6.0 = Critical
+    GRADE_ALERT: 7.0,              // Below 7.0 = Alert
+    GRADE_EXCELLENT: 8.0           // 8.0+ = Excellent
 };
+
+const RED_GRADE_THRESHOLD = INCOR_KPI_THRESHOLDS.GRADE_ALERT;
+const VERY_GOOD_THRESHOLD = INCOR_KPI_THRESHOLDS.GRADE_EXCELLENT;
+const EXCELLENCE_THRESHOLD = 9;
 
 const pontoState = {
     rawRows: [],
@@ -8234,9 +8238,6 @@ function renderTabFaltas(faltas) {
             // Constants for grade validation
             const MIN_GRADE = 0;
             const MAX_GRADE = GRADE_MAX_VALUE;
-            const RED_GRADE_THRESHOLD = 8.4;
-            const VERY_GOOD_THRESHOLD = 9.6;
-            const EXCELLENCE_THRESHOLD = 10.8;
             const MIN_FIELDS_FOR_TABLE = 5;
             
             // SUB prefix patterns for substitutive exams - shared constant to avoid duplication
@@ -9135,11 +9136,11 @@ function renderTabFaltas(faltas) {
             
             // Determina a mensagem de performance
             let performanceMessage = 'Precisa de atenção';
-            if (summary.overallAvg >= 10.8) {
+            if (summary.overallAvg >= EXCELLENCE_THRESHOLD) {
                 performanceMessage = 'Excelência Acadêmica';
-            } else if (summary.overallAvg >= 9.6) {
+            } else if (summary.overallAvg >= VERY_GOOD_THRESHOLD) {
                 performanceMessage = 'Muito Bom';
-            } else if (summary.overallAvg >= 8.4) {
+            } else if (summary.overallAvg >= RED_GRADE_THRESHOLD) {
                 performanceMessage = 'Bom Desempenho';
             }
             
@@ -9345,16 +9346,16 @@ function renderTabFaltas(faltas) {
                 // Determina cor e status baseado na nota
                 let gradeColor = '#3b82f6';
                 let gradeStatus = 'Satisfatório';
-                if (mediaFinal >= 10.8) {
+                if (mediaFinal >= EXCELLENCE_THRESHOLD) {
                     gradeColor = '#10b981';
                     gradeStatus = 'Excelente';
-                } else if (mediaFinal >= 9.6) {
+                } else if (mediaFinal >= VERY_GOOD_THRESHOLD) {
                     gradeColor = '#6366f1';
                     gradeStatus = 'Muito Bom';
-                } else if (mediaFinal >= 8.4) {
+                } else if (mediaFinal >= RED_GRADE_THRESHOLD) {
                     gradeColor = '#f59e0b';
                     gradeStatus = 'Bom';
-                } else if (mediaFinal < 8.4) {
+                } else if (mediaFinal < RED_GRADE_THRESHOLD) {
                     gradeColor = '#ef4444';
                     gradeStatus = 'Precisa Melhorar';
                 }
@@ -9452,9 +9453,9 @@ function renderTabFaltas(faltas) {
                                             ${numericalScores.map(score => {
                                                 const percentage = (score.value / GRADE_MAX_VALUE) * 100;
                                                 let scoreColor = '#0891B2';
-                                                if (score.value >= 10.8) scoreColor = '#059669';
-                                                else if (score.value >= 9.6) scoreColor = '#0891B2';
-                                                else if (score.value < 9.6) scoreColor = '#f59e0b';
+                                                if (score.value >= EXCELLENCE_THRESHOLD) scoreColor = '#059669';
+                                                else if (score.value >= VERY_GOOD_THRESHOLD) scoreColor = '#0891B2';
+                                                else if (score.value < VERY_GOOD_THRESHOLD) scoreColor = '#f59e0b';
                                                 
                                                 const displayLabel = splitConcatenatedFieldName(score.label);
                                                 return `
