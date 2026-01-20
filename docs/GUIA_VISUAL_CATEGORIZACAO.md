@@ -8,7 +8,7 @@
 │                                                              │
 │  Campo: "Assiduidade frequencia comparecimento com          │
 │          regularidade e exatidao..."                        │
-│  Nota: 10.0                                                 │
+│  Nota: 12.0                                                 │
 └─────────────────────────────────────────────────────────────┘
                             │
                             ↓
@@ -29,7 +29,7 @@
 │  0 campos    │  │  8 campos    │  │  ✅ Exatidão     │
 │              │  │              │  │                  │
 │              │  │              │  │  Média: 8.2      │
-│              │  │              │  │  (inclui 10.0)   │
+│              │  │              │  │  (inclui 12.0)   │
 └──────────────┘  └──────────────┘  └──────────────────┘
 ```
 
@@ -58,7 +58,7 @@
 │   ☑ Precisão na Execução: 8.2                             │
 │                                                             │
 │ 👥 Profissionalismo:                                       │
-│   ☑ Assiduidade e Frequência: 10.0  ← EXEMPLO             │
+│   ☑ Assiduidade e Frequência: 12.0  ← EXEMPLO             │
 │   ☑ Comunicação com Equipe: 7.5                           │
 │   ☑ Comportamento Ético: 9.0                              │
 │   ☑ Iniciativa e Interesse: 8.0                           │
@@ -88,7 +88,7 @@
   "PrecisaoNaExecucao": 8.2,
   
   // Profissionalismo (4 campos)
-  "AssiduidadeFrequenciaComparecimentoComRegularidadeEExatidao": 10.0,  // ← NOSSO EXEMPLO
+  "AssiduidadeFrequenciaComparecimentoComRegularidadeEExatidao": 12.0,  // ← NOSSO EXEMPLO
   "ComunicacaoComEquipe": 7.5,
   "ComportamentoEtico": 9.0,
   "IniciativaEInteresse": 8.0,
@@ -102,7 +102,7 @@
 ```javascript
 // Sistema analisa cada campo:
 
-// CAMPO 1: "AssiduidadeFrequenciaComparecimentoComRegularidadeEExatidao" = 10.0
+// CAMPO 1: "AssiduidadeFrequenciaComparecimentoComRegularidadeEExatidao" = 12.0
 // ↓
 // Testa contra padrões regex:
 //   ✅ /ASSIDUIDADE/i → MATCH!
@@ -110,7 +110,7 @@
 //   ✅ /COMPARECIMENTO/i → MATCH!
 //   ✅ /REGULARIDADE/i → MATCH!
 // ↓
-// RESULTADO: Profissionalismo += 10.0
+// RESULTADO: Profissionalismo += 12.0
 ```
 
 ### Saída no Dashboard
@@ -126,7 +126,7 @@
 ║  │          ╭─────────╮                        │  ║
 ║  │          │   7.5   │   ✓ Bom Desempenho    │  ║
 ║  │          ╰─────────╯                        │  ║
-║  │          de 10.0                            │  ║
+║  │          de 12.0                            │  ║
 ║  └─────────────────────────────────────────────┘  ║
 ║                                                     ║
 ║  ┌──────────────┬──────────────┬──────────────┐   ║
@@ -137,17 +137,17 @@
 ║  │              │              │   ↑          │   ║
 ║  │  Avaliação,  │  Habilidade  │  Inclui      │   ║
 ║  │  planejamento│  e precisão  │  Assiduidade │   ║
-║  │              │              │  (10.0)      │   ║
+║  │              │              │  (12.0)      │   ║
 ║  └──────────────┴──────────────┴──────────────┘   ║
 ║                                                     ║
 ║  CÁLCULO DO PROFISSIONALISMO:                      ║
 ║  ─────────────────────────────                     ║
-║  Assiduidade: 10.0                                 ║
+║  Assiduidade: 12.0                                 ║
 ║  Comunicação: 7.5                                  ║
 ║  Ética: 9.0                                        ║
 ║  Iniciativa: 8.0                                   ║
 ║  ──────────────                                    ║
-║  Média: (10.0 + 7.5 + 9.0 + 8.0) / 4 = 8.6 ✓      ║
+║  Média: (12.0 + 7.5 + 9.0 + 8.0) / 4 = 9.1 ✓      ║
 ║                                                     ║
 ╚════════════════════════════════════════════════════╝
 ```
@@ -160,14 +160,14 @@
 │  "Assiduidade: Frequência e comparecimento com           │
 │   regularidade e exatidão ao lugar onde tem de           │
 │   desempenhar suas funções"                              │
-│  Resposta: 10.0                                          │
+│  Resposta: 12.0                                          │
 └────────────────────┬─────────────────────────────────────┘
                      │
                      ↓
 ┌──────────────────────────────────────────────────────────┐
 │  2️⃣ GOOGLE SHEETS                                       │
 │  Coluna: "Assiduidade: Frequência e comparecimento..."   │
-│  Valor: 10.0                                             │
+│  Valor: 12.0                                             │
 └────────────────────┬─────────────────────────────────────┘
                      │
                      ↓
@@ -183,7 +183,7 @@
 ┌──────────────────────────────────────────────────────────┐
 │  4️⃣ FIREBASE REALTIME DATABASE                          │
 │  exportAll/NP_Modulo3/dados/0/                          │
-│    AssiduidadeFrequenciaComparecimento... = 10.0         │
+│    AssiduidadeFrequenciaComparecimento... = 12.0         │
 └────────────────────┬─────────────────────────────────────┘
                      │
                      ↓
@@ -210,7 +210,7 @@
 │  7️⃣ CATEGORIZAÇÃO                                       │
 │  calculatePracticeSummary() {                            │
 │    if (/ASSIDUIDADE/i.test(fieldName)) {                │
-│      profissionalismo += 10.0  ✅                        │
+│      profissionalismo += 12.0  ✅                        │
 │    }                                                      │
 │  }                                                        │
 └────────────────────┬─────────────────────────────────────┘
@@ -248,7 +248,7 @@
   overallAvg: "7.50",
   raciocinioAvg: "0.00",
   tecnicaAvg: "8.57",
-  profissionalismoAvg: "8.63",  // ← Incluiu corretamente o 10.0 de Assiduidade
+  profissionalismoAvg: "9.13",  // ← Incluiu corretamente o 12.0 de Assiduidade
   evolutionPoints: 1
 }
 [calculatePracticeSummary] Categorization Summary:

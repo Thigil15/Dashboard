@@ -35,7 +35,7 @@ O sistema verifica automaticamente:
 ✅ **EmailHC**: Deve estar presente e conter "@"
 ✅ **NomeCompleto**: Deve estar preenchido
 ✅ **Data/Hora**: Deve ser uma data válida
-✅ **Notas**: Devem estar no intervalo 0-10
+✅ **Notas**: Devem estar no intervalo 0-12
 
 #### 3. Metadata de Validação
 
@@ -108,10 +108,10 @@ A interface foi redesenhada seguindo os mais altos padrões visuais e de usabili
 - Barras de progresso coloridas por nível
 - Animação suave de preenchimento
 - Cores dinâmicas:
-  - 9.0-10.0: Verde (#10b981)
-  - 7.0-8.9: Azul (#6366f1)
-  - 6.0-6.9: Âmbar (#f59e0b)
-  - < 6.0: Vermelho (#ef4444)
+  - 10.8-12.0: Verde (#10b981)
+  - 9.6-10.7: Azul (#6366f1)
+  - 8.4-9.5: Âmbar (#f59e0b)
+  - < 8.4: Vermelho (#ef4444)
 
 **Checklist de Habilidades**
 - Layout em grid responsivo

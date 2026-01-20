@@ -107,7 +107,7 @@ Notas aparecem! ✅
 ├─────────────────────────────────────┤
 │  ╭──────╮                           │
 │  │ 8.5  │  Média Geral Teórica     │
-│  │  /10 │  Muito Bom               │
+│  │  /12 │  Muito Bom               │
 │  ╰──────╯                           │
 │                                     │
 │ ┌─ Fisioterapia I ────────────┐    │

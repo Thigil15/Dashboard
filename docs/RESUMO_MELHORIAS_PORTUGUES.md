@@ -147,8 +147,8 @@ Implementados em 5 locais para garantir compatibilidade:
 ## 📊 Antes e Depois - Resumo Visual
 
 ### Média Geral
-- **Antes:** 0.0 de 10.0 ❌
-- **Agora:** 8.5 de 10.0 ✅
+- **Antes:** 0.0 de 12.0 ❌
+- **Agora:** 8.5 de 12.0 ✅
 
 ### Competências
 - **Antes:** 
