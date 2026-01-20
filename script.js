@@ -664,16 +664,16 @@
             // Valida se tem pelo menos uma nota numérica
             const hasNumericalGrade = Object.keys(registro).some(key => {
                 const value = registro[key];
-                if (typeof value === 'number' && value >= 0 && value <= 12) return true;
+                if (typeof value === 'number' && value >= 0 && value <= GRADE_MAX_VALUE) return true;
                 if (typeof value === 'string' && /^\d+([.,]\d+)?$/.test(value.trim())) {
                     const num = parseFloat(value.replace(',', '.'));
-                    return num >= 0 && num <= 12;
+                    return num >= 0 && num <= GRADE_MAX_VALUE;
                 }
                 return false;
             });
             
             if (!hasNumericalGrade) {
-                warnings.push('Nenhuma nota numérica válida (0-12) encontrada');
+                warnings.push(`Nenhuma nota numérica válida (0-${GRADE_MAX_VALUE}) encontrada`);
             }
             
             // Cria ID único para esta avaliação (hash dos campos chave)
@@ -1747,6 +1747,7 @@ function clearNavigationState() {
 }
 
 const ATRASO_THRESHOLD_MINUTES = 10;  // General threshold for lateness in Prática
+const GRADE_MAX_VALUE = 12;
 const TOTAL_ESCALADOS = 25;
 const MAX_RECENT_ACTIVITIES = 10;
 // MAX_PENDING_STUDENTS removed - now shows all students
@@ -4118,10 +4119,10 @@ function extractTimeFromISO(isoString) {
                 const theoreticalBar = document.getElementById('db-theoretical-bar');
                 const practicalBar = document.getElementById('db-practical-bar');
                 if (theoreticalBar && oTAvg > 0) {
-                    theoreticalBar.style.width = `${(oTAvg / 12) * 100}%`;
+                    theoreticalBar.style.width = `${(oTAvg / GRADE_MAX_VALUE) * 100}%`;
                 }
                 if (practicalBar && oPAvg > 0) {
-                    practicalBar.style.width = `${(oPAvg / 12) * 100}%`;
+                    practicalBar.style.width = `${(oPAvg / GRADE_MAX_VALUE) * 100}%`;
                 }
                 
                 // Update timestamp
@@ -4565,7 +4566,7 @@ function extractTimeFromISO(isoString) {
                     </div>
                     <div class="incor-modules-card-grid">
                         ${allTheoreticalEntries.map(([key, value], index) => {
-                            const percentage = (value / 12) * 100;
+                            const percentage = (value / GRADE_MAX_VALUE) * 100;
                             const count = tCounts[key] || 0;
                             const gradeClass = value >= 8.4 ? 'good' : value >= 6 ? 'warning' : 'danger';
                             const displayLabel = formatTheoreticalLabel(key);
@@ -4617,7 +4618,7 @@ function extractTimeFromISO(isoString) {
                     </div>
                     <div class="incor-modules-card-grid">
                         ${practicalEntries.map(({ key, value }, index) => {
-                            const percentage = (value / 12) * 100;
+                            const percentage = (value / GRADE_MAX_VALUE) * 100;
                             const count = pCounts[key] || 0;
                             const gradeClass = value >= 8.4 ? 'good' : value >= 6 ? 'warning' : 'danger';
                             return `
@@ -8232,7 +8233,7 @@ function renderTabFaltas(faltas) {
             
             // Constants for grade validation
             const MIN_GRADE = 0;
-            const MAX_GRADE = 12;
+            const MAX_GRADE = GRADE_MAX_VALUE;
             const RED_GRADE_THRESHOLD = 8.4;
             const VERY_GOOD_THRESHOLD = 9.6;
             const EXCELLENCE_THRESHOLD = 10.8;
@@ -8794,7 +8795,7 @@ function renderTabFaltas(faltas) {
                 
                 const displayGrade = notaFinal > 0 ? formatarNota(notaFinal) : '-';
                 const gradeColor = notaFinal > 0 ? getGradeColor(notaFinal, disciplina.color) : disciplina.color;
-                const percentage = notaFinal > 0 ? (notaFinal / 12) * 100 : 0;
+                const percentage = notaFinal > 0 ? (notaFinal / GRADE_MAX_VALUE) * 100 : 0;
                 
                 // Status badge
                 let statusBadge = '';
@@ -8929,7 +8930,7 @@ function renderTabFaltas(faltas) {
                     }
                 });
                 const mediaValue = count > 0 ? sum / count : 0;
-                const percentage = (mediaValue / 12) * 100;
+                const percentage = (mediaValue / GRADE_MAX_VALUE) * 100;
                 const mediaColor = getGradeColor(mediaValue, color);
                 
                 // Status for the group
@@ -9107,11 +9108,11 @@ function renderTabFaltas(faltas) {
             const summary = calculatePracticeSummary(notasP);
             const hasValidatedData = notasP.some(n => n._uniqueId);
             const totalValidated = hasValidatedData ? notasP.filter(n => n._uniqueId).length : 0;
-            const progressPercent = (summary.overallAvg / 12) * 100;
+            const progressPercent = (summary.overallAvg / GRADE_MAX_VALUE) * 100;
             
             // Calcula estatísticas adicionais
             let highestGrade = 0;
-            let lowestGrade = 12;
+            let lowestGrade = GRADE_MAX_VALUE;
             let totalCount = 0;
             
             notasP.forEach(n => {
@@ -9130,7 +9131,7 @@ function renderTabFaltas(faltas) {
                 }
             });
             
-            if (lowestGrade === 12 && totalCount === 0) lowestGrade = 0;
+            if (lowestGrade === GRADE_MAX_VALUE && totalCount === 0) lowestGrade = 0;
             
             // Determina a mensagem de performance
             let performanceMessage = 'Precisa de atenção';
@@ -9408,7 +9409,7 @@ function renderTabFaltas(faltas) {
                             </div>
                             
                             <div class="np-module-progress-bar-pro">
-                                <div class="np-module-progress-fill-pro" style="width: ${(mediaFinal / 12) * 100}%; background: ${gradeColor};"></div>
+                                <div class="np-module-progress-fill-pro" style="width: ${(mediaFinal / GRADE_MAX_VALUE) * 100}%; background: ${gradeColor};"></div>
                             </div>
                             
                             <details class="np-module-details-pro" open>
@@ -9449,7 +9450,7 @@ function renderTabFaltas(faltas) {
                                                 <span>Desempenho por Competência</span>
                                             </div>
                                             ${numericalScores.map(score => {
-                                                const percentage = (score.value / 12) * 100;
+                                                const percentage = (score.value / GRADE_MAX_VALUE) * 100;
                                                 let scoreColor = '#0891B2';
                                                 if (score.value >= 10.8) scoreColor = '#059669';
                                                 else if (score.value >= 9.6) scoreColor = '#0891B2';
