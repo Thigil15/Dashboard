@@ -634,6 +634,44 @@
         }
 
         /**
+         * Formata um valor de data/hora (inclusive ISO com "T") para exibição
+         * Retorna data em pt-BR e hora (HH:MM). Usa UTC para evitar deslocamentos.
+         */
+        function formatDataHoraDisplay(value) {
+            if (!value) return { data: 'N/A', hora: '' };
+            const str = String(value).trim();
+            if (!str) return { data: 'N/A', hora: '' };
+            
+            let dateObj = null;
+            
+            // ISO completo: 2025-04-11T14:53:04.000Z
+            if (str.includes('T')) {
+                const isoDate = new Date(str);
+                if (!Number.isNaN(isoDate.getTime())) {
+                    dateObj = isoDate;
+                }
+            }
+            
+            // Fallback para outros formatos já aceitos no código
+            if (!dateObj) {
+                const fallback = str.replace(/-/g, '/');
+                const parsed = new Date(fallback);
+                if (!Number.isNaN(parsed.getTime())) {
+                    dateObj = parsed;
+                }
+            }
+            
+            if (!dateObj || Number.isNaN(dateObj.getTime())) {
+                return { data: 'N/A', hora: '' };
+            }
+            
+            return {
+                data: dateObj.toLocaleDateString('pt-BR', { timeZone: 'UTC' }),
+                hora: dateObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })
+            };
+        }
+
+        /**
          * [SISTEMA ÚNICO] Valida integridade de uma nota prática
          * Garante que os dados essenciais estão presentes e válidos
          */
@@ -9389,9 +9427,9 @@ function renderTabFaltas(faltas) {
                 
                 const mediaFinal = parseNota(n[keyM]);
                 const comentario = n[keyC] || 'Sem comentários registrados.';
-                // Handle different variations of the date/time field
-                const dataHoraValue = n['Data/Hora'] || n['DataHora'] || n.dataHora;
-                const dataFormatada = dataHoraValue ? new Date(String(dataHoraValue).replace(/-/g,'/')).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : 'N/A';
+                // Handle different variations of the date/time field (including ISO)
+                const dataHoraValue = n['Data/Hora'] || n['DataHora'] || n.dataHora || n.Timestamp || n.timestamp;
+                const { data: dataFormatada, hora: horaFormatada } = formatDataHoraDisplay(dataHoraValue);
                 const nomePratica = formatarNomeModulo(n.nomePratica) || `Avaliação Prática ${index + 1}`;
                 
                 // Determina cor e status baseado na nota
@@ -9480,7 +9518,7 @@ function renderTabFaltas(faltas) {
                                         </div>
                                         <div class="np-meta-item-pro">
                                             <span class="np-meta-label">Data</span>
-                                            <span class="np-meta-value">${dataFormatada}</span>
+                                            <span class="np-meta-value">${dataFormatada}${horaFormatada ? ` • ${horaFormatada}` : ''}</span>
                                         </div>
                                         <div class="np-meta-item-pro">
                                             <span class="np-meta-label">Unidade</span>
