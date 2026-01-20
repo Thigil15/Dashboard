@@ -62,7 +62,7 @@
             <h2>2️⃣ Card de Média Geral Profissional</h2>
             <p class="text-sm text-slate-600 mb-4">Design com gradiente roxo moderno e anel de progresso animado</p>
             <div class="content-card summary-progress-card animated-card delay-100" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; max-width: 600px;">
-                <div class="summary-progress-ring" style="--value:71; --ring-color: rgba(255,255,255,0.3); --fill-color: white;">
+                <div class="summary-progress-ring" data-grade="8.5" data-max="12" style="--value:70.8; --ring-color: rgba(255,255,255,0.3); --fill-color: white;">
                     <div class="value" style="color: white; font-size: 2.5rem; font-weight: 700;">8.5</div>
                     <div style="color: rgba(255,255,255,0.9); font-size: 0.75rem; margin-top: -8px;">de 12.0</div>
                 </div>
@@ -201,5 +201,13 @@
             <p class="mt-2">✅ Sistema de validação único implementado</p>
         </footer>
     </div>
+    <script>
+        document.querySelectorAll('.summary-progress-ring[data-grade][data-max]').forEach((ring) => {
+            const grade = parseFloat(ring.dataset.grade || '0');
+            const max = parseFloat(ring.dataset.max || '1');
+            const percent = max > 0 ? (grade / max) * 100 : 0;
+            ring.style.setProperty('--value', percent.toFixed(1));
+        });
+    </script>
 </body>
 </html>

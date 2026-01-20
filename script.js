@@ -8687,7 +8687,7 @@ function renderTabFaltas(faltas) {
             });
 
             const overallAvg = totalCount > 0 ? totalSum / totalCount : 0;
-            const progressPercent = (overallAvg / MAX_GRADE) * 100;
+            const progressPercent = (overallAvg / GRADE_MAX_VALUE) * 100;
 
             // Determina a mensagem de performance
             let performanceMessage = 'Precisa de atenção';
