@@ -62,7 +62,7 @@
             <h2>2️⃣ Card de Média Geral Profissional</h2>
             <p class="text-sm text-slate-600 mb-4">Design com gradiente roxo moderno e anel de progresso animado</p>
             <div class="content-card summary-progress-card animated-card delay-100" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; max-width: 600px;">
-                <div class="summary-progress-ring" data-grade="8.5" data-max="12" style="--value:70.8; --ring-color: rgba(255,255,255,0.3); --fill-color: white;">
+                <div class="summary-progress-ring" data-grade="8.5" data-max="12" style="--ring-color: rgba(255,255,255,0.3); --fill-color: white;">
                     <div class="value" style="color: white; font-size: 2.5rem; font-weight: 700;">8.5</div>
                     <div style="color: rgba(255,255,255,0.9); font-size: 0.75rem; margin-top: -8px;">de 12.0</div>
                 </div>
@@ -143,33 +143,33 @@
             <h2>5️⃣ Barras de Progresso com Cores Dinâmicas</h2>
             <p class="text-sm text-slate-600 mb-4">Cores variam automaticamente baseadas no desempenho (verde > azul > âmbar > vermelho)</p>
             <div style="display: grid; gap: 1.5rem;">
-                <div class="bar-chart-item">
+                <div class="bar-chart-item" data-grade="9.5" data-max="12">
                     <div class="flex justify-between items-center mb-2">
                         <span class="font-medium text-sm text-slate-700">Avaliação de Paciente</span>
                         <span class="font-bold text-lg" style="color: #10b981;">9.5</span>
                     </div>
                     <div class="bar-bg relative" style="height: 10px; background: #e2e8f0; border-radius: 5px; overflow: hidden;">
-                        <div class="bar-fill" style="width: 79%; background: linear-gradient(90deg, #10b981 0%, #10b981cc 100%); height: 100%; border-radius: 5px;"></div>
+                        <div class="bar-fill" data-progress-bar style="background: linear-gradient(90deg, #10b981 0%, #10b981cc 100%); height: 100%; border-radius: 5px;"></div>
                     </div>
                 </div>
                 
-                <div class="bar-chart-item">
+                <div class="bar-chart-item" data-grade="7.8" data-max="12">
                     <div class="flex justify-between items-center mb-2">
                         <span class="font-medium text-sm text-slate-700">Execução de Técnica</span>
                         <span class="font-bold text-lg" style="color: #6366f1;">7.8</span>
                     </div>
                     <div class="bar-bg relative" style="height: 10px; background: #e2e8f0; border-radius: 5px; overflow: hidden;">
-                        <div class="bar-fill" style="width: 65%; background: linear-gradient(90deg, #6366f1 0%, #6366f1cc 100%); height: 100%; border-radius: 5px;"></div>
+                        <div class="bar-fill" data-progress-bar style="background: linear-gradient(90deg, #6366f1 0%, #6366f1cc 100%); height: 100%; border-radius: 5px;"></div>
                     </div>
                 </div>
                 
-                <div class="bar-chart-item">
+                <div class="bar-chart-item" data-grade="6.5" data-max="12">
                     <div class="flex justify-between items-center mb-2">
                         <span class="font-medium text-sm text-slate-700">Comunicação</span>
                         <span class="font-bold text-lg" style="color: #f59e0b;">6.5</span>
                     </div>
                     <div class="bar-bg relative" style="height: 10px; background: #e2e8f0; border-radius: 5px; overflow: hidden;">
-                        <div class="bar-fill" style="width: 54%; background: linear-gradient(90deg, #f59e0b 0%, #f59e0bcc 100%); height: 100%; border-radius: 5px;"></div>
+                        <div class="bar-fill" data-progress-bar style="background: linear-gradient(90deg, #f59e0b 0%, #f59e0bcc 100%); height: 100%; border-radius: 5px;"></div>
                     </div>
                 </div>
             </div>
@@ -207,6 +207,15 @@
             const max = parseFloat(ring.dataset.max || '1');
             const percent = max > 0 ? (grade / max) * 100 : 0;
             ring.style.setProperty('--value', percent.toFixed(1));
+        });
+        document.querySelectorAll('.bar-chart-item[data-grade][data-max]').forEach((item) => {
+            const grade = parseFloat(item.dataset.grade || '0');
+            const max = parseFloat(item.dataset.max || '1');
+            const percent = max > 0 ? Math.round((grade / max) * 100) : 0;
+            const bar = item.querySelector('[data-progress-bar]');
+            if (bar) {
+                bar.style.width = `${percent}%`;
+            }
         });
     </script>
 </body>

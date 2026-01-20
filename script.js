@@ -9210,7 +9210,7 @@ function renderTabFaltas(faltas) {
                                 </svg>
                             </div>
                             <div>
-                                <div class="np-stat-value-pro">${lowestGrade < 10 && lowestGrade > 0 ? formatarNota(lowestGrade) : '-'}</div>
+                                <div class="np-stat-value-pro">${lowestGrade < GRADE_MAX_VALUE && lowestGrade > 0 ? formatarNota(lowestGrade) : '-'}</div>
                                 <div class="np-stat-label-pro">Menor Nota</div>
                             </div>
                         </div>
