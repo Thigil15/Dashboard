@@ -1747,7 +1747,7 @@ function clearNavigationState() {
 }
 
 const ATRASO_THRESHOLD_MINUTES = 10;  // General threshold for lateness in Prática
-const GRADE_MAX_VALUE = 10;
+const GRADE_MAX_VALUE = 12;  // Maximum grade value (notas práticas e teóricas vão até 12)
 const TOTAL_ESCALADOS = 25;
 const MAX_RECENT_ACTIVITIES = 10;
 // MAX_PENDING_STUDENTS removed - now shows all students
@@ -1775,7 +1775,7 @@ const INCOR_KPI_THRESHOLDS = {
     PENDING_CRITICAL: 10,          // 10+ pending = Critical
     PENDING_ALERT: 5,              // 5+ pending = Alert
     
-    // Grade averages (max 10)
+    // Grade averages (max 12)
     GRADE_CRITICAL: 6.0,           // Below 6.0 = Critical
     GRADE_ALERT: 7.0,              // Below 7.0 = Alert
     GRADE_EXCELLENT: 8.0           // 8.0+ = Excellent
