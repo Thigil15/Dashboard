@@ -664,16 +664,16 @@
             // Valida se tem pelo menos uma nota numérica
             const hasNumericalGrade = Object.keys(registro).some(key => {
                 const value = registro[key];
-                if (typeof value === 'number' && value >= 0 && value <= 10) return true;
+                if (typeof value === 'number' && value >= 0 && value <= 12) return true;
                 if (typeof value === 'string' && /^\d+([.,]\d+)?$/.test(value.trim())) {
                     const num = parseFloat(value.replace(',', '.'));
-                    return num >= 0 && num <= 10;
+                    return num >= 0 && num <= 12;
                 }
                 return false;
             });
             
             if (!hasNumericalGrade) {
-                warnings.push('Nenhuma nota numérica válida (0-10) encontrada');
+                warnings.push('Nenhuma nota numérica válida (0-12) encontrada');
             }
             
             // Cria ID único para esta avaliação (hash dos campos chave)
@@ -1774,10 +1774,10 @@ const INCOR_KPI_THRESHOLDS = {
     PENDING_CRITICAL: 10,          // 10+ pending = Critical
     PENDING_ALERT: 5,              // 5+ pending = Alert
     
-    // Grade averages
-    GRADE_CRITICAL: 6.0,           // Below 6.0 = Critical
-    GRADE_ALERT: 7.0,              // Below 7.0 = Alert
-    GRADE_EXCELLENT: 8.0           // 8.0+ = Excellent
+    // Grade averages (max 12)
+    GRADE_CRITICAL: 7.2,           // Below 7.2 = Critical
+    GRADE_ALERT: 8.4,              // Below 8.4 = Alert
+    GRADE_EXCELLENT: 9.6           // 9.6+ = Excellent
 };
 
 const pontoState = {
@@ -4118,10 +4118,10 @@ function extractTimeFromISO(isoString) {
                 const theoreticalBar = document.getElementById('db-theoretical-bar');
                 const practicalBar = document.getElementById('db-practical-bar');
                 if (theoreticalBar && oTAvg > 0) {
-                    theoreticalBar.style.width = `${(oTAvg / 10) * 100}%`;
+                    theoreticalBar.style.width = `${(oTAvg / 12) * 100}%`;
                 }
                 if (practicalBar && oPAvg > 0) {
-                    practicalBar.style.width = `${(oPAvg / 10) * 100}%`;
+                    practicalBar.style.width = `${(oPAvg / 12) * 100}%`;
                 }
                 
                 // Update timestamp
@@ -4565,9 +4565,9 @@ function extractTimeFromISO(isoString) {
                     </div>
                     <div class="incor-modules-card-grid">
                         ${allTheoreticalEntries.map(([key, value], index) => {
-                            const percentage = (value / 10) * 100;
+                            const percentage = (value / 12) * 100;
                             const count = tCounts[key] || 0;
-                            const gradeClass = value >= 7 ? 'good' : value >= 5 ? 'warning' : 'danger';
+                            const gradeClass = value >= 8.4 ? 'good' : value >= 6 ? 'warning' : 'danger';
                             const displayLabel = formatTheoreticalLabel(key);
                             return `
                                 <div class="incor-module-grid-card incor-module-grid-card--theoretical">
@@ -4578,7 +4578,7 @@ function extractTimeFromISO(isoString) {
                                     <h4 class="incor-module-grid-card__title" title="${escapeHtml(displayLabel)}">${escapeHtml(displayLabel)}</h4>
                                     <div class="incor-module-grid-card__grade incor-module-grid-card__grade--${gradeClass}">
                                         <span class="incor-module-grid-card__value">${value.toFixed(1)}</span>
-                                        <span class="incor-module-grid-card__max">/10</span>
+                                        <span class="incor-module-grid-card__max">/12</span>
                                     </div>
                                     <div class="incor-module-grid-card__progress">
                                         <div class="incor-module-grid-card__progress-fill incor-module-grid-card__progress-fill--theoretical" style="width: ${percentage}%;"></div>
@@ -4617,9 +4617,9 @@ function extractTimeFromISO(isoString) {
                     </div>
                     <div class="incor-modules-card-grid">
                         ${practicalEntries.map(({ key, value }, index) => {
-                            const percentage = (value / 10) * 100;
+                            const percentage = (value / 12) * 100;
                             const count = pCounts[key] || 0;
-                            const gradeClass = value >= 7 ? 'good' : value >= 5 ? 'warning' : 'danger';
+                            const gradeClass = value >= 8.4 ? 'good' : value >= 6 ? 'warning' : 'danger';
                             return `
                                 <div class="incor-module-grid-card incor-module-grid-card--practical">
                                     <div class="incor-module-grid-card__header">
@@ -4629,7 +4629,7 @@ function extractTimeFromISO(isoString) {
                                     <h4 class="incor-module-grid-card__title" title="${escapeHtml(key)}">${escapeHtml(key)}</h4>
                                     <div class="incor-module-grid-card__grade incor-module-grid-card__grade--${gradeClass}">
                                         <span class="incor-module-grid-card__value">${value.toFixed(1)}</span>
-                                        <span class="incor-module-grid-card__max">/10</span>
+                                        <span class="incor-module-grid-card__max">/12</span>
                                     </div>
                                     <div class="incor-module-grid-card__progress">
                                         <div class="incor-module-grid-card__progress-fill incor-module-grid-card__progress-fill--practical" style="width: ${percentage}%;"></div>
@@ -8232,10 +8232,10 @@ function renderTabFaltas(faltas) {
             
             // Constants for grade validation
             const MIN_GRADE = 0;
-            const MAX_GRADE = 10;
-            const RED_GRADE_THRESHOLD = 7;
-            const VERY_GOOD_THRESHOLD = 8;
-            const EXCELLENCE_THRESHOLD = 9;
+            const MAX_GRADE = 12;
+            const RED_GRADE_THRESHOLD = 8.4;
+            const VERY_GOOD_THRESHOLD = 9.6;
+            const EXCELLENCE_THRESHOLD = 10.8;
             const MIN_FIELDS_FOR_TABLE = 5;
             
             // SUB prefix patterns for substitutive exams - shared constant to avoid duplication
@@ -8686,7 +8686,7 @@ function renderTabFaltas(faltas) {
             });
 
             const overallAvg = totalCount > 0 ? totalSum / totalCount : 0;
-            const progressPercent = overallAvg * 10;
+            const progressPercent = (overallAvg / MAX_GRADE) * 100;
 
             // Determina a mensagem de performance
             let performanceMessage = 'Precisa de atenção';
@@ -8728,7 +8728,7 @@ function renderTabFaltas(faltas) {
                             <div class="nt-ring-container">
                                 <div class="nt-progress-ring" style="--nt-progress-percent: ${progressPercent}%;">
                                     <div class="nt-ring-value">${formatarNota(overallAvg)}</div>
-                                    <div class="nt-ring-subtitle">de 10,0</div>
+                                    <div class="nt-ring-subtitle">de 12,0</div>
                                 </div>
                             </div>
                             <div class="nt-progress-text">
@@ -8794,7 +8794,7 @@ function renderTabFaltas(faltas) {
                 
                 const displayGrade = notaFinal > 0 ? formatarNota(notaFinal) : '-';
                 const gradeColor = notaFinal > 0 ? getGradeColor(notaFinal, disciplina.color) : disciplina.color;
-                const percentage = notaFinal > 0 ? (notaFinal / 10) * 100 : 0;
+                const percentage = notaFinal > 0 ? (notaFinal / 12) * 100 : 0;
                 
                 // Status badge
                 let statusBadge = '';
@@ -8929,7 +8929,7 @@ function renderTabFaltas(faltas) {
                     }
                 });
                 const mediaValue = count > 0 ? sum / count : 0;
-                const percentage = (mediaValue / 10) * 100;
+                const percentage = (mediaValue / 12) * 100;
                 const mediaColor = getGradeColor(mediaValue, color);
                 
                 // Status for the group
@@ -9107,11 +9107,11 @@ function renderTabFaltas(faltas) {
             const summary = calculatePracticeSummary(notasP);
             const hasValidatedData = notasP.some(n => n._uniqueId);
             const totalValidated = hasValidatedData ? notasP.filter(n => n._uniqueId).length : 0;
-            const progressPercent = summary.overallAvg * 10;
+            const progressPercent = (summary.overallAvg / 12) * 100;
             
             // Calcula estatísticas adicionais
             let highestGrade = 0;
-            let lowestGrade = 10;
+            let lowestGrade = 12;
             let totalCount = 0;
             
             notasP.forEach(n => {
@@ -9130,15 +9130,15 @@ function renderTabFaltas(faltas) {
                 }
             });
             
-            if (lowestGrade === 10 && totalCount === 0) lowestGrade = 0;
+            if (lowestGrade === 12 && totalCount === 0) lowestGrade = 0;
             
             // Determina a mensagem de performance
             let performanceMessage = 'Precisa de atenção';
-            if (summary.overallAvg >= 9.0) {
+            if (summary.overallAvg >= 10.8) {
                 performanceMessage = 'Excelência Acadêmica';
-            } else if (summary.overallAvg >= 8.0) {
+            } else if (summary.overallAvg >= 9.6) {
                 performanceMessage = 'Muito Bom';
-            } else if (summary.overallAvg >= 7.0) {
+            } else if (summary.overallAvg >= 8.4) {
                 performanceMessage = 'Bom Desempenho';
             }
             
@@ -9172,7 +9172,7 @@ function renderTabFaltas(faltas) {
                             <div class="np-ring-container-pro">
                                 <div class="np-progress-ring-pro" style="--np-progress-percent: ${progressPercent}%;">
                                     <div class="np-ring-value-pro">${formatarNota(summary.overallAvg)}</div>
-                                    <div class="np-ring-subtitle-pro">de 10,0</div>
+                                    <div class="np-ring-subtitle-pro">de 12,0</div>
                                 </div>
                             </div>
                             <div class="np-progress-text-pro">
@@ -9255,9 +9255,9 @@ function renderTabFaltas(faltas) {
                     <div class="np-chart-canvas-pro">
                         ${summary.last5Notes.length > 0 ? summary.last5Notes.map((note, i) => {
                             let barColor = '#0891B2';
-                            if (note.value >= 9) barColor = '#059669';
-                            else if (note.value >= 7) barColor = '#0891B2';
-                            else if (note.value < 7) barColor = '#f59e0b';
+                            if (note.value >= 10.8) barColor = '#059669';
+                            else if (note.value >= 9.6) barColor = '#0891B2';
+                            else if (note.value < 9.6) barColor = '#f59e0b';
                             return `
                             <div class="np-chart-bar-pro">
                                 <div class="np-bar-fill-pro" style="height: ${Math.max(note.value * 22, 35)}px; background: linear-gradient(180deg, ${barColor}, ${barColor}dd);">
@@ -9344,16 +9344,16 @@ function renderTabFaltas(faltas) {
                 // Determina cor e status baseado na nota
                 let gradeColor = '#3b82f6';
                 let gradeStatus = 'Satisfatório';
-                if (mediaFinal >= 9.0) {
+                if (mediaFinal >= 10.8) {
                     gradeColor = '#10b981';
                     gradeStatus = 'Excelente';
-                } else if (mediaFinal >= 8.0) {
+                } else if (mediaFinal >= 9.6) {
                     gradeColor = '#6366f1';
                     gradeStatus = 'Muito Bom';
-                } else if (mediaFinal >= 7.0) {
+                } else if (mediaFinal >= 8.4) {
                     gradeColor = '#f59e0b';
                     gradeStatus = 'Bom';
-                } else if (mediaFinal < 7.0) {
+                } else if (mediaFinal < 8.4) {
                     gradeColor = '#ef4444';
                     gradeStatus = 'Precisa Melhorar';
                 }
@@ -9408,7 +9408,7 @@ function renderTabFaltas(faltas) {
                             </div>
                             
                             <div class="np-module-progress-bar-pro">
-                                <div class="np-module-progress-fill-pro" style="width: ${(mediaFinal / 10) * 100}%; background: ${gradeColor};"></div>
+                                <div class="np-module-progress-fill-pro" style="width: ${(mediaFinal / 12) * 100}%; background: ${gradeColor};"></div>
                             </div>
                             
                             <details class="np-module-details-pro" open>
@@ -9449,11 +9449,11 @@ function renderTabFaltas(faltas) {
                                                 <span>Desempenho por Competência</span>
                                             </div>
                                             ${numericalScores.map(score => {
-                                                const percentage = (score.value / 10) * 100;
+                                                const percentage = (score.value / 12) * 100;
                                                 let scoreColor = '#0891B2';
-                                                if (score.value >= 9) scoreColor = '#059669';
-                                                else if (score.value >= 7) scoreColor = '#0891B2';
-                                                else if (score.value < 7) scoreColor = '#f59e0b';
+                                                if (score.value >= 10.8) scoreColor = '#059669';
+                                                else if (score.value >= 9.6) scoreColor = '#0891B2';
+                                                else if (score.value < 9.6) scoreColor = '#f59e0b';
                                                 
                                                 const displayLabel = splitConcatenatedFieldName(score.label);
                                                 return `

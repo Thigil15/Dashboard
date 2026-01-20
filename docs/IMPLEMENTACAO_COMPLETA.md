@@ -21,7 +21,7 @@
    - ✅ Valida EmailHC (deve conter "@")
    - ✅ Valida NomeCompleto (não pode estar vazio)
    - ✅ Valida Data/Hora (formato válido)
-   - ✅ Valida Notas (devem estar entre 0-10)
+   - ✅ Valida Notas (devem estar entre 0-12)
 
 2. **ID Único (Hash)**
    ```javascript
@@ -62,7 +62,7 @@
 - **Card de Média Geral**:
   - Gradiente roxo/violeta profissional
   - Anel de progresso animado (CSS puro)
-  - Valor grande e destacado (8.5 de 10.0)
+  - Valor grande e destacado (8.5 de 12.0)
   - Status contextual (Excelente/Bom/Precisa Atenção)
   - Contador de avaliações validadas
 
@@ -83,10 +83,10 @@
 **Cada avaliação individual tem**:
 
 - **Borda colorida dinâmica** (varia com a nota):
-  - 9.0-10.0: 🟢 Verde (#10b981) - "Excelente"
-  - 8.0-8.9: 🔵 Azul (#3b82f6) - "Muito Bom"
-  - 7.0-7.9: 🟡 Âmbar (#f59e0b) - "Bom"
-  - < 7.0: 🔴 Vermelho (#ef4444) - "Precisa Melhorar"
+  - 10.8-12.0: 🟢 Verde (#10b981) - "Excelente"
+  - 9.6-10.7: 🔵 Azul (#3b82f6) - "Muito Bom"
+  - 8.4-9.5: 🟡 Âmbar (#f59e0b) - "Bom"
+  - < 8.4: 🔴 Vermelho (#ef4444) - "Precisa Melhorar"
 
 - **Badge de Status**:
   - Cor contextual baseada na nota
