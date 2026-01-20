@@ -641,11 +641,21 @@
             const errors = [];
             const warnings = [];
             
-            // Campos obrigatórios para identificação única
+            // Helper function to get field value from multiple possible names
+            const getField = (fieldNames) => {
+                for (const name of fieldNames) {
+                    if (registro[name] && String(registro[name]).trim() !== '') {
+                        return registro[name];
+                    }
+                }
+                return null;
+            };
+            
+            // Campos obrigatórios para identificação única - expanded variants
             const requiredFields = {
-                'EmailHC': registro.EmailHC || registro.emailHC || registro.emailhc,
-                'NomeCompleto': registro.NomeCompleto || registro.nomeCompleto || registro.nomecompleto,
-                'Data/Hora': registro['Data/Hora'] || registro['DataHora'] || registro.dataHora
+                'EmailHC': getField(['EmailHC', 'emailHC', 'emailhc', 'Email', 'email', 'EMAIL', 'E-mail', 'e-mail', 'EmailAluno', 'emailAluno']),
+                'NomeCompleto': getField(['NomeCompleto', 'nomeCompleto', 'nomecompleto', 'Nome', 'nome', 'NOME', 'NomeAluno', 'nomeAluno', 'Aluno', 'aluno']),
+                'Data/Hora': getField(['Data/Hora', 'DataHora', 'dataHora', 'Data', 'data', 'DATA', 'Timestamp', 'timestamp', 'DataAvaliacao', 'dataAvaliacao'])
             };
             
             // Valida campos obrigatórios
@@ -729,18 +739,57 @@
                     let totalErrors = 0;
                     let totalWarnings = 0;
                     
-                    // Find all sheets that match practical grades pattern
+                    // Find all sheets that match practical grades pattern (NotasPraticas1-12)
                     Object.keys(data).forEach(sheetName => {
                         const normName = normalizeSheetName(sheetName);
                         if (isPracticeSheetName(normName)) {
                             const sheetData = data[sheetName];
+                            
+                            // Handle both data structures:
+                            // 1. { dados: [...], nomeAbaOriginal: "..." }
+                            // 2. Direct array of records
+                            // 3. Object with numeric keys (Firebase array-like)
+                            let dataArray = null;
+                            let nome = sheetName;
+                            
                             if (sheetData && sheetData.dados) {
-                                const nome = sheetData.nomeAbaOriginal || sheetName;
+                                // Structure 1: Has 'dados' property
+                                dataArray = sheetData.dados;
+                                nome = sheetData.nomeAbaOriginal || sheetName;
+                            } else if (Array.isArray(sheetData)) {
+                                // Structure 2: Direct array
+                                dataArray = sheetData;
+                                console.log(`[setupNotasPraticasListeners] Sheet "${sheetName}" usando estrutura de array direto`);
+                            } else if (sheetData && typeof sheetData === 'object') {
+                                // Structure 3: Object that might be Firebase array-like (with numeric keys)
+                                // or might have data nested differently
+                                const keys = Object.keys(sheetData);
+                                // Use Number.isInteger(Number(k)) for accurate numeric key detection
+                                const hasNumericKeys = keys.some(k => Number.isInteger(Number(k)) && Number(k) >= 0);
+                                
+                                if (hasNumericKeys) {
+                                    // Convert Firebase array-like object to array
+                                    dataArray = keys
+                                        .filter(k => Number.isInteger(Number(k)) && Number(k) >= 0)
+                                        .sort((a, b) => Number(a) - Number(b))
+                                        .map(k => sheetData[k]);
+                                    console.log(`[setupNotasPraticasListeners] Sheet "${sheetName}" convertido de objeto para array (${dataArray.length} registros)`);
+                                } else if (sheetData.registros) {
+                                    // Alternative structure with 'registros' property
+                                    dataArray = sheetData.registros;
+                                    nome = sheetData.nomePratica || sheetData.nomeAbaOriginal || sheetName;
+                                }
+                            }
+                            
+                            if (dataArray && dataArray.length > 0) {
                                 const validatedRegistros = [];
                                 const sheetErrors = [];
                                 
                                 // [SISTEMA ÚNICO] Valida cada registro
-                                (sheetData.dados || []).forEach((registro, idx) => {
+                                // Filter out invalid entries before processing
+                                const validEntries = dataArray.filter(registro => registro && typeof registro === 'object');
+                                
+                                validEntries.forEach((registro, idx) => {
                                     const validation = validateNotaPraticaIntegrity(registro, sheetName);
                                     
                                     if (validation.isValid) {
@@ -774,7 +823,7 @@
                                         const newUniqueRecords = validatedRegistros.filter(r => !existingIds.has(r._uniqueId));
                                         
                                         notasPraticas[nome].registros.push(...newUniqueRecords);
-                                        notasPraticas[nome]._metadata.totalRegistros += sheetData.dados.length;
+                                        notasPraticas[nome]._metadata.totalRegistros += dataArray.length;
                                         notasPraticas[nome]._metadata.registrosValidos += newUniqueRecords.length;
                                         notasPraticas[nome]._metadata.duplicatasRemovidas = (notasPraticas[nome]._metadata.duplicatasRemovidas || 0) + (validatedRegistros.length - newUniqueRecords.length);
                                         
@@ -784,7 +833,7 @@
                                             nomePratica: nome,
                                             registros: validatedRegistros,
                                             _metadata: {
-                                                totalRegistros: sheetData.dados.length,
+                                                totalRegistros: dataArray.length,
                                                 registrosValidos: validatedRegistros.length,
                                                 registrosInvalidos: sheetErrors.length,
                                                 duplicatasRemovidas: 0,
@@ -792,11 +841,13 @@
                                                 erros: sheetErrors
                                             }
                                         };
-                                        console.log(`[setupNotasPraticasListeners] ✅ Notas práticas "${nome}" validadas: ${validatedRegistros.length}/${sheetData.dados.length} registros válidos`);
+                                        console.log(`[setupNotasPraticasListeners] ✅ Notas práticas "${nome}" validadas: ${validatedRegistros.length}/${dataArray.length} registros válidos`);
                                     }
-                                } else if (sheetData.dados.length > 0) {
+                                } else if (dataArray.length > 0) {
                                     console.error(`[setupNotasPraticasListeners] ❌ Todos os registros em "${nome}" são inválidos!`);
                                 }
+                            } else {
+                                console.warn(`[setupNotasPraticasListeners] ⚠️ Sheet "${sheetName}" não contém dados válidos ou estrutura reconhecida`);
                             }
                         }
                     });
@@ -9507,18 +9558,6 @@ function renderTabFaltas(faltas) {
                                         </div>
                                         <div class="np-feedback-content-pro">${comentario}</div>
                                     </div>
-                                    
-                                    ${n._uniqueId ? `
-                                        <div class="np-validation-info-pro">
-                                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            <div>
-                                                <span class="np-validation-title-pro">Avaliação Validada</span>
-                                                <span class="np-validation-id-pro">ID: ${n._uniqueId}</span>
-                                            </div>
-                                        </div>
-                                    ` : ''}
                                 </div>
                             </details>
                         </div>

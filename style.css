@@ -15430,41 +15430,6 @@
     white-space: pre-wrap;
 }
 
-/* === VALIDATION INFO === */
-.np-validation-info-pro {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-top: 1.5rem;
-    padding: 1rem;
-    background: rgba(5, 150, 105, 0.08);
-    border: 1px solid rgba(5, 150, 105, 0.2);
-    border-radius: 10px;
-}
-
-.np-validation-info-pro svg {
-    width: 1.25rem;
-    height: 1.25rem;
-    color: #059669;
-    flex-shrink: 0;
-}
-
-.np-validation-title-pro {
-    display: block;
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: #059669;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.np-validation-id-pro {
-    display: block;
-    font-size: 0.8125rem;
-    color: #047857;
-    margin-top: 0.125rem;
-}
-
 /* === EMPTY STATE === */
 .np-empty-state-pro {
     display: flex;
