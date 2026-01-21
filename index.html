@@ -173,6 +173,18 @@
                     </svg>
                     <span>Frequência</span>
                 </a>
+                <a href="#ausencias" data-tab="ausencias" class="header-nav-link">
+                    <svg class="header-nav-icon" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                    </svg>
+                    <span>Ausências</span>
+                </a>
+                <a href="#reposicoes" data-tab="reposicoes" class="header-nav-link">
+                    <svg class="header-nav-icon" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+                    </svg>
+                    <span>Reposições</span>
+                </a>
             </nav>
         </header>
 
@@ -620,6 +632,150 @@
                         </div>
                     </div>
 
+                </div>
+
+                <!-- View: Ausências - Modern InCor Design -->
+                <div id="content-ausencias" class="view-container" style="display: none;">
+                    <!-- Sync Status Badge -->
+                    <div class="ponto-sync-status">
+                        <span id="ausencias-last-sync" class="ponto-sync-badge">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>Dados não carregados</span>
+                        </span>
+                    </div>
+
+                    <!-- Header Card -->
+                    <div class="ponto-type-card animated-card delay-50">
+                        <div class="ponto-header-info">
+                            <h2 class="ponto-header-title">Ausências</h2>
+                            <p class="ponto-header-subtitle">Registro de faltas e justificativas dos alunos</p>
+                        </div>
+                    </div>
+
+                    <!-- Controls Card -->
+                    <div class="ponto-controls-card animated-card delay-100">
+                        <div class="ponto-controls-row">
+                            <!-- Search Box -->
+                            <div class="ponto-control-group" style="flex: 2;">
+                                <label class="ponto-control-label">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                                    </svg>
+                                    Buscar
+                                </label>
+                                <input type="text" id="ausencias-search" placeholder="Buscar por nome, email, curso..." class="ponto-control-input">
+                            </div>
+
+                            <!-- Refresh Button -->
+                            <div class="ponto-control-group ponto-control-action">
+                                <button id="ausencias-refresh-button" class="ponto-refresh-btn" type="button">
+                                    <svg class="ponto-refresh-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                                    </svg>
+                                    <span>Atualizar</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Data Table Card -->
+                    <div class="ponto-data-card animated-card delay-300">
+                        <div class="ponto-table-container">
+                            <table class="ponto-table" id="ausencias-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nome Completo</th>
+                                        <th>Email HC</th>
+                                        <th>Curso</th>
+                                        <th>Escala</th>
+                                        <th>Data Ausência</th>
+                                        <th>Unidade</th>
+                                        <th>Horário</th>
+                                        <th>Motivo</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ausencias-table-body">
+                                    <tr>
+                                        <td colspan="8" class="ponto-table-empty">Nenhuma ausência registrada</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- View: Reposições - Modern InCor Design -->
+                <div id="content-reposicoes" class="view-container" style="display: none;">
+                    <!-- Sync Status Badge -->
+                    <div class="ponto-sync-status">
+                        <span id="reposicoes-last-sync" class="ponto-sync-badge">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>Dados não carregados</span>
+                        </span>
+                    </div>
+
+                    <!-- Header Card -->
+                    <div class="ponto-type-card animated-card delay-50">
+                        <div class="ponto-header-info">
+                            <h2 class="ponto-header-title">Reposições</h2>
+                            <p class="ponto-header-subtitle">Registro de aulas de reposição agendadas e realizadas</p>
+                        </div>
+                    </div>
+
+                    <!-- Controls Card -->
+                    <div class="ponto-controls-card animated-card delay-100">
+                        <div class="ponto-controls-row">
+                            <!-- Search Box -->
+                            <div class="ponto-control-group" style="flex: 2;">
+                                <label class="ponto-control-label">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                                    </svg>
+                                    Buscar
+                                </label>
+                                <input type="text" id="reposicoes-search" placeholder="Buscar por nome, email, curso..." class="ponto-control-input">
+                            </div>
+
+                            <!-- Refresh Button -->
+                            <div class="ponto-control-group ponto-control-action">
+                                <button id="reposicoes-refresh-button" class="ponto-refresh-btn" type="button">
+                                    <svg class="ponto-refresh-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                                    </svg>
+                                    <span>Atualizar</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Data Table Card -->
+                    <div class="ponto-data-card animated-card delay-300">
+                        <div class="ponto-table-container">
+                            <table class="ponto-table" id="reposicoes-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nome Completo</th>
+                                        <th>Email HC</th>
+                                        <th>Curso</th>
+                                        <th>Escala</th>
+                                        <th>Unidade</th>
+                                        <th>Horário</th>
+                                        <th>Motivo</th>
+                                        <th>Data Reposição</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reposicoes-table-body">
+                                    <tr>
+                                        <td colspan="8" class="ponto-table-empty">Nenhuma reposição registrada</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
 
         </main>

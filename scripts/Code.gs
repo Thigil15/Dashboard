@@ -1749,6 +1749,14 @@ function enviarDadosParaFirebase() {
 function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents);
+    
+    // Verificar se é uma requisição de ausência ou reposição
+    var tipo = (data.tipo || '').toLowerCase();
+    if (tipo === 'ausencia' || tipo === 'reposicao') {
+      // Redirecionar para o handler de ausências/reposições
+      return doPostAusenciasReposicoes(e);
+    }
+    
     var id = data.SerialNumber || "";
     var nome = data.NomeCompleto || "Desconhecido";
     var email = data.EmailHC || "";
