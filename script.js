@@ -2383,21 +2383,44 @@ function extractTimeFromISO(isoString) {
                     const card = document.createElement('div');
                     card.className = 'student-card student-card-ausencia';
                     card.setAttribute('data-student-email', s.EmailHC || '');
-                    card.setAttribute('data-student-name', normalizeString(s.NomeCompleto));
+                    card.setAttribute('data-student-name', normalizeString(s.NomeCompleto || ''));
                     
-                    // Build card content
+                    // Build card content safely
                     const imgSrc = s.FotoID ? `https://lh3.googleusercontent.com/d/${s.FotoID}=s96-c` : placeholderImg;
-                    card.innerHTML = `
-                        <img src="${imgSrc}" alt="Foto" loading="lazy" onerror="this.src='${placeholderImg}'">
-                        <p class="student-name">${s.NomeCompleto}</p>
-                        <p class="student-course mt-0.5">${s.Curso || 'Sem Curso'}</p>
-                        <button class="btn-insert-ausencia" onclick="openAusenciaModal('${(s.EmailHC || '').replace(/'/g, "\\'")}', '${(s.NomeCompleto || '').replace(/'/g, "\\'")}', '${(s.Curso || '').replace(/'/g, "\\'")}', '${s.Escala || ''}')">
-                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                            </svg>
-                            Inserir Ausência
-                        </button>
+                    
+                    // Create elements to avoid innerHTML with user data in onclick
+                    const img = document.createElement('img');
+                    img.src = imgSrc;
+                    img.alt = 'Foto';
+                    img.loading = 'lazy';
+                    img.onerror = function() { this.src = placeholderImg; };
+                    
+                    const namePara = document.createElement('p');
+                    namePara.className = 'student-name';
+                    namePara.textContent = s.NomeCompleto;
+                    
+                    const coursePara = document.createElement('p');
+                    coursePara.className = 'student-course mt-0.5';
+                    coursePara.textContent = s.Curso || 'Sem Curso';
+                    
+                    const button = document.createElement('button');
+                    button.className = 'btn-insert-ausencia';
+                    button.innerHTML = `
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>
+                        Inserir Ausência
                     `;
+                    // Safely attach click handler
+                    button.addEventListener('click', () => {
+                        openAusenciaModal(s.EmailHC || '', s.NomeCompleto || '', s.Curso || '', s.Escala || '');
+                    });
+                    
+                    card.appendChild(img);
+                    card.appendChild(namePara);
+                    card.appendChild(coursePara);
+                    card.appendChild(button);
+                    
                     grid.appendChild(card);
                 }); 
                 
@@ -2577,17 +2600,19 @@ function extractTimeFromISO(isoString) {
                         body: JSON.stringify(ausenciaData)
                     });
                     
-                    // Note: With no-cors mode, we can't read the response, but if no error is thrown, it succeeded
-                    console.log('[setupAusenciaFormHandler] Data sent successfully');
+                    // Note: With no-cors mode, we can't read the response
+                    // The absence of an error thrown indicates the request was sent successfully,
+                    // but we cannot verify if the server processed it correctly
+                    console.log('[setupAusenciaFormHandler] Request sent successfully (no-cors mode)');
                     
                     submitBtn.classList.remove('loading');
                     submitBtn.disabled = false;
                     
-                    showSuccess('Ausência registrada com sucesso!');
+                    showSuccess('Ausência enviada! Verifique a planilha para confirmar o registro.');
                     closeAusenciaModal();
                     
                     // Refresh the table after a delay to allow the sheet to update
-                    setTimeout(() => renderAusenciasView(), 1000);
+                    setTimeout(() => renderAusenciasView(), 2000);
                 } catch (error) {
                     console.error('[setupAusenciaFormHandler] Error sending data:', error);
                     
