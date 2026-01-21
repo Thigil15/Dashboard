@@ -2036,7 +2036,7 @@ function criarAbasAusenciasReposicoes() {
     ss.moveActiveSheet(abaAusencias.getIndex() + 1);
     
     // Configurar cabeçalhos
-    var cabecalhosReposicoes = ['NomeCompleto', 'EmailHC', 'Curso', 'Escala', 'Unidade', 'Horario', 'Motivo', 'DataReposicao'];
+    var cabecalhosReposicoes = ['NomeCompleto', 'EmailHC', 'Curso', 'Escala', 'Horario', 'Unidade', 'Motivo', 'DataReposicao'];
     abaReposicoes.getRange(1, 1, 1, cabecalhosReposicoes.length).setValues([cabecalhosReposicoes]);
     abaReposicoes.getRange(1, 1, 1, cabecalhosReposicoes.length).setFontWeight('bold');
     abaReposicoes.setFrozenRows(1);
@@ -2185,8 +2185,8 @@ function registrarReposicao(data) {
     data.EmailHC || '',
     data.Curso || '',
     data.Escala || '',
-    data.Unidade || '',
     data.Horario || '',
+    data.Unidade || '',
     data.Motivo || '',
     data.DataReposicao || ''
   ];
