@@ -3,6 +3,7 @@
  **********************************************/
 const FIREBASE_URL = "https://dashboardalunos-default-rtdb.firebaseio.com/"; // ⚠️ Substitua pelo seu
 const FIREBASE_SECRET = PropertiesService.getScriptProperties().getProperty("FIREBASE_SECRET");
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**********************************************
  * 🔨 FUNÇÕES AUXILIARES (HELPERS)
@@ -2577,9 +2578,6 @@ function processarEscala12() { processarAusenciasEscala(12); }
  * 🎯 SISTEMA DE AUSÊNCIAS E REPOSIÇÕES
  * Integrado do AusenciasReposicoes.gs
  **********************************************/
-
-// Constantes
-var EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
  * Cria as abas "Ausencias" e "Reposicoes" se não existirem.
