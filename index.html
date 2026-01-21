@@ -654,19 +654,31 @@
                         </div>
                     </div>
 
-                    <!-- Students List Section -->
-                    <div class="ponto-type-card animated-card delay-100" id="ausencias-students-section">
-                        <div class="ponto-header-info" style="margin-bottom: 1.5rem;">
-                            <h3 class="ponto-header-title" style="font-size: 1.25rem;">Registrar Ausência</h3>
-                            <p class="ponto-header-subtitle">Selecione um aluno para registrar uma ausência</p>
+                    <!-- Students List Section - Similar to Alunos tab -->
+                    <header class="alunos-header">
+                        <div class="alunos-header-content">
+                            <div class="alunos-header-left">
+                                <div class="alunos-header-icon">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h1 class="alunos-header-title">Registrar Ausência</h1>
+                                    <p class="alunos-header-subtitle">Selecione um aluno para registrar uma ausência</p>
+                                </div>
+                            </div>
+                            <div class="alunos-search-wrapper">
+                                <svg class="alunos-search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                                </svg>
+                                <input type="text" id="ausencias-students-search" placeholder="Buscar aluno pelo nome..." class="alunos-search-input">
+                            </div>
                         </div>
-                        <div style="margin-bottom: 1rem;">
-                            <input type="text" id="ausencias-students-search" placeholder="Buscar aluno por nome ou email..." class="ponto-control-input" style="width: 100%;">
-                        </div>
-                        <div id="ausencias-students-list" style="max-height: 400px; overflow-y: auto;">
-                            <!-- Students will be rendered here by JavaScript -->
-                        </div>
-                    </div>
+                    </header>
+                    
+                    <!-- Student List Panel - Natural page scroll -->
+                    <div id="ausencias-students-list" class="alunos-list-panel"></div>
 
                     <!-- Controls Card -->
                     <div class="ponto-controls-card animated-card delay-150">
@@ -1377,7 +1389,21 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label">Escala *</label>
-                        <input type="text" id="ausencia-escala" class="form-input" required>
+                        <select id="ausencia-escala" class="form-input" required>
+                            <option value="">Selecione...</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                            <option value="10">10</option>
+                            <option value="11">11</option>
+                            <option value="12">12</option>
+                        </select>
                     </div>
                 </div>
                 <div class="form-row">
@@ -1387,13 +1413,31 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label">Unidade *</label>
-                        <input type="text" id="ausencia-unidade" class="form-input" required>
+                        <select id="ausencia-unidade" class="form-input" required>
+                            <option value="">Selecione...</option>
+                            <option value="Enf. Pneumo">Enf. Pneumo</option>
+                            <option value="Enf. Cardio">Enf. Cardio</option>
+                            <option value="Enf. Coronária">Enf. Coronária</option>
+                            <option value="Enf. Pediátrica">Enf. Pediátrica</option>
+                            <option value="UCO">UCO</option>
+                            <option value="UTI Clínica">UTI Clínica</option>
+                            <option value="UTI Respiratória">UTI Respiratória</option>
+                            <option value="UTI Pediátrica">UTI Pediátrica</option>
+                            <option value="REC1">REC1</option>
+                            <option value="REC2">REC2</option>
+                        </select>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Horário *</label>
-                        <input type="text" id="ausencia-horario" class="form-input" placeholder="Ex: 08:00-12:00" required>
+                        <select id="ausencia-horario" class="form-input" required>
+                            <option value="">Selecione...</option>
+                            <option value="07h-12h">07h-12h</option>
+                            <option value="08h-13h">08h-13h</option>
+                            <option value="13h-18h">13h-18h</option>
+                            <option value="19h-07h">19h-07h</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Motivo *</label>

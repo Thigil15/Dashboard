@@ -2338,60 +2338,170 @@ function extractTimeFromISO(isoString) {
             console.log(`[renderAusenciasStudentsList] Found ${activeStudents.length} active students`);
             
             if (activeStudents.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: var(--content-text-muted); padding: 2rem;">Nenhum aluno ativo encontrado</p>';
+                container.innerHTML = `
+                    <div class="empty-state" style="text-align: center; padding: 3rem;">
+                        <p style="color: var(--content-text-muted); font-size: 1rem;">Nenhum aluno ativo encontrado</p>
+                    </div>
+                `;
                 return;
             }
             
-            // Render students
-            container.innerHTML = activeStudents.map(student => `
-                <div class="student-list-card">
-                    <div class="student-list-header">
-                        <div class="student-list-name">${student.NomeCompleto || 'Nome não disponível'}</div>
-                        <button class="student-action-btn" onclick="openAusenciaModal('${student.EmailHC}', '${student.NomeCompleto}', '${student.Curso || ''}', '${student.Escala || ''}')">
-                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                            </svg>
-                            Inserir Ausência
-                        </button>
-                    </div>
-                    <div class="student-list-info">
-                        <div class="student-list-info-item">
-                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-                            </svg>
-                            ${student.EmailHC || 'Email não disponível'}
-                        </div>
-                        ${student.Curso ? `
-                        <div class="student-list-info-item">
-                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-                            </svg>
-                            ${student.Curso}
-                        </div>
-                        ` : ''}
-                        ${student.Escala ? `
-                        <div class="student-list-info-item">
-                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-                            </svg>
-                            Escala ${student.Escala}
-                        </div>
-                        ` : ''}
-                    </div>
-                </div>
-            `).join('');
+            // Use DocumentFragment for better performance
+            const fragment = document.createDocumentFragment();
+            
+            // Group students by course
+            const grouped = activeStudents.reduce((acc, s) => { 
+                const c = s.Curso || 'Sem Curso'; 
+                if (!acc[c]) acc[c] = []; 
+                acc[c].push(s); 
+                return acc; 
+            }, {}); 
+            const courses = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
+            
+            // Pre-sort students once per group
+            courses.forEach(c => {
+                grouped[c].sort((a, b) => a.NomeCompleto.localeCompare(b.NomeCompleto));
+            });
+            
+            // Placeholder image URL
+            const placeholderImg = 'https://placehold.co/60x60/e2e8f0/64748b?text=?';
+            
+            courses.forEach(c => { 
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'student-group';
+                groupDiv.setAttribute('data-course', c);
+                
+                const header = document.createElement('h3');
+                header.className = 'student-group-header';
+                header.textContent = `${c} (${grouped[c].length})`;
+                groupDiv.appendChild(header);
+                
+                const grid = document.createElement('div');
+                grid.className = 'grid';
+                
+                grouped[c].forEach(s => { 
+                    const card = document.createElement('div');
+                    card.className = 'student-card student-card-ausencia';
+                    card.setAttribute('data-student-email', s.EmailHC || '');
+                    card.setAttribute('data-student-name', normalizeString(s.NomeCompleto || ''));
+                    
+                    // Build card content safely
+                    const imgSrc = s.FotoID ? `https://lh3.googleusercontent.com/d/${s.FotoID}=s96-c` : placeholderImg;
+                    
+                    // Create elements to avoid innerHTML with user data in onclick
+                    const img = document.createElement('img');
+                    img.src = imgSrc;
+                    img.alt = 'Foto';
+                    img.loading = 'lazy';
+                    img.onerror = function() { this.src = placeholderImg; };
+                    
+                    const namePara = document.createElement('p');
+                    namePara.className = 'student-name';
+                    namePara.textContent = s.NomeCompleto;
+                    
+                    const coursePara = document.createElement('p');
+                    coursePara.className = 'student-course mt-0.5';
+                    coursePara.textContent = s.Curso || 'Sem Curso';
+                    
+                    const button = document.createElement('button');
+                    button.className = 'btn-insert-ausencia';
+                    button.innerHTML = `
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>
+                        Inserir Ausência
+                    `;
+                    // Safely attach click handler
+                    button.addEventListener('click', () => {
+                        openAusenciaModal(s.EmailHC || '', s.NomeCompleto || '', s.Curso || '', s.Escala || '');
+                    });
+                    
+                    card.appendChild(img);
+                    card.appendChild(namePara);
+                    card.appendChild(coursePara);
+                    card.appendChild(button);
+                    
+                    grid.appendChild(card);
+                }); 
+                
+                groupDiv.appendChild(grid);
+                fragment.appendChild(groupDiv);
+            }); 
+            
+            // Clear and append in one operation
+            container.innerHTML = '';
+            container.appendChild(fragment);
             
             // Setup search for students
             const searchInput = document.getElementById('ausencias-students-search');
             if (searchInput) {
-                searchInput.addEventListener('input', (e) => {
-                    const searchTerm = e.target.value.toLowerCase();
-                    const cards = container.querySelectorAll('.student-list-card');
-                    cards.forEach(card => {
-                        const text = card.textContent.toLowerCase();
-                        card.style.display = text.includes(searchTerm) ? '' : 'none';
-                    });
+                // Remove existing listeners
+                const newSearchInput = searchInput.cloneNode(true);
+                searchInput.parentNode.replaceChild(newSearchInput, searchInput);
+                
+                newSearchInput.addEventListener('input', filterAusenciasStudentList);
+            }
+        }
+        
+        function filterAusenciasStudentList(e) {
+            const q = normalizeString(e.target.value);
+            const groups = document.querySelectorAll('#ausencias-students-list .student-group');
+            let hasVisible = false;
+            
+            groups.forEach(g => {
+                const cards = g.querySelectorAll('.student-card');
+                const header = g.querySelector('.student-group-header');
+                let groupVisible = false;
+                
+                cards.forEach(c => {
+                    const nameElem = c.querySelector('.student-name');
+                    const name = c.getAttribute('data-student-name'); 
+                    const originalName = nameElem.textContent; 
+                    
+                    if (q === '' || name.includes(q)) {
+                        c.classList.remove('hidden');
+                        groupVisible = true;
+                        hasVisible = true;
+                        if (q !== '') {
+                            try {
+                                const regex = new RegExp(`(${q.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi');
+                                nameElem.innerHTML = originalName.replace(regex, '<span class="highlight">$1</span>');
+                            } catch (err) {
+                                nameElem.innerHTML = originalName; 
+                            }
+                        } else {
+                            nameElem.innerHTML = originalName;
+                        }
+                    } else {
+                        c.classList.add('hidden');
+                        nameElem.innerHTML = originalName;
+                    }
                 });
+                
+                if (groupVisible) {
+                    g.classList.remove('hidden');
+                } else {
+                    g.classList.add('hidden');
+                }
+            });
+            
+            if (!hasVisible && q !== '') {
+                const container = document.getElementById('ausencias-students-list');
+                if (container && container.querySelectorAll('.student-card').length > 0) {
+                    // Show "no results" only if there are students but none match
+                    if (!document.getElementById('no-results-ausencias')) {
+                        const noResults = document.createElement('div');
+                        noResults.id = 'no-results-ausencias';
+                        noResults.style.cssText = 'text-align: center; padding: 2rem; color: var(--content-text-muted);';
+                        noResults.textContent = 'Nenhum aluno encontrado';
+                        container.appendChild(noResults);
+                    }
+                } 
+            } else {
+                const noResults = document.getElementById('no-results-ausencias');
+                if (noResults) {
+                    noResults.remove();
+                }
             }
         }
 
@@ -2449,6 +2559,7 @@ function extractTimeFromISO(isoString) {
 
         /**
          * Handle form submission for Ausências
+         * Sends data to Google Apps Script instead of Firebase
          */
         function setupAusenciaFormHandler() {
             const form = document.getElementById('form-ausencia');
@@ -2463,6 +2574,7 @@ function extractTimeFromISO(isoString) {
                 
                 // Get form data
                 const ausenciaData = {
+                    tipo: 'ausencia',
                     NomeCompleto: document.getElementById('ausencia-nome').value,
                     EmailHC: document.getElementById('ausencia-email').value,
                     Curso: document.getElementById('ausencia-curso').value,
@@ -2473,19 +2585,41 @@ function extractTimeFromISO(isoString) {
                     Motivo: document.getElementById('ausencia-motivo').value
                 };
                 
-                // Save to Firebase
-                const result = await saveAusencia(ausenciaData);
+                console.log('[setupAusenciaFormHandler] Sending data to Google Apps Script:', ausenciaData);
                 
-                submitBtn.classList.remove('loading');
-                submitBtn.disabled = false;
+                // Send to Google Apps Script
+                const appsScriptURL = 'https://script.google.com/macros/s/AKfycbz-o8_PfTuFHgyPSaOxdfM_NUeCexOYSzpFPcxUak-sKF81XTuwDvTSlI7aNI0UFEMF2w/exec';
                 
-                if (result.success) {
-                    showSuccess('Ausência registrada com sucesso!');
+                try {
+                    const response = await fetch(appsScriptURL, {
+                        method: 'POST',
+                        mode: 'no-cors', // Google Apps Script requires no-cors mode
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(ausenciaData)
+                    });
+                    
+                    // Note: With no-cors mode, we can't read the response
+                    // The absence of an error thrown indicates the request was sent successfully,
+                    // but we cannot verify if the server processed it correctly
+                    console.log('[setupAusenciaFormHandler] Request sent successfully (no-cors mode)');
+                    
+                    submitBtn.classList.remove('loading');
+                    submitBtn.disabled = false;
+                    
+                    showSuccess('Ausência enviada! Verifique a planilha para confirmar o registro.');
                     closeAusenciaModal();
-                    // Refresh the table
-                    setTimeout(() => renderAusenciasView(), 500);
-                } else {
-                    showError('Erro ao registrar ausência: ' + result.error);
+                    
+                    // Refresh the table after a delay to allow the sheet to update
+                    setTimeout(() => renderAusenciasView(), 2000);
+                } catch (error) {
+                    console.error('[setupAusenciaFormHandler] Error sending data:', error);
+                    
+                    submitBtn.classList.remove('loading');
+                    submitBtn.disabled = false;
+                    
+                    showError('Erro ao registrar ausência: ' + error.message);
                 }
             });
         }
