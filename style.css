@@ -1955,6 +1955,50 @@
             transform: translateY(-3px);
         }
         
+        /* === INSERIR AUSÊNCIA BUTTON === */
+        .btn-insert-ausencia {
+            margin-top: 0.75rem;
+            padding: 0.5rem 1rem;
+            background: linear-gradient(135deg, var(--incor-blue-600), var(--incor-blue-500));
+            color: white;
+            border: none;
+            border-radius: var(--radius-lg);
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.375rem;
+            width: 100%;
+            box-shadow: 0 2px 8px rgba(0, 51, 160, 0.2);
+        }
+        
+        .btn-insert-ausencia svg {
+            width: 14px;
+            height: 14px;
+        }
+        
+        .btn-insert-ausencia:hover {
+            background: linear-gradient(135deg, var(--incor-blue-700), var(--incor-blue-600));
+            box-shadow: 0 4px 12px rgba(0, 51, 160, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .btn-insert-ausencia:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(0, 51, 160, 0.2);
+        }
+        
+        .student-card-ausencia {
+            cursor: default;
+        }
+        
+        .student-card-ausencia:hover {
+            transform: translateY(-2px);
+        }
+        
         .inactive-badge { 
             position: absolute;
             top: 0.625rem;
