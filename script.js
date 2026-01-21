@@ -2161,10 +2161,9 @@ function extractTimeFromISO(isoString) {
             
             console.log(`[renderAusenciasView] ${ausencias.length} ausências encontradas`);
             
-            // Update last sync badge
+            // Update last sync badge - removed timestamp as per user request
             if (lastSync) {
-                const now = new Date().toLocaleString('pt-BR');
-                lastSync.querySelector('span:last-child').textContent = `Atualizado: ${now}`;
+                lastSync.querySelector('span:last-child').textContent = `Sincronizado`;
             }
             
             // Clear table
@@ -2217,10 +2216,9 @@ function extractTimeFromISO(isoString) {
             
             console.log(`[renderReposicoesView] ${reposicoes.length} reposições encontradas`);
             
-            // Update last sync badge
+            // Update last sync badge - removed timestamp as per user request
             if (lastSync) {
-                const now = new Date().toLocaleString('pt-BR');
-                lastSync.querySelector('span:last-child').textContent = `Atualizado: ${now}`;
+                lastSync.querySelector('span:last-child').textContent = `Sincronizado`;
             }
             
             // Clear table
