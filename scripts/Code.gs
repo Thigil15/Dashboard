@@ -1724,8 +1724,9 @@ function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents);
     
-    // Verificar se é uma requisição de ausência ou reposição
-    var tipo = (data.tipo || '').toLowerCase();
+    // Verificar se é uma requisição de ausência ou reposição (aceita "tipo" em qualquer capitalização)
+    var tipoRaw = data.tipo || data.Tipo || data.TIPO || '';
+    var tipo = String(tipoRaw).toLowerCase();
     if (tipo === 'ausencia' || tipo === 'reposicao') {
       // Redirecionar para o handler de ausências/reposições
       return doPostAusenciasReposicoes(e);
@@ -2035,7 +2036,7 @@ function criarAbasAusenciasReposicoes() {
     ss.moveActiveSheet(abaAusencias.getIndex() + 1);
     
     // Configurar cabeçalhos
-    var cabecalhosReposicoes = ['NomeCompleto', 'EmailHC', 'Curso', 'Escala', 'Unidade', 'Horario', 'Motivo', 'DataReposicao'];
+    var cabecalhosReposicoes = ['NomeCompleto', 'EmailHC', 'Curso', 'Escala', 'Horario', 'Unidade', 'Motivo', 'DataReposicao'];
     abaReposicoes.getRange(1, 1, 1, cabecalhosReposicoes.length).setValues([cabecalhosReposicoes]);
     abaReposicoes.getRange(1, 1, 1, cabecalhosReposicoes.length).setFontWeight('bold');
     abaReposicoes.setFrozenRows(1);
@@ -2184,8 +2185,8 @@ function registrarReposicao(data) {
     data.EmailHC || '',
     data.Curso || '',
     data.Escala || '',
-    data.Unidade || '',
     data.Horario || '',
+    data.Unidade || '',
     data.Motivo || '',
     data.DataReposicao || ''
   ];
