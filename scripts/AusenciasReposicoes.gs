@@ -1,5 +1,7 @@
 /**********************************************
  * 🎯 SISTEMA DE AUSÊNCIAS E REPOSIÇÕES
+ * Version: 1.0.0
+ * Author: Portal de Ensino InCor - HC FMUSP
  * 
  * Este arquivo gerencia as abas "Ausencias" e "Reposicoes"
  * permitindo registro via POST de dados do site externo.
@@ -13,6 +15,9 @@
  * - NomeCompleto | EmailHC | Curso | Escala | Unidade | Horario | Motivo | DataReposicao
  * 
  **********************************************/
+
+// Constantes
+var EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
  * Cria as abas "Ausencias" e "Reposicoes" se não existirem.
@@ -88,8 +93,7 @@ function validarDadosAusencia(data) {
   }
   
   // Validar formato de email
-  var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(data.EmailHC)) {
+  if (!EMAIL_REGEX.test(data.EmailHC)) {
     return { valid: false, message: 'Email inválido' };
   }
   
@@ -115,8 +119,7 @@ function validarDadosReposicao(data) {
   }
   
   // Validar formato de email
-  var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(data.EmailHC)) {
+  if (!EMAIL_REGEX.test(data.EmailHC)) {
     return { valid: false, message: 'Email inválido' };
   }
   

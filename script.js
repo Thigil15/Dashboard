@@ -2099,6 +2099,37 @@ function extractTimeFromISO(isoString) {
         // AUSÊNCIAS VIEW - Display absences from the Ausencias sheet
         // ====================================================================
         
+        /**
+         * Setup search and refresh functionality for a table view
+         * @param {string} searchInputId - ID of the search input element
+         * @param {string} tableBodyId - ID of the table body element
+         * @param {string} refreshBtnId - ID of the refresh button element
+         * @param {function} refreshCallback - Function to call when refresh is clicked
+         */
+        function setupTableControls(searchInputId, tableBodyId, refreshBtnId, refreshCallback) {
+            // Setup search functionality
+            const searchInput = document.getElementById(searchInputId);
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    const searchTerm = e.target.value.toLowerCase();
+                    const tbody = document.getElementById(tableBodyId);
+                    if (!tbody) return;
+                    
+                    const rows = tbody.querySelectorAll('tr');
+                    rows.forEach(row => {
+                        const text = row.textContent.toLowerCase();
+                        row.style.display = text.includes(searchTerm) ? '' : 'none';
+                    });
+                });
+            }
+            
+            // Setup refresh button
+            const refreshBtn = document.getElementById(refreshBtnId);
+            if (refreshBtn && refreshCallback) {
+                refreshBtn.addEventListener('click', refreshCallback);
+            }
+        }
+        
         function renderAusenciasView() {
             console.log('[renderAusenciasView] Renderizando view de ausências...');
             
@@ -2145,27 +2176,8 @@ function extractTimeFromISO(isoString) {
                 tbody.appendChild(row);
             });
             
-            // Setup search functionality
-            const searchInput = document.getElementById('ausencias-search');
-            if (searchInput) {
-                searchInput.addEventListener('input', (e) => {
-                    const searchTerm = e.target.value.toLowerCase();
-                    const rows = tbody.querySelectorAll('tr');
-                    
-                    rows.forEach(row => {
-                        const text = row.textContent.toLowerCase();
-                        row.style.display = text.includes(searchTerm) ? '' : 'none';
-                    });
-                });
-            }
-            
-            // Setup refresh button
-            const refreshBtn = document.getElementById('ausencias-refresh-button');
-            if (refreshBtn) {
-                refreshBtn.addEventListener('click', () => {
-                    renderAusenciasView();
-                });
-            }
+            // Setup controls (search and refresh)
+            setupTableControls('ausencias-search', 'ausencias-table-body', 'ausencias-refresh-button', renderAusenciasView);
         }
         
         // ====================================================================
@@ -2218,27 +2230,8 @@ function extractTimeFromISO(isoString) {
                 tbody.appendChild(row);
             });
             
-            // Setup search functionality
-            const searchInput = document.getElementById('reposicoes-search');
-            if (searchInput) {
-                searchInput.addEventListener('input', (e) => {
-                    const searchTerm = e.target.value.toLowerCase();
-                    const rows = tbody.querySelectorAll('tr');
-                    
-                    rows.forEach(row => {
-                        const text = row.textContent.toLowerCase();
-                        row.style.display = text.includes(searchTerm) ? '' : 'none';
-                    });
-                });
-            }
-            
-            // Setup refresh button
-            const refreshBtn = document.getElementById('reposicoes-refresh-button');
-            if (refreshBtn) {
-                refreshBtn.addEventListener('click', () => {
-                    renderReposicoesView();
-                });
-            }
+            // Setup controls (search and refresh)
+            setupTableControls('reposicoes-search', 'reposicoes-table-body', 'reposicoes-refresh-button', renderReposicoesView);
         }
         
         function setupEventHandlers() {
