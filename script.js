@@ -59,8 +59,8 @@
             const pathMappings = [
                 { path: 'exportAll/Alunos/dados', stateKey: 'alunos', processor: (data) => data || [] },
                 { path: 'exportAll/AusenciasReposicoes/dados', stateKey: 'ausenciasReposicoes', processor: (data) => normalizeAusenciasReposicoes(data || []) },
-                { path: 'exportAll/Ausencias/dados', stateKey: 'ausencias', processor: (data) => data || [] },
-                { path: 'exportAll/Reposicoes/dados', stateKey: 'reposicoes', processor: (data) => data || [] },
+                { path: 'exportAll/Ausencias/dados', stateKey: 'ausencias', processor: (data) => (data || []).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row) },
+                { path: 'exportAll/Reposicoes/dados', stateKey: 'reposicoes', processor: (data) => (data || []).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row) },
                 { path: 'exportAll/NotasTeoricas/dados', stateKey: 'notasTeoricas', processor: (data) => {
                     // Handle different possible data structures from Firebase
                     let registros = [];
