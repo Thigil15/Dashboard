@@ -15,7 +15,7 @@ caren.sardelari@hc.fm.usp.br	Caren Cristina Sardelari	21/01/2026	19:44:57		11	Pr
 
 **Problema Técnico**: As funções de ausências estavam em um arquivo separado (`AusenciasReposicoes.gs`) e não eram acessíveis ao handler principal `doPost()`.
 
-**Solução**: Todas as funções foram integradas diretamente no `Code.gs`:
+**Solução**: Todas as funções foram integradas diretamente no `Code.gs` (arquivo único — `AusenciasReposicoes.gs` foi removido no repositório, mantendo tudo centralizado):
 
 ```javascript
 function doPost(e) {

@@ -1724,8 +1724,9 @@ function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents);
     
-    // Verificar se é uma requisição de ausência ou reposição
-    var tipo = (data.tipo || '').toLowerCase();
+    // Verificar se é uma requisição de ausência ou reposição (aceita "tipo" em qualquer capitalização)
+    var tipoRaw = data.tipo || data.Tipo || data.TIPO || '';
+    var tipo = String(tipoRaw).toLowerCase();
     if (tipo === 'ausencia' || tipo === 'reposicao') {
       // Redirecionar para o handler de ausências/reposições
       return doPostAusenciasReposicoes(e);
