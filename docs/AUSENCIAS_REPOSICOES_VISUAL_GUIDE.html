@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guia Visual - Ausências e Reposições</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: #f5f5f5;
+        }
+        .section {
+            background: white;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #0033A0;
+            border-bottom: 3px solid #0033A0;
+            padding-bottom: 0.5rem;
+        }
+        h2 {
+            color: #0054B4;
+            margin-top: 2rem;
+        }
+        .feature-box {
+            background: #f0f7ff;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            border-left: 4px solid #0033A0;
+        }
+        .screenshot-placeholder {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 400px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            margin: 1rem 0;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+        .checklist {
+            list-style: none;
+            padding-left: 0;
+        }
+        .checklist li:before {
+            content: "✅ ";
+            margin-right: 0.5rem;
+        }
+        .workflow {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin: 1rem 0;
+        }
+        .workflow-step {
+            flex: 1;
+            min-width: 200px;
+            background: #fff;
+            border: 2px solid #0033A0;
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+        .workflow-step h4 {
+            color: #0033A0;
+            margin-top: 0;
+        }
+        .arrow {
+            font-size: 2rem;
+            color: #0033A0;
+            align-self: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎯 Guia Visual - Sistema de Ausências e Reposições</h1>
+    
+    <div class="section">
+        <h2>📋 Visão Geral</h2>
+        <p>O novo sistema permite registrar <strong>Ausências</strong> e <strong>Reposições</strong> diretamente pela interface web, com integração automática ao Firebase e Google Sheets.</p>
+        
+        <div class="feature-box">
+            <h3>✨ Principais Funcionalidades</h3>
+            <ul class="checklist">
+                <li>Interface moderna e profissional com design InCor</li>
+                <li>Formulários intuitivos com validação em tempo real</li>
+                <li>Sincronização automática com Firebase</li>
+                <li>Lista de alunos ativos com busca rápida</li>
+                <li>Tabelas com filtros e atualização em tempo real</li>
+                <li>Feedback visual para todas as ações</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>📝 Aba Ausências</h2>
+        
+        <h3>Seção 1: Lista de Alunos</h3>
+        <div class="screenshot-placeholder">
+            [IMAGEM: Lista de alunos com cards e botões "Inserir Ausência"]
+        </div>
+        <p>A primeira seção mostra todos os alunos ativos em formato de cards elegantes. Cada card exibe:</p>
+        <ul>
+            <li><strong>Nome do Aluno</strong> em destaque</li>
+            <li><strong>Email HC</strong> com ícone de envelope</li>
+            <li><strong>Curso</strong> (se disponível) com ícone de livro</li>
+            <li><strong>Escala</strong> (se disponível) com ícone de calendário</li>
+            <li><strong>Botão "Inserir Ausência"</strong> em azul InCor</li>
+        </ul>
+        <p>Recursos:</p>
+        <ul>
+            <li>🔍 Campo de busca para filtrar alunos por nome ou email</li>
+            <li>📱 Layout responsivo (grid em desktop, lista em mobile)</li>
+            <li>✨ Efeito hover nos cards e botões</li>
+        </ul>
+
+        <h3>Seção 2: Modal de Registro</h3>
+        <div class="screenshot-placeholder">
+            [IMAGEM: Modal de formulário de ausência aberto]
+        </div>
+        <p>Ao clicar em "Inserir Ausência", abre um modal profissional com:</p>
+        <ul>
+            <li><strong>Título:</strong> "Registrar Ausência"</li>
+            <li><strong>Campos pré-preenchidos:</strong> Nome e Email (somente leitura)</li>
+            <li><strong>Campos editáveis:</strong>
+                <ul>
+                    <li>Curso</li>
+                    <li>Escala</li>
+                    <li>Data da Ausência (seletor de data)</li>
+                    <li>Unidade</li>
+                    <li>Horário (ex: 08:00-12:00)</li>
+                    <li>Motivo</li>
+                </ul>
+            </li>
+            <li><strong>Botões:</strong> Cancelar (cinza) e Registrar Ausência (azul)</li>
+        </ul>
+        <p>Interações:</p>
+        <ul>
+            <li>❌ Clicar no X fecha o modal</li>
+            <li>🖱️ Clicar fora do modal fecha</li>
+            <li>⌨️ Tecla ESC fecha o modal</li>
+            <li>✅ Validação de campos obrigatórios</li>
+            <li>⏳ Loading state durante salvamento</li>
+        </ul>
+
+        <h3>Seção 3: Tabela de Ausências</h3>
+        <div class="screenshot-placeholder">
+            [IMAGEM: Tabela com ausências registradas]
+        </div>
+        <p>Abaixo das seções de registro, uma tabela moderna exibe todas as ausências:</p>
+        <ul>
+            <li>Colunas: Nome | Email | Curso | Escala | Data | Unidade | Horário | Motivo</li>
+            <li>🔍 Campo de busca para filtrar na tabela</li>
+            <li>🔄 Botão "Atualizar" para recarregar dados</li>
+            <li>⏰ Badge com última sincronização</li>
+            <li>📊 Design limpo com alternância de cores nas linhas</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🔄 Aba Reposições</h2>
+        
+        <h3>Seção 1: Botão Nova Reposição</h3>
+        <div class="screenshot-placeholder">
+            [IMAGEM: Botão verde "Nova Reposição" em destaque]
+        </div>
+        <p>No topo da página, um botão grande e visível em verde com ícone de +:</p>
+        <ul>
+            <li><strong>Cor:</strong> Verde (success-green) para destacar ação positiva</li>
+            <li><strong>Tamanho:</strong> Grande e convidativo</li>
+            <li><strong>Posição:</strong> Alinhado à direita, acima dos controles</li>
+            <li><strong>Efeito:</strong> Elevação e mudança de tom no hover</li>
+        </ul>
+
+        <h3>Seção 2: Modal de Registro</h3>
+        <div class="screenshot-placeholder">
+            [IMAGEM: Modal de formulário de reposição aberto]
+        </div>
+        <p>Ao clicar em "Nova Reposição", abre um modal similar ao de ausências:</p>
+        <ul>
+            <li><strong>Título:</strong> "Registrar Reposição"</li>
+            <li><strong>Todos os campos editáveis:</strong>
+                <ul>
+                    <li>Nome Completo</li>
+                    <li>Email HC</li>
+                    <li>Curso</li>
+                    <li>Escala</li>
+                    <li>Unidade</li>
+                    <li>Horário (ex: 14:00-18:00)</li>
+                    <li>Motivo</li>
+                    <li>Data da Reposição (seletor de data)</li>
+                </ul>
+            </li>
+            <li><strong>Botões:</strong> Cancelar e Registrar Reposição</li>
+        </ul>
+
+        <h3>Seção 3: Tabela de Reposições</h3>
+        <div class="screenshot-placeholder">
+            [IMAGEM: Tabela com reposições registradas]
+        </div>
+        <p>Tabela moderna exibindo todas as reposições:</p>
+        <ul>
+            <li>Colunas: Nome | Email | Curso | Escala | Unidade | Horário | Motivo | Data</li>
+            <li>Mesmos recursos de busca e atualização da tabela de ausências</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🎨 Design System</h2>
+        
+        <h3>Cores InCor</h3>
+        <ul>
+            <li><strong>Azul Principal:</strong> #0033A0 (azul InCor institucional)</li>
+            <li><strong>Azul Claro:</strong> #4A90E2 (hover states)</li>
+            <li><strong>Verde Sucesso:</strong> #059669 (botões de ação positiva)</li>
+            <li><strong>Vermelho InCor:</strong> #E21E26 (erros e alertas)</li>
+            <li><strong>Cinza Claro:</strong> #F0F4F8 (backgrounds)</li>
+        </ul>
+
+        <h3>Tipografia</h3>
+        <ul>
+            <li><strong>Títulos:</strong> Poppins (font-display)</li>
+            <li><strong>Corpo:</strong> Inter (font-main)</li>
+            <li><strong>Tamanhos:</strong> 0.875rem a 1.5rem</li>
+        </ul>
+
+        <h3>Espaçamento</h3>
+        <ul>
+            <li>Padding dos cards: 1rem - 2rem</li>
+            <li>Gaps entre elementos: 1rem - 1.5rem</li>
+            <li>Margens verticais: 1rem - 2rem</li>
+        </ul>
+
+        <h3>Sombras e Elevação</h3>
+        <ul>
+            <li>Cards: <code>box-shadow: 0 4px 6px rgba(0, 51, 160, 0.04)</code></li>
+            <li>Modais: <code>box-shadow: 0 20px 40px rgba(0, 51, 160, 0.12)</code></li>
+            <li>Hover: Aumenta elevação e intensidade</li>
+        </ul>
+
+        <h3>Animações</h3>
+        <ul>
+            <li><strong>Transições:</strong> 0.15s - 0.35s cubic-bezier</li>
+            <li><strong>Modal:</strong> Fade-in + slide-up (0.3s)</li>
+            <li><strong>Botões:</strong> Transform translateY + shadow change</li>
+            <li><strong>Loading:</strong> Spinner rotativo</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🔄 Fluxo de Dados</h2>
+        
+        <div class="workflow">
+            <div class="workflow-step">
+                <h4>1. Interface Web</h4>
+                <p>Usuário preenche formulário</p>
+            </div>
+            <div class="arrow">→</div>
+            <div class="workflow-step">
+                <h4>2. JavaScript</h4>
+                <p>Valida e prepara dados</p>
+            </div>
+            <div class="arrow">→</div>
+            <div class="workflow-step">
+                <h4>3. Firebase</h4>
+                <p>Salva em Realtime Database</p>
+            </div>
+            <div class="arrow">→</div>
+            <div class="workflow-step">
+                <h4>4. Apps Script</h4>
+                <p>Trigger detecta mudança</p>
+            </div>
+            <div class="arrow">→</div>
+            <div class="workflow-step">
+                <h4>5. Google Sheets</h4>
+                <p>Atualiza planilha</p>
+            </div>
+        </div>
+
+        <h3>Estrutura no Firebase</h3>
+        <pre><code>exportAll/
+  ├── Ausencias/
+  │   └── dados/
+  │       ├── {id1}/
+  │       │   ├── NomeCompleto: "..."
+  │       │   ├── EmailHC: "..."
+  │       │   ├── Curso: "..."
+  │       │   ├── Escala: "..."
+  │       │   ├── DataAusencia: "..."
+  │       │   ├── Unidade: "..."
+  │       │   ├── Horario: "..."
+  │       │   └── Motivo: "..."
+  │       └── {id2}/ ...
+  │
+  └── Reposicoes/
+      └── dados/
+          ├── {id1}/
+          │   ├── NomeCompleto: "..."
+          │   ├── EmailHC: "..."
+          │   ├── Curso: "..."
+          │   ├── Escala: "..."
+          │   ├── Unidade: "..."
+          │   ├── Horario: "..."
+          │   ├── Motivo: "..."
+          │   └── DataReposicao: "..."
+          └── {id2}/ ...</code></pre>
+    </div>
+
+    <div class="section">
+        <h2>📱 Responsividade</h2>
+        
+        <h3>Desktop (> 1024px)</h3>
+        <ul class="checklist">
+            <li>Modal com largura máxima de 800px</li>
+            <li>Formulários em 2 colunas</li>
+            <li>Lista de alunos em grid 2-3 colunas</li>
+            <li>Tabelas com scroll horizontal se necessário</li>
+        </ul>
+
+        <h3>Tablet (768px - 1024px)</h3>
+        <ul class="checklist">
+            <li>Modal ocupa 90% da largura</li>
+            <li>Formulários mantêm 2 colunas</li>
+            <li>Lista de alunos em grid 2 colunas</li>
+            <li>Tabelas adaptativas</li>
+        </ul>
+
+        <h3>Mobile (< 768px)</h3>
+        <ul class="checklist">
+            <li>Modal ocupa 95% da largura</li>
+            <li>Formulários em 1 coluna</li>
+            <li>Lista de alunos empilhada (1 coluna)</li>
+            <li>Tabelas com scroll horizontal</li>
+            <li>Botões e inputs com tamanho touch-friendly</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>✅ Validações</h2>
+        
+        <h3>Client-Side (JavaScript)</h3>
+        <ul>
+            <li>✓ Campos obrigatórios (HTML5 required)</li>
+            <li>✓ Formato de email válido</li>
+            <li>✓ Data não pode ser futura (opcional)</li>
+            <li>✓ Horário no formato correto</li>
+        </ul>
+
+        <h3>Feedback Visual</h3>
+        <ul>
+            <li>🔴 Borda vermelha em campos inválidos</li>
+            <li>✅ Mensagem de sucesso em verde</li>
+            <li>❌ Mensagem de erro em vermelho</li>
+            <li>⏳ Spinner durante processamento</li>
+        </ul>
+
+        <h3>Server-Side (Firebase Rules)</h3>
+        <p>Configure as regras do Firebase para validar:</p>
+        <ul>
+            <li>Usuário autenticado</li>
+            <li>Estrutura de dados correta</li>
+            <li>Tipos de campos</li>
+            <li>Campos obrigatórios presentes</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🎯 Melhorias Futuras</h2>
+        <ul>
+            <li>📝 Editar registros existentes</li>
+            <li>🗑️ Excluir registros (com confirmação)</li>
+            <li>📊 Dashboard com estatísticas</li>
+            <li>📧 Notificações por email</li>
+            <li>📎 Upload de documentos</li>
+            <li>🔍 Filtros avançados</li>
+            <li>📥 Exportar para Excel/PDF</li>
+            <li>📱 App mobile nativo</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>📞 Suporte</h2>
+        <p><strong>Contato:</strong> ensinofisioincor@hc.fm.usp.br</p>
+        <p><strong>Telefone:</strong> (11) 2661-5319</p>
+        <p><strong>Documentação:</strong> <a href="./AUSENCIAS_REPOSICOES_FORMS.md">AUSENCIAS_REPOSICOES_FORMS.md</a></p>
+    </div>
+
+    <footer style="text-align: center; margin-top: 3rem; padding: 2rem; border-top: 2px solid #0033A0;">
+        <p><strong>Portal de Ensino InCor - HC FMUSP</strong></p>
+        <p>Sistema Profissional de Gestão Acadêmica</p>
+        <p style="color: #666; font-size: 0.9rem;">Desenvolvido com ❤️ para melhorar a gestão educacional</p>
+    </footer>
+</body>
+</html>

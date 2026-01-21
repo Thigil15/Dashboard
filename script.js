@@ -2157,27 +2157,29 @@ function extractTimeFromISO(isoString) {
             
             if (ausencias.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="8" class="ponto-table-empty">Nenhuma ausência registrada</td></tr>';
-                return;
+            } else {
+                // Render each absence
+                ausencias.forEach(ausencia => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${ausencia.NomeCompleto || ''}</td>
+                        <td>${ausencia.EmailHC || ''}</td>
+                        <td>${ausencia.Curso || ''}</td>
+                        <td>${ausencia.Escala || ''}</td>
+                        <td>${ausencia.DataAusencia || ''}</td>
+                        <td>${ausencia.Unidade || ''}</td>
+                        <td>${ausencia.Horario || ''}</td>
+                        <td>${ausencia.Motivo || ''}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
             }
-            
-            // Render each absence
-            ausencias.forEach(ausencia => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${ausencia.NomeCompleto || ''}</td>
-                    <td>${ausencia.EmailHC || ''}</td>
-                    <td>${ausencia.Curso || ''}</td>
-                    <td>${ausencia.Escala || ''}</td>
-                    <td>${ausencia.DataAusencia || ''}</td>
-                    <td>${ausencia.Unidade || ''}</td>
-                    <td>${ausencia.Horario || ''}</td>
-                    <td>${ausencia.Motivo || ''}</td>
-                `;
-                tbody.appendChild(row);
-            });
             
             // Setup controls (search and refresh)
             setupTableControls('ausencias-search', 'ausencias-table-body', 'ausencias-refresh-button', renderAusenciasView);
+            
+            // Render students list
+            renderAusenciasStudentsList();
         }
         
         // ====================================================================
@@ -2232,6 +2234,322 @@ function extractTimeFromISO(isoString) {
             
             // Setup controls (search and refresh)
             setupTableControls('reposicoes-search', 'reposicoes-table-body', 'reposicoes-refresh-button', renderReposicoesView);
+        }
+
+        // ====================================================================
+        // MODAL FUNCTIONS - Ausências e Reposições
+        // ====================================================================
+
+        /**
+         * Open modal to insert absence for a student
+         */
+        window.openAusenciaModal = function(studentEmail, studentName, curso, escala) {
+            console.log('[openAusenciaModal] Opening modal for student:', studentEmail);
+            
+            // Pre-fill form with student data
+            document.getElementById('ausencia-nome').value = studentName || '';
+            document.getElementById('ausencia-email').value = studentEmail || '';
+            document.getElementById('ausencia-curso').value = curso || '';
+            document.getElementById('ausencia-escala').value = escala || '';
+            
+            // Clear other fields
+            document.getElementById('ausencia-data').value = '';
+            document.getElementById('ausencia-unidade').value = '';
+            document.getElementById('ausencia-horario').value = '';
+            document.getElementById('ausencia-motivo').value = '';
+            
+            // Show modal
+            document.getElementById('modal-ausencia').style.display = 'flex';
+        };
+
+        /**
+         * Close absence modal
+         */
+        window.closeAusenciaModal = function() {
+            document.getElementById('modal-ausencia').style.display = 'none';
+            // Reset form
+            document.getElementById('form-ausencia').reset();
+        };
+        
+        /**
+         * Close modal when clicking outside
+         */
+        document.getElementById('modal-ausencia')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeAusenciaModal();
+            }
+        });
+
+        /**
+         * Open modal to insert reposição
+         */
+        window.openReposicaoModal = function() {
+            console.log('[openReposicaoModal] Opening modal');
+            
+            // Clear all fields
+            document.getElementById('reposicao-nome').value = '';
+            document.getElementById('reposicao-email').value = '';
+            document.getElementById('reposicao-curso').value = '';
+            document.getElementById('reposicao-escala').value = '';
+            document.getElementById('reposicao-unidade').value = '';
+            document.getElementById('reposicao-horario').value = '';
+            document.getElementById('reposicao-motivo').value = '';
+            document.getElementById('reposicao-data').value = '';
+            
+            // Show modal
+            document.getElementById('modal-reposicao').style.display = 'flex';
+        };
+
+        /**
+         * Close reposição modal
+         */
+        window.closeReposicaoModal = function() {
+            document.getElementById('modal-reposicao').style.display = 'none';
+            // Reset form
+            document.getElementById('form-reposicao').reset();
+        };
+        
+        /**
+         * Close modal when clicking outside
+         */
+        document.getElementById('modal-reposicao')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeReposicaoModal();
+            }
+        });
+
+        /**
+         * Render students list for Ausências view
+         */
+        function renderAusenciasStudentsList() {
+            console.log('[renderAusenciasStudentsList] Rendering students list');
+            
+            const container = document.getElementById('ausencias-students-list');
+            if (!container) {
+                console.error('[renderAusenciasStudentsList] Container not found');
+                return;
+            }
+            
+            // Get active students
+            const activeStudents = Array.from(appState.alunosMap.values())
+                .filter(s => s.Status === 'Ativo')
+                .sort((a, b) => (a.NomeCompleto || '').localeCompare(b.NomeCompleto || ''));
+            
+            console.log(`[renderAusenciasStudentsList] Found ${activeStudents.length} active students`);
+            
+            if (activeStudents.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--content-text-muted); padding: 2rem;">Nenhum aluno ativo encontrado</p>';
+                return;
+            }
+            
+            // Render students
+            container.innerHTML = activeStudents.map(student => `
+                <div class="student-list-card">
+                    <div class="student-list-header">
+                        <div class="student-list-name">${student.NomeCompleto || 'Nome não disponível'}</div>
+                        <button class="student-action-btn" onclick="openAusenciaModal('${student.EmailHC}', '${student.NomeCompleto}', '${student.Curso || ''}', '${student.Escala || ''}')">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                            </svg>
+                            Inserir Ausência
+                        </button>
+                    </div>
+                    <div class="student-list-info">
+                        <div class="student-list-info-item">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                            </svg>
+                            ${student.EmailHC || 'Email não disponível'}
+                        </div>
+                        ${student.Curso ? `
+                        <div class="student-list-info-item">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                            </svg>
+                            ${student.Curso}
+                        </div>
+                        ` : ''}
+                        ${student.Escala ? `
+                        <div class="student-list-info-item">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                            </svg>
+                            Escala ${student.Escala}
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+            
+            // Setup search for students
+            const searchInput = document.getElementById('ausencias-students-search');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    const searchTerm = e.target.value.toLowerCase();
+                    const cards = container.querySelectorAll('.student-list-card');
+                    cards.forEach(card => {
+                        const text = card.textContent.toLowerCase();
+                        card.style.display = text.includes(searchTerm) ? '' : 'none';
+                    });
+                });
+            }
+        }
+
+        /**
+         * Save absence to Firebase
+         */
+        async function saveAusencia(data) {
+            console.log('[saveAusencia] Saving absence:', data);
+            
+            try {
+                if (!fbDB) {
+                    throw new Error('Firebase Database não está inicializado');
+                }
+                
+                // Get reference to Ausencias data path
+                const ausenciasRef = window.firebase.ref(fbDB, 'exportAll/Ausencias/dados');
+                
+                // Push new absence to the array
+                const newAusenciaRef = window.firebase.push(ausenciasRef);
+                await window.firebase.set(newAusenciaRef, data);
+                
+                console.log('[saveAusencia] Absence saved successfully');
+                return { success: true };
+            } catch (error) {
+                console.error('[saveAusencia] Error saving absence:', error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        /**
+         * Save reposição to Firebase
+         */
+        async function saveReposicao(data) {
+            console.log('[saveReposicao] Saving reposição:', data);
+            
+            try {
+                if (!fbDB) {
+                    throw new Error('Firebase Database não está inicializado');
+                }
+                
+                // Get reference to Reposicoes data path
+                const reposicoesRef = window.firebase.ref(fbDB, 'exportAll/Reposicoes/dados');
+                
+                // Push new reposição to the array
+                const newReposicaoRef = window.firebase.push(reposicoesRef);
+                await window.firebase.set(newReposicaoRef, data);
+                
+                console.log('[saveReposicao] Reposição saved successfully');
+                return { success: true };
+            } catch (error) {
+                console.error('[saveReposicao] Error saving reposição:', error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        /**
+         * Handle form submission for Ausências
+         */
+        function setupAusenciaFormHandler() {
+            const form = document.getElementById('form-ausencia');
+            if (!form) return;
+            
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const submitBtn = form.querySelector('button[type="submit"]');
+                submitBtn.classList.add('loading');
+                submitBtn.disabled = true;
+                
+                // Get form data
+                const ausenciaData = {
+                    NomeCompleto: document.getElementById('ausencia-nome').value,
+                    EmailHC: document.getElementById('ausencia-email').value,
+                    Curso: document.getElementById('ausencia-curso').value,
+                    Escala: document.getElementById('ausencia-escala').value,
+                    DataAusencia: document.getElementById('ausencia-data').value,
+                    Unidade: document.getElementById('ausencia-unidade').value,
+                    Horario: document.getElementById('ausencia-horario').value,
+                    Motivo: document.getElementById('ausencia-motivo').value
+                };
+                
+                // Save to Firebase
+                const result = await saveAusencia(ausenciaData);
+                
+                submitBtn.classList.remove('loading');
+                submitBtn.disabled = false;
+                
+                if (result.success) {
+                    showSuccess('Ausência registrada com sucesso!');
+                    closeAusenciaModal();
+                    // Refresh the table
+                    setTimeout(() => renderAusenciasView(), 500);
+                } else {
+                    showError('Erro ao registrar ausência: ' + result.error);
+                }
+            });
+        }
+
+        /**
+         * Handle form submission for Reposições
+         */
+        function setupReposicaoFormHandler() {
+            const form = document.getElementById('form-reposicao');
+            if (!form) return;
+            
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const submitBtn = form.querySelector('button[type="submit"]');
+                submitBtn.classList.add('loading');
+                submitBtn.disabled = true;
+                
+                // Get form data
+                const reposicaoData = {
+                    NomeCompleto: document.getElementById('reposicao-nome').value,
+                    EmailHC: document.getElementById('reposicao-email').value,
+                    Curso: document.getElementById('reposicao-curso').value,
+                    Escala: document.getElementById('reposicao-escala').value,
+                    Unidade: document.getElementById('reposicao-unidade').value,
+                    Horario: document.getElementById('reposicao-horario').value,
+                    Motivo: document.getElementById('reposicao-motivo').value,
+                    DataReposicao: document.getElementById('reposicao-data').value
+                };
+                
+                // Save to Firebase
+                const result = await saveReposicao(reposicaoData);
+                
+                submitBtn.classList.remove('loading');
+                submitBtn.disabled = false;
+                
+                if (result.success) {
+                    showSuccess('Reposição registrada com sucesso!');
+                    closeReposicaoModal();
+                    // Refresh the table
+                    setTimeout(() => renderReposicoesView(), 500);
+                } else {
+                    showError('Erro ao registrar reposição: ' + result.error);
+                }
+            });
+        }
+
+        /**
+         * Show success message
+         */
+        function showSuccess(message) {
+            const errorDiv = document.getElementById('error-message');
+            const errorText = document.getElementById('error-text');
+            
+            if (errorDiv && errorText) {
+                errorDiv.style.backgroundColor = 'var(--success-green)';
+                errorText.textContent = message;
+                errorDiv.style.display = 'block';
+                
+                setTimeout(() => {
+                    errorDiv.style.display = 'none';
+                    errorDiv.style.backgroundColor = 'var(--accent-red)';
+                }, 3000);
+            }
         }
         
         function setupEventHandlers() {
@@ -2375,11 +2693,29 @@ function extractTimeFromISO(isoString) {
                 tab.addEventListener('click', handleAcademicTabSwitch);
             });
             
+            // Close modals with ESC key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    const ausenciaModal = document.getElementById('modal-ausencia');
+                    const reposicaoModal = document.getElementById('modal-reposicao');
+                    if (ausenciaModal && ausenciaModal.style.display === 'flex') {
+                        closeAusenciaModal();
+                    }
+                    if (reposicaoModal && reposicaoModal.style.display === 'flex') {
+                        closeReposicaoModal();
+                    }
+                }
+            });
+            
             // InCor Action filters
             const actionFilters = document.querySelectorAll('.incor-action-filter');
             actionFilters.forEach(filter => {
                 filter.addEventListener('click', handleActionFilterSwitch);
             });
+
+            // Setup form handlers for Ausências and Reposições
+            setupAusenciaFormHandler();
+            setupReposicaoFormHandler();
 
             console.log('[setupEventHandlers] Listeners configurados.');
         }
