@@ -2270,6 +2270,15 @@ function extractTimeFromISO(isoString) {
             // Reset form
             document.getElementById('form-ausencia').reset();
         };
+        
+        /**
+         * Close modal when clicking outside
+         */
+        document.getElementById('modal-ausencia')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeAusenciaModal();
+            }
+        });
 
         /**
          * Open modal to insert reposição
@@ -2299,6 +2308,15 @@ function extractTimeFromISO(isoString) {
             // Reset form
             document.getElementById('form-reposicao').reset();
         };
+        
+        /**
+         * Close modal when clicking outside
+         */
+        document.getElementById('modal-reposicao')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeReposicaoModal();
+            }
+        });
 
         /**
          * Render students list for Ausências view
@@ -2673,6 +2691,20 @@ function extractTimeFromISO(isoString) {
             const performanceTabs = document.querySelectorAll('.dash-tab, .incor-story-tab, .incor-modules-tab');
             performanceTabs.forEach(tab => {
                 tab.addEventListener('click', handleAcademicTabSwitch);
+            });
+            
+            // Close modals with ESC key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    const ausenciaModal = document.getElementById('modal-ausencia');
+                    const reposicaoModal = document.getElementById('modal-reposicao');
+                    if (ausenciaModal && ausenciaModal.style.display === 'flex') {
+                        closeAusenciaModal();
+                    }
+                    if (reposicaoModal && reposicaoModal.style.display === 'flex') {
+                        closeReposicaoModal();
+                    }
+                }
             });
             
             // InCor Action filters
