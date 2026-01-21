@@ -1964,6 +1964,21 @@ function extractTimeFromISO(isoString) {
             return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
         }
 
+        /**
+         * Get short name (first name + last surname)
+         * Example: "João Silva Santos" → "João Santos"
+         * @param {string} fullName - Full name
+         * @returns {string} Short name with first name and last surname
+         */
+        function getShortName(fullName = '') {
+            if (!fullName) return '';
+            const parts = fullName.trim().split(/\s+/).filter(Boolean);
+            if (parts.length === 0) return '';
+            if (parts.length === 1) return parts[0];
+            // Return first name + last surname
+            return parts[0] + ' ' + parts[parts.length - 1];
+        }
+
         // --- Funções Utilitárias (Loading/Erro) ---
         function showLoading(show) {
             const overlay = document.getElementById('loading-overlay');
@@ -2397,7 +2412,7 @@ function extractTimeFromISO(isoString) {
                     
                     const namePara = document.createElement('p');
                     namePara.className = 'student-name';
-                    namePara.textContent = s.NomeCompleto;
+                    namePara.textContent = getShortName(s.NomeCompleto);
                     
                     const coursePara = document.createElement('p');
                     coursePara.className = 'student-course mt-0.5';
@@ -7179,7 +7194,7 @@ function extractTimeFromISO(isoString) {
                          // Use loading="lazy" for images to improve initial load
                          const imgSrc = s.FotoID ? `https://lh3.googleusercontent.com/d/${s.FotoID}=s96-c` : placeholderImg;
                          cardHTML += `<img src="${imgSrc}" alt="Foto" loading="lazy" onerror="this.src='${placeholderImg}'">`;
-                         cardHTML += `<p class="student-name">${s.NomeCompleto}</p>`;
+                         cardHTML += `<p class="student-name">${getShortName(s.NomeCompleto)}</p>`;
                          cardHTML += `<p class="student-course mt-0.5">${s.Curso || 'Sem Curso'}</p>`;
                          
                          card.innerHTML = cardHTML;
