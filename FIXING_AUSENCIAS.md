@@ -39,7 +39,7 @@ function doPost(e) {
 - ✅ `validarDadosReposicao()` - Validação de dados
 - ✅ `buscarAusenciasAluno()` - Busca por aluno
 - ✅ `buscarReposicoesAluno()` - Busca por aluno
-- ✅ `criarAbasAusenciasReposicoes()` - Criação das abas
+- ✅ `criarAbasAusenciasReposicoes()` - Utilitário para criar abas (caso necessário)
 
 **Melhorias Adicionadas**:
 - Sincronização automática com Firebase após gravar
@@ -88,23 +88,15 @@ function doPost(e) {
 
 **IMPORTANTE**: O arquivo `AusenciasReposicoes.gs` agora é **OPCIONAL**. Todas as funções já estão no `Code.gs`.
 
-### Passo 2: Criar as Abas (se não existirem)
+**NOTA**: As abas "Ausencias" e "Reposicoes" já existem na sua planilha, então não é necessário criar novas abas. O código está preparado para trabalhar com as abas existentes.
 
-No editor do Apps Script, execute a função:
-
-```javascript
-criarAbasAusenciasReposicoes()
-```
-
-Isso criará as abas "Ausencias" e "Reposicoes" com os cabeçalhos corretos.
-
-### Passo 3: Atualizar o Site
+### Passo 2: Atualizar o Site
 
 1. Substitua o arquivo `index.html` pelo novo
 2. Substitua o arquivo `script.js` pelo novo
 3. Não é necessário alterar `style.css`
 
-### Passo 4: Testar o Sistema
+### Passo 3: Testar o Sistema
 
 #### Teste 1: Inserir Ausência via Site
 
@@ -198,11 +190,11 @@ curl -X POST "SUA_URL_DO_APPS_SCRIPT" \
 
 ### Problema: Erro "Aba Ausencias não encontrada"
 
-**Causa**: As abas não foram criadas
+**Causa**: As abas foram renomeadas ou removidas acidentalmente
 
 **Solução**:
-1. No Apps Script, execute: `criarAbasAusenciasReposicoes()`
-2. Verifique se as abas "Ausencias" e "Reposicoes" aparecem na planilha
+1. Verifique se as abas "Ausencias" e "Reposicoes" existem na planilha (com esses nomes exatos)
+2. Se não existirem por algum motivo, no Apps Script execute: `criarAbasAusenciasReposicoes()`
 
 ### Problema: Nomes ainda aparecem completos nos cards
 
