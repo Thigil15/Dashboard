@@ -5,6 +5,12 @@ const FIREBASE_URL = "https://dashboardalunos-default-rtdb.firebaseio.com/"; // 
 const FIREBASE_SECRET = PropertiesService.getScriptProperties().getProperty("FIREBASE_SECRET");
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// Nomes das abas (constantes para evitar erros de digitação)
+const ABA_AUSENCIAS = 'Ausencias';
+const ABA_REPOSICOES = 'Reposicoes';
+const ABA_PONTO_PRATICA = 'PontoPratica';
+const ABA_PONTO_TEORIA = 'PontoTeoria';
+
 /**********************************************
  * 🔨 FUNÇÕES AUXILIARES (HELPERS)
  **********************************************/
@@ -1735,10 +1741,10 @@ function doPost(e) {
     var isDiaTeoria = data.IsDiaTeoria || false;
 
     var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var abaPratica = ss.getSheetByName("PontoPratica");
-    var abaTeoria = ss.getSheetByName("PontoTeoria");
+    var abaPratica = ss.getSheetByName(ABA_PONTO_PRATICA);
+    var abaTeoria = ss.getSheetByName(ABA_PONTO_TEORIA);
     if (!abaPratica || !abaTeoria)
-      throw new Error("Abas 'PontoPratica' ou 'PontoTeoria' não encontradas!");
+      throw new Error("Abas '" + ABA_PONTO_PRATICA + "' ou '" + ABA_PONTO_TEORIA + "' não encontradas!");
 
     var agora = new Date();
     var dataStr = Utilities.formatDate(agora, "America/Sao_Paulo", "dd/MM/yyyy");
@@ -1999,9 +2005,9 @@ function criarAbasAusenciasReposicoes() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   
   // Criar aba Ausencias
-  var abaAusencias = ss.getSheetByName('Ausencias');
+  var abaAusencias = ss.getSheetByName(ABA_AUSENCIAS);
   if (!abaAusencias) {
-    abaAusencias = ss.insertSheet('Ausencias');
+    abaAusencias = ss.insertSheet(ABA_AUSENCIAS);
     // Posicionar após a aba Frequência/Ponto se existir
     var abaPonto = ss.getSheetByName('Ponto') || ss.getSheetByName('PontoPratica');
     if (abaPonto) {
@@ -2021,9 +2027,9 @@ function criarAbasAusenciasReposicoes() {
   }
   
   // Criar aba Reposicoes
-  var abaReposicoes = ss.getSheetByName('Reposicoes');
+  var abaReposicoes = ss.getSheetByName(ABA_REPOSICOES);
   if (!abaReposicoes) {
-    abaReposicoes = ss.insertSheet('Reposicoes');
+    abaReposicoes = ss.insertSheet(ABA_REPOSICOES);
     // Posicionar após a aba Ausencias
     ss.setActiveSheet(abaReposicoes);
     ss.moveActiveSheet(abaAusencias.getIndex() + 1);
@@ -2105,10 +2111,10 @@ function validarDadosReposicao(data) {
  */
 function registrarAusencia(data) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var aba = ss.getSheetByName('Ausencias');
+  var aba = ss.getSheetByName(ABA_AUSENCIAS);
   
   if (!aba) {
-    return { success: false, message: 'Aba "Ausencias" não encontrada. Execute criarAbasAusenciasReposicoes() primeiro.' };
+    return { success: false, message: 'Aba "' + ABA_AUSENCIAS + '" não encontrada. Execute criarAbasAusenciasReposicoes() primeiro.' };
   }
   
   // Validar dados
@@ -2160,10 +2166,10 @@ function registrarAusencia(data) {
  */
 function registrarReposicao(data) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var aba = ss.getSheetByName('Reposicoes');
+  var aba = ss.getSheetByName(ABA_REPOSICOES);
   
   if (!aba) {
-    return { success: false, message: 'Aba "Reposicoes" não encontrada. Execute criarAbasAusenciasReposicoes() primeiro.' };
+    return { success: false, message: 'Aba "' + ABA_REPOSICOES + '" não encontrada. Execute criarAbasAusenciasReposicoes() primeiro.' };
   }
   
   // Validar dados
@@ -2273,7 +2279,7 @@ function doPostAusenciasReposicoes(e) {
  */
 function buscarAusenciasAluno(emailHC) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var aba = ss.getSheetByName('Ausencias');
+  var aba = ss.getSheetByName(ABA_AUSENCIAS);
   
   if (!aba) {
     return [];
@@ -2311,7 +2317,7 @@ function buscarAusenciasAluno(emailHC) {
  */
 function buscarReposicoesAluno(emailHC) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var aba = ss.getSheetByName('Reposicoes');
+  var aba = ss.getSheetByName(ABA_REPOSICOES);
   
   if (!aba) {
     return [];
