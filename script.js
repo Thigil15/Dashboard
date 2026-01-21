@@ -59,6 +59,8 @@
             const pathMappings = [
                 { path: 'exportAll/Alunos/dados', stateKey: 'alunos', processor: (data) => data || [] },
                 { path: 'exportAll/AusenciasReposicoes/dados', stateKey: 'ausenciasReposicoes', processor: (data) => normalizeAusenciasReposicoes(data || []) },
+                { path: 'exportAll/Ausencias/dados', stateKey: 'ausencias', processor: (data) => data || [] },
+                { path: 'exportAll/Reposicoes/dados', stateKey: 'reposicoes', processor: (data) => data || [] },
                 { path: 'exportAll/NotasTeoricas/dados', stateKey: 'notasTeoricas', processor: (data) => {
                     // Handle different possible data structures from Firebase
                     let registros = [];
@@ -1741,6 +1743,8 @@ const appState = {
     pontoHojeAliases: new Map(),
     escalas: {},
     ausenciasReposicoes: [],
+    ausencias: [],
+    reposicoes: [],
     notasTeoricas: {},
     notasPraticas: {},
     pontoStaticRows: [], // Legacy ponto data from exportAll/Ponto/dados
@@ -1764,6 +1768,8 @@ const appState = {
     dataLoadingState: {
         alunos: false,
         ausenciasReposicoes: false,
+        ausencias: false,
+        reposicoes: false,
         notasTeoricas: false,
         notasPraticas: false,
         pontoStaticRows: false,
@@ -2086,6 +2092,152 @@ function extractTimeFromISO(isoString) {
                 showError(`Falha Crítica na Inicialização: ${errorMessage}. Verifique a conexão e recarregue.`);
                 showLoading(false);
                 showView('login-view');
+            }
+        }
+        
+        // ====================================================================
+        // AUSÊNCIAS VIEW - Display absences from the Ausencias sheet
+        // ====================================================================
+        
+        function renderAusenciasView() {
+            console.log('[renderAusenciasView] Renderizando view de ausências...');
+            
+            const tbody = document.getElementById('ausencias-table-body');
+            const lastSync = document.getElementById('ausencias-last-sync');
+            
+            if (!tbody) {
+                console.error('[renderAusenciasView] Elemento ausencias-table-body não encontrado');
+                return;
+            }
+            
+            // Get data from appState
+            const ausencias = appState.ausencias || [];
+            
+            console.log(`[renderAusenciasView] ${ausencias.length} ausências encontradas`);
+            
+            // Update last sync badge
+            if (lastSync) {
+                const now = new Date().toLocaleString('pt-BR');
+                lastSync.querySelector('span:last-child').textContent = `Atualizado: ${now}`;
+            }
+            
+            // Clear table
+            tbody.innerHTML = '';
+            
+            if (ausencias.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="ponto-table-empty">Nenhuma ausência registrada</td></tr>';
+                return;
+            }
+            
+            // Render each absence
+            ausencias.forEach(ausencia => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${ausencia.NomeCompleto || ''}</td>
+                    <td>${ausencia.EmailHC || ''}</td>
+                    <td>${ausencia.Curso || ''}</td>
+                    <td>${ausencia.Escala || ''}</td>
+                    <td>${ausencia.DataAusencia || ''}</td>
+                    <td>${ausencia.Unidade || ''}</td>
+                    <td>${ausencia.Horario || ''}</td>
+                    <td>${ausencia.Motivo || ''}</td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            // Setup search functionality
+            const searchInput = document.getElementById('ausencias-search');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    const searchTerm = e.target.value.toLowerCase();
+                    const rows = tbody.querySelectorAll('tr');
+                    
+                    rows.forEach(row => {
+                        const text = row.textContent.toLowerCase();
+                        row.style.display = text.includes(searchTerm) ? '' : 'none';
+                    });
+                });
+            }
+            
+            // Setup refresh button
+            const refreshBtn = document.getElementById('ausencias-refresh-button');
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', () => {
+                    renderAusenciasView();
+                });
+            }
+        }
+        
+        // ====================================================================
+        // REPOSIÇÕES VIEW - Display make-up classes from the Reposicoes sheet
+        // ====================================================================
+        
+        function renderReposicoesView() {
+            console.log('[renderReposicoesView] Renderizando view de reposições...');
+            
+            const tbody = document.getElementById('reposicoes-table-body');
+            const lastSync = document.getElementById('reposicoes-last-sync');
+            
+            if (!tbody) {
+                console.error('[renderReposicoesView] Elemento reposicoes-table-body não encontrado');
+                return;
+            }
+            
+            // Get data from appState
+            const reposicoes = appState.reposicoes || [];
+            
+            console.log(`[renderReposicoesView] ${reposicoes.length} reposições encontradas`);
+            
+            // Update last sync badge
+            if (lastSync) {
+                const now = new Date().toLocaleString('pt-BR');
+                lastSync.querySelector('span:last-child').textContent = `Atualizado: ${now}`;
+            }
+            
+            // Clear table
+            tbody.innerHTML = '';
+            
+            if (reposicoes.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="ponto-table-empty">Nenhuma reposição registrada</td></tr>';
+                return;
+            }
+            
+            // Render each reposicao
+            reposicoes.forEach(reposicao => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${reposicao.NomeCompleto || ''}</td>
+                    <td>${reposicao.EmailHC || ''}</td>
+                    <td>${reposicao.Curso || ''}</td>
+                    <td>${reposicao.Escala || ''}</td>
+                    <td>${reposicao.Unidade || ''}</td>
+                    <td>${reposicao.Horario || ''}</td>
+                    <td>${reposicao.Motivo || ''}</td>
+                    <td>${reposicao.DataReposicao || ''}</td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            // Setup search functionality
+            const searchInput = document.getElementById('reposicoes-search');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    const searchTerm = e.target.value.toLowerCase();
+                    const rows = tbody.querySelectorAll('tr');
+                    
+                    rows.forEach(row => {
+                        const text = row.textContent.toLowerCase();
+                        row.style.display = text.includes(searchTerm) ? '' : 'none';
+                    });
+                });
+            }
+            
+            // Setup refresh button
+            const refreshBtn = document.getElementById('reposicoes-refresh-button');
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', () => {
+                    renderReposicoesView();
+                });
             }
         }
         
@@ -3222,6 +3374,18 @@ function extractTimeFromISO(isoString) {
                         emptyState.hidden = true;
                     }
                 }
+            }
+            
+            // Initialize ausencias panel when switching to ausencias tab
+            if (tabName === 'ausencias') {
+                console.log('[switchMainTab] Inicializando painel de ausências...');
+                renderAusenciasView();
+            }
+            
+            // Initialize reposicoes panel when switching to reposicoes tab
+            if (tabName === 'reposicoes') {
+                console.log('[switchMainTab] Inicializando painel de reposições...');
+                renderReposicoesView();
             }
             
             window.scrollTo(0, 0);
