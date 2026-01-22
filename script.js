@@ -2148,44 +2148,6 @@ function extractTimeFromISO(isoString) {
         function renderAusenciasView() {
             console.log('[renderAusenciasView] Renderizando view de ausências...');
             
-            const tbody = document.getElementById('ausencias-table-body');
-            
-            if (!tbody) {
-                console.error('[renderAusenciasView] Elemento ausencias-table-body não encontrado');
-                return;
-            }
-            
-            // Get data from appState
-            const ausencias = appState.ausencias || [];
-            
-            console.log(`[renderAusenciasView] ${ausencias.length} ausências encontradas`);
-            
-            // Clear table
-            tbody.innerHTML = '';
-            
-            if (ausencias.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="ponto-table-empty">Nenhuma ausência registrada</td></tr>';
-            } else {
-                // Render each absence
-                ausencias.forEach(ausencia => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${ausencia.NomeCompleto || ''}</td>
-                        <td>${ausencia.EmailHC || ''}</td>
-                        <td>${ausencia.Curso || ''}</td>
-                        <td>${ausencia.Escala || ''}</td>
-                        <td>${ausencia.DataAusencia || ''}</td>
-                        <td>${ausencia.Unidade || ''}</td>
-                        <td>${ausencia.Horario || ''}</td>
-                        <td>${ausencia.Motivo || ''}</td>
-                    `;
-                    tbody.appendChild(row);
-                });
-            }
-            
-            // Setup controls (search and refresh)
-            setupTableControls('ausencias-search', 'ausencias-table-body', 'ausencias-refresh-button', renderAusenciasView);
-            
             // Render students list
             renderAusenciasStudentsList();
         }
