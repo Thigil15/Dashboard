@@ -2644,9 +2644,6 @@ function extractTimeFromISO(isoString) {
                 // Send to Google Apps Script
                 const appsScriptURL = 'https://script.google.com/macros/s/AKfycbz-o8_PfTuFHgyPSaOxdfM_NUeCexOYSzpFPcxUak-sKF81XTuwDvTSlI7aNI0UFEMF2w/exec';
                 
-                submitBtn.classList.remove('loading');
-                submitBtn.disabled = false;
-                
                 try {
                     await fetch(appsScriptURL, {
                         method: 'POST',
@@ -2659,6 +2656,9 @@ function extractTimeFromISO(isoString) {
                     
                     console.log('[setupReposicaoFormHandler] Request sent successfully (no-cors mode)');
                     
+                    submitBtn.classList.remove('loading');
+                    submitBtn.disabled = false;
+                    
                     showSuccess('Reposição enviada! Verifique a planilha para confirmar o registro.');
                     closeReposicaoModal();
                     
@@ -2666,6 +2666,8 @@ function extractTimeFromISO(isoString) {
                     setTimeout(() => renderReposicoesView(), 500);
                 } catch (error) {
                     console.error('[setupReposicaoFormHandler] Error sending data:', error);
+                    submitBtn.classList.remove('loading');
+                    submitBtn.disabled = false;
                     showError('Erro ao registrar reposição: ' + error.message);
                 }
             });
