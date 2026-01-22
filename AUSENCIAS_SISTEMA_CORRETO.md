@@ -21,7 +21,7 @@ O sistema de registro de ausências foi modernizado e agora funciona da seguinte
    - Clique em "Salvar"
 
 2. **Via POST para Google Apps Script**
-   - URL: `https://script.google.com/macros/s/AKfycbz-o8_PfTuFHgyPSaOxdfM_NUeCexOYSzpFPcxUak-sKF81XTuwDvTSlI7aNI0UFEMF2w/exec`
+   - URL: `https://script.google.com/macros/s/AKfycbwscXAEZMkv1xt7uZ-HBHY9uRwtF9YOxNnp-xdEtIFKzDT0leSnm5kbZQbVU0GjRgyInw/exec`
    - Método: POST
    - Content-Type: application/json
    - **IMPORTANTE**: Incluir campo `"tipo": "ausencia"` no JSON
