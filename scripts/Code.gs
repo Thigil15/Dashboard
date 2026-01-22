@@ -1789,16 +1789,6 @@ function doPost(e) {
     return resposta("Saída teórica registrada: " + horaStr);
   }
 
-    if (ehDiaTeoria) {
-      abaTeoria.appendRow([id, email, nome, dataStr, horaStr, "", escala, "Teoria"]);
-      var novaLinhaTeoria = abaTeoria.getLastRow();
-      syncToFrequenciaTeoricaFromPonto_(ss, abaTeoria, novaLinhaTeoria, escala);
-      if (typeof enviarAbaParaFirebase === "function") {
-        enviarAbaParaFirebase(abaTeoria);
-      }
-      return resposta("Entrada teórica registrada: " + horaStr);
-    }
-
     // === 2. Verifica se há linha aberta na PRÁTICA ===
     var dadosPratica = abaPratica.getDataRange().getValues();
     var linhaPraticaAberta = null;
@@ -1821,8 +1811,17 @@ function doPost(e) {
       return resposta("Sem ação: aluno já completou a prática hoje.");
     }
 
-    // === 3. Caso não exista prática aberta → cria nova entrada prática ===
+    // === 3. Caso não exista prática aberta → cria nova entrada prática ou teórica ===
     if (!linhaPraticaAberta && !linhaPraticaCompleta) {
+      if (ehDiaTeoria) {
+        abaTeoria.appendRow([id, email, nome, dataStr, horaStr, "", escala, "Teoria"]);
+        var novaLinhaTeoria = abaTeoria.getLastRow();
+        syncToFrequenciaTeoricaFromPonto_(ss, abaTeoria, novaLinhaTeoria, escala);
+        if (typeof enviarAbaParaFirebase === "function") {
+          enviarAbaParaFirebase(abaTeoria);
+        }
+        return resposta("Entrada teórica registrada: " + horaStr);
+      }
       abaPratica.appendRow([id, email, nome, dataStr, horaStr, "", escala, "Prática"]);
       return resposta("Entrada prática registrada: " + horaStr);
     }
