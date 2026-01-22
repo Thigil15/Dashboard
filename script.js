@@ -2149,7 +2149,6 @@ function extractTimeFromISO(isoString) {
             console.log('[renderAusenciasView] Renderizando view de ausências...');
             
             const tbody = document.getElementById('ausencias-table-body');
-            const lastSync = document.getElementById('ausencias-last-sync');
             
             if (!tbody) {
                 console.error('[renderAusenciasView] Elemento ausencias-table-body não encontrado');
@@ -2160,11 +2159,6 @@ function extractTimeFromISO(isoString) {
             const ausencias = appState.ausencias || [];
             
             console.log(`[renderAusenciasView] ${ausencias.length} ausências encontradas`);
-            
-            // Update last sync badge - removed timestamp as per user request
-            if (lastSync) {
-                lastSync.querySelector('span:last-child').textContent = `Sincronizado`;
-            }
             
             // Clear table
             tbody.innerHTML = '';
