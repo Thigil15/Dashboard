@@ -1789,6 +1789,16 @@ function doPost(e) {
     return resposta("Saída teórica registrada: " + horaStr);
   }
 
+    if (ehDiaTeoria) {
+      abaTeoria.appendRow([id, email, nome, dataStr, horaStr, "", escala, "Teoria"]);
+      var novaLinhaTeoria = abaTeoria.getLastRow();
+      syncToFrequenciaTeoricaFromPonto_(ss, abaTeoria, novaLinhaTeoria, escala);
+      if (typeof enviarAbaParaFirebase === "function") {
+        enviarAbaParaFirebase(abaTeoria);
+      }
+      return resposta("Entrada teórica registrada: " + horaStr);
+    }
+
     // === 2. Verifica se há linha aberta na PRÁTICA ===
     var dadosPratica = abaPratica.getDataRange().getValues();
     var linhaPraticaAberta = null;
