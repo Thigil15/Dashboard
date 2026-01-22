@@ -2544,32 +2544,7 @@ function extractTimeFromISO(isoString) {
             }
         }
 
-        /**
-         * Save reposição to Firebase
-         */
-        async function saveReposicao(data) {
-            console.log('[saveReposicao] Saving reposição:', data);
-            
-            try {
-                if (!fbDB) {
-                    throw new Error('Firebase Database não está inicializado');
-                }
-                
-                // Get reference to Reposicoes data path
-                const reposicoesRef = window.firebase.ref(fbDB, 'exportAll/Reposicoes/dados');
-                
-                // Push new reposição to the array
-                const newReposicaoRef = window.firebase.push(reposicoesRef);
-                await window.firebase.set(newReposicaoRef, data);
-                
-                console.log('[saveReposicao] Reposição saved successfully');
-                return { success: true };
-            } catch (error) {
-                console.error('[saveReposicao] Error saving reposição:', error);
-                return { success: false, error: error.message };
-            }
-        }
-
+        
         /**
          * Handle form submission for Ausências
          * Sends data to Google Apps Script instead of Firebase
@@ -2653,6 +2628,7 @@ function extractTimeFromISO(isoString) {
                 
                 // Get form data
                 const reposicaoData = {
+                    tipo: 'reposicao',
                     NomeCompleto: document.getElementById('reposicao-nome').value,
                     EmailHC: document.getElementById('reposicao-email').value,
                     Curso: document.getElementById('reposicao-curso').value,
@@ -2663,19 +2639,36 @@ function extractTimeFromISO(isoString) {
                     DataReposicao: document.getElementById('reposicao-data').value
                 };
                 
-                // Save to Firebase
-                const result = await saveReposicao(reposicaoData);
+                console.log('[setupReposicaoFormHandler] Sending data to Google Apps Script:', reposicaoData);
                 
-                submitBtn.classList.remove('loading');
-                submitBtn.disabled = false;
+                // Send to Google Apps Script
+                const appsScriptURL = 'https://script.google.com/macros/s/AKfycbz-o8_PfTuFHgyPSaOxdfM_NUeCexOYSzpFPcxUak-sKF81XTuwDvTSlI7aNI0UFEMF2w/exec';
                 
-                if (result.success) {
-                    showSuccess('Reposição registrada com sucesso!');
+                try {
+                    await fetch(appsScriptURL, {
+                        method: 'POST',
+                        mode: 'no-cors', // Google Apps Script requires no-cors mode
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(reposicaoData)
+                    });
+                    
+                    console.log('[setupReposicaoFormHandler] Request sent successfully (no-cors mode)');
+                    
+                    submitBtn.classList.remove('loading');
+                    submitBtn.disabled = false;
+                    
+                    showSuccess('Reposição enviada! Verifique a planilha para confirmar o registro.');
                     closeReposicaoModal();
-                    // Refresh the table
+                    
+                    // Refresh the table after a delay to allow the sheet to update
                     setTimeout(() => renderReposicoesView(), 500);
-                } else {
-                    showError('Erro ao registrar reposição: ' + result.error);
+                } catch (error) {
+                    console.error('[setupReposicaoFormHandler] Error sending data:', error);
+                    submitBtn.classList.remove('loading');
+                    submitBtn.disabled = false;
+                    showError('Erro ao registrar reposição: ' + error.message);
                 }
             });
         }

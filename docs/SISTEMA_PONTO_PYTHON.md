@@ -158,7 +158,8 @@ python SistemaPonto.py --endpoint "URL_ALTERNATIVA"
                         ▼
 ┌─────────────────────────────────────────────────────┐
 │              1ª LEITURA DO DIA                       │
-│         → Registra ENTRADA na Prática                │
+│  → Registra ENTRADA na Teoria (dia de teoria)        │
+│  → Registra ENTRADA na Prática (outros dias)         │
 └───────────────────────┬─────────────────────────────┘
                         │
                         ▼
