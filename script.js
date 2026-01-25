@@ -2542,23 +2542,26 @@ function extractTimeFromISO(isoString) {
             document.getElementById('reposicao-email').removeAttribute('readonly');
             document.getElementById('reposicao-curso').removeAttribute('readonly');
             
-            // Add event listener for student selection
-            nomeSelect.onchange = function() {
-                const selectedOption = this.options[this.selectedIndex];
-                if (selectedOption.value) {
-                    document.getElementById('reposicao-email').value = selectedOption.value;
-                    document.getElementById('reposicao-curso').value = selectedOption.dataset.curso;
-                    document.getElementById('reposicao-escala').value = selectedOption.dataset.escala;
-                } else {
-                    document.getElementById('reposicao-email').value = '';
-                    document.getElementById('reposicao-curso').value = '';
-                    document.getElementById('reposicao-escala').value = '';
-                }
-            };
-            
             // Show modal
             document.getElementById('modal-reposicao').style.display = 'flex';
         };
+
+        /**
+         * Event handler for student selection in manual mode
+         * Attached once during initialization
+         */
+        document.getElementById('reposicao-nome-select')?.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            if (selectedOption.value) {
+                document.getElementById('reposicao-email').value = selectedOption.value;
+                document.getElementById('reposicao-curso').value = selectedOption.dataset.curso;
+                document.getElementById('reposicao-escala').value = selectedOption.dataset.escala;
+            } else {
+                document.getElementById('reposicao-email').value = '';
+                document.getElementById('reposicao-curso').value = '';
+                document.getElementById('reposicao-escala').value = '';
+            }
+        });
 
         /**
          * Close reposição modal
