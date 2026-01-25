@@ -2813,10 +2813,14 @@ function extractTimeFromISO(isoString) {
          */
         function setupAusenciaFormHandler() {
             const form = document.getElementById('form-ausencia');
-            if (!form) return;
+            if (!form) {
+                console.warn('[setupAusenciaFormHandler] Form não encontrado: form-ausencia');
+                return;
+            }
             
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
+                console.log('[setupAusenciaFormHandler] Form submitted');
                 
                 const submitBtn = form.querySelector('button[type="submit"]');
                 submitBtn.classList.add('loading');
@@ -2835,7 +2839,32 @@ function extractTimeFromISO(isoString) {
                     Motivo: document.getElementById('ausencia-motivo').value
                 };
                 
-                console.log('[setupAusenciaFormHandler] Sending data to Google Apps Script:', ausenciaData);
+                // Validate required fields
+                if (!ausenciaData.NomeCompleto || !ausenciaData.NomeCompleto.trim()) {
+                    console.error('[setupAusenciaFormHandler] Validation error: Nome completo é obrigatório');
+                    submitBtn.classList.remove('loading');
+                    submitBtn.disabled = false;
+                    showError('Nome completo é obrigatório');
+                    return;
+                }
+                
+                if (!ausenciaData.EmailHC || !ausenciaData.EmailHC.trim()) {
+                    console.error('[setupAusenciaFormHandler] Validation error: Email HC é obrigatório');
+                    submitBtn.classList.remove('loading');
+                    submitBtn.disabled = false;
+                    showError('Email HC é obrigatório');
+                    return;
+                }
+                
+                if (!ausenciaData.DataAusencia) {
+                    console.error('[setupAusenciaFormHandler] Validation error: Data da ausência é obrigatória');
+                    submitBtn.classList.remove('loading');
+                    submitBtn.disabled = false;
+                    showError('Data da ausência é obrigatória');
+                    return;
+                }
+                
+                console.log('[setupAusenciaFormHandler] Validation passed. Sending data to Google Apps Script:', ausenciaData);
                 
                 // Send to Google Apps Script
                 const appsScriptURL = 'https://script.google.com/macros/s/AKfycbwscXAEZMkv1xt7uZ-HBHY9uRwtF9YOxNnp-xdEtIFKzDT0leSnm5kbZQbVU0GjRgyInw/exec';
@@ -2850,28 +2879,33 @@ function extractTimeFromISO(isoString) {
                         body: JSON.stringify(ausenciaData)
                     });
                     
-                    // Note: With no-cors mode, we can't read the response
-                    // The absence of an error thrown indicates the request was sent successfully,
-                    // but we cannot verify if the server processed it correctly
-                    console.log('[setupAusenciaFormHandler] Request sent successfully (no-cors mode)');
+                    console.log('[setupAusenciaFormHandler] ✅ Request sent successfully to Google Apps Script');
+                    console.log('[setupAusenciaFormHandler] Note: no-cors mode prevents reading response, assuming success');
                     
                     submitBtn.classList.remove('loading');
                     submitBtn.disabled = false;
                     
-                    showSuccess('Ausência enviada! Verifique a planilha para confirmar o registro.');
+                    showSuccess('✅ Ausência registrada com sucesso! Os dados foram enviados para a planilha "Ausencias".');
                     closeAusenciaModal();
                     
-                    // Refresh the table after a delay to allow the sheet to update
-                    setTimeout(() => renderAusenciasView(), 2000);
+                    // Refresh the view after a delay to allow Firebase sync
+                    setTimeout(() => {
+                        console.log('[setupAusenciaFormHandler] Refreshing view after submission');
+                        if (typeof renderAusenciasView === 'function') {
+                            renderAusenciasView();
+                        }
+                    }, 2000);
                 } catch (error) {
-                    console.error('[setupAusenciaFormHandler] Error sending data:', error);
+                    console.error('[setupAusenciaFormHandler] ❌ Error sending data:', error);
                     
                     submitBtn.classList.remove('loading');
                     submitBtn.disabled = false;
                     
-                    showError('Erro ao registrar ausência: ' + error.message);
+                    showError('Erro ao registrar ausência: ' + error.message + '. Verifique sua conexão e tente novamente.');
                 }
             });
+            
+            console.log('[setupAusenciaFormHandler] ✅ Handler configurado com sucesso');
         }
 
         /**
@@ -2879,10 +2913,14 @@ function extractTimeFromISO(isoString) {
          */
         function setupReposicaoFormHandler() {
             const form = document.getElementById('form-reposicao');
-            if (!form) return;
+            if (!form) {
+                console.warn('[setupReposicaoFormHandler] Form não encontrado: form-reposicao');
+                return;
+            }
             
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
+                console.log('[setupReposicaoFormHandler] Form submitted');
                 
                 const submitBtn = form.querySelector('button[type="submit"]');
                 submitBtn.classList.add('loading');
@@ -2901,13 +2939,38 @@ function extractTimeFromISO(isoString) {
                     DataReposicao: document.getElementById('reposicao-data').value
                 };
                 
-                console.log('[setupReposicaoFormHandler] Sending data to Google Apps Script:', reposicaoData);
+                // Validate required fields
+                if (!reposicaoData.NomeCompleto || !reposicaoData.NomeCompleto.trim()) {
+                    console.error('[setupReposicaoFormHandler] Validation error: Nome completo é obrigatório');
+                    submitBtn.classList.remove('loading');
+                    submitBtn.disabled = false;
+                    showError('Nome completo é obrigatório');
+                    return;
+                }
+                
+                if (!reposicaoData.EmailHC || !reposicaoData.EmailHC.trim()) {
+                    console.error('[setupReposicaoFormHandler] Validation error: Email HC é obrigatório');
+                    submitBtn.classList.remove('loading');
+                    submitBtn.disabled = false;
+                    showError('Email HC é obrigatório');
+                    return;
+                }
+                
+                if (!reposicaoData.DataReposicao) {
+                    console.error('[setupReposicaoFormHandler] Validation error: Data da reposição é obrigatória');
+                    submitBtn.classList.remove('loading');
+                    submitBtn.disabled = false;
+                    showError('Data da reposição é obrigatória');
+                    return;
+                }
+                
+                console.log('[setupReposicaoFormHandler] Validation passed. Sending data to Google Apps Script:', reposicaoData);
                 
                 // Send to Google Apps Script
                 const appsScriptURL = 'https://script.google.com/macros/s/AKfycbwscXAEZMkv1xt7uZ-HBHY9uRwtF9YOxNnp-xdEtIFKzDT0leSnm5kbZQbVU0GjRgyInw/exec';
                 
                 try {
-                    await fetch(appsScriptURL, {
+                    const response = await fetch(appsScriptURL, {
                         method: 'POST',
                         mode: 'no-cors', // Google Apps Script requires no-cors mode
                         headers: {
@@ -2916,23 +2979,31 @@ function extractTimeFromISO(isoString) {
                         body: JSON.stringify(reposicaoData)
                     });
                     
-                    console.log('[setupReposicaoFormHandler] Request sent successfully (no-cors mode)');
+                    console.log('[setupReposicaoFormHandler] ✅ Request sent successfully to Google Apps Script');
+                    console.log('[setupReposicaoFormHandler] Note: no-cors mode prevents reading response, assuming success');
                     
                     submitBtn.classList.remove('loading');
                     submitBtn.disabled = false;
                     
-                    showSuccess('Reposição enviada! Verifique a planilha para confirmar o registro.');
+                    showSuccess('✅ Reposição registrada com sucesso! Os dados foram enviados para a planilha "Reposicoes".');
                     closeReposicaoModal();
                     
-                    // Refresh the table after a delay to allow the sheet to update
-                    setTimeout(() => renderReposicoesView(), 500);
+                    // Refresh the view after a delay to allow Firebase sync
+                    setTimeout(() => {
+                        console.log('[setupReposicaoFormHandler] Refreshing view after submission');
+                        if (typeof renderReposicoesView === 'function') {
+                            renderReposicoesView();
+                        }
+                    }, 1500);
                 } catch (error) {
-                    console.error('[setupReposicaoFormHandler] Error sending data:', error);
+                    console.error('[setupReposicaoFormHandler] ❌ Error sending data:', error);
                     submitBtn.classList.remove('loading');
                     submitBtn.disabled = false;
-                    showError('Erro ao registrar reposição: ' + error.message);
+                    showError('Erro ao registrar reposição: ' + error.message + '. Verifique sua conexão e tente novamente.');
                 }
             });
+            
+            console.log('[setupReposicaoFormHandler] ✅ Handler configurado com sucesso');
         }
 
         /**
