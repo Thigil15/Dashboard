@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste - Registrar Reposição</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .required {
+            color: #e74c3c;
+            margin-left: 4px;
+        }
+        
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .message {
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+            display: none;
+        }
+        
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .log {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+        
+        .log-entry {
+            margin-bottom: 8px;
+            padding: 4px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+        
+        .log-time {
+            color: #666;
+            margin-right: 8px;
+        }
+        
+        .log-success {
+            color: #28a745;
+        }
+        
+        .log-error {
+            color: #dc3545;
+        }
+        
+        .log-info {
+            color: #17a2b8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Teste de Reposição</h1>
+        <p class="subtitle">Use este formulário para testar o registro de reposições</p>
+        
+        <div id="message" class="message"></div>
+        
+        <form id="test-form">
+            <div class="form-group">
+                <label for="nome">Nome Completo <span class="required">*</span></label>
+                <input type="text" id="nome" value="Teste Usuario" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email HC <span class="required">*</span></label>
+                <input type="email" id="email" value="teste@hc.fm.usp.br" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="curso">Curso</label>
+                <input type="text" id="curso" value="Fisioterapia">
+            </div>
+            
+            <div class="form-group">
+                <label for="escala">Escala</label>
+                <select id="escala">
+                    <option value="1">Escala 1</option>
+                    <option value="2">Escala 2</option>
+                    <option value="3">Escala 3</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="unidade">Unidade</label>
+                <select id="unidade">
+                    <option value="UTI">UTI</option>
+                    <option value="Enfermaria">Enfermaria</option>
+                    <option value="Ambulatório">Ambulatório</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="horario">Horário</label>
+                <select id="horario">
+                    <option value="08:00-12:00">08:00-12:00</option>
+                    <option value="14:00-18:00">14:00-18:00</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="motivo">Motivo</label>
+                <textarea id="motivo" rows="3">Teste de registro via formulário</textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="data">Data da Reposição <span class="required">*</span></label>
+                <input type="date" id="data" required>
+            </div>
+            
+            <button type="submit" id="submit-btn">Registrar Reposição</button>
+        </form>
+        
+        <div class="log" id="log">
+            <strong>📋 Log de Execução:</strong>
+            <div id="log-entries"></div>
+        </div>
+    </div>
+    
+    <script>
+        // Set default date to tomorrow
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        document.getElementById('data').valueAsDate = tomorrow;
+        
+        // Log function
+        function log(message, type = 'info') {
+            const logEntries = document.getElementById('log-entries');
+            const time = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `<span class="log-time">[${time}]</span><span class="log-${type}">${message}</span>`;
+            logEntries.appendChild(entry);
+            logEntries.scrollTop = logEntries.scrollHeight;
+            console.log(`[${time}] ${message}`);
+        }
+        
+        // Show message function
+        function showMessage(message, type = 'info') {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = message;
+            messageDiv.className = `message ${type}`;
+            messageDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Form submission
+        document.getElementById('test-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            log('📝 Iniciando envio...', 'info');
+            
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Enviando...';
+            
+            // Collect form data
+            const data = {
+                tipo: 'reposicao',
+                NomeCompleto: document.getElementById('nome').value,
+                EmailHC: document.getElementById('email').value,
+                Curso: document.getElementById('curso').value,
+                Escala: document.getElementById('escala').value,
+                Unidade: document.getElementById('unidade').value,
+                Horario: document.getElementById('horario').value,
+                Motivo: document.getElementById('motivo').value,
+                DataReposicao: document.getElementById('data').value
+            };
+            
+            log(`📦 Dados coletados: ${JSON.stringify(data)}`, 'info');
+            
+            // Validate required fields
+            if (!data.NomeCompleto || !data.EmailHC || !data.DataReposicao) {
+                log('❌ Validação falhou: campos obrigatórios faltando', 'error');
+                showMessage('Preencha todos os campos obrigatórios!', 'error');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Registrar Reposição';
+                return;
+            }
+            
+            log('✅ Validação OK', 'success');
+            
+            // IMPORTANT: Replace this URL with your actual Apps Script deployment URL
+            const appsScriptURL = 'https://script.google.com/macros/s/AKfycbwscXAEZMkv1xt7uZ-HBHY9uRwtF9YOxNnp-xdEtIFKzDT0leSnm5kbZQbVU0GjRgyInw/exec';
+            
+            log(`🌐 Enviando para: ${appsScriptURL}`, 'info');
+            
+            try {
+                const response = await fetch(appsScriptURL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                log('✅ Requisição enviada com sucesso (no-cors mode)', 'success');
+                log('ℹ️ Nota: Com no-cors, não podemos ler a resposta', 'info');
+                showMessage('✅ Reposição enviada! Verifique a planilha "Reposicoes" no Google Sheets.', 'success');
+                
+                log('📊 Aguarde alguns segundos e verifique:', 'info');
+                log('   1. Planilha Google Sheets > Aba "Reposicoes"', 'info');
+                log('   2. Apps Script > Execuções (para ver logs)', 'info');
+                
+            } catch (error) {
+                log(`❌ Erro ao enviar: ${error.message}`, 'error');
+                showMessage(`Erro: ${error.message}`, 'error');
+                console.error('Error details:', error);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Registrar Reposição';
+            }
+        });
+        
+        log('🚀 Formulário de teste carregado', 'success');
+        log('💡 Dica: Abra as Ferramentas do Desenvolvedor (F12) para ver logs detalhados', 'info');
+    </script>
+</body>
+</html>
