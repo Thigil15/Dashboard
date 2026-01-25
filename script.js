@@ -2159,50 +2159,268 @@ function extractTimeFromISO(isoString) {
         function renderReposicoesView() {
             console.log('[renderReposicoesView] Renderizando view de reposições...');
             
-            const tbody = document.getElementById('reposicoes-table-body');
-            const lastSync = document.getElementById('reposicoes-last-sync');
+            // Render both tabs
+            renderReposicoesPendentesList();
+            renderReposicoesMarcadasList();
             
-            if (!tbody) {
-                console.error('[renderReposicoesView] Elemento reposicoes-table-body não encontrado');
+            // Setup search functionality
+            setupReposicoesSearch();
+        }
+
+        /**
+         * Switch between Reposições tabs
+         */
+        window.switchReposicoesTab = function(tab) {
+            const pendentesList = document.getElementById('reposicoes-pendentes-list');
+            const marcadasList = document.getElementById('reposicoes-marcadas-list');
+            const tabPendentes = document.getElementById('tab-pendentes');
+            const tabMarcadas = document.getElementById('tab-marcadas');
+            
+            if (tab === 'pendentes') {
+                pendentesList.style.display = '';
+                marcadasList.style.display = 'none';
+                tabPendentes.classList.add('active');
+                tabMarcadas.classList.remove('active');
+                tabPendentes.style.borderBottom = '3px solid #dc2626';
+                tabPendentes.style.color = '#dc2626';
+                tabMarcadas.style.borderBottom = '3px solid transparent';
+                tabMarcadas.style.color = '#64748b';
+            } else {
+                pendentesList.style.display = 'none';
+                marcadasList.style.display = '';
+                tabPendentes.classList.remove('active');
+                tabMarcadas.classList.add('active');
+                tabPendentes.style.borderBottom = '3px solid transparent';
+                tabPendentes.style.color = '#64748b';
+                tabMarcadas.style.borderBottom = '3px solid #22c55e';
+                tabMarcadas.style.color = '#22c55e';
+            }
+        };
+
+        /**
+         * Render students with pending reposições (have absences but no scheduled replacement)
+         */
+        function renderReposicoesPendentesList() {
+            console.log('[renderReposicoesPendentesList] Rendering students with pending reposições');
+            
+            const container = document.getElementById('reposicoes-pendentes-list');
+            if (!container) {
+                console.error('[renderReposicoesPendentesList] Container not found');
                 return;
             }
             
-            // Get data from appState
+            // Get students with absences
+            const ausencias = appState.ausencias || [];
             const reposicoes = appState.reposicoes || [];
             
-            console.log(`[renderReposicoesView] ${reposicoes.length} reposições encontradas`);
+            // Create a map of students with reposições scheduled
+            const studentsWithReposicoes = new Set();
+            reposicoes.forEach(rep => {
+                if (rep.EmailHC) {
+                    studentsWithReposicoes.add(rep.EmailHC);
+                }
+            });
             
-            // Update last sync badge - removed timestamp as per user request
-            if (lastSync) {
-                lastSync.querySelector('span:last-child').textContent = `Sincronizado`;
-            }
+            // Get unique students with absences but no reposição
+            const studentEmailsWithAbsences = new Set();
+            ausencias.forEach(aus => {
+                if (aus.EmailHC && !studentsWithReposicoes.has(aus.EmailHC)) {
+                    studentEmailsWithAbsences.add(aus.EmailHC);
+                }
+            });
             
-            // Clear table
-            tbody.innerHTML = '';
+            // Get student details from alunosMap
+            const studentsWithPendingReposicoes = Array.from(studentEmailsWithAbsences)
+                .map(email => appState.alunosMap.get(email))
+                .filter(s => s && s.Status === 'Ativo')
+                .sort((a, b) => (a.NomeCompleto || '').localeCompare(b.NomeCompleto || ''));
             
-            if (reposicoes.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="ponto-table-empty">Nenhuma reposição registrada</td></tr>';
+            console.log(`[renderReposicoesPendentesList] Found ${studentsWithPendingReposicoes.length} students with pending reposições`);
+            
+            if (studentsWithPendingReposicoes.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="text-align: center; padding: 3rem;">
+                        <p style="color: var(--content-text-muted); font-size: 1rem;">Nenhum aluno com reposição pendente</p>
+                    </div>
+                `;
                 return;
             }
             
-            // Render each reposicao
-            reposicoes.forEach(reposicao => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${reposicao.NomeCompleto || ''}</td>
-                    <td>${reposicao.EmailHC || ''}</td>
-                    <td>${reposicao.Curso || ''}</td>
-                    <td>${reposicao.Escala || ''}</td>
-                    <td>${reposicao.Unidade || ''}</td>
-                    <td>${reposicao.Horario || ''}</td>
-                    <td>${reposicao.Motivo || ''}</td>
-                    <td>${reposicao.DataReposicao || ''}</td>
-                `;
-                tbody.appendChild(row);
+            renderReposicoesStudentCards(container, studentsWithPendingReposicoes, 'pendente');
+        }
+
+        /**
+         * Render students with scheduled reposições
+         */
+        function renderReposicoesMarcadasList() {
+            console.log('[renderReposicoesMarcadasList] Rendering students with scheduled reposições');
+            
+            const container = document.getElementById('reposicoes-marcadas-list');
+            if (!container) {
+                console.error('[renderReposicoesMarcadasList] Container not found');
+                return;
+            }
+            
+            // Get reposições data
+            const reposicoes = appState.reposicoes || [];
+            
+            // Get unique students with reposições
+            const studentEmailsWithReposicoes = new Set();
+            reposicoes.forEach(rep => {
+                if (rep.EmailHC) {
+                    studentEmailsWithReposicoes.add(rep.EmailHC);
+                }
             });
             
-            // Setup controls (search and refresh)
-            setupTableControls('reposicoes-search', 'reposicoes-table-body', 'reposicoes-refresh-button', renderReposicoesView);
+            // Get student details from alunosMap
+            const studentsWithScheduledReposicoes = Array.from(studentEmailsWithReposicoes)
+                .map(email => appState.alunosMap.get(email))
+                .filter(s => s && s.Status === 'Ativo')
+                .sort((a, b) => (a.NomeCompleto || '').localeCompare(b.NomeCompleto || ''));
+            
+            console.log(`[renderReposicoesMarcadasList] Found ${studentsWithScheduledReposicoes.length} students with scheduled reposições`);
+            
+            if (studentsWithScheduledReposicoes.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="text-align: center; padding: 3rem;">
+                        <p style="color: var(--content-text-muted); font-size: 1rem;">Nenhuma reposição marcada</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            renderReposicoesStudentCards(container, studentsWithScheduledReposicoes, 'marcada');
+        }
+
+        /**
+         * Render student cards for Reposições view
+         */
+        function renderReposicoesStudentCards(container, students, type) {
+            // Use DocumentFragment for better performance
+            const fragment = document.createDocumentFragment();
+            
+            // Group students by course
+            const grouped = students.reduce((acc, s) => { 
+                const c = s.Curso || 'Sem Curso'; 
+                if (!acc[c]) acc[c] = []; 
+                acc[c].push(s); 
+                return acc; 
+            }, {}); 
+            const courses = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
+            
+            // Pre-sort students once per group
+            courses.forEach(c => {
+                grouped[c].sort((a, b) => a.NomeCompleto.localeCompare(b.NomeCompleto));
+            });
+            
+            // Placeholder image URL
+            const placeholderImg = 'https://placehold.co/60x60/e2e8f0/64748b?text=?';
+            
+            courses.forEach(c => { 
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'student-group';
+                groupDiv.setAttribute('data-course', c);
+                
+                const header = document.createElement('h3');
+                header.className = 'student-group-header';
+                header.textContent = `${c} (${grouped[c].length})`;
+                groupDiv.appendChild(header);
+                
+                const grid = document.createElement('div');
+                grid.className = 'grid';
+                
+                grouped[c].forEach(s => { 
+                    const card = document.createElement('div');
+                    card.className = 'student-card student-card-reposicao';
+                    card.setAttribute('data-student-email', s.EmailHC || '');
+                    card.setAttribute('data-student-name', normalizeString(s.NomeCompleto || ''));
+                    card.setAttribute('data-reposicao-type', type);
+                    
+                    // Build card content safely
+                    const imgSrc = s.FotoID ? `https://lh3.googleusercontent.com/d/${s.FotoID}=s96-c` : placeholderImg;
+                    
+                    // Create elements to avoid innerHTML with user data in onclick
+                    const img = document.createElement('img');
+                    img.src = imgSrc;
+                    img.alt = 'Foto';
+                    img.loading = 'lazy';
+                    img.onerror = function() { this.src = placeholderImg; };
+                    
+                    const namePara = document.createElement('p');
+                    namePara.className = 'student-name';
+                    namePara.textContent = getShortName(s.NomeCompleto);
+                    
+                    const coursePara = document.createElement('p');
+                    coursePara.className = 'student-course mt-0.5';
+                    coursePara.textContent = s.Curso || 'Sem Curso';
+                    
+                    // Add button based on type
+                    const button = document.createElement('button');
+                    if (type === 'pendente') {
+                        button.className = 'btn-insert-ausencia';
+                        button.style.background = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
+                        button.innerHTML = `
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            Agendar Reposição
+                        `;
+                        button.addEventListener('click', () => {
+                            openReposicaoModal(s.EmailHC || '', s.NomeCompleto || '', s.Curso || '', s.Escala || '');
+                        });
+                    } else {
+                        button.className = 'btn-insert-ausencia';
+                        button.style.background = 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)';
+                        button.innerHTML = `
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                            </svg>
+                            Ver Detalhes
+                        `;
+                        button.addEventListener('click', () => {
+                            showStudentDetail(s.EmailHC || '');
+                        });
+                    }
+                    
+                    card.appendChild(img);
+                    card.appendChild(namePara);
+                    card.appendChild(coursePara);
+                    card.appendChild(button);
+                    
+                    grid.appendChild(card);
+                });
+                
+                groupDiv.appendChild(grid);
+                fragment.appendChild(groupDiv);
+            });
+            
+            container.innerHTML = '';
+            container.appendChild(fragment);
+        }
+
+        /**
+         * Setup search functionality for Reposições view
+         */
+        function setupReposicoesSearch() {
+            const searchInput = document.getElementById('reposicoes-students-search');
+            if (!searchInput) return;
+            
+            searchInput.addEventListener('input', (e) => {
+                const query = normalizeString(e.target.value.trim());
+                const allCards = document.querySelectorAll('.student-card-reposicao');
+                
+                allCards.forEach(card => {
+                    const name = card.getAttribute('data-student-name') || '';
+                    const matches = name.includes(query);
+                    card.style.display = matches ? '' : 'none';
+                });
+                
+                // Hide empty groups
+                document.querySelectorAll('.student-group').forEach(group => {
+                    const visibleCards = group.querySelectorAll('.student-card-reposicao:not([style*="display: none"])');
+                    group.style.display = visibleCards.length > 0 ? '' : 'none';
+                });
+            });
         }
 
         // ====================================================================
@@ -2252,14 +2470,16 @@ function extractTimeFromISO(isoString) {
         /**
          * Open modal to insert reposição
          */
-        window.openReposicaoModal = function() {
-            console.log('[openReposicaoModal] Opening modal');
+        window.openReposicaoModal = function(emailHC = '', nomeCompleto = '', curso = '', escala = '') {
+            console.log('[openReposicaoModal] Opening modal for', nomeCompleto);
             
-            // Clear all fields
-            document.getElementById('reposicao-nome').value = '';
-            document.getElementById('reposicao-email').value = '';
-            document.getElementById('reposicao-curso').value = '';
-            document.getElementById('reposicao-escala').value = '';
+            // Pre-fill fields if provided
+            document.getElementById('reposicao-nome').value = nomeCompleto;
+            document.getElementById('reposicao-email').value = emailHC;
+            document.getElementById('reposicao-curso').value = curso;
+            document.getElementById('reposicao-escala').value = escala;
+            
+            // Clear other fields
             document.getElementById('reposicao-unidade').value = '';
             document.getElementById('reposicao-horario').value = '';
             document.getElementById('reposicao-motivo').value = '';
