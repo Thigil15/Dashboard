@@ -2473,8 +2473,19 @@ function extractTimeFromISO(isoString) {
         window.openReposicaoModal = function(emailHC = '', nomeCompleto = '', curso = '', escala = '') {
             console.log('[openReposicaoModal] Opening modal for', nomeCompleto);
             
+            // Switch to readonly mode (called from student cards)
+            const nomeInput = document.getElementById('reposicao-nome');
+            const nomeSelect = document.getElementById('reposicao-nome-select');
+            
+            nomeInput.style.display = 'block';
+            nomeSelect.style.display = 'none';
+            
+            // Set readonly attributes
+            document.getElementById('reposicao-email').setAttribute('readonly', 'readonly');
+            document.getElementById('reposicao-curso').setAttribute('readonly', 'readonly');
+            
             // Pre-fill fields if provided
-            document.getElementById('reposicao-nome').value = nomeCompleto;
+            nomeInput.value = nomeCompleto;
             document.getElementById('reposicao-email').value = emailHC;
             document.getElementById('reposicao-curso').value = curso;
             document.getElementById('reposicao-escala').value = escala;
@@ -2490,10 +2501,83 @@ function extractTimeFromISO(isoString) {
         };
 
         /**
+         * Open modal to add a new reposição (manual mode with dropdowns)
+         */
+        window.openAdicionarReposicaoModal = function() {
+            console.log('[openAdicionarReposicaoModal] Opening modal in manual mode');
+            
+            // Switch to select mode for student selection
+            const nomeInput = document.getElementById('reposicao-nome');
+            const nomeSelect = document.getElementById('reposicao-nome-select');
+            
+            nomeInput.style.display = 'none';
+            nomeSelect.style.display = 'block';
+            
+            // Populate student dropdown with active students
+            nomeSelect.innerHTML = '<option value="">Selecione um aluno...</option>';
+            const activeStudents = Array.from(appState.alunosMap.values())
+                .filter(s => s.Status === 'Ativo')
+                .sort((a, b) => (a.NomeCompleto || '').localeCompare(b.NomeCompleto || ''));
+            
+            activeStudents.forEach(student => {
+                const option = document.createElement('option');
+                option.value = student.EmailHC;
+                option.textContent = student.NomeCompleto;
+                option.dataset.curso = student.Curso || '';
+                option.dataset.escala = student.Escala || '';
+                nomeSelect.appendChild(option);
+            });
+            
+            // Clear all fields
+            nomeSelect.value = '';
+            document.getElementById('reposicao-email').value = '';
+            document.getElementById('reposicao-curso').value = '';
+            document.getElementById('reposicao-escala').value = '';
+            document.getElementById('reposicao-unidade').value = '';
+            document.getElementById('reposicao-horario').value = '';
+            document.getElementById('reposicao-motivo').value = '';
+            document.getElementById('reposicao-data').value = '';
+            
+            // Remove readonly attributes
+            document.getElementById('reposicao-email').removeAttribute('readonly');
+            document.getElementById('reposicao-curso').removeAttribute('readonly');
+            
+            // Show modal
+            document.getElementById('modal-reposicao').style.display = 'flex';
+        };
+
+        /**
+         * Event handler for student selection in manual mode
+         * Attached once during initialization
+         */
+        document.getElementById('reposicao-nome-select')?.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            if (selectedOption.value) {
+                document.getElementById('reposicao-email').value = selectedOption.value;
+                document.getElementById('reposicao-curso').value = selectedOption.dataset.curso;
+                document.getElementById('reposicao-escala').value = selectedOption.dataset.escala;
+            } else {
+                document.getElementById('reposicao-email').value = '';
+                document.getElementById('reposicao-curso').value = '';
+                document.getElementById('reposicao-escala').value = '';
+            }
+        });
+
+        /**
          * Close reposição modal
          */
         window.closeReposicaoModal = function() {
             document.getElementById('modal-reposicao').style.display = 'none';
+            
+            // Reset to readonly mode
+            const nomeInput = document.getElementById('reposicao-nome');
+            const nomeSelect = document.getElementById('reposicao-nome-select');
+            nomeInput.style.display = 'block';
+            nomeSelect.style.display = 'none';
+            
+            document.getElementById('reposicao-email').setAttribute('readonly', 'readonly');
+            document.getElementById('reposicao-curso').setAttribute('readonly', 'readonly');
+            
             // Reset form
             document.getElementById('form-reposicao').reset();
         };
