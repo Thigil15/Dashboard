@@ -1356,31 +1356,63 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Nome Completo *</label>
-                        <input type="text" id="reposicao-nome" class="form-input" required>
+                        <input type="text" id="reposicao-nome" class="form-input" required readonly>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Email HC *</label>
-                        <input type="email" id="reposicao-email" class="form-input" required>
+                        <input type="email" id="reposicao-email" class="form-input" required readonly>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Curso *</label>
-                        <input type="text" id="reposicao-curso" class="form-input" required>
+                        <input type="text" id="reposicao-curso" class="form-input" required readonly>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Escala *</label>
-                        <input type="text" id="reposicao-escala" class="form-input" required>
+                        <select id="reposicao-escala" class="form-input" required>
+                            <option value="">Selecione...</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                            <option value="10">10</option>
+                            <option value="11">11</option>
+                            <option value="12">12</option>
+                        </select>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Unidade *</label>
-                        <input type="text" id="reposicao-unidade" class="form-input" required>
+                        <select id="reposicao-unidade" class="form-input" required>
+                            <option value="">Selecione...</option>
+                            <option value="Enf. Pneumo">Enf. Pneumo</option>
+                            <option value="Enf. Cardio">Enf. Cardio</option>
+                            <option value="Enf. Coronária">Enf. Coronária</option>
+                            <option value="Enf. Pediátrica">Enf. Pediátrica</option>
+                            <option value="UCO">UCO</option>
+                            <option value="UTI Clínica">UTI Clínica</option>
+                            <option value="UTI Respiratória">UTI Respiratória</option>
+                            <option value="UTI Pediátrica">UTI Pediátrica</option>
+                            <option value="REC1">REC1</option>
+                            <option value="REC2">REC2</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Horário *</label>
-                        <input type="text" id="reposicao-horario" class="form-input" placeholder="Ex: 14:00-18:00" required>
+                        <select id="reposicao-horario" class="form-input" required>
+                            <option value="">Selecione...</option>
+                            <option value="07h-12h">07h-12h</option>
+                            <option value="08h-13h">08h-13h</option>
+                            <option value="13h-18h">13h-18h</option>
+                            <option value="19h-07h">19h-07h</option>
+                        </select>
                     </div>
                 </div>
                 <div class="form-row">
