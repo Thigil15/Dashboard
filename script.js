@@ -2553,7 +2553,7 @@ function extractTimeFromISO(isoString) {
         document.getElementById('reposicao-nome-select')?.addEventListener('change', function() {
             const selectedOption = this.options[this.selectedIndex];
             if (selectedOption.value) {
-                document.getElementById('reposicao-nome').value = selectedOption.textContent;
+                document.getElementById('reposicao-nome').value = selectedOption.textContent.trim();
                 document.getElementById('reposicao-email').value = selectedOption.value;
                 document.getElementById('reposicao-curso').value = selectedOption.dataset.curso;
                 document.getElementById('reposicao-escala').value = selectedOption.dataset.escala;
