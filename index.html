@@ -666,93 +666,45 @@
 
                 <!-- View: Reposições - Modern InCor Design -->
                 <div id="content-reposicoes" class="view-container" style="display: none;">
-                    <!-- Sync Status Badge -->
-                    <div class="ponto-sync-status">
-                        <span id="reposicoes-last-sync" class="ponto-sync-badge">
-                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <span>Dados não carregados</span>
-                        </span>
-                    </div>
-
-                    <!-- Header Card -->
-                    <div class="ponto-type-card animated-card delay-50" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border: none;">
-                        <div class="ponto-header-info">
-                            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
-                                <div style="width: 48px; height: 48px; background: rgba(255,255,255,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
-                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width: 24px; height: 24px;">
+                    
+                    <!-- Header Section -->
+                    <header class="alunos-header">
+                        <div class="alunos-header-content">
+                            <div class="alunos-header-left">
+                                <div class="alunos-header-icon">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                     </svg>
                                 </div>
                                 <div>
-                                    <h2 class="ponto-header-title" style="color: white; margin: 0;">Reposições</h2>
-                                    <p class="ponto-header-subtitle" style="color: rgba(255,255,255,0.9); margin: 0;">Registro de aulas de reposição agendadas e realizadas</p>
+                                    <h1 class="alunos-header-title">Reposições</h1>
+                                    <p class="alunos-header-subtitle">Alunos com ausências registradas</p>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-
-                    <!-- Add New Reposicao Button -->
-                    <div class="view-action-bar animated-card delay-75">
-                        <button class="add-new-btn" onclick="openReposicaoModal()">
-                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                            </svg>
-                            Nova Reposição
-                        </button>
-                    </div>
-
-                    <!-- Controls Card -->
-                    <div class="ponto-controls-card animated-card delay-100">
-                        <div class="ponto-controls-row">
-                            <!-- Search Box -->
-                            <div class="ponto-control-group" style="flex: 2;">
-                                <label class="ponto-control-label">
-                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-                                    </svg>
-                                    Buscar
-                                </label>
-                                <input type="text" id="reposicoes-search" placeholder="Buscar por nome, email, curso..." class="ponto-control-input">
-                            </div>
-
-                            <!-- Refresh Button -->
-                            <div class="ponto-control-group ponto-control-action">
-                                <button id="reposicoes-refresh-button" class="ponto-refresh-btn" type="button">
-                                    <svg class="ponto-refresh-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-                                    </svg>
-                                    <span>Atualizar</span>
-                                </button>
+                            <div class="alunos-search-wrapper">
+                                <svg class="alunos-search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                                </svg>
+                                <input type="text" id="reposicoes-students-search" placeholder="Buscar aluno pelo nome..." class="alunos-search-input">
                             </div>
                         </div>
-                    </div>
+                    </header>
 
-                    <!-- Data Table Card -->
-                    <div class="ponto-data-card animated-card delay-300">
-                        <div class="ponto-table-container">
-                            <table class="ponto-table" id="reposicoes-table">
-                                <thead>
-                                    <tr>
-                                        <th>Nome Completo</th>
-                                        <th>Email HC</th>
-                                        <th>Curso</th>
-                                        <th>Escala</th>
-                                        <th>Unidade</th>
-                                        <th>Horário</th>
-                                        <th>Motivo</th>
-                                        <th>Data Reposição</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="reposicoes-table-body">
-                                    <tr>
-                                        <td colspan="8" class="ponto-table-empty">Nenhuma reposição registrada</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                    <!-- Tabs for Pendentes and Marcadas -->
+                    <div class="reposicoes-tabs" style="margin: 0 auto; max-width: 1400px; padding: 0 1.5rem;">
+                        <div class="tabs-container" style="display: flex; gap: 0.5rem; border-bottom: 2px solid #e2e8f0; margin-bottom: 1.5rem;">
+                            <button id="tab-pendentes" class="tab-button active" onclick="switchReposicoesTab('pendentes')" style="padding: 1rem 1.5rem; background: none; border: none; border-bottom: 3px solid #dc2626; color: #dc2626; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                                Reposições Pendentes
+                            </button>
+                            <button id="tab-marcadas" class="tab-button" onclick="switchReposicoesTab('marcadas')" style="padding: 1rem 1.5rem; background: none; border: none; border-bottom: 3px solid transparent; color: #64748b; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+                                Reposições Marcadas
+                            </button>
                         </div>
                     </div>
+                    
+                    <!-- Student List Panels -->
+                    <div id="reposicoes-pendentes-list" class="alunos-list-panel"></div>
+                    <div id="reposicoes-marcadas-list" class="alunos-list-panel" style="display: none;"></div>
                 </div>
 
         </main>
