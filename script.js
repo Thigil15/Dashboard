@@ -2599,7 +2599,7 @@ function extractTimeFromISO(isoString) {
         document.getElementById('reposicao-ausencia')?.addEventListener('change', function() {
             const selectedOption = this.options[this.selectedIndex];
             if (selectedOption && selectedOption.value) {
-                // Auto-populate Unidade and Horário from the selected absence
+                // Auto-populate Unidade, Horário, and Escala from the selected absence
                 const unidade = selectedOption.dataset.unidade || '';
                 const horario = selectedOption.dataset.horario || '';
                 const escala = selectedOption.dataset.escala || '';
@@ -2757,7 +2757,7 @@ function extractTimeFromISO(isoString) {
                             const value = a.DataAusenciaISO || a.DataAusencia || '';
                             ausenciaSelect.value = value;
                             if (!ausenciaSelect.value && value) {
-                                // ensure option exists with data attributes
+                                // Ensure option exists with data attributes
                                 const opt = document.createElement('option');
                                 opt.value = value;
                                 opt.textContent = `${dataBR} • ${motivo} • ${unidade}`;
