@@ -2426,6 +2426,7 @@ function extractTimeFromISO(isoString) {
         // ====================================================================
         // MODAL FUNCTIONS - Ausências e Reposições
         // ====================================================================
+        const reposicaoPlaceholderText = 'Selecione um aluno...';
 
         /**
          * Open modal to insert absence for a student
@@ -2522,7 +2523,7 @@ function extractTimeFromISO(isoString) {
             nomeSelect.disabled = false;
             
             // Populate student dropdown with active students
-            nomeSelect.innerHTML = '<option value="">Selecione um aluno...</option>';
+            nomeSelect.innerHTML = `<option value="">${reposicaoPlaceholderText}</option>`;
             const activeStudents = Array.from(appState.alunosMap.values())
                 .filter(s => s.Status === 'Ativo')
                 .sort((a, b) => (a.NomeCompleto || '').localeCompare(b.NomeCompleto || ''));
@@ -2969,10 +2970,10 @@ function extractTimeFromISO(isoString) {
                 };
                 
                 if (!reposicaoData.NomeCompleto || !reposicaoData.NomeCompleto.trim()) {
-                    const selectedOptions = document.getElementById('reposicao-nome-select')?.selectedOptions;
-                    const selectedOption = selectedOptions && selectedOptions.length > 0 ? selectedOptions[0] : null;
+                    const select = document.getElementById('reposicao-nome-select');
+                    const selectedOption = select && select.selectedIndex >= 0 ? select.options[select.selectedIndex] : null;
                     const selectedName = selectedOption?.textContent?.trim();
-                    if (selectedOption?.value && selectedName && selectedName !== 'Selecione um aluno...') {
+                    if (selectedOption?.value && selectedName && selectedName !== reposicaoPlaceholderText) {
                         reposicaoData.NomeCompleto = selectedName;
                     }
                 }
