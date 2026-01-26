@@ -2970,7 +2970,7 @@ function extractTimeFromISO(isoString) {
                 
                 if (!reposicaoData.NomeCompleto || !reposicaoData.NomeCompleto.trim()) {
                     const selectedOptions = document.getElementById('reposicao-nome-select')?.selectedOptions;
-                    if (selectedOptions && selectedOptions.length > 0) {
+                    if (selectedOptions && selectedOptions.length > 0 && selectedOptions[0].value) {
                         reposicaoData.NomeCompleto = selectedOptions[0].textContent.trim();
                     }
                 }
