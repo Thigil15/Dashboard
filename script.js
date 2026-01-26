@@ -3118,7 +3118,7 @@ function extractTimeFromISO(isoString) {
                 console.log('[setupAusenciaFormHandler] Validation passed. Sending data to Google Apps Script:', ausenciaData);
                 
                 // Send to Google Apps Script
-                const appsScriptURL = 'https://script.google.com/macros/s/AKfycbwscXAEZMkv1xt7uZ-HBHY9uRwtF9YOxNnp-xdEtIFKzDT0leSnm5kbZQbVU0GjRgyInw/exec';
+                const appsScriptURL = 'https://script.google.com/macros/s/AKfycbx6x-I0PCc1Ym8vx7VYyXmwvx3mY-9i3P16z6-5sJB2v728SlzENKnwy-4uAIHIiDLxGg/exec';
                 
                 try {
                     await fetch(appsScriptURL, {
@@ -3210,7 +3210,7 @@ function extractTimeFromISO(isoString) {
                 console.log('[setupReposicaoFormHandler] Validation passed. Sending data to Google Apps Script:', reposicaoData);
                 
                 // Send to Google Apps Script
-                const appsScriptURL = 'https://script.google.com/macros/s/AKfycbwscXAEZMkv1xt7uZ-HBHY9uRwtF9YOxNnp-xdEtIFKzDT0leSnm5kbZQbVU0GjRgyInw/exec';
+                const appsScriptURL = 'https://script.google.com/macros/s/AKfycbx6x-I0PCc1Ym8vx7VYyXmwvx3mY-9i3P16z6-5sJB2v728SlzENKnwy-4uAIHIiDLxGg/exec';
                 
                 try {
                     await fetch(appsScriptURL, {
