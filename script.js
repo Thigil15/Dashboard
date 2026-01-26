@@ -3078,6 +3078,8 @@ function extractTimeFromISO(isoString) {
          * Handle form submission for Ausências
          * Sends data to Google Apps Script instead of Firebase
          */
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx6x-I0PCc1Ym8vx7VYyXmwvx3mY-9i3P16z6-5sJB2v728SlzENKnwy-4uAIHIiDLxGg/exec';
+
         function setupAusenciaFormHandler() {
             const form = document.getElementById('form-ausencia');
             if (!form) {
@@ -3118,10 +3120,8 @@ function extractTimeFromISO(isoString) {
                 console.log('[setupAusenciaFormHandler] Validation passed. Sending data to Google Apps Script:', ausenciaData);
                 
                 // Send to Google Apps Script
-                const appsScriptURL = 'https://script.google.com/macros/s/AKfycbwscXAEZMkv1xt7uZ-HBHY9uRwtF9YOxNnp-xdEtIFKzDT0leSnm5kbZQbVU0GjRgyInw/exec';
-                
                 try {
-                    await fetch(appsScriptURL, {
+                    await fetch(APPS_SCRIPT_URL, {
                         method: 'POST',
                         mode: 'no-cors', // Google Apps Script requires no-cors mode
                         headers: {
@@ -3210,10 +3210,8 @@ function extractTimeFromISO(isoString) {
                 console.log('[setupReposicaoFormHandler] Validation passed. Sending data to Google Apps Script:', reposicaoData);
                 
                 // Send to Google Apps Script
-                const appsScriptURL = 'https://script.google.com/macros/s/AKfycbwscXAEZMkv1xt7uZ-HBHY9uRwtF9YOxNnp-xdEtIFKzDT0leSnm5kbZQbVU0GjRgyInw/exec';
-                
                 try {
-                    await fetch(appsScriptURL, {
+                    await fetch(APPS_SCRIPT_URL, {
                         method: 'POST',
                         mode: 'no-cors', // Google Apps Script requires no-cors mode
                         headers: {
