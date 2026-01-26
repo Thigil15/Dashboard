@@ -2554,9 +2554,9 @@ function extractTimeFromISO(isoString) {
             document.getElementById('reposicao-horario').value = '';
             document.getElementById('reposicao-motivo').value = '';
             document.getElementById('reposicao-data').value = '';
-            const ausenciaSelect = document.getElementById('reposicao-ausencia');
-            if (ausenciaSelect) {
-                ausenciaSelect.innerHTML = '<option value=\"\">Selecione uma ausência...</option>';
+            const ausenciaSelectInitial = document.getElementById('reposicao-ausencia');
+            if (ausenciaSelectInitial) {
+                ausenciaSelectInitial.innerHTML = '<option value=\"\">Selecione uma ausência...</option>';
             }
             
             // Remove readonly attributes
@@ -2646,7 +2646,7 @@ function extractTimeFromISO(isoString) {
             ausencias.forEach(a => {
                 const option = document.createElement('option');
                 option.value = a.DataAusenciaISO || a.DataAusencia || '';
-                const dataBR = a.DataAusenciaISO ? formatDateToBR(a.DataAusenciaISO) : (a.DataAusencia || 'Data não informada');
+                const dataBR = a.DataAusenciaISO ? formatDateBR(a.DataAusenciaISO) : (a.DataAusencia || 'Data não informada');
                 option.textContent = `${dataBR} • ${a.Motivo || 'Motivo não informado'} • ${a.Unidade || ''}`.trim();
                 select.appendChild(option);
             });
