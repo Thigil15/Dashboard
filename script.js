@@ -2674,7 +2674,8 @@ function extractTimeFromISO(isoString) {
             list.style.flexDirection = 'column';
             list.style.gap = '0.75rem';
             
-            const ausenciasAluno = (appState.ausenciasReposicoes || [])
+            const ausenciasFonte = (appState.ausenciasReposicoes && appState.ausenciasReposicoes.length ? appState.ausenciasReposicoes : appState.ausencias || []);
+            const ausenciasAluno = ausenciasFonte
                 .filter(a => normalizeString(a.EmailHC || a.Email) === normalizeString(student.EmailHC))
                 .sort((a, b) => (a.DataAusenciaISO || a.DataAusencia || '').localeCompare(b.DataAusenciaISO || b.DataAusencia || ''));
             
@@ -2754,7 +2755,8 @@ function extractTimeFromISO(isoString) {
             if (!select) return;
             select.innerHTML = '<option value=\"\">Selecione uma ausência...</option>';
             if (!email) return;
-            const ausencias = (appState.ausenciasReposicoes || []).filter(a => normalizeString(a.EmailHC || a.Email) === normalizeString(email) && (a.DataAusenciaISO || a.DataAusencia));
+            const ausenciasFonte = (appState.ausenciasReposicoes && appState.ausenciasReposicoes.length ? appState.ausenciasReposicoes : appState.ausencias || []);
+            const ausencias = ausenciasFonte.filter(a => normalizeString(a.EmailHC || a.Email) === normalizeString(email) && (a.DataAusenciaISO || a.DataAusencia));
             ausencias.sort((a, b) => (a.DataAusenciaISO || a.DataAusencia || '').localeCompare(b.DataAusenciaISO || b.DataAusencia || ''));
             ausencias.forEach(a => {
                 const option = document.createElement('option');
