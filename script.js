@@ -2568,6 +2568,15 @@ function extractTimeFromISO(isoString) {
             document.getElementById('modal-reposicao').style.display = 'flex';
         };
 
+        const reposicaoLockableFields = ['reposicao-unidade', 'reposicao-horario', 'reposicao-escala'];
+
+        function setReposicaoFieldsLocked(locked) {
+            reposicaoLockableFields.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.disabled = locked;
+            });
+        }
+
         /**
          * Event handler for student selection in manual mode
          * Attached once during initialization
@@ -2585,6 +2594,7 @@ function extractTimeFromISO(isoString) {
                 document.getElementById('reposicao-email').value = '';
                 document.getElementById('reposicao-curso').value = '';
                 document.getElementById('reposicao-escala').value = '';
+                setReposicaoFieldsLocked(false);
                 const ausenciaSelect = document.getElementById('reposicao-ausencia');
                 if (ausenciaSelect) {
                     ausenciaSelect.innerHTML = '<option value=\"\">Selecione uma ausência...</option>';
@@ -2613,6 +2623,12 @@ function extractTimeFromISO(isoString) {
                 if (escala) {
                     document.getElementById('reposicao-escala').value = escala;
                 }
+                
+                // Lock only if all auto fields are available
+                const hasAll = unidade && horario && escala;
+                setReposicaoFieldsLocked(hasAll);
+            } else {
+                setReposicaoFieldsLocked(false);
             }
         });
 
