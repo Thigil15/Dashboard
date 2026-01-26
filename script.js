@@ -2593,6 +2593,30 @@ function extractTimeFromISO(isoString) {
         });
 
         /**
+         * Event handler for absence selection - auto-populates Unidade, Horário, and Escala
+         * Attached once during initialization
+         */
+        document.getElementById('reposicao-ausencia')?.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            if (selectedOption && selectedOption.value) {
+                // Auto-populate Unidade and Horário from the selected absence
+                const unidade = selectedOption.dataset.unidade || '';
+                const horario = selectedOption.dataset.horario || '';
+                const escala = selectedOption.dataset.escala || '';
+                
+                if (unidade) {
+                    document.getElementById('reposicao-unidade').value = unidade;
+                }
+                if (horario) {
+                    document.getElementById('reposicao-horario').value = horario;
+                }
+                if (escala) {
+                    document.getElementById('reposicao-escala').value = escala;
+                }
+            }
+        });
+
+        /**
          * Close reposição modal
          */
         window.closeReposicaoModal = function() {
@@ -2733,13 +2757,18 @@ function extractTimeFromISO(isoString) {
                             const value = a.DataAusenciaISO || a.DataAusencia || '';
                             ausenciaSelect.value = value;
                             if (!ausenciaSelect.value && value) {
-                                // ensure option exists
+                                // ensure option exists with data attributes
                                 const opt = document.createElement('option');
                                 opt.value = value;
                                 opt.textContent = `${dataBR} • ${motivo} • ${unidade}`;
+                                opt.dataset.unidade = a.Unidade || '';
+                                opt.dataset.horario = a.Horario || '';
+                                opt.dataset.escala = a.Escala || '';
                                 ausenciaSelect.appendChild(opt);
                                 ausenciaSelect.value = value;
                             }
+                            // Trigger change event to auto-populate fields
+                            ausenciaSelect.dispatchEvent(new Event('change'));
                         }
                     });
                     
@@ -2769,6 +2798,10 @@ function extractTimeFromISO(isoString) {
             ausencias.forEach(a => {
                 const option = document.createElement('option');
                 option.value = a.DataAusenciaISO || a.DataAusencia || '';
+                // Store Unidade, Horario, and Escala as data attributes for auto-population
+                option.dataset.unidade = a.Unidade || '';
+                option.dataset.horario = a.Horario || '';
+                option.dataset.escala = a.Escala || '';
                 const dataBR = a.DataAusenciaISO ? formatDateBR(a.DataAusenciaISO) : (a.DataAusencia || 'Data não informada');
                 const parts = [dataBR, a.Motivo || 'Motivo não informado', a.Unidade || ''];
                 option.textContent = parts.filter(Boolean).join(' • ');
@@ -6302,7 +6335,9 @@ function extractTimeFromISO(isoString) {
 
         function formatDateBR(isoDate = '') {
             if (!isoDate) return '--';
-            const [year, month, day] = isoDate.split('-');
+            // Extract date part from ISO timestamp (handles both YYYY-MM-DD and YYYY-MM-DDTHH:mm:ss.sssZ formats)
+            const datePart = isoDate.split('T')[0];
+            const [year, month, day] = datePart.split('-');
             if (!year || !month || !day) return isoDate;
             return `${day}/${month}/${year}`;
         }
