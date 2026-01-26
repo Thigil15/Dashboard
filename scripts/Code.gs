@@ -2193,18 +2193,22 @@ function registrarReposicao(data) {
     return { success: false, message: validacao.message };
   }
   
-  // Preparar dados para inserção
-  var registro = [
-    data.NomeCompleto || '',
-    data.EmailHC || '',
-    data.Curso || '',
-    data.Escala || '',
-    data.Horario || '',
-    data.Unidade || '',
-    data.Motivo || '',
-    data.DataReposicao || '',
-    data.DataAusencia || ''
-  ];
+  // Preparar dados para inserção respeitando a ordem atual dos cabeçalhos
+  var cabecalhos = aba.getRange(1, 1, 1, aba.getLastColumn()).getValues()[0];
+  var registro = cabecalhos.map(function(col) {
+    switch (col) {
+      case 'NomeCompleto': return data.NomeCompleto || '';
+      case 'EmailHC': return data.EmailHC || '';
+      case 'Curso': return data.Curso || '';
+      case 'Escala': return data.Escala || '';
+      case 'Horario': return data.Horario || '';
+      case 'Unidade': return data.Unidade || '';
+      case 'Motivo': return data.Motivo || '';
+      case 'DataReposicao': return data.DataReposicao || '';
+      case 'DataAusencia': return data.DataAusencia || '';
+      default: return '';
+    }
+  });
   
   // Adicionar à planilha
   aba.appendRow(registro);
