@@ -2489,6 +2489,7 @@ function extractTimeFromISO(isoString) {
             // Set readonly attributes
             document.getElementById('reposicao-email').setAttribute('readonly', 'readonly');
             document.getElementById('reposicao-curso').setAttribute('readonly', 'readonly');
+            document.getElementById('reposicao-ausencia-row').style.display = 'flex';
             
             // Pre-fill fields if provided
             nomeInput.value = nomeCompleto;
@@ -2496,11 +2497,17 @@ function extractTimeFromISO(isoString) {
             document.getElementById('reposicao-curso').value = curso;
             document.getElementById('reposicao-escala').value = escala;
             
+            populateAusenciaOptions(emailHC);
+            
             // Clear other fields
             document.getElementById('reposicao-unidade').value = '';
             document.getElementById('reposicao-horario').value = '';
             document.getElementById('reposicao-motivo').value = '';
             document.getElementById('reposicao-data').value = '';
+            const ausenciaSelect = document.getElementById('reposicao-ausencia');
+            if (ausenciaSelect) {
+                ausenciaSelect.value = '';
+            }
             
             // Show modal
             document.getElementById('modal-reposicao').style.display = 'flex';
@@ -2547,10 +2554,19 @@ function extractTimeFromISO(isoString) {
             document.getElementById('reposicao-horario').value = '';
             document.getElementById('reposicao-motivo').value = '';
             document.getElementById('reposicao-data').value = '';
+            const ausenciaSelect = document.getElementById('reposicao-ausencia');
+            if (ausenciaSelect) {
+                ausenciaSelect.innerHTML = '<option value=\"\">Selecione uma ausência...</option>';
+            }
             
             // Remove readonly attributes
             document.getElementById('reposicao-email').removeAttribute('readonly');
             document.getElementById('reposicao-curso').removeAttribute('readonly');
+            document.getElementById('reposicao-ausencia-row').style.display = 'none';
+            const ausenciaSelect = document.getElementById('reposicao-ausencia');
+            if (ausenciaSelect) {
+                ausenciaSelect.innerHTML = '<option value=\"\">Selecione uma ausência...</option>';
+            }
             
             // Show modal
             document.getElementById('modal-reposicao').style.display = 'flex';
@@ -2567,11 +2583,16 @@ function extractTimeFromISO(isoString) {
                 document.getElementById('reposicao-email').value = selectedOption.value;
                 document.getElementById('reposicao-curso').value = selectedOption.dataset.curso;
                 document.getElementById('reposicao-escala').value = selectedOption.dataset.escala;
+                populateAusenciaOptions(selectedOption.value);
             } else {
                 document.getElementById('reposicao-nome').value = '';
                 document.getElementById('reposicao-email').value = '';
                 document.getElementById('reposicao-curso').value = '';
                 document.getElementById('reposicao-escala').value = '';
+                const ausenciaSelect = document.getElementById('reposicao-ausencia');
+                if (ausenciaSelect) {
+                    ausenciaSelect.innerHTML = '<option value=\"\">Selecione uma ausência...</option>';
+                }
             }
         });
 
@@ -2593,6 +2614,11 @@ function extractTimeFromISO(isoString) {
             
             document.getElementById('reposicao-email').setAttribute('readonly', 'readonly');
             document.getElementById('reposicao-curso').setAttribute('readonly', 'readonly');
+            document.getElementById('reposicao-ausencia-row').style.display = 'none';
+            const ausenciaSelect = document.getElementById('reposicao-ausencia');
+            if (ausenciaSelect) {
+                ausenciaSelect.innerHTML = '<option value=\"\">Selecione uma ausência...</option>';
+            }
             
             // Reset form
             document.getElementById('form-reposicao').reset();
@@ -2606,6 +2632,25 @@ function extractTimeFromISO(isoString) {
                 closeReposicaoModal();
             }
         });
+
+        /**
+         * Populate ausência options for a specific student to allow linking reposição
+         */
+        function populateAusenciaOptions(email) {
+            const select = document.getElementById('reposicao-ausencia');
+            if (!select) return;
+            select.innerHTML = '<option value=\"\">Selecione uma ausência...</option>';
+            if (!email) return;
+            const ausencias = (appState.ausenciasReposicoes || []).filter(a => normalizeString(a.EmailHC || a.Email) === normalizeString(email) && (a.DataAusenciaISO || a.DataAusencia));
+            ausencias.sort((a, b) => (a.DataAusenciaISO || a.DataAusencia || '').localeCompare(b.DataAusenciaISO || b.DataAusencia || ''));
+            ausencias.forEach(a => {
+                const option = document.createElement('option');
+                option.value = a.DataAusenciaISO || a.DataAusencia || '';
+                const dataBR = a.DataAusenciaISO ? formatDateToBR(a.DataAusenciaISO) : (a.DataAusencia || 'Data não informada');
+                option.textContent = `${dataBR} • ${a.Motivo || 'Motivo não informado'} • ${a.Unidade || ''}`.trim();
+                select.appendChild(option);
+            });
+        }
 
         /**
          * Render students list for Ausências view
@@ -2967,7 +3012,8 @@ function extractTimeFromISO(isoString) {
                     Unidade: document.getElementById('reposicao-unidade').value,
                     Horario: document.getElementById('reposicao-horario').value,
                     Motivo: document.getElementById('reposicao-motivo').value,
-                    DataReposicao: document.getElementById('reposicao-data').value
+                    DataReposicao: document.getElementById('reposicao-data').value,
+                    DataAusencia: document.getElementById('reposicao-ausencia')?.value || ''
                 };
                 
                 if (!reposicaoData.NomeCompleto || !reposicaoData.NomeCompleto.trim()) {
