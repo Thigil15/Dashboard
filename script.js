@@ -2568,6 +2568,15 @@ function extractTimeFromISO(isoString) {
             document.getElementById('modal-reposicao').style.display = 'flex';
         };
 
+        const reposicaoLockableFields = ['reposicao-unidade', 'reposicao-horario', 'reposicao-escala'];
+
+        function setReposicaoFieldsLocked(locked) {
+            reposicaoLockableFields.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.disabled = locked;
+            });
+        }
+
         /**
          * Event handler for student selection in manual mode
          * Attached once during initialization
@@ -2585,6 +2594,7 @@ function extractTimeFromISO(isoString) {
                 document.getElementById('reposicao-email').value = '';
                 document.getElementById('reposicao-curso').value = '';
                 document.getElementById('reposicao-escala').value = '';
+                setReposicaoFieldsLocked(false);
                 const ausenciaSelect = document.getElementById('reposicao-ausencia');
                 if (ausenciaSelect) {
                     ausenciaSelect.innerHTML = '<option value=\"\">Selecione uma ausência...</option>';
@@ -2613,6 +2623,12 @@ function extractTimeFromISO(isoString) {
                 if (escala) {
                     document.getElementById('reposicao-escala').value = escala;
                 }
+                
+                // Lock only if all auto fields are available
+                const hasAll = unidade && horario && escala;
+                setReposicaoFieldsLocked(hasAll);
+            } else {
+                setReposicaoFieldsLocked(false);
             }
         });
 
@@ -2728,7 +2744,7 @@ function extractTimeFromISO(isoString) {
                     card.style.flexDirection = 'column';
                     card.style.gap = '0.25rem';
                     
-                    const dataBR = a.DataAusenciaISO ? formatDateBR(a.DataAusenciaISO) : (a.DataAusencia || 'Data não informada');
+                    const dataBR = formatDateBR(a.DataAusenciaISO || a.DataAusencia || '');
                     const unidade = a.Unidade || 'Unidade não informada';
                     const horario = a.Horario || 'Horário não informado';
                     const motivo = a.Motivo || 'Motivo não informado';
@@ -2802,7 +2818,7 @@ function extractTimeFromISO(isoString) {
                 option.dataset.unidade = a.Unidade || '';
                 option.dataset.horario = a.Horario || '';
                 option.dataset.escala = a.Escala || '';
-                const dataBR = a.DataAusenciaISO ? formatDateBR(a.DataAusenciaISO) : (a.DataAusencia || 'Data não informada');
+                const dataBR = formatDateBR(a.DataAusenciaISO || a.DataAusencia || '');
                 const parts = [dataBR, a.Motivo || 'Motivo não informado', a.Unidade || ''];
                 option.textContent = parts.filter(Boolean).join(' • ');
                 select.appendChild(option);
