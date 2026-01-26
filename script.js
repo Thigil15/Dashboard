@@ -2426,6 +2426,8 @@ function extractTimeFromISO(isoString) {
         // ====================================================================
         // MODAL FUNCTIONS - Ausências e Reposições
         // ====================================================================
+        const reposicaoPlaceholderText = 'Selecione um aluno...';
+        const reposicaoPlaceholderIndex = 0;
 
         /**
          * Open modal to insert absence for a student
@@ -2478,7 +2480,11 @@ function extractTimeFromISO(isoString) {
             const nomeSelect = document.getElementById('reposicao-nome-select');
             
             nomeInput.style.display = 'block';
+            nomeInput.required = true;
+            nomeInput.disabled = false;
             nomeSelect.style.display = 'none';
+            nomeSelect.required = false;
+            nomeSelect.disabled = true;
             
             // Set readonly attributes
             document.getElementById('reposicao-email').setAttribute('readonly', 'readonly');
@@ -2511,10 +2517,14 @@ function extractTimeFromISO(isoString) {
             const nomeSelect = document.getElementById('reposicao-nome-select');
             
             nomeInput.style.display = 'none';
+            nomeInput.required = false;
+            nomeInput.disabled = true;
             nomeSelect.style.display = 'block';
+            nomeSelect.required = true;
+            nomeSelect.disabled = false;
             
             // Populate student dropdown with active students
-            nomeSelect.innerHTML = '<option value="">Selecione um aluno...</option>';
+            nomeSelect.innerHTML = `<option value="">${reposicaoPlaceholderText}</option>`;
             const activeStudents = Array.from(appState.alunosMap.values())
                 .filter(s => s.Status === 'Ativo')
                 .sort((a, b) => (a.NomeCompleto || '').localeCompare(b.NomeCompleto || ''));
@@ -2575,7 +2585,11 @@ function extractTimeFromISO(isoString) {
             const nomeInput = document.getElementById('reposicao-nome');
             const nomeSelect = document.getElementById('reposicao-nome-select');
             nomeInput.style.display = 'block';
+            nomeInput.required = true;
+            nomeInput.disabled = false;
             nomeSelect.style.display = 'none';
+            nomeSelect.required = false;
+            nomeSelect.disabled = true;
             
             document.getElementById('reposicao-email').setAttribute('readonly', 'readonly');
             document.getElementById('reposicao-curso').setAttribute('readonly', 'readonly');
@@ -2955,6 +2969,15 @@ function extractTimeFromISO(isoString) {
                     Motivo: document.getElementById('reposicao-motivo').value,
                     DataReposicao: document.getElementById('reposicao-data').value
                 };
+                
+                if (!reposicaoData.NomeCompleto || !reposicaoData.NomeCompleto.trim()) {
+                    const select = document.getElementById('reposicao-nome-select');
+                    const selectedOption = select && select.selectedIndex > reposicaoPlaceholderIndex ? select.options[select.selectedIndex] : null;
+                    const selectedName = selectedOption?.textContent?.trim();
+                    if (selectedOption?.value && selectedName && selectedName !== reposicaoPlaceholderText) {
+                        reposicaoData.NomeCompleto = selectedName;
+                    }
+                }
                 
                 // Validate required fields
                 const validation = validateFormData(reposicaoData, 'DataReposicao');
