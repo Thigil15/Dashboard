@@ -2593,10 +2593,6 @@ function extractTimeFromISO(isoString) {
             document.getElementById('reposicao-curso').setAttribute('readonly', 'readonly');
             
             // Reset form
-            nomeInput.required = true;
-            nomeInput.disabled = false;
-            nomeSelect.required = false;
-            nomeSelect.disabled = true;
             document.getElementById('form-reposicao').reset();
         };
         
@@ -2973,7 +2969,10 @@ function extractTimeFromISO(isoString) {
                 };
                 
                 if (!reposicaoData.NomeCompleto || !reposicaoData.NomeCompleto.trim()) {
-                    reposicaoData.NomeCompleto = document.getElementById('reposicao-nome-select')?.selectedOptions?.[0]?.textContent?.trim() || '';
+                    const selectedOptions = document.getElementById('reposicao-nome-select')?.selectedOptions;
+                    if (selectedOptions && selectedOptions.length > 0) {
+                        reposicaoData.NomeCompleto = selectedOptions[0].textContent.trim();
+                    }
                 }
                 
                 // Validate required fields
