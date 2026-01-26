@@ -2728,7 +2728,7 @@ function extractTimeFromISO(isoString) {
                     card.style.flexDirection = 'column';
                     card.style.gap = '0.25rem';
                     
-                    const dataBR = a.DataAusenciaISO ? formatDateBR(a.DataAusenciaISO) : (a.DataAusencia || 'Data não informada');
+                    const dataBR = formatDateBR(a.DataAusenciaISO || a.DataAusencia || '');
                     const unidade = a.Unidade || 'Unidade não informada';
                     const horario = a.Horario || 'Horário não informado';
                     const motivo = a.Motivo || 'Motivo não informado';
@@ -2802,7 +2802,7 @@ function extractTimeFromISO(isoString) {
                 option.dataset.unidade = a.Unidade || '';
                 option.dataset.horario = a.Horario || '';
                 option.dataset.escala = a.Escala || '';
-                const dataBR = a.DataAusenciaISO ? formatDateBR(a.DataAusenciaISO) : (a.DataAusencia || 'Data não informada');
+                const dataBR = formatDateBR(a.DataAusenciaISO || a.DataAusencia || '');
                 const parts = [dataBR, a.Motivo || 'Motivo não informado', a.Unidade || ''];
                 option.textContent = parts.filter(Boolean).join(' • ');
                 select.appendChild(option);
