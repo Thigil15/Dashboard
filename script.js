@@ -2669,13 +2669,18 @@ function extractTimeFromISO(isoString) {
             listWrapper.style.maxHeight = '60vh';
             listWrapper.style.padding = '0.5rem 0';
             
-            const list = document.createElement('div');
-            list.style.display = 'flex';
-            list.style.flexDirection = 'column';
-            list.style.gap = '0.75rem';
+        const list = document.createElement('div');
+        list.style.display = 'flex';
+        list.style.flexDirection = 'column';
+        list.style.gap = '0.75rem';
+
+        function getAusenciasSource() {
+            const fromReposicoes = appState.ausenciasReposicoes || [];
+            if (fromReposicoes.length > 0) return fromReposicoes;
+            return appState.ausencias || [];
+        }
             
-            const ausenciasFonte = (appState.ausenciasReposicoes && appState.ausenciasReposicoes.length ? appState.ausenciasReposicoes : appState.ausencias || []);
-            const ausenciasAluno = ausenciasFonte
+            const ausenciasAluno = getAusenciasSource()
                 .filter(a => normalizeString(a.EmailHC || a.Email) === normalizeString(student.EmailHC))
                 .sort((a, b) => (a.DataAusenciaISO || a.DataAusencia || '').localeCompare(b.DataAusenciaISO || b.DataAusencia || ''));
             
@@ -2755,8 +2760,7 @@ function extractTimeFromISO(isoString) {
             if (!select) return;
             select.innerHTML = '<option value=\"\">Selecione uma ausência...</option>';
             if (!email) return;
-            const ausenciasFonte = (appState.ausenciasReposicoes && appState.ausenciasReposicoes.length ? appState.ausenciasReposicoes : appState.ausencias || []);
-            const ausencias = ausenciasFonte.filter(a => normalizeString(a.EmailHC || a.Email) === normalizeString(email) && (a.DataAusenciaISO || a.DataAusencia));
+            const ausencias = getAusenciasSource().filter(a => normalizeString(a.EmailHC || a.Email) === normalizeString(email) && (a.DataAusenciaISO || a.DataAusencia));
             ausencias.sort((a, b) => (a.DataAusenciaISO || a.DataAusencia || '').localeCompare(b.DataAusenciaISO || b.DataAusencia || ''));
             ausencias.forEach(a => {
                 const option = document.createElement('option');
