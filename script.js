@@ -2427,6 +2427,7 @@ function extractTimeFromISO(isoString) {
         // MODAL FUNCTIONS - Ausências e Reposições
         // ====================================================================
         const reposicaoPlaceholderText = 'Selecione um aluno...';
+        const reposicaoPlaceholderIndex = 0;
 
         /**
          * Open modal to insert absence for a student
@@ -2971,7 +2972,7 @@ function extractTimeFromISO(isoString) {
                 
                 if (!reposicaoData.NomeCompleto || !reposicaoData.NomeCompleto.trim()) {
                     const select = document.getElementById('reposicao-nome-select');
-                    const selectedOption = select && select.selectedIndex >= 0 ? select.options[select.selectedIndex] : null;
+                    const selectedOption = select && select.selectedIndex > reposicaoPlaceholderIndex ? select.options[select.selectedIndex] : null;
                     const selectedName = selectedOption?.textContent?.trim();
                     if (selectedOption?.value && selectedName && selectedName !== reposicaoPlaceholderText) {
                         reposicaoData.NomeCompleto = selectedName;
