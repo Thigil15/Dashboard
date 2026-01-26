@@ -2632,6 +2632,10 @@ function extractTimeFromISO(isoString) {
         /**
          * Lista ausências do aluno antes de agendar reposição
          */
+        /**
+         * Retorna fonte de ausências priorizando AusenciasReposicoes (dados combinados).
+         * Se não houver registros nessa coleção, faz fallback para a coleção Ausencias.
+         */
         function getAusenciasSource() {
             const fromReposicoes = appState.ausenciasReposicoes || [];
             if (fromReposicoes.length > 0) return fromReposicoes;
