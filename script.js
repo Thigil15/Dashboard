@@ -2632,6 +2632,12 @@ function extractTimeFromISO(isoString) {
         /**
          * Lista ausências do aluno antes de agendar reposição
          */
+        function getAusenciasSource() {
+            const fromReposicoes = appState.ausenciasReposicoes || [];
+            if (fromReposicoes.length > 0) return fromReposicoes;
+            return appState.ausencias || [];
+        }
+
         function openReposicaoAusenciasList(student) {
             if (!student) return;
             const overlay = document.createElement('div');
@@ -2669,16 +2675,10 @@ function extractTimeFromISO(isoString) {
             listWrapper.style.maxHeight = '60vh';
             listWrapper.style.padding = '0.5rem 0';
             
-        const list = document.createElement('div');
-        list.style.display = 'flex';
-        list.style.flexDirection = 'column';
-        list.style.gap = '0.75rem';
-
-        function getAusenciasSource() {
-            const fromReposicoes = appState.ausenciasReposicoes || [];
-            if (fromReposicoes.length > 0) return fromReposicoes;
-            return appState.ausencias || [];
-        }
+            const list = document.createElement('div');
+            list.style.display = 'flex';
+            list.style.flexDirection = 'column';
+            list.style.gap = '0.75rem';
             
             const ausenciasAluno = getAusenciasSource()
                 .filter(a => normalizeString(a.EmailHC || a.Email) === normalizeString(student.EmailHC))
