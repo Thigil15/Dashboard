@@ -2045,7 +2045,7 @@ function criarAbasAusenciasReposicoes() {
     ss.moveActiveSheet(abaAusencias.getIndex() + 1);
     
     // Configurar cabeçalhos
-    var cabecalhosReposicoes = ['NomeCompleto', 'EmailHC', 'Curso', 'Escala', 'Horario', 'Unidade', 'Motivo', 'DataReposicao'];
+    var cabecalhosReposicoes = ['NomeCompleto', 'EmailHC', 'Curso', 'Escala', 'Horario', 'Unidade', 'Motivo', 'DataReposicao', 'DataAusencia'];
     abaReposicoes.getRange(1, 1, 1, cabecalhosReposicoes.length).setValues([cabecalhosReposicoes]);
     abaReposicoes.getRange(1, 1, 1, cabecalhosReposicoes.length).setFontWeight('bold');
     abaReposicoes.setFrozenRows(1);
@@ -2104,6 +2104,11 @@ function validarDadosReposicao(data) {
   
   if (!data.DataReposicao) {
     return { valid: false, message: 'Data da reposição é obrigatória' };
+  }
+  
+  // DataAusencia é opcional, mas se existir deve ter formato plausível
+  if (data.DataAusencia && typeof data.DataAusencia !== 'string') {
+    return { valid: false, message: 'Data da ausência deve ser texto (YYYY-MM-DD)' };
   }
   
   // Validar formato de email
@@ -2197,7 +2202,8 @@ function registrarReposicao(data) {
     data.Horario || '',
     data.Unidade || '',
     data.Motivo || '',
-    data.DataReposicao || ''
+    data.DataReposicao || '',
+    data.DataAusencia || ''
   ];
   
   // Adicionar à planilha
