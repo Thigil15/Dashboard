@@ -2632,6 +2632,16 @@ function extractTimeFromISO(isoString) {
         /**
          * Lista ausências do aluno antes de agendar reposição
          */
+        /**
+         * Retorna fonte de ausências priorizando AusenciasReposicoes (dados combinados).
+         * Se não houver registros nessa coleção, faz fallback para a coleção Ausencias.
+         */
+        function getAusenciasSource() {
+            const fromReposicoes = appState.ausenciasReposicoes || [];
+            if (fromReposicoes.length > 0) return fromReposicoes;
+            return appState.ausencias || [];
+        }
+
         function openReposicaoAusenciasList(student) {
             if (!student) return;
             const overlay = document.createElement('div');
@@ -2674,7 +2684,7 @@ function extractTimeFromISO(isoString) {
             list.style.flexDirection = 'column';
             list.style.gap = '0.75rem';
             
-            const ausenciasAluno = (appState.ausenciasReposicoes || [])
+            const ausenciasAluno = getAusenciasSource()
                 .filter(a => normalizeString(a.EmailHC || a.Email) === normalizeString(student.EmailHC))
                 .sort((a, b) => (a.DataAusenciaISO || a.DataAusencia || '').localeCompare(b.DataAusenciaISO || b.DataAusencia || ''));
             
@@ -2754,7 +2764,7 @@ function extractTimeFromISO(isoString) {
             if (!select) return;
             select.innerHTML = '<option value=\"\">Selecione uma ausência...</option>';
             if (!email) return;
-            const ausencias = (appState.ausenciasReposicoes || []).filter(a => normalizeString(a.EmailHC || a.Email) === normalizeString(email) && (a.DataAusenciaISO || a.DataAusencia));
+            const ausencias = getAusenciasSource().filter(a => normalizeString(a.EmailHC || a.Email) === normalizeString(email) && (a.DataAusenciaISO || a.DataAusencia));
             ausencias.sort((a, b) => (a.DataAusenciaISO || a.DataAusencia || '').localeCompare(b.DataAusenciaISO || b.DataAusencia || ''));
             ausencias.forEach(a => {
                 const option = document.createElement('option');
