@@ -2354,33 +2354,29 @@ function extractTimeFromISO(isoString) {
                     coursePara.className = 'student-course mt-0.5';
                     coursePara.textContent = s.Curso || 'Sem Curso';
                     
-                    // Add button based on type
-                    const button = document.createElement('button');
-                    if (type === 'pendente') {
-                        button.className = 'btn-insert-ausencia';
-                        button.style.background = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
-                        button.innerHTML = `
-                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            Agendar Reposição
-                        `;
-                        button.addEventListener('click', () => {
-                            openReposicaoModal(s.EmailHC || '', s.NomeCompleto || '', s.Curso || '', s.Escala || '');
-                        });
-                    } else {
-                        button.className = 'btn-insert-ausencia';
-                        button.style.background = 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)';
-                        button.innerHTML = `
-                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                            </svg>
-                            Ver Detalhes
-                        `;
-                        button.addEventListener('click', () => {
-                            showStudentDetail(s.EmailHC || '');
-                        });
-                    }
+            const button = document.createElement('button');
+            button.className = 'btn-insert-ausencia';
+            button.style.background = type === 'pendente' 
+                ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
+                : 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)';
+            button.innerHTML = type === 'pendente' ? `
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                Ver ausências
+            ` : `
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
+                Ver Detalhes
+            `;
+            button.addEventListener('click', () => {
+                if (type === 'pendente') {
+                    openReposicaoAusenciasList(s);
+                } else {
+                    showStudentDetail(s.EmailHC || '');
+                }
+            });
                     
                     card.appendChild(img);
                     card.appendChild(namePara);
@@ -2634,6 +2630,123 @@ function extractTimeFromISO(isoString) {
         });
 
         /**
+         * Lista ausências do aluno antes de agendar reposição
+         */
+        function openReposicaoAusenciasList(student) {
+            if (!student) return;
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            overlay.style.display = 'flex';
+            overlay.style.alignItems = 'center';
+            overlay.style.justifyContent = 'center';
+            overlay.style.zIndex = '1100';
+            
+            const container = document.createElement('div');
+            container.className = 'modal-container';
+            container.style.maxWidth = '640px';
+            container.style.width = '95%';
+            container.style.maxHeight = '80vh';
+            container.style.overflow = 'hidden';
+            
+            const header = document.createElement('div');
+            header.className = 'modal-header';
+            header.innerHTML = `
+                <div>
+                    <h3 class="modal-title">Ausências de ${student.NomeCompleto || 'Aluno'}</h3>
+                    <p class="alunos-header-subtitle" style="margin-top: 4px;">Selecione a ausência para agendar reposição</p>
+                </div>
+                <button class="modal-close" aria-label="Fechar">×</button>
+            `;
+            
+            const close = () => {
+                overlay.remove();
+            };
+            header.querySelector('.modal-close').addEventListener('click', close);
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+            
+            const listWrapper = document.createElement('div');
+            listWrapper.style.overflowY = 'auto';
+            listWrapper.style.maxHeight = '60vh';
+            listWrapper.style.padding = '0.5rem 0';
+            
+            const list = document.createElement('div');
+            list.style.display = 'flex';
+            list.style.flexDirection = 'column';
+            list.style.gap = '0.75rem';
+            
+            const ausenciasAluno = (appState.ausenciasReposicoes || [])
+                .filter(a => normalizeString(a.EmailHC || a.Email) === normalizeString(student.EmailHC))
+                .sort((a, b) => (a.DataAusenciaISO || a.DataAusencia || '').localeCompare(b.DataAusenciaISO || b.DataAusencia || ''));
+            
+            if (ausenciasAluno.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state" style="text-align:center; padding:1.5rem;">
+                        <p style="color: var(--content-text-muted);">Nenhuma ausência encontrada para este aluno.</p>
+                    </div>
+                `;
+            } else {
+                ausenciasAluno.forEach(a => {
+                    const card = document.createElement('div');
+                    card.style.border = '1px solid var(--border-color, #e2e8f0)';
+                    card.style.borderRadius = '12px';
+                    card.style.padding = '0.75rem 1rem';
+                    card.style.display = 'flex';
+                    card.style.flexDirection = 'column';
+                    card.style.gap = '0.25rem';
+                    
+                    const dataBR = a.DataAusenciaISO ? formatDateBR(a.DataAusenciaISO) : (a.DataAusencia || 'Data não informada');
+                    const unidade = a.Unidade || 'Unidade não informada';
+                    const horario = a.Horario || 'Horário não informado';
+                    const motivo = a.Motivo || 'Motivo não informado';
+                    
+                    card.innerHTML = `
+                        <div style="display:flex; justify-content: space-between; align-items:center; gap:0.5rem; flex-wrap: wrap;">
+                            <div>
+                                <p style="font-weight:700; margin:0;">${dataBR}</p>
+                                <p style="margin:0; color: var(--content-text-muted);">${unidade} • ${horario}</p>
+                                <p style="margin:0; color: var(--content-text-muted);">${motivo}</p>
+                            </div>
+                            <button class="btn-primary" style="min-width: 180px;">Agendar reposição</button>
+                        </div>
+                    `;
+                    
+                    card.querySelector('button').addEventListener('click', () => {
+                        close();
+                        openReposicaoModal(
+                            student.EmailHC || '',
+                            student.NomeCompleto || '',
+                            student.Curso || '',
+                            student.Escala || ''
+                        );
+                        const ausenciaSelect = document.getElementById('reposicao-ausencia');
+                        if (ausenciaSelect) {
+                            const value = a.DataAusenciaISO || a.DataAusencia || '';
+                            ausenciaSelect.value = value;
+                            if (!ausenciaSelect.value && value) {
+                                // ensure option exists
+                                const opt = document.createElement('option');
+                                opt.value = value;
+                                opt.textContent = `${dataBR} • ${motivo} • ${unidade}`;
+                                ausenciaSelect.appendChild(opt);
+                                ausenciaSelect.value = value;
+                            }
+                        }
+                    });
+                    
+                    list.appendChild(card);
+                });
+            }
+            
+            listWrapper.appendChild(list);
+            
+            container.appendChild(header);
+            container.appendChild(listWrapper);
+            
+            overlay.appendChild(container);
+            document.body.appendChild(overlay);
+        }
+
+        /**
          * Populate ausência options for a specific student to allow linking reposição
          */
         function populateAusenciaOptions(email) {
@@ -2647,7 +2760,8 @@ function extractTimeFromISO(isoString) {
                 const option = document.createElement('option');
                 option.value = a.DataAusenciaISO || a.DataAusencia || '';
                 const dataBR = a.DataAusenciaISO ? formatDateBR(a.DataAusenciaISO) : (a.DataAusencia || 'Data não informada');
-                option.textContent = `${dataBR} • ${a.Motivo || 'Motivo não informado'} • ${a.Unidade || ''}`.trim();
+                const parts = [dataBR, a.Motivo || 'Motivo não informado', a.Unidade || ''];
+                option.textContent = parts.filter(Boolean).join(' • ');
                 select.appendChild(option);
             });
         }
