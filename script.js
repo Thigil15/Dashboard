@@ -2209,28 +2209,52 @@ function extractTimeFromISO(isoString) {
                 return;
             }
             
-            // Get students with absences
-            const ausencias = appState.ausencias || [];
-            const reposicoes = appState.reposicoes || [];
+            // Prefer merged AusenciasReposicoes dataset (contains both ausência + reposição)
+            const combined = Array.isArray(appState.ausenciasReposicoes) && appState.ausenciasReposicoes.length > 0
+                ? appState.ausenciasReposicoes
+                : null;
             
-            // Create a map of students with reposições scheduled
-            const studentsWithReposicoes = new Set();
-            reposicoes.forEach(rep => {
-                if (rep.EmailHC) {
-                    studentsWithReposicoes.add(rep.EmailHC);
-                }
-            });
+            let studentsPendingEmails;
             
-            // Get unique students with absences but no reposição
-            const studentEmailsWithAbsences = new Set();
-            ausencias.forEach(aus => {
-                if (aus.EmailHC && !studentsWithReposicoes.has(aus.EmailHC)) {
-                    studentEmailsWithAbsences.add(aus.EmailHC);
-                }
-            });
+            if (combined) {
+                const byEmail = new Map();
+                combined.forEach(item => {
+                    const email = item?.EmailHC;
+                    if (!email) return;
+                    if (!byEmail.has(email)) byEmail.set(email, []);
+                    byEmail.get(email).push(item);
+                });
+                
+                studentsPendingEmails = Array.from(byEmail.entries())
+                    .filter(([, items]) => {
+                        const total = items.filter(i => i.DataAusenciaISO || i.DataAusencia).length;
+                        const completed = items.filter(i => i.DataReposicaoISO || i.DataReposicao).length;
+                        return total > 0 && completed < total;
+                    })
+                    .map(([email]) => email);
+            } else {
+                // Fallback using separate sheets
+                const ausencias = (appState.ausencias || []).filter(a => a.EmailHC);
+                const reposicoes = (appState.reposicoes || []).filter(r => r.EmailHC);
+                
+                const ausenciasCount = ausencias.reduce((acc, a) => {
+                    acc[a.EmailHC] = (acc[a.EmailHC] || 0) + 1;
+                    return acc;
+                }, {});
+                const reposicoesCount = reposicoes.reduce((acc, r) => {
+                    acc[r.EmailHC] = (acc[r.EmailHC] || 0) + 1;
+                    return acc;
+                }, {});
+                
+                studentsPendingEmails = Object.keys(ausenciasCount).filter(email => {
+                    const total = ausenciasCount[email] || 0;
+                    const done = reposicoesCount[email] || 0;
+                    return total > 0 && done < total;
+                });
+            }
             
             // Get student details from alunosMap
-            const studentsWithPendingReposicoes = Array.from(studentEmailsWithAbsences)
+            const studentsWithPendingReposicoes = studentsPendingEmails
                 .map(email => appState.alunosMap.get(email))
                 .filter(s => s && s.Status === 'Ativo')
                 .sort((a, b) => (a.NomeCompleto || '').localeCompare(b.NomeCompleto || ''));
@@ -2261,19 +2285,30 @@ function extractTimeFromISO(isoString) {
                 return;
             }
             
-            // Get reposições data
-            const reposicoes = appState.reposicoes || [];
+            // Prefer merged AusenciasReposicoes to show each ausência with reposição marcada
+            const combined = Array.isArray(appState.ausenciasReposicoes) && appState.ausenciasReposicoes.length > 0
+                ? appState.ausenciasReposicoes
+                : null;
             
-            // Get unique students with reposições
-            const studentEmailsWithReposicoes = new Set();
-            reposicoes.forEach(rep => {
-                if (rep.EmailHC) {
-                    studentEmailsWithReposicoes.add(rep.EmailHC);
-                }
-            });
+            let scheduledEmails;
+            if (combined) {
+                const byEmail = new Map();
+                combined.forEach(item => {
+                    const email = item?.EmailHC;
+                    if (!email) return;
+                    if (!byEmail.has(email)) byEmail.set(email, []);
+                    byEmail.get(email).push(item);
+                });
+                
+                scheduledEmails = Array.from(byEmail.entries())
+                    .filter(([, items]) => items.some(i => i.DataReposicaoISO || i.DataReposicao))
+                    .map(([email]) => email);
+            } else {
+                const reposicoes = (appState.reposicoes || []).filter(r => r.EmailHC);
+                scheduledEmails = Array.from(new Set(reposicoes.map(r => r.EmailHC)));
+            }
             
-            // Get student details from alunosMap
-            const studentsWithScheduledReposicoes = Array.from(studentEmailsWithReposicoes)
+            const studentsWithScheduledReposicoes = scheduledEmails
                 .map(email => appState.alunosMap.get(email))
                 .filter(s => s && s.Status === 'Ativo')
                 .sort((a, b) => (a.NomeCompleto || '').localeCompare(b.NomeCompleto || ''));
@@ -3597,9 +3632,9 @@ function extractTimeFromISO(isoString) {
                     const email = this.getAttribute('data-email');
                     if (email && appState.alunosMap.has(email)) {
                         showStudentDetail(email);
-                        setTimeout(() => switchStudentTab('notas-t'), 100);
-                    }
-                });
+                setTimeout(() => switchStudentTab('notas-t'), 100);
+            }
+        });
             });
         }
 
@@ -5633,9 +5668,9 @@ function extractTimeFromISO(isoString) {
             
             if (studentEmail && appState.alunosMap.has(studentEmail)) {
                 showStudentDetail(studentEmail);
-                // Switch to faltas (absences) tab after a short delay to ensure view is rendered
+                // Switch to ausências/reposição tab after render
                 setTimeout(() => {
-                    switchStudentTab('faltas');
+                    switchStudentTab('ausencias-reposicoes');
                 }, 100);
             } else {
                 showError(`Aluno não encontrado: ${nome || email}`);
@@ -6069,12 +6104,12 @@ function extractTimeFromISO(isoString) {
                          const email = row.getAttribute('data-email');
                          const action = this.getAttribute('data-action');
                          
-                         if (action === 'view' && email) {
-                             if (appState.alunosMap.has(email)) {
-                                 showStudentDetail(email);
-                                 setTimeout(() => switchStudentTab('faltas'), 100);
-                             }
-                         } else if (action === 'approve') {
+                        if (action === 'view' && email) {
+                            if (appState.alunosMap.has(email)) {
+                                showStudentDetail(email);
+                                setTimeout(() => switchStudentTab('ausencias-reposicoes'), 100);
+                            }
+                        } else if (action === 'approve') {
                              console.log('[incor-action] Aprovar ação para:', email);
                              // Future: implement approval workflow
                          } else if (action === 'notify') {
@@ -7917,12 +7952,12 @@ function extractTimeFromISO(isoString) {
                 }
                 const emailNormalizado = normalizeString(email);
                 const alunoNomeNormalizado = normalizeString(info.NomeCompleto); 
-                const { escalas, faltas, notasT, notasP } = findDataByStudent(emailNormalizado, alunoNomeNormalizado);
-                
-                console.groupCollapsed(`[Debug Dados] Aluno: ${info.NomeCompleto} (Email: ${email})`);
-                console.log("Info:", info);
-                console.log("Escalas:", escalas);
-                console.log("Faltas:", faltas);
+            const { escalas, faltas, notasT, notasP } = findDataByStudent(emailNormalizado, alunoNomeNormalizado);
+            
+            console.groupCollapsed(`[Debug Dados] Aluno: ${info.NomeCompleto} (Email: ${email})`);
+            console.log("Info:", info);
+            console.log("Escalas:", escalas);
+            console.log("Faltas:", faltas);
                 console.log("Notas Teóricas:", notasT);
                 console.log("Notas Práticas:", notasP);
                 console.groupEnd();
@@ -7931,7 +7966,7 @@ function extractTimeFromISO(isoString) {
                 renderStudentDetailKPIs(faltas, notasP);
                 renderTabInfo(info);
                 renderTabEscala(escalas);
-                renderTabFaltas(faltas);
+                renderTabAusenciasReposicoes(faltas);
                 renderTabNotasTeoricas(notasT, info); 
                 renderTabNotasPraticas(notasP); 
 
@@ -9209,8 +9244,8 @@ function renderTabEscala(escalas) {
  * Sistema inteligente de visualização de ausências e reposições
  * Inclui validação de datas contra a EscalaPratica do aluno
  */
-function renderTabFaltas(faltas) {
-    const container = document.getElementById('faltas-content');
+        function renderTabAusenciasReposicoes(faltas) {
+            const container = document.getElementById('faltas-content');
     
     // Configuration constants
     const MOTIVO_MAX_LENGTH = 100;
