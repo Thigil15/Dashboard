@@ -5268,7 +5268,7 @@ function extractTimeFromISO(isoString) {
         
         // Shared constant for Sub discipline prefixes
         // Used to detect and handle substitute grades across the codebase
-        const SUB_PREFIXES = ['Sub/', 'Sub-', 'SUB/', 'SUB-', 'Sub_', 'SUB_', 'sub/', 'sub-', 'sub_'];
+        const SUB_PREFIXES = ['Sub/', 'Sub-', 'SUB/', 'SUB-', 'Sub_', 'SUB_', 'sub/', 'sub-', 'sub_', 'Sub ', 'SUB ', 'sub '];
         
         /**
          * Helper function to check if a discipline key has a Sub prefix
