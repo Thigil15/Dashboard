@@ -8172,8 +8172,18 @@ function extractTimeFromISO(isoString) {
         }
 
         function renderStudentDetailKPIs(faltas, notasP) {
-             const tF=faltas.length; 
-             const pF=faltas.filter(f=> f && !f.DataReposicaoISO).length; 
+             // Handle both object format {ausencias, reposicoes} and array format
+             let faltasArray = [];
+             if (faltas && typeof faltas === 'object' && (faltas.ausencias || faltas.reposicoes)) {
+                 // New format: separate arrays
+                 faltasArray = [...(faltas.ausencias || []), ...(faltas.reposicoes || [])];
+             } else if (Array.isArray(faltas)) {
+                 // Legacy format: combined array
+                 faltasArray = faltas;
+             }
+             
+             const tF=faltasArray.length; 
+             const pF=faltasArray.filter(f=> f && !f.DataReposicaoISO).length; 
              let mP=0; let countP = 0; 
              if(notasP.length>0){
                  let s=0; 
