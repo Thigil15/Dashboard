@@ -12435,6 +12435,10 @@
     background: linear-gradient(135deg, #059669, #10b981);
 }
 
+.faltas-card--reposicao .faltas-card-timeline-dot {
+    background: linear-gradient(135deg, #7c3aed, #a78bfa);
+}
+
 .faltas-card-timeline-line {
     width: 2px;
     flex: 1;
@@ -12502,6 +12506,16 @@
     color: #059669;
 }
 
+.faltas-card--reposicao .faltas-card-status-icon {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(167, 139, 250, 0.08));
+}
+
+.faltas-card--reposicao .faltas-card-status-icon svg {
+    width: 16px;
+    height: 16px;
+    color: #7c3aed;
+}
+
 .faltas-card-status-text {
     font-size: 0.75rem;
     font-weight: 700;
@@ -12515,6 +12529,10 @@
 
 .faltas-card--completed .faltas-card-status-text {
     color: #059669;
+}
+
+.faltas-card--reposicao .faltas-card-status-text {
+    color: #7c3aed;
 }
 
 .faltas-card-days {
