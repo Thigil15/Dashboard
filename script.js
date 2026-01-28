@@ -5266,14 +5266,23 @@ function extractTimeFromISO(isoString) {
             return { escalas, faltas, notasT, notasP };
         }
         
+        // Shared constant for Sub discipline prefixes
+        // Used to detect and handle substitute grades across the codebase
+        const SUB_PREFIXES = ['Sub/', 'Sub-', 'SUB/', 'SUB-', 'Sub_', 'SUB_', 'sub/', 'sub-', 'sub_'];
+        
         /**
          * Helper function to check if a discipline key has a Sub prefix
          * @param {string} key - The discipline key to check
          * @returns {boolean} - True if the key starts with a Sub prefix
          */
         function isSubDiscipline(key) {
-            const SUB_PREFIXES = ['Sub/', 'Sub-', 'SUB/', 'SUB-', 'Sub_', 'SUB_', 'sub/', 'sub-', 'sub_', 'Sub', 'SUB', 'sub'];
-            return SUB_PREFIXES.some(prefix => key.startsWith(prefix));
+            // Check explicit prefixes with separators
+            if (SUB_PREFIXES.some(prefix => key.startsWith(prefix))) {
+                return true;
+            }
+            // Check for "Sub" prefix without separator followed by uppercase letter
+            // Handles: SubAnatomopatologia, SUBAnatomopatologia, subAnatomopatologia
+            return /^[Ss][Uu][Bb][A-ZÀ-Ÿ]/.test(key);
         }
         
         /**
@@ -5282,8 +5291,6 @@ function extractTimeFromISO(isoString) {
          * @returns {string} - The parent discipline name (e.g., "Anatomopatologia")
          */
         function getParentDisciplineName(subKey) {
-            const SUB_PREFIXES = ['Sub/', 'Sub-', 'SUB/', 'SUB-', 'Sub_', 'SUB_', 'sub/', 'sub-', 'sub_'];
-            
             // Try prefixes with separators first
             for (const prefix of SUB_PREFIXES) {
                 if (subKey.startsWith(prefix)) {
@@ -5291,10 +5298,10 @@ function extractTimeFromISO(isoString) {
                 }
             }
             
-            // Handle "Sub" prefix without separator (e.g., "SubAnatomopatologia")
-            // The pattern is "Sub" followed by an uppercase letter
+            // Handle "Sub" prefix without separator (e.g., "SubAnatomopatologia", "SUBAnatomopatologia")
+            // The pattern is "Sub" (case-insensitive) followed by an uppercase letter
             if (/^[Ss][Uu][Bb][A-ZÀ-Ÿ]/.test(subKey)) {
-                return subKey.substring(3); // Remove "Sub" (3 characters)
+                return subKey.substring(3); // Remove first 3 characters ("Sub", "SUB", or "sub")
             }
             
             return subKey; // Fallback: return original key
@@ -5341,7 +5348,6 @@ function extractTimeFromISO(isoString) {
                                     if (processedKeysForRecord.has(kNormalized)) {
                                         return;
                                     }
-                                    processedKeysForRecord.add(kNormalized);
                                     
                                     // Check if this is a Sub discipline
                                     // If so, merge its grades into the parent discipline
@@ -5351,8 +5357,23 @@ function extractTimeFromISO(isoString) {
                                         targetKey = getParentDisciplineName(k);
                                         // Normalize the parent key for consistency
                                         const parentNormalized = normalizeKeyForDeduplication(targetKey);
+                                        
+                                        // Check if we've already processed the parent discipline for this record
+                                        // to prevent double-counting when both Sub and parent exist
+                                        if (processedKeysForRecord.has(parentNormalized)) {
+                                            // Already processed parent, skip this Sub grade to avoid double-counting
+                                            return;
+                                        }
+                                        
+                                        // Mark both the Sub key and parent key as processed
+                                        processedKeysForRecord.add(kNormalized);
+                                        processedKeysForRecord.add(parentNormalized);
+                                        
                                         // Use existing canonical key for parent if it exists
                                         targetKey = canonicalKeyMap.get(parentNormalized) || targetKey;
+                                    } else {
+                                        // Mark this regular (non-Sub) key as processed
+                                        processedKeysForRecord.add(kNormalized);
                                     }
                                     
                                     // Determine the canonical key to use
