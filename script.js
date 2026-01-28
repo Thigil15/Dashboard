@@ -5245,11 +5245,26 @@ function extractTimeFromISO(isoString) {
                 return a ? { nomeEscala: e.nomeEscala, headersDay: e.headersDay, tipo: e.tipo, numero: e.numero, ...a } : null;
             }).filter(Boolean); // Filtra nulos
 
-            // Faltas
-            const faltas = appState.ausenciasReposicoes.filter(f => f && 
-                ((f.EmailHC && normalizeString(f.EmailHC) === emailNormalizado) || 
-                 (f.NomeCompleto && normalizeString(f.NomeCompleto) === alunoNomeNormalizado))
+            // Faltas - combine ausencias and reposicoes for comprehensive view
+            // This allows showing absences separately from makeups
+            const ausencias = (appState.ausencias || []).filter(a => a && 
+                ((a.EmailHC && normalizeString(a.EmailHC) === emailNormalizado) || 
+                 (a.NomeCompleto && normalizeString(a.NomeCompleto) === alunoNomeNormalizado))
             );
+            
+            const reposicoes = (appState.reposicoes || []).filter(r => r && 
+                ((r.EmailHC && normalizeString(r.EmailHC) === emailNormalizado) || 
+                 (r.NomeCompleto && normalizeString(r.NomeCompleto) === alunoNomeNormalizado))
+            );
+            
+            // Fallback to combined data if separate arrays are not available
+            // Check if separate arrays exist in appState (not just if they have data)
+            const faltas = (appState.ausencias !== undefined || appState.reposicoes !== undefined)
+                ? { ausencias, reposicoes }
+                : appState.ausenciasReposicoes.filter(f => f && 
+                    ((f.EmailHC && normalizeString(f.EmailHC) === emailNormalizado) || 
+                     (f.NomeCompleto && normalizeString(f.NomeCompleto) === alunoNomeNormalizado))
+                  );
 
             // Notas Teóricas
             console.log('[findDataByStudent] Buscando Notas Teóricas para:', { emailNormalizado, alunoNomeNormalizado });
@@ -9391,9 +9406,29 @@ function renderTabEscala(escalas) {
     const MOTIVO_MAX_LENGTH = 100;
     
     // ═══════════════════════════════════════════════════════════════════
+    // DATA HANDLING - Support both new (separate arrays) and legacy (combined array) formats
+    // ═══════════════════════════════════════════════════════════════════
+    let ausenciasList = [];
+    let reposicoesList = [];
+    let combinedList = [];
+    
+    // Check if faltas has the new structure (separate ausencias and reposicoes)
+    if (faltas && typeof faltas === 'object' && (faltas.ausencias || faltas.reposicoes)) {
+        console.log('[renderTabAusenciasReposicoes] Using NEW separate data structure');
+        ausenciasList = faltas.ausencias || [];
+        reposicoesList = faltas.reposicoes || [];
+        console.log(`[renderTabAusenciasReposicoes] Ausencias: ${ausenciasList.length}, Reposicoes: ${reposicoesList.length}`);
+    } else if (Array.isArray(faltas)) {
+        // Legacy format - combined array
+        console.log('[renderTabAusenciasReposicoes] Using LEGACY combined data structure');
+        combinedList = faltas;
+    }
+    
+    // ═══════════════════════════════════════════════════════════════════
     // EMPTY STATE - Design elegante para quando não há faltas
     // ═══════════════════════════════════════════════════════════════════
-    if (!faltas || faltas.length === 0) {
+    const hasAnyData = ausenciasList.length > 0 || reposicoesList.length > 0 || combinedList.length > 0;
+    if (!hasAnyData) {
         container.innerHTML = `
             <div class="faltas-empty-state">
                 <div class="faltas-empty-icon">
@@ -9409,17 +9444,56 @@ function renderTabEscala(escalas) {
     }
 
     // ═══════════════════════════════════════════════════════════════════
+    // PROCESS DATA - Create unified view showing all absences and makeups
+    // ═══════════════════════════════════════════════════════════════════
+    let allRecords = [];
+    
+    // NEW FORMAT: Process separate ausencias and reposicoes
+    if (ausenciasList.length > 0 || reposicoesList.length > 0) {
+        // Add ausencias with type marker
+        ausenciasList.forEach(a => {
+            if (a && a.DataAusenciaISO) {
+                allRecords.push({
+                    ...a,
+                    _recordType: 'ausencia',
+                    _sortDate: a.DataAusenciaISO
+                });
+            }
+        });
+        
+        // Add reposicoes with type marker - link to corresponding ausencia
+        reposicoesList.forEach(r => {
+            if (r && r.DataReposicaoISO) {
+                allRecords.push({
+                    ...r,
+                    _recordType: 'reposicao',
+                    _sortDate: r.DataReposicaoISO,
+                    // Link to corresponding absence if available
+                    _linkedAusenciaDate: r.DataAusenciaISO || null
+                });
+            }
+        });
+    } else {
+        // LEGACY FORMAT: Process combined data
+        allRecords = combinedList.map(f => ({
+            ...f,
+            _recordType: f.DataReposicaoISO ? 'combined-reposta' : 'combined-pendente',
+            _sortDate: f.DataAusenciaISO
+        }));
+    }
+    
+    // ═══════════════════════════════════════════════════════════════════
     // VALIDAÇÃO DE ESCALA - Verifica datas contra EscalaPratica
     // ═══════════════════════════════════════════════════════════════════
-    // Process each absence to add escala validation info
-    const faltasComValidacao = faltas.map(f => {
+    const recordsComValidacao = allRecords.map(f => {
         const escalaName = f.Escala || f.escala || '';
         const studentEmail = f.EmailHC || f.emailHC || '';
         const studentName = f.NomeCompleto || f.nomeCompleto || '';
         
-        // Validate against EscalaPratica
+        // Validate against EscalaPratica - for ausencias, use DataAusenciaISO; for reposicoes, use DataReposicaoISO
+        const dateToValidate = f._recordType === 'reposicao' ? f.DataReposicaoISO : f.DataAusenciaISO;
         const validation = checkAbsenceAgainstEscala(
-            f.DataAusenciaISO,
+            dateToValidate,
             escalaName,
             studentEmail,
             studentName
@@ -9435,40 +9509,36 @@ function renderTabEscala(escalas) {
     // ═══════════════════════════════════════════════════════════════════
     // CÁLCULO DE ESTATÍSTICAS
     // ═══════════════════════════════════════════════════════════════════
-    // Separate absences and scheduled makeups for better organization
-    // Note: For this student view, we group by absence date since the same date
-    // represents the same absence event (even if recorded multiple times)
-    const uniqueAbsencesByDate = new Map();
-    const scheduledMakeups = [];
+    const ausenciasOnly = recordsComValidacao.filter(r => r._recordType === 'ausencia' || r._recordType.startsWith('combined'));
+    const reposicoesOnly = recordsComValidacao.filter(r => r._recordType === 'reposicao');
     
-    // Group by absence date to identify unique absence events
-    faltasComValidacao.forEach(f => {
-        if (f.DataAusenciaISO) {
-            const key = f.DataAusenciaISO;
-            // Store first occurrence of each absence date
-            if (!uniqueAbsencesByDate.has(key)) {
-                uniqueAbsencesByDate.set(key, f);
-            }
-            // If this record has a makeup date, add to scheduled makeups
-            if (f.DataReposicaoISO) {
-                scheduledMakeups.push(f);
-            }
-        }
-    });
+    // For new format, count unique ausencias and reposicoes
+    // For legacy format, count by pending status
+    const totalFaltas = ausenciasOnly.length;
+    const totalReposicoes = reposicoesOnly.length;
     
-    const totalFaltas = uniqueAbsencesByDate.size;
-    const faltasPendentes = getPendingAbsences(faltasComValidacao).length;
-    const faltasRepostas = scheduledMakeups.length;
+    // Count pending ausencias (those without a corresponding reposicao)
+    let faltasPendentes = 0;
+    if (ausenciasList.length > 0 || reposicoesList.length > 0) {
+        // New format: ausencia is pending if there's no reposicao with matching DataAusenciaISO
+        const reposicoesMap = new Set(reposicoesList.map(r => r.DataAusenciaISO).filter(Boolean));
+        faltasPendentes = ausenciasList.filter(a => !reposicoesMap.has(a.DataAusenciaISO)).length;
+    } else {
+        // Legacy format: count records without DataReposicaoISO
+        faltasPendentes = ausenciasOnly.filter(a => !a.DataReposicaoISO).length;
+    }
+    
+    const faltasRepostas = ausenciasOnly.filter(a => a.DataReposicaoISO).length + totalReposicoes;
     const taxaReposicao = totalFaltas > 0 ? Math.round((faltasRepostas / totalFaltas) * 100) : 0;
     
-    // Count validated absences (dates that match the student's escala schedule)
-    const faltasValidadas = faltasComValidacao.filter(f => f._escalaValidation && f._escalaValidation.isInSchedule).length;
-    const faltasNaoValidadas = faltasComValidacao.filter(f => f._escalaValidation && !f._escalaValidation.isInSchedule && f._escalaName).length;
+    // Count validated records
+    const faltasValidadas = recordsComValidacao.filter(f => f._escalaValidation && f._escalaValidation.isInSchedule).length;
+    const faltasNaoValidadas = recordsComValidacao.filter(f => f._escalaValidation && !f._escalaValidation.isInSchedule && f._escalaName).length;
 
-    // Ordenar faltas por data (mais recentes primeiro)
-    const faltasOrdenadas = [...faltasComValidacao].sort((a, b) => {
-        const dateA = a.DataAusenciaISO ? new Date(a.DataAusenciaISO) : new Date(0);
-        const dateB = b.DataAusenciaISO ? new Date(b.DataAusenciaISO) : new Date(0);
+    // Ordenar todos os registros por data (mais recentes primeiro)
+    const recordsOrdenados = [...recordsComValidacao].sort((a, b) => {
+        const dateA = a._sortDate ? new Date(a._sortDate) : new Date(0);
+        const dateB = b._sortDate ? new Date(b._sortDate) : new Date(0);
         return dateB - dateA;
     });
 
@@ -9510,8 +9580,8 @@ function renderTabEscala(escalas) {
                     </svg>
                 </div>
                 <div class="faltas-kpi-content">
-                    <span class="faltas-kpi-value">${faltasRepostas}</span>
-                    <span class="faltas-kpi-label">Repostas</span>
+                    <span class="faltas-kpi-value">${totalReposicoes}</span>
+                    <span class="faltas-kpi-label">Reposições Marcadas</span>
                 </div>
             </div>
             
@@ -9542,27 +9612,60 @@ function renderTabEscala(escalas) {
                 </h4>
                 <div class="faltas-tabs-nav">
                     <button class="faltas-tab-button faltas-tab-button--active" data-tab="all" onclick="switchFaltasTab('all')">
-                        Todas (${totalFaltas})
+                        Todos (${recordsOrdenados.length})
+                    </button>
+                    <button class="faltas-tab-button" data-tab="ausencias" onclick="switchFaltasTab('ausencias')">
+                        Ausências (${totalFaltas})
                     </button>
                     <button class="faltas-tab-button ${faltasPendentes > 0 ? 'faltas-tab-button--alert' : ''}" data-tab="pending" onclick="switchFaltasTab('pending')">
                         Pendentes (${faltasPendentes})
                     </button>
-                    <button class="faltas-tab-button" data-tab="completed" onclick="switchFaltasTab('completed')">
-                        Repostas (${faltasRepostas})
+                    <button class="faltas-tab-button" data-tab="reposicoes" onclick="switchFaltasTab('reposicoes')">
+                        Reposições (${totalReposicoes})
                     </button>
                 </div>
             </div>
             
-            <div class="faltas-timeline" id="faltas-timeline-all">${faltasOrdenadas.map((f, index) => {
-                    const isPending = !f.DataReposicaoISO;
-                    const statusClass = isPending ? 'faltas-card--pending' : 'faltas-card--completed';
-                    const statusIcon = isPending ? 
-                        '<path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />' :
-                        '<path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />';
-                    const statusText = isPending ? 'Pendente' : 'Reposta';
+            <div class="faltas-timeline" id="faltas-timeline-all">${recordsOrdenados.map((f, index) => {
+                    // Determine record type and display accordingly
+                    const isAusencia = f._recordType === 'ausencia' || f._recordType.startsWith('combined');
+                    const isReposicao = f._recordType === 'reposicao';
+                    const isPending = isAusencia && !f.DataReposicaoISO;
                     
-                    const dataAusencia = f.DataAusenciaISO 
-                        ? new Date(f.DataAusenciaISO + 'T00:00:00').toLocaleDateString('pt-BR', { 
+                    // Status for display
+                    let statusClass, statusIcon, statusText, mainDate, secondaryDate, mainDateLabel, secondaryDateLabel;
+                    
+                    if (isReposicao) {
+                        // This is a reposição record
+                        statusClass = 'faltas-card--reposicao';
+                        statusIcon = '<path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />';
+                        statusText = 'Reposição Marcada';
+                        mainDate = f.DataReposicaoISO;
+                        mainDateLabel = 'Data da Reposição';
+                        secondaryDate = f._linkedAusenciaDate || f.DataAusenciaISO;
+                        secondaryDateLabel = 'Ausência Relacionada';
+                    } else if (isPending) {
+                        // Ausência pendente
+                        statusClass = 'faltas-card--pending';
+                        statusIcon = '<path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />';
+                        statusText = 'Ausência Pendente';
+                        mainDate = f.DataAusenciaISO;
+                        mainDateLabel = 'Data da Ausência';
+                        secondaryDate = null;
+                        secondaryDateLabel = 'Reposição';
+                    } else {
+                        // Ausência com reposição (legacy format)
+                        statusClass = 'faltas-card--completed';
+                        statusIcon = '<path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />';
+                        statusText = 'Ausência Reposta';
+                        mainDate = f.DataAusenciaISO;
+                        mainDateLabel = 'Data da Ausência';
+                        secondaryDate = f.DataReposicaoISO;
+                        secondaryDateLabel = 'Data da Reposição';
+                    }
+                    
+                    const mainDateFormatted = mainDate
+                        ? new Date(mainDate + 'T00:00:00').toLocaleDateString('pt-BR', { 
                             weekday: 'short', 
                             day: '2-digit', 
                             month: 'short',
@@ -9571,17 +9674,17 @@ function renderTabEscala(escalas) {
                         })
                         : 'Data não informada';
                     
-                    const dataReposicao = f.DataReposicaoISO 
-                        ? new Date(f.DataReposicaoISO + 'T00:00:00').toLocaleDateString('pt-BR', { 
+                    const secondaryDateFormatted = secondaryDate
+                        ? new Date(secondaryDate + 'T00:00:00').toLocaleDateString('pt-BR', { 
                             weekday: 'short', 
                             day: '2-digit', 
                             month: 'short',
                             year: 'numeric',
                             timeZone: 'UTC' 
                         })
-                        : 'Aguardando reposição';
+                        : (isPending || isReposicao ? 'Não informada' : 'Aguardando reposição');
                     
-                    const local = f.Local || 'Local não informado';
+                    const local = f.Local || f.Unidade || 'Local não informado';
                     const motivo = f.Motivo || 'Motivo não informado';
                     const motivoTruncado = motivo.length > MOTIVO_MAX_LENGTH ? motivo.substring(0, MOTIVO_MAX_LENGTH) + '...' : motivo;
                     
@@ -9625,25 +9728,32 @@ function renderTabEscala(escalas) {
                         `;
                     }
                     
-                    // Calculate days between absence and makeup
+                    // Calculate days information
                     let diasParaRepor = '';
-                    if (f.DataAusenciaISO && f.DataReposicaoISO) {
-                        const ausDate = new Date(f.DataAusenciaISO);
-                        const repDate = new Date(f.DataReposicaoISO);
+                    if (mainDate && secondaryDate && !isReposicao) {
+                        // For ausencia with reposicao
+                        const ausDate = new Date(mainDate);
+                        const repDate = new Date(secondaryDate);
                         const diffDays = Math.round((repDate - ausDate) / (1000 * 60 * 60 * 24));
                         diasParaRepor = `<span class="faltas-card-days">Reposta em ${diffDays} dias</span>`;
-                    } else if (f.DataAusenciaISO && isPending) {
-                        const ausDate = new Date(f.DataAusenciaISO);
+                    } else if (isReposicao && secondaryDate && mainDate) {
+                        // For reposicao, show how many days after the absence
+                        const ausDate = new Date(secondaryDate);
+                        const repDate = new Date(mainDate);
+                        const diffDays = Math.round((repDate - ausDate) / (1000 * 60 * 60 * 24));
+                        diasParaRepor = `<span class="faltas-card-days">Reposição ${diffDays} dias após ausência</span>`;
+                    } else if (isPending && mainDate) {
+                        const ausDate = new Date(mainDate);
                         const today = new Date();
                         const diffDays = Math.round((today - ausDate) / (1000 * 60 * 60 * 24));
                         diasParaRepor = `<span class="faltas-card-days faltas-card-days--warning">${diffDays} dias pendente</span>`;
                     }
 
                     return `
-                        <div class="faltas-card ${statusClass}" style="animation-delay: ${index * 0.05}s">
+                        <div class="faltas-card ${statusClass}" data-record-type="${f._recordType}" style="animation-delay: ${index * 0.05}s">
                             <div class="faltas-card-timeline-marker">
                                 <div class="faltas-card-timeline-dot"></div>
-                                ${index < faltasOrdenadas.length - 1 ? '<div class="faltas-card-timeline-line"></div>' : ''}
+                                ${index < recordsOrdenados.length - 1 ? '<div class="faltas-card-timeline-line"></div>' : ''}
                             </div>
                             
                             <div class="faltas-card-content">
@@ -9662,31 +9772,41 @@ function renderTabEscala(escalas) {
                                 ${escalaInfoHtml}
                                 
                                 <div class="faltas-card-dates">
-                                    <div class="faltas-card-date faltas-card-date--absence">
+                                    <div class="faltas-card-date ${isReposicao ? 'faltas-card-date--makeup' : 'faltas-card-date--absence'}">
                                         <span class="faltas-card-date-label">
                                             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+                                                ${isReposicao 
+                                                    ? '<path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>'
+                                                    : '<path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>'
+                                                }
                                             </svg>
-                                            Ausência
+                                            ${mainDateLabel}
                                         </span>
-                                        <span class="faltas-card-date-value">${dataAusencia}</span>
+                                        <span class="faltas-card-date-value">${mainDateFormatted}</span>
                                     </div>
                                     
+                                    ${!isReposicao || secondaryDate ? `
                                     <div class="faltas-card-date-arrow">
                                         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                                         </svg>
                                     </div>
                                     
-                                    <div class="faltas-card-date faltas-card-date--makeup ${isPending ? 'faltas-card-date--pending' : ''}">
+                                    <div class="faltas-card-date ${secondaryDate ? (isReposicao ? 'faltas-card-date--absence' : 'faltas-card-date--makeup') : 'faltas-card-date--pending'}">
                                         <span class="faltas-card-date-label">
                                             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                ${secondaryDate 
+                                                    ? (isReposicao 
+                                                        ? '<path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>'
+                                                        : '<path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>')
+                                                    : '<path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />'
+                                                }
                                             </svg>
-                                            Reposição
+                                            ${secondaryDateLabel}
                                         </span>
-                                        <span class="faltas-card-date-value">${dataReposicao}</span>
+                                        <span class="faltas-card-date-value">${secondaryDateFormatted}</span>
                                     </div>
+                                    ` : ''}
                                 </div>
                                 
                                 <div class="faltas-card-details">
@@ -9730,12 +9850,22 @@ function renderTabEscala(escalas) {
         
         // Filter cards based on selected tab
         cards.forEach(card => {
+            const recordType = card.dataset.recordType;
             if (tab === 'all') {
+                // Show all records
                 card.style.display = '';
+            } else if (tab === 'ausencias') {
+                // Show only ausencias (both combined formats)
+                const isAusencia = recordType === 'ausencia' || recordType.startsWith('combined');
+                card.style.display = isAusencia ? '' : 'none';
             } else if (tab === 'pending') {
-                card.style.display = card.classList.contains('faltas-card--pending') ? '' : 'none';
-            } else if (tab === 'completed') {
-                card.style.display = card.classList.contains('faltas-card--completed') ? '' : 'none';
+                // Show only pending ausencias
+                const isPending = card.classList.contains('faltas-card--pending');
+                card.style.display = isPending ? '' : 'none';
+            } else if (tab === 'reposicoes') {
+                // Show only reposicoes
+                const isReposicao = recordType === 'reposicao';
+                card.style.display = isReposicao ? '' : 'none';
             }
         });
     };
