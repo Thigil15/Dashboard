@@ -12385,6 +12385,10 @@
     color: var(--warning-amber);
 }
 
+.faltas-tab-button--alert.faltas-tab-button--active {
+    color: white;
+}
+
 .faltas-tab-button--alert::after {
     content: '';
     position: absolute;
@@ -12394,10 +12398,14 @@
     height: 6px;
     background: var(--incor-red-500);
     border-radius: 50%;
-    animation: pulse 2s infinite;
+    animation: faltas-tab-alert-pulse 2s infinite;
 }
 
-@keyframes pulse {
+.faltas-tab-button--alert.faltas-tab-button--active::after {
+    display: none;
+}
+
+@keyframes faltas-tab-alert-pulse {
     0%, 100% {
         opacity: 1;
         transform: scale(1);

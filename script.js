@@ -2195,7 +2195,7 @@ function extractTimeFromISO(isoString) {
         /**
          * Get absences that truly need makeup (no matching makeup scheduled)
          * @param {Array} records - All absence/makeup records for a student
-         * @returns {Array} - Absences without matching makeups
+         * @returns {Array} - Absences without matching makeups (deduplicated by date+email)
          */
         function getPendingAbsences(records) {
             if (!records || records.length === 0) return [];
@@ -2203,8 +2203,15 @@ function extractTimeFromISO(isoString) {
             // Get all unique absences (records with DataAusenciaISO)
             const absences = records.filter(r => r.DataAusenciaISO);
             
+            // Deduplicate by email + absence date (in case of duplicate records)
+            const uniqueAbsences = Array.from(
+                new Map(
+                    absences.map(a => [`${a.EmailHC}|${a.DataAusenciaISO}`, a])
+                ).values()
+            );
+            
             // Filter to only those without a matching makeup
-            return absences.filter(absence => !hasMatchingMakeup(absence, records));
+            return uniqueAbsences.filter(absence => !hasMatchingMakeup(absence, records));
         }
 
         /**
@@ -9417,15 +9424,18 @@ function renderTabEscala(escalas) {
     // CÁLCULO DE ESTATÍSTICAS
     // ═══════════════════════════════════════════════════════════════════
     // Separate absences and scheduled makeups for better organization
-    const uniqueAbsences = new Map();
+    // Note: For this student view, we group by absence date since the same date
+    // represents the same absence event (even if recorded multiple times)
+    const uniqueAbsencesByDate = new Map();
     const scheduledMakeups = [];
     
-    // Group by absence date to identify unique absences
+    // Group by absence date to identify unique absence events
     faltasComValidacao.forEach(f => {
         if (f.DataAusenciaISO) {
             const key = f.DataAusenciaISO;
-            if (!uniqueAbsences.has(key)) {
-                uniqueAbsences.set(key, f);
+            // Store first occurrence of each absence date
+            if (!uniqueAbsencesByDate.has(key)) {
+                uniqueAbsencesByDate.set(key, f);
             }
             // If this record has a makeup date, add to scheduled makeups
             if (f.DataReposicaoISO) {
@@ -9434,7 +9444,7 @@ function renderTabEscala(escalas) {
         }
     });
     
-    const totalFaltas = uniqueAbsences.size;
+    const totalFaltas = uniqueAbsencesByDate.size;
     const faltasPendentes = getPendingAbsences(faltasComValidacao).length;
     const faltasRepostas = scheduledMakeups.length;
     const taxaReposicao = totalFaltas > 0 ? Math.round((faltasRepostas / totalFaltas) * 100) : 0;
@@ -9694,7 +9704,6 @@ function renderTabEscala(escalas) {
     
     // Add tab switching functionality
     window.switchFaltasTab = function(tab) {
-        const timeline = document.getElementById('faltas-timeline-all');
         const buttons = document.querySelectorAll('.faltas-tab-button');
         const cards = document.querySelectorAll('.faltas-card');
         
