@@ -7653,50 +7653,6 @@ function extractTimeFromISO(isoString) {
             console.log(`[handlePontoTypeTabSwitch] Switched to type: ${newType}`);
         }
 
-        async function handlePontoRefresh() {
-            const refreshButton = document.getElementById('ponto-refresh-button');
-            if (refreshButton) {
-                refreshButton.disabled = true;
-                refreshButton.classList.add('is-loading');
-                refreshButton.setAttribute('aria-busy', 'true');
-            }
-            const todayISO = getTodayBrazilISO(); // Use Brazil timezone
-            const dateIso = normalizeDateInput(pontoState.selectedDate) || todayISO;
-            const scaleLabel = pontoState.selectedScale || 'all';
-            const autoScale = pontoState.autoScaleByDate.get(dateIso);
-            const autoScaleKey = autoScale ? normalizeScaleKey(autoScale) : 'all';
-            const currentScaleKey = normalizeScaleKey(scaleLabel);
-            const useTodayEndpointAll = dateIso === todayISO && (currentScaleKey === 'all' || currentScaleKey === autoScaleKey);
-
-            try {
-                await ensurePontoData(dateIso, 'all', {
-                    showInlineSpinner: true,
-                    useTodayEndpoint: useTodayEndpointAll,
-                    forceReload: true,
-                    replaceExisting: true
-                });
-
-                if (scaleLabel !== 'all') {
-                    const useTodayEndpointScale = dateIso === todayISO && currentScaleKey === autoScaleKey;
-                    await ensurePontoData(dateIso, scaleLabel, {
-                        showInlineSpinner: false,
-                        useTodayEndpoint: useTodayEndpointScale,
-                        forceReload: true,
-                        replaceExisting: true
-                    });
-                }
-
-                hydratePontoSelectors();
-                refreshPontoView();
-            } finally {
-                if (refreshButton) {
-                    refreshButton.disabled = false;
-                    refreshButton.classList.remove('is-loading');
-                    refreshButton.removeAttribute('aria-busy');
-                }
-            }
-        }
-
         function handlePontoPrevDate() {
             if (!pontoState.dates || pontoState.dates.length === 0) return;
             const currentIndex = pontoState.dates.indexOf(pontoState.selectedDate);
