@@ -5266,6 +5266,40 @@ function extractTimeFromISO(isoString) {
             return { escalas, faltas, notasT, notasP };
         }
         
+        /**
+         * Helper function to check if a discipline key has a Sub prefix
+         * @param {string} key - The discipline key to check
+         * @returns {boolean} - True if the key starts with a Sub prefix
+         */
+        function isSubDiscipline(key) {
+            const SUB_PREFIXES = ['Sub/', 'Sub-', 'SUB/', 'SUB-', 'Sub_', 'SUB_', 'sub/', 'sub-', 'sub_', 'Sub', 'SUB', 'sub'];
+            return SUB_PREFIXES.some(prefix => key.startsWith(prefix));
+        }
+        
+        /**
+         * Helper function to extract parent discipline name from Sub-prefixed key
+         * @param {string} subKey - The Sub-prefixed discipline key (e.g., "SubAnatomopatologia")
+         * @returns {string} - The parent discipline name (e.g., "Anatomopatologia")
+         */
+        function getParentDisciplineName(subKey) {
+            const SUB_PREFIXES = ['Sub/', 'Sub-', 'SUB/', 'SUB-', 'Sub_', 'SUB_', 'sub/', 'sub-', 'sub_'];
+            
+            // Try prefixes with separators first
+            for (const prefix of SUB_PREFIXES) {
+                if (subKey.startsWith(prefix)) {
+                    return subKey.substring(prefix.length);
+                }
+            }
+            
+            // Handle "Sub" prefix without separator (e.g., "SubAnatomopatologia")
+            // The pattern is "Sub" followed by an uppercase letter
+            if (/^[Ss][Uu][Bb][A-ZÀ-Ÿ]/.test(subKey)) {
+                return subKey.substring(3); // Remove "Sub" (3 characters)
+            }
+            
+            return subKey; // Fallback: return original key
+        }
+        
         function calculateAveragesAndDistribution() {
             const activeStudents = appState.alunos.filter(s => s.Status === 'Ativo');
             const activeStudentMap = new Map();
@@ -5309,24 +5343,36 @@ function extractTimeFromISO(isoString) {
                                     }
                                     processedKeysForRecord.add(kNormalized);
                                     
+                                    // Check if this is a Sub discipline
+                                    // If so, merge its grades into the parent discipline
+                                    let targetKey = k;
+                                    if (isSubDiscipline(k)) {
+                                        // Extract parent discipline name
+                                        targetKey = getParentDisciplineName(k);
+                                        // Normalize the parent key for consistency
+                                        const parentNormalized = normalizeKeyForDeduplication(targetKey);
+                                        // Use existing canonical key for parent if it exists
+                                        targetKey = canonicalKeyMap.get(parentNormalized) || targetKey;
+                                    }
+                                    
                                     // Determine the canonical key to use
                                     // Prefer: 1) existing canonical key, 2) key with accents (proper formatting)
-                                    let canonicalKey = canonicalKeyMap.get(kNormalized);
+                                    let canonicalKey = canonicalKeyMap.get(normalizeKeyForDeduplication(targetKey));
                                     if (!canonicalKey) {
                                         // First key becomes canonical
-                                        canonicalKey = k;
-                                        canonicalKeyMap.set(kNormalized, canonicalKey);
-                                    } else if (keyHasAccents(k) && !keyHasAccents(canonicalKey)) {
+                                        canonicalKey = targetKey;
+                                        canonicalKeyMap.set(normalizeKeyForDeduplication(targetKey), canonicalKey);
+                                    } else if (keyHasAccents(targetKey) && !keyHasAccents(canonicalKey)) {
                                         // Update to key with accents (likely original Firebase name)
-                                        canonicalKeyMap.set(kNormalized, k);
+                                        canonicalKeyMap.set(normalizeKeyForDeduplication(targetKey), targetKey);
                                         // Transfer sums/counts to new canonical key (use 'in' to handle 0 values)
                                         if (canonicalKey in tSums && canonicalKey in tCounts) {
-                                            tSums[k] = tSums[canonicalKey];
-                                            tCounts[k] = tCounts[canonicalKey];
+                                            tSums[targetKey] = tSums[canonicalKey];
+                                            tCounts[targetKey] = tCounts[canonicalKey];
                                             delete tSums[canonicalKey];
                                             delete tCounts[canonicalKey];
                                         }
-                                        canonicalKey = k;
+                                        canonicalKey = targetKey;
                                     }
                                     
                                     tSums[canonicalKey] = (tSums[canonicalKey] || 0) + n;
@@ -5833,10 +5879,11 @@ function extractTimeFromISO(isoString) {
             };
             
             // Separate MÉDIA entries from individual discipline entries
+            // Filter out Sub-prefixed disciplines (they are merged into parent disciplines)
             const mediaEntries = Object.entries(tAvgs)
                 .filter(([key, value]) => {
                     const keyNorm = normalizeKeyForDeduplication(key);
-                    return keyNorm.includes('MEDIA') && value > 0;
+                    return keyNorm.includes('MEDIA') && value > 0 && !isSubDiscipline(key);
                 })
                 .map(([key, value]) => ({ key, value, sortNum: extractModuleNumber(key) }))
                 .sort((a, b) => a.sortNum - b.sortNum);
@@ -5844,7 +5891,7 @@ function extractTimeFromISO(isoString) {
             const disciplineEntries = Object.entries(tAvgs)
                 .filter(([key, value]) => {
                     const keyNorm = normalizeKeyForDeduplication(key);
-                    return !keyNorm.includes('MEDIA') && value > 0;
+                    return !keyNorm.includes('MEDIA') && value > 0 && !isSubDiscipline(key);
                 })
                 .map(([key, value]) => ({ key, value }))
                 .sort((a, b) => a.key.localeCompare(b.key));
