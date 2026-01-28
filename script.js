@@ -1052,10 +1052,23 @@
                     
                     // Update ponto selectors and view if we're on the ponto tab
                     const pontoContent = document.getElementById('content-ponto');
-                    if (pontoContent && !pontoContent.classList.contains('hidden')) {
+                    if (pontoContent && pontoContent.style.display !== 'none') {
                         console.log('[triggerUIUpdates] Atualizando painel de ponto (tab ativa)');
-                        hydratePontoSelectors();
-                        refreshPontoView();
+                        
+                        // If ponto data just arrived and panel hasn't been initialized yet, initialize it
+                        if (pontoState.dates.length === 0 && appState.pontoStaticRows && appState.pontoStaticRows.length > 0) {
+                            console.log('[triggerUIUpdates] Dados de ponto chegaram, processando e inicializando painel...');
+                            extractAndPopulatePontoDates(appState.pontoStaticRows);
+                            if (appState.escalas && Object.keys(appState.escalas).length > 0) {
+                                extractPontoFromEscalas(appState.escalas);
+                            }
+                            updatePontoHojeMap();
+                            initializePontoPanel();
+                        } else {
+                            // Otherwise just refresh the view
+                            hydratePontoSelectors();
+                            refreshPontoView();
+                        }
                     }
                     
                     // Also update dashboard if visible
@@ -1065,15 +1078,37 @@
                     break;
                     
                 case 'escalas':
-                    // Escala data updated - log but don't try to update removed tab
+                    // Escala data updated - also contains ponto data, so refresh ponto view if active
                     console.log(`[triggerUIUpdates] Dados de ${stateKey} atualizados`);
+                    
+                    // Update ponto view if we're on the ponto tab
+                    const pontoContentEscalas = document.getElementById('content-ponto');
+                    if (pontoContentEscalas && pontoContentEscalas.style.display !== 'none') {
+                        console.log('[triggerUIUpdates] Atualizando painel de ponto com novos dados de escalas');
+                        
+                        // Extract ponto data from escalas
+                        if (appState.escalas && Object.keys(appState.escalas).length > 0) {
+                            extractPontoFromEscalas(appState.escalas);
+                            updatePontoHojeMap();
+                        }
+                        
+                        // If panel hasn't been initialized yet, initialize it
+                        if (pontoState.dates.length === 0) {
+                            console.log('[triggerUIUpdates] Dados de escalas chegaram, inicializando painel de ponto...');
+                            initializePontoPanel();
+                        } else {
+                            // Otherwise just refresh the view
+                            hydratePontoSelectors();
+                            refreshPontoView();
+                        }
+                    }
                     break;
                 
                 case 'escalaAtual':
                     // EscalaAtual data updated - refresh ponto view to update Escalados count
                     console.log('[triggerUIUpdates] Dados de EscalaAtual atualizados');
                     const pontoContentEscala = document.getElementById('content-ponto');
-                    if (pontoContentEscala && !pontoContentEscala.classList.contains('hidden')) {
+                    if (pontoContentEscala && pontoContentEscala.style.display !== 'none') {
                         console.log('[triggerUIUpdates] Atualizando painel de ponto com novos dados de EscalaAtual');
                         refreshPontoView();
                     }
@@ -3413,11 +3448,6 @@ function extractTimeFromISO(isoString) {
                 pontoScaleSelect.addEventListener('change', handlePontoScaleChange);
             }
 
-            const pontoRefreshButton = document.getElementById('ponto-refresh-button');
-            if (pontoRefreshButton) {
-                pontoRefreshButton.addEventListener('click', handlePontoRefresh);
-            }
-
             const pontoPrevButton = document.getElementById('ponto-prev-date');
             if (pontoPrevButton) {
                 pontoPrevButton.addEventListener('click', handlePontoPrevDate);
@@ -5523,12 +5553,6 @@ function extractTimeFromISO(isoString) {
                 }
                 if (practicalBar && oPAvg > 0) {
                     practicalBar.style.width = `${(oPAvg / GRADE_MAX_VALUE) * 100}%`;
-                }
-                
-                // Update timestamp
-                const timestampEl = document.getElementById('kpi-last-update');
-                if (timestampEl) {
-                    timestampEl.textContent = `Atualizado às ${new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}`;
                 }
                 
                 // Render students with pending replacements (clickable list)
