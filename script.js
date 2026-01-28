@@ -1086,6 +1086,12 @@
                     if (pontoContentEscalas && pontoContentEscalas.style.display !== 'none') {
                         console.log('[triggerUIUpdates] Atualizando painel de ponto com novos dados de escalas');
                         
+                        // First, ensure pontoStaticRows are processed if available
+                        if (pontoState.dates.length === 0 && appState.pontoStaticRows && appState.pontoStaticRows.length > 0) {
+                            console.log('[triggerUIUpdates] Processando pontoStaticRows antes de processar escalas...');
+                            extractAndPopulatePontoDates(appState.pontoStaticRows);
+                        }
+                        
                         // Extract ponto data from escalas
                         if (appState.escalas && Object.keys(appState.escalas).length > 0) {
                             extractPontoFromEscalas(appState.escalas);
