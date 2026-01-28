@@ -5331,9 +5331,10 @@ function extractTimeFromISO(isoString) {
                     const student = activeStudentMap.get(rEmailNorm) || activeStudentMap.get(rNomeNorm);
 
                     if(student && student.Curso !== 'Residência - 2º ano' && student.Curso !== 'Residência  - 2º ano'){
-                        // Track which normalized keys we've already processed for THIS record
-                        // to avoid counting variants (e.g., MediaFisio1, mediaFisio1, _media_fisio1)
-                        const processedKeysForRecord = new Set();
+                        // STEP 1: Collect all grades for this record, grouping SUB with their parent disciplines
+                        // Map: normalized discipline name -> { original: grade, sub: grade, rawKey: original key }
+                        const disciplineGrades = new Map();
+                        const processedKeysForRecord = new Set(); // Track processed normalized keys to avoid variants
                         
                         Object.keys(r).forEach(k => {
                             // Exclude known non-grade fields (case-insensitive) using module-level Set
@@ -5348,57 +5349,85 @@ function extractTimeFromISO(isoString) {
                                     if (processedKeysForRecord.has(kNormalized)) {
                                         return;
                                     }
+                                    processedKeysForRecord.add(kNormalized);
                                     
-                                    // Check if this is a Sub discipline
-                                    // If so, merge its grades into the parent discipline
-                                    let targetKey = k;
+                                    // Determine the target discipline and whether this is a SUB grade
+                                    let targetDiscipline = k;
+                                    let isSub = false;
+                                    
                                     if (isSubDiscipline(k)) {
                                         // Extract parent discipline name
-                                        targetKey = getParentDisciplineName(k);
-                                        // Normalize the parent key for consistency
-                                        const parentNormalized = normalizeKeyForDeduplication(targetKey);
-                                        
-                                        // Check if we've already processed the parent discipline for this record
-                                        // to prevent double-counting when both Sub and parent exist
-                                        if (processedKeysForRecord.has(parentNormalized)) {
-                                            // Already processed parent, skip this Sub grade to avoid double-counting
-                                            return;
-                                        }
-                                        
-                                        // Mark both the Sub key and parent key as processed
-                                        processedKeysForRecord.add(kNormalized);
-                                        processedKeysForRecord.add(parentNormalized);
-                                        
-                                        // Use existing canonical key for parent if it exists
-                                        targetKey = canonicalKeyMap.get(parentNormalized) || targetKey;
+                                        targetDiscipline = getParentDisciplineName(k);
+                                        isSub = true;
+                                    }
+                                    
+                                    // Normalize the target discipline name for grouping
+                                    const targetNormalized = normalizeKeyForDeduplication(targetDiscipline);
+                                    
+                                    // Get or create entry for this discipline
+                                    if (!disciplineGrades.has(targetNormalized)) {
+                                        disciplineGrades.set(targetNormalized, {
+                                            original: 0,
+                                            sub: 0,
+                                            rawKey: targetDiscipline
+                                        });
+                                    }
+                                    
+                                    const entry = disciplineGrades.get(targetNormalized);
+                                    
+                                    // Store the grade in the appropriate field
+                                    if (isSub) {
+                                        entry.sub = Math.max(entry.sub, n); // Take highest SUB if multiple variants exist
                                     } else {
-                                        // Mark this regular (non-Sub) key as processed
-                                        processedKeysForRecord.add(kNormalized);
-                                    }
-                                    
-                                    // Determine the canonical key to use
-                                    // Prefer: 1) existing canonical key, 2) key with accents (proper formatting)
-                                    let canonicalKey = canonicalKeyMap.get(normalizeKeyForDeduplication(targetKey));
-                                    if (!canonicalKey) {
-                                        // First key becomes canonical
-                                        canonicalKey = targetKey;
-                                        canonicalKeyMap.set(normalizeKeyForDeduplication(targetKey), canonicalKey);
-                                    } else if (keyHasAccents(targetKey) && !keyHasAccents(canonicalKey)) {
-                                        // Update to key with accents (likely original Firebase name)
-                                        canonicalKeyMap.set(normalizeKeyForDeduplication(targetKey), targetKey);
-                                        // Transfer sums/counts to new canonical key (use 'in' to handle 0 values)
-                                        if (canonicalKey in tSums && canonicalKey in tCounts) {
-                                            tSums[targetKey] = tSums[canonicalKey];
-                                            tCounts[targetKey] = tCounts[canonicalKey];
-                                            delete tSums[canonicalKey];
-                                            delete tCounts[canonicalKey];
+                                        entry.original = Math.max(entry.original, n); // Take highest original if multiple variants
+                                        // Update rawKey to prefer keys with accents
+                                        if (keyHasAccents(k) && !keyHasAccents(entry.rawKey)) {
+                                            entry.rawKey = k;
                                         }
-                                        canonicalKey = targetKey;
                                     }
-                                    
-                                    tSums[canonicalKey] = (tSums[canonicalKey] || 0) + n;
-                                    tCounts[canonicalKey] = (tCounts[canonicalKey] || 0) + 1;
                                 }
+                            }
+                        });
+                        
+                        // STEP 2: For each discipline, determine the effective grade (higher of original or SUB)
+                        // and add to the running totals
+                        disciplineGrades.forEach((gradeInfo, targetNormalized) => {
+                            const { original, sub, rawKey } = gradeInfo;
+                            
+                            // Use the higher grade (SUB if it's higher than original, otherwise original)
+                            // If only one exists, use that one
+                            let effectiveGrade = 0;
+                            if (original > 0 && sub > 0) {
+                                effectiveGrade = Math.max(original, sub);
+                            } else if (original > 0) {
+                                effectiveGrade = original;
+                            } else if (sub > 0) {
+                                effectiveGrade = sub;
+                            }
+                            
+                            if (effectiveGrade > 0) {
+                                // Determine the canonical key to use
+                                let canonicalKey = canonicalKeyMap.get(targetNormalized);
+                                if (!canonicalKey) {
+                                    // First occurrence - use the raw key from this record
+                                    canonicalKey = rawKey;
+                                    canonicalKeyMap.set(targetNormalized, canonicalKey);
+                                } else if (keyHasAccents(rawKey) && !keyHasAccents(canonicalKey)) {
+                                    // Update to key with accents (likely original Firebase name)
+                                    canonicalKeyMap.set(targetNormalized, rawKey);
+                                    // Transfer sums/counts to new canonical key
+                                    if (canonicalKey in tSums && canonicalKey in tCounts) {
+                                        tSums[rawKey] = tSums[canonicalKey];
+                                        tCounts[rawKey] = tCounts[canonicalKey];
+                                        delete tSums[canonicalKey];
+                                        delete tCounts[canonicalKey];
+                                    }
+                                    canonicalKey = rawKey;
+                                }
+                                
+                                // Add the effective grade to the totals
+                                tSums[canonicalKey] = (tSums[canonicalKey] || 0) + effectiveGrade;
+                                tCounts[canonicalKey] = (tCounts[canonicalKey] || 0) + 1;
                             }
                         });
                     }
