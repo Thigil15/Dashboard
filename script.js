@@ -5258,7 +5258,8 @@ function extractTimeFromISO(isoString) {
             );
             
             // Fallback to combined data if separate arrays are not available
-            const faltas = (ausencias.length > 0 || reposicoes.length > 0)
+            // Check if separate arrays exist in appState (not just if they have data)
+            const faltas = (appState.ausencias !== undefined || appState.reposicoes !== undefined)
                 ? { ausencias, reposicoes }
                 : appState.ausenciasReposicoes.filter(f => f && 
                     ((f.EmailHC && normalizeString(f.EmailHC) === emailNormalizado) || 
@@ -9607,7 +9608,7 @@ function renderTabEscala(escalas) {
                     <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    Histórico Detalhado
+                    Ausências e Reposições
                 </h4>
                 <div class="faltas-tabs-nav">
                     <button class="faltas-tab-button faltas-tab-button--active" data-tab="all" onclick="switchFaltasTab('all')">
