@@ -2168,6 +2168,46 @@ function extractTimeFromISO(isoString) {
         }
 
         /**
+         * Helper function: Check if an absence has a matching makeup scheduled
+         * Matches based on DataAusencia (the date of the absence)
+         * @param {Object} absence - The absence record
+         * @param {Array} allRecords - All absence/makeup records
+         * @returns {boolean} - True if there's a makeup with the same DataAusencia
+         */
+        function hasMatchingMakeup(absence, allRecords) {
+            if (!absence || !absence.DataAusenciaISO) return false;
+            
+            // Check if any record has a makeup date (DataReposicaoISO) AND matches the same absence date
+            return allRecords.some(record => {
+                // Must have a makeup date scheduled
+                if (!record.DataReposicaoISO) return false;
+                
+                // Must match the same student
+                const sameStudent = record.EmailHC === absence.EmailHC;
+                if (!sameStudent) return false;
+                
+                // Must reference the same absence date
+                const sameAbsenceDate = record.DataAusenciaISO === absence.DataAusenciaISO;
+                return sameAbsenceDate;
+            });
+        }
+
+        /**
+         * Get absences that truly need makeup (no matching makeup scheduled)
+         * @param {Array} records - All absence/makeup records for a student
+         * @returns {Array} - Absences without matching makeups
+         */
+        function getPendingAbsences(records) {
+            if (!records || records.length === 0) return [];
+            
+            // Get all unique absences (records with DataAusenciaISO)
+            const absences = records.filter(r => r.DataAusenciaISO);
+            
+            // Filter to only those without a matching makeup
+            return absences.filter(absence => !hasMatchingMakeup(absence, records));
+        }
+
+        /**
          * Switch between Reposições tabs
          */
         window.switchReposicoesTab = function(tab) {
@@ -2227,30 +2267,43 @@ function extractTimeFromISO(isoString) {
                 
                 studentsPendingEmails = Array.from(byEmail.entries())
                     .filter(([, items]) => {
-                        const total = items.filter(i => i.DataAusenciaISO || i.DataAusencia).length;
-                        const completed = items.filter(i => i.DataReposicaoISO || i.DataReposicao).length;
-                        return total > 0 && completed < total;
+                        // Use the new helper to get truly pending absences
+                        const pendingAbsences = getPendingAbsences(items);
+                        return pendingAbsences.length > 0;
                     })
                     .map(([email]) => email);
             } else {
                 // Fallback using separate sheets
-                const ausencias = (appState.ausencias || []).filter(a => a.EmailHC);
-                const reposicoes = (appState.reposicoes || []).filter(r => r.EmailHC);
+                const ausencias = (appState.ausencias || []).filter(a => a.EmailHC && a.DataAusenciaISO);
+                const reposicoes = (appState.reposicoes || []).filter(r => r.EmailHC && r.DataReposicaoISO && r.DataAusenciaISO);
                 
-                const ausenciasCount = ausencias.reduce((acc, a) => {
-                    acc[a.EmailHC] = (acc[a.EmailHC] || 0) + 1;
-                    return acc;
-                }, {});
-                const reposicoesCount = reposicoes.reduce((acc, r) => {
-                    acc[r.EmailHC] = (acc[r.EmailHC] || 0) + 1;
-                    return acc;
-                }, {});
-                
-                studentsPendingEmails = Object.keys(ausenciasCount).filter(email => {
-                    const total = ausenciasCount[email] || 0;
-                    const done = reposicoesCount[email] || 0;
-                    return total > 0 && done < total;
+                // Build a map of absences by email
+                const ausenciasByEmail = new Map();
+                ausencias.forEach(a => {
+                    if (!ausenciasByEmail.has(a.EmailHC)) {
+                        ausenciasByEmail.set(a.EmailHC, []);
+                    }
+                    ausenciasByEmail.get(a.EmailHC).push(a);
                 });
+                
+                // Build a set of covered absences (absence dates that have makeups)
+                const coveredAbsences = new Set();
+                reposicoes.forEach(r => {
+                    // Key: email + absence date
+                    const key = `${r.EmailHC}|${r.DataAusenciaISO}`;
+                    coveredAbsences.add(key);
+                });
+                
+                // Find students with pending absences
+                studentsPendingEmails = Array.from(ausenciasByEmail.entries())
+                    .filter(([email, studentAbsences]) => {
+                        // Check if any absence is not covered by a makeup
+                        return studentAbsences.some(a => {
+                            const key = `${email}|${a.DataAusenciaISO}`;
+                            return !coveredAbsences.has(key);
+                        });
+                    })
+                    .map(([email]) => email);
             }
             
             // Get student details from alunosMap
@@ -9363,9 +9416,27 @@ function renderTabEscala(escalas) {
     // ═══════════════════════════════════════════════════════════════════
     // CÁLCULO DE ESTATÍSTICAS
     // ═══════════════════════════════════════════════════════════════════
-    const totalFaltas = faltasComValidacao.length;
-    const faltasPendentes = faltasComValidacao.filter(f => !f.DataReposicaoISO).length;
-    const faltasRepostas = faltasComValidacao.filter(f => f.DataReposicaoISO).length;
+    // Separate absences and scheduled makeups for better organization
+    const uniqueAbsences = new Map();
+    const scheduledMakeups = [];
+    
+    // Group by absence date to identify unique absences
+    faltasComValidacao.forEach(f => {
+        if (f.DataAusenciaISO) {
+            const key = f.DataAusenciaISO;
+            if (!uniqueAbsences.has(key)) {
+                uniqueAbsences.set(key, f);
+            }
+            // If this record has a makeup date, add to scheduled makeups
+            if (f.DataReposicaoISO) {
+                scheduledMakeups.push(f);
+            }
+        }
+    });
+    
+    const totalFaltas = uniqueAbsences.size;
+    const faltasPendentes = getPendingAbsences(faltasComValidacao).length;
+    const faltasRepostas = scheduledMakeups.length;
     const taxaReposicao = totalFaltas > 0 ? Math.round((faltasRepostas / totalFaltas) * 100) : 0;
     
     // Count validated absences (dates that match the student's escala schedule)
@@ -9438,29 +9509,29 @@ function renderTabEscala(escalas) {
             </div>
         </div>
         
-        <!-- Timeline Section -->
+        <!-- Timeline Section with Tabs -->
         <div class="faltas-timeline-section">
             <div class="faltas-timeline-header">
                 <h4 class="faltas-timeline-title">
                     <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    Histórico de Ausências e Reposições
+                    Ausências e Reposições
                 </h4>
-                <div class="faltas-timeline-legend">
-                    <span class="faltas-legend-item faltas-legend-item--pending">
-                        <span class="faltas-legend-dot"></span>
-                        Pendente
-                    </span>
-                    <span class="faltas-legend-item faltas-legend-item--completed">
-                        <span class="faltas-legend-dot"></span>
-                        Reposta
-                    </span>
+                <div class="faltas-tabs-nav">
+                    <button class="faltas-tab-button faltas-tab-button--active" data-tab="all" onclick="switchFaltasTab('all')">
+                        Todas (${totalFaltas})
+                    </button>
+                    <button class="faltas-tab-button ${faltasPendentes > 0 ? 'faltas-tab-button--alert' : ''}" data-tab="pending" onclick="switchFaltasTab('pending')">
+                        Pendentes (${faltasPendentes})
+                    </button>
+                    <button class="faltas-tab-button" data-tab="completed" onclick="switchFaltasTab('completed')">
+                        Repostas (${faltasRepostas})
+                    </button>
                 </div>
             </div>
             
-            <div class="faltas-timeline">
-                ${faltasOrdenadas.map((f, index) => {
+            <div class="faltas-timeline" id="faltas-timeline-all">${faltasOrdenadas.map((f, index) => {
                     const isPending = !f.DataReposicaoISO;
                     const statusClass = isPending ? 'faltas-card--pending' : 'faltas-card--completed';
                     const statusIcon = isPending ? 
@@ -9620,6 +9691,33 @@ function renderTabEscala(escalas) {
     `;
 
     container.innerHTML = html;
+    
+    // Add tab switching functionality
+    window.switchFaltasTab = function(tab) {
+        const timeline = document.getElementById('faltas-timeline-all');
+        const buttons = document.querySelectorAll('.faltas-tab-button');
+        const cards = document.querySelectorAll('.faltas-card');
+        
+        // Update button states
+        buttons.forEach(btn => {
+            if (btn.dataset.tab === tab) {
+                btn.classList.add('faltas-tab-button--active');
+            } else {
+                btn.classList.remove('faltas-tab-button--active');
+            }
+        });
+        
+        // Filter cards based on selected tab
+        cards.forEach(card => {
+            if (tab === 'all') {
+                card.style.display = '';
+            } else if (tab === 'pending') {
+                card.style.display = card.classList.contains('faltas-card--pending') ? '' : 'none';
+            } else if (tab === 'completed') {
+                card.style.display = card.classList.contains('faltas-card--completed') ? '' : 'none';
+            }
+        });
+    };
 }
 
         /**
