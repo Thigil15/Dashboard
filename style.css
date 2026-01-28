@@ -12286,6 +12286,76 @@
     color: var(--incor-blue-500);
 }
 
+.faltas-tabs-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: white;
+    padding: 0.25rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 51, 160, 0.04);
+}
+
+.faltas-tab-button {
+    padding: 0.5rem 1rem;
+    border: none;
+    background: transparent;
+    color: var(--content-text-secondary);
+    font-family: var(--font-main);
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: var(--transition-medium);
+    position: relative;
+}
+
+.faltas-tab-button:hover {
+    background: var(--incor-blue-50);
+    color: var(--incor-blue-700);
+}
+
+.faltas-tab-button--active {
+    background: var(--incor-blue-600);
+    color: white;
+    box-shadow: 0 2px 8px rgba(0, 84, 180, 0.2);
+}
+
+.faltas-tab-button--alert {
+    color: var(--warning-amber);
+}
+
+.faltas-tab-button--alert.faltas-tab-button--active {
+    color: white;
+}
+
+.faltas-tab-button--alert::after {
+    content: '';
+    position: absolute;
+    top: 0.25rem;
+    right: 0.25rem;
+    width: 6px;
+    height: 6px;
+    background: var(--incor-red-500);
+    border-radius: 50%;
+    animation: faltas-tab-alert-pulse 2s infinite;
+}
+
+.faltas-tab-button--alert.faltas-tab-button--active::after {
+    display: none;
+}
+
+@keyframes faltas-tab-alert-pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.5;
+        transform: scale(1.2);
+    }
+}
+
 .faltas-timeline-legend {
     display: flex;
     align-items: center;
