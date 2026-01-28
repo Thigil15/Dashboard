@@ -5378,6 +5378,10 @@ function extractTimeFromISO(isoString) {
                                     // Store the grade in the appropriate field
                                     if (isSub) {
                                         entry.sub = Math.max(entry.sub, n); // Take highest SUB if multiple variants exist
+                                        // Update rawKey to prefer keys with accents (for SUB grades too)
+                                        if (keyHasAccents(targetDiscipline) && !keyHasAccents(entry.rawKey)) {
+                                            entry.rawKey = targetDiscipline;
+                                        }
                                     } else {
                                         entry.original = Math.max(entry.original, n); // Take highest original if multiple variants
                                         // Update rawKey to prefer keys with accents
@@ -5394,16 +5398,9 @@ function extractTimeFromISO(isoString) {
                         disciplineGrades.forEach((gradeInfo, targetNormalized) => {
                             const { original, sub, rawKey } = gradeInfo;
                             
-                            // Use the higher grade (SUB if it's higher than original, otherwise original)
-                            // If only one exists, use that one
-                            let effectiveGrade = 0;
-                            if (original > 0 && sub > 0) {
-                                effectiveGrade = Math.max(original, sub);
-                            } else if (original > 0) {
-                                effectiveGrade = original;
-                            } else if (sub > 0) {
-                                effectiveGrade = sub;
-                            }
+                            // Use the higher grade between original and SUB
+                            // Math.max handles all cases: both exist, only one exists, or neither exists
+                            const effectiveGrade = Math.max(original, sub);
                             
                             if (effectiveGrade > 0) {
                                 // Determine the canonical key to use
