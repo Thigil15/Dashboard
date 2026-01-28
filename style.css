@@ -524,11 +524,6 @@
             border-color: transparent;
         }
         
-        /* Removed animated underline for cleaner look */
-        .login-input-line {
-            display: none;
-        }
-        
         /* Minimalist Button */
         .login-btn-minimal {
             width: 100%;
