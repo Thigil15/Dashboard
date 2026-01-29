@@ -3853,12 +3853,16 @@ function extractTimeFromISO(isoString) {
             const email = document.getElementById("login-email").value.trim();
             const password = document.getElementById("login-password").value.trim();
             const errorBox = document.getElementById("login-error");
+            const loginButton = document.getElementById("login-button");
+
+            // Add loading state to button
+            loginButton.classList.add('loading');
+            loginButton.disabled = true;
+            errorBox.style.display = "none";
 
             // CRITICAL FIX: Wait for Firebase to initialize if not ready yet
             if (!fbAuth) {
                 console.warn("[handleLogin] Firebase Auth ainda não está disponível. Aguardando inicialização...");
-                errorBox.textContent = "Inicializando sistema de autenticação...";
-                errorBox.style.display = "block";
                 
                 // Wait for Firebase to be ready (max 5 seconds)
                 const maxWaitTime = 5000;
@@ -3870,18 +3874,19 @@ function extractTimeFromISO(isoString) {
                 
                 if (!fbAuth) {
                     console.error("[handleLogin] Firebase Auth não está disponível após espera. window.firebase:", window.firebase, "fbAuth:", fbAuth);
+                    loginButton.classList.remove('loading');
+                    loginButton.disabled = false;
                     showError("Firebase não inicializado. Por favor, verifique sua conexão com a internet e recarregue a página. Se o problema persistir, abra o Console do navegador (F12) para mais detalhes.", true);
                     return;
                 }
                 
                 console.log("[handleLogin] Firebase Auth agora está disponível. Prosseguindo com login...");
-                errorBox.style.display = "none";
             }
 
             try {
                 const userCredential = await window.firebase.signInWithEmailAndPassword(fbAuth, email, password);
                 console.log("[handleLogin] Login bem-sucedido via Firebase:", userCredential.user.email);
-                errorBox.style.display = "none";
+                // Keep button loading - will show loading overlay next
                 // onAuthStateChanged will handle the rest (redirect to dashboard)
             } catch (error) {
                 console.error("[handleLogin] Erro no login Firebase:", error);
@@ -3900,6 +3905,9 @@ function extractTimeFromISO(isoString) {
                     errorMessage = "Erro de conexão. Verifique sua internet.";
                 }
                 
+                // Remove loading state on error
+                loginButton.classList.remove('loading');
+                loginButton.disabled = false;
                 showError(errorMessage, true);
             }
         }
@@ -11203,9 +11211,10 @@ function renderTabEscala(escalas) {
             
             // CRITICAL FIX: Disable login button until Firebase is ready
             const loginButton = document.getElementById('login-button');
-            if (loginButton) {
+            const loginBtnText = loginButton ? loginButton.querySelector('.login-btn-text') : null;
+            if (loginButton && loginBtnText) {
                 loginButton.disabled = true;
-                loginButton.textContent = 'Aguarde...';
+                loginBtnText.textContent = 'Aguarde...';
                 console.log('[Firebase] Login button disabled - waiting for Firebase SDK');
             }
             
@@ -11215,9 +11224,10 @@ function renderTabEscala(escalas) {
             // Helper function to enable login button and clear timeout
             const enableLoginButton = (reason) => {
                 const btn = document.getElementById('login-button');
-                if (btn) {
+                const btnText = btn ? btn.querySelector('.login-btn-text') : null;
+                if (btn && btnText) {
                     btn.disabled = false;
-                    btn.textContent = 'Entrar';
+                    btnText.textContent = 'Entrar no Portal';
                     console.log(`[Firebase] Login button enabled - ${reason}`);
                 }
                 if (loginButtonTimeout) {
