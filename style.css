@@ -1155,6 +1155,8 @@
            PROFESSIONAL INCOR HEADER - Modern Minimalist Design 2025
            ════════════════════════════════════════════════════════════════ */
         .header-professional {
+            /* Enhanced glassmorphic effect - 20px blur creates premium look
+               Note: High blur values may impact performance on lower-end devices */
             background: linear-gradient(135deg, rgba(0, 26, 82, 0.95) 0%, rgba(0, 51, 160, 0.92) 100%);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
@@ -10073,7 +10075,6 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    text-shadow: none;
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
@@ -10207,7 +10208,6 @@
         rgba(30, 111, 217, 0.95));
     border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
     box-shadow: 0 2px 8px rgba(0, 84, 180, 0.4);
-}
 }
 
 .incor-kpi-header {
@@ -10345,11 +10345,24 @@
     flex-shrink: 0;
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
     transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
 }
 
 .incor-kpi-card:hover .incor-kpi-icon-wrapper {
-    transform: scale(1.1) rotate(-5deg);
+    transform: scale(1.08);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+    .incor-kpi-card:hover .incor-kpi-icon-wrapper {
+        transform: none;
+        transition: none;
+    }
+    
+    .incor-kpi-card:hover {
+        transform: none;
+    }
 }
 
 .incor-kpi-icon-wrapper svg {
