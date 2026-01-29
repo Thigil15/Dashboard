@@ -1848,7 +1848,7 @@
         
         /* Default: only dashboard is visible initially */
         #content-dashboard {
-            display: block;
+            display: flex;
         }
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(15px); }
@@ -2065,7 +2065,6 @@
         
         /* === ALUNOS VIEW CONTAINER === */
         .alunos-view {
-            display: flex;
             flex-direction: column;
             gap: var(--spacing-lg);
         }
@@ -9913,7 +9912,6 @@
     --incor-status-critical-bg: rgba(220, 38, 38, 0.08);
     
     /* Layout */
-    display: flex;
     flex-direction: column;
     gap: var(--incor-spacing-lg);
     padding: 0;
@@ -12090,7 +12088,6 @@
 
 /* === BASE LAYOUT === */
 .student-profile-view {
-    display: flex;
     flex-direction: column;
     min-height: 100vh;
     background: linear-gradient(135deg, #F0F4F8 0%, #E8EEF4 50%, #F5F8FB 100%);
