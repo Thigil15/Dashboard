@@ -11310,6 +11310,40 @@ function renderTabEscala(escalas) {
                         appState.notasPraticas = {};
                         appState.pontoStaticRows = [];
                         
+                        // Clean up: reset dataLoadingState to all false
+                        Object.keys(appState.dataLoadingState).forEach(key => {
+                            appState.dataLoadingState[key] = false;
+                        });
+                        
+                        // Clean up: reset pontoState
+                        pontoState.rawRows = [];
+                        pontoState.byDate.clear();
+                        pontoState.cache.clear();
+                        pontoState.scalesByDate.clear();
+                        pontoState.autoScaleByDate.clear();
+                        pontoState.dates = [];
+                        pontoState.selectedDate = '';
+                        pontoState.selectedScale = 'all';
+                        pontoState.selectedType = 'pratica';
+                        pontoState.filter = 'all';
+                        pontoState.search = '';
+                        pontoState.searchRaw = '';
+                        pontoState.lastLoadedAt = null;
+                        pontoState.isLoading = false;
+                        
+                        // Clean up: reset login button state (in case it was stuck in loading)
+                        const loginButton = document.getElementById('login-button');
+                        if (loginButton) {
+                            loginButton.classList.remove('loading');
+                            loginButton.disabled = false;
+                        }
+                        
+                        // Clean up: hide login error messages
+                        const errorBox = document.getElementById('login-error');
+                        if (errorBox) {
+                            errorBox.style.display = 'none';
+                        }
+                        
                         // CRITICAL FIX: Always show login view when not authenticated
                         // This ensures the app never gets stuck on a student detail page when logged out
                         showLoading(false); // Ensure loading overlay is hidden
