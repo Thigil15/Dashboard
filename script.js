@@ -2069,6 +2069,8 @@ function extractTimeFromISO(isoString) {
                     if (view.id === viewIdToShow) {
                         // Use flex for views that have flexbox layout
                         const needsFlex = (id === 'dashboard-view' || id === 'login-view' || 
+                                          view.classList.contains('incor-dash') ||
+                                          view.classList.contains('alunos-view') ||
                                           view.classList.contains('student-profile-view'));
                         displayStyle = needsFlex ? 'flex' : 'block';
                         
@@ -4510,8 +4512,10 @@ function extractTimeFromISO(isoString) {
             const allSubViews = document.querySelectorAll('.main-content-area > .view-container, main > .view-container');
             allSubViews.forEach(view => {
                 const isActive = view.id === `content-${tabName}`;
-                // Use flex for views that have flexbox layout (incor-dash, alunos-view)
-                const needsFlex = view.classList.contains('incor-dash') || view.classList.contains('alunos-view');
+                // Use flex for views that have flexbox layout
+                const needsFlex = view.classList.contains('incor-dash') || 
+                                 view.classList.contains('alunos-view') ||
+                                 view.classList.contains('student-profile-view');
                 view.style.display = isActive ? (needsFlex ? 'flex' : 'block') : 'none';
                 if (isActive) {
                     view.style.animation = 'none';
