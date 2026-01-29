@@ -1011,39 +1011,29 @@
                 grid-template-columns: 1fr;
                 max-width: 540px;
                 text-align: center;
-                gap: 3rem;
+                gap: 2rem;
             }
 
             .login-hero {
-                align-items: center;
-                order: 2;
+                display: none;
             }
 
             #login-card {
                 order: 1;
                 max-width: 100%;
             }
-
-            .login-hero-badge-wrapper {
-                align-self: center;
-                justify-content: center;
+        }
+        
+        /* Hide hero section on screens with limited height */
+        @media (max-height: 800px) {
+            .login-hero {
+                display: none;
             }
-
-            .login-hero-title,
-            .login-hero-subtitle {
-                max-width: 100%;
-            }
-
-            .login-hero-highlights {
-                width: 100%;
-            }
-
-            .login-highlight-card {
-                text-align: left;
-            }
-
-            .login-hero-footer {
-                justify-content: center;
+            
+            .login-grid {
+                grid-template-columns: 1fr;
+                max-width: 540px;
+                justify-items: center;
             }
         }
         
