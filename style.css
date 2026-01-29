@@ -10376,6 +10376,29 @@
     color: #ffffff;
 }
 
+.incor-kpi-status-badge {
+    font-family: var(--font-main);
+    font-size: 0.5625rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 2px 6px;
+    border-radius: var(--radius-full);
+    background: var(--incor-status-normal-bg);
+    color: var(--incor-status-normal);
+    white-space: nowrap;
+}
+
+.incor-kpi-card[data-status="alert"] .incor-kpi-status-badge {
+    background: var(--incor-status-alert-bg);
+    color: var(--incor-status-alert);
+}
+
+.incor-kpi-card[data-status="critical"] .incor-kpi-status-badge {
+    background: var(--incor-status-critical-bg);
+    color: var(--incor-status-critical);
+}
+
 .incor-kpi-label {
     font-size: 0.75rem;
     font-weight: 500;
