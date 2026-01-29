@@ -438,7 +438,7 @@
             border-radius: var(--radius-lg);
             background: rgba(255, 255, 255, 0.09);
             border: 1px solid rgba(255, 255, 255, 0.18);
-            backdrop-filter: blur(14px);
+            backdrop-filter: blur(12px);
         }
 
         .login-highlight-title {
@@ -508,8 +508,8 @@
             display: flex;
             flex-direction: column;
             gap: 0.6rem;
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
+            backdrop-filter: blur(22px);
+            -webkit-backdrop-filter: blur(22px);
         }
         
         .login-card-head {
@@ -526,8 +526,8 @@
             padding: 0.48rem 1rem;
             border-radius: var(--radius-full);
             font-weight: 600;
-            font-size: 0.66rem;
-            letter-spacing: 0.16em;
+            font-size: 0.75rem;
+            letter-spacing: 0.12em;
             text-transform: uppercase;
             border: 1px solid rgba(30, 111, 217, 0.28);
         }
@@ -567,9 +567,9 @@
         
         .login-brand-name {
             font-family: var(--font-display);
-            font-size: 0.72rem;
+            font-size: 0.75rem;
             font-weight: 700;
-            letter-spacing: 0.32em;
+            letter-spacing: 0.28em;
             color: var(--incor-blue-800);
         }
         
@@ -623,9 +623,9 @@
         
         .login-label {
             display: block;
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             font-weight: 600;
-            letter-spacing: 0.08em;
+            letter-spacing: 0.06em;
             color: var(--content-text-secondary);
             margin-bottom: 0.25rem;
             text-transform: uppercase;
@@ -655,7 +655,7 @@
             width: 100%;
             padding: 1.05rem;
             margin-top: 1rem;
-            background: linear-gradient(135deg, #0A2A72, #1E6FD9);
+            background: linear-gradient(135deg, var(--incor-blue-700), var(--incor-blue-500));
             color: #ffffff;
             font-family: var(--font-display);
             font-weight: 600;
@@ -707,9 +707,9 @@
         }
         
         .login-footer-minimal span {
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             color: var(--content-text-muted);
-            letter-spacing: 0.04em;
+            letter-spacing: 0.03em;
         }
         
         .login-footer-institution {
