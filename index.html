@@ -50,24 +50,53 @@
     <div id="login-view" class="view-container" style="display: flex;">
         <div class="login-grid">
             <section class="login-hero" role="region" aria-labelledby="login-hero-title">
-                <span class="login-hero-badge">Portal do Ensino • InCor</span>
-                <h1 class="login-hero-title" id="login-hero-title">O ensino clínico elevado à sua melhor forma digital</h1>
+                <div class="login-hero-badge-wrapper">
+                    <span class="login-hero-badge">Portal do Ensino</span>
+                    <span class="login-hero-badge-dot"></span>
+                    <span class="login-hero-badge">InCor</span>
+                </div>
+                <h1 class="login-hero-title" id="login-hero-title">
+                    Transformando a 
+                    <span class="login-hero-title-highlight">excelência clínica</span> 
+                    em experiência digital
+                </h1>
                 <p class="login-hero-subtitle">
-                    Uma experiência minimalista e precisa, atualizada em tempo real: dados, jornadas e indicadores
-                    integrados para acelerar o cuidado, a aprendizagem e o impacto em cada módulo.
+                    Plataforma inteligente que integra formação acadêmica, gestão de escalas e avaliação de desempenho em tempo real. 
+                    Desenvolvida para profissionais que moldam o futuro da cardiologia e fisioterapia respiratória.
                 </p>
                 <div class="login-hero-highlights">
                     <div class="login-highlight-card">
-                        <span class="login-highlight-title">Trilhas inteligentes</span>
-                        <span class="login-highlight-text">Módulos, escalas e avaliações em um fluxo contínuo.</span>
+                        <div class="login-highlight-icon">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                        </div>
+                        <div class="login-highlight-content">
+                            <span class="login-highlight-title">Sistema em Tempo Real</span>
+                            <span class="login-highlight-text">Atualizações instantâneas de escalas, notas e frequência. Sincronização automática entre todos dispositivos.</span>
+                        </div>
                     </div>
                     <div class="login-highlight-card">
-                        <span class="login-highlight-title">Insights instantâneos</span>
-                        <span class="login-highlight-text">Evolução acadêmica refletida a cada atualização.</span>
+                        <div class="login-highlight-icon">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                        </div>
+                        <div class="login-highlight-content">
+                            <span class="login-highlight-title">Análise Inteligente</span>
+                            <span class="login-highlight-text">Dashboards personalizados com métricas de desempenho, evolução modular e insights preditivos.</span>
+                        </div>
                     </div>
                     <div class="login-highlight-card">
-                        <span class="login-highlight-title">Proteção de nível clínico</span>
-                        <span class="login-highlight-text">Ambiente seguro para docentes, residentes e alunos.</span>
+                        <div class="login-highlight-icon">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                            </svg>
+                        </div>
+                        <div class="login-highlight-content">
+                            <span class="login-highlight-title">Segurança Institucional</span>
+                            <span class="login-highlight-text">Criptografia de ponta, controle de acesso granular e conformidade com LGPD e regulamentações médicas.</span>
+                        </div>
                     </div>
                 </div>
                 <div class="login-hero-footer">
@@ -77,14 +106,13 @@
                         </svg>
                     </div>
                     <div class="login-hero-footer-text">
-                        <span class="login-hero-footer-title">Instituto do Coração</span>
-                        <span class="login-hero-footer-sub">HC FMUSP • Fisioterapia Cardiovascular e Respiratória</span>
+                        <span class="login-hero-footer-title">Instituto do Coração • HC FMUSP</span>
+                        <span class="login-hero-footer-sub">Programa de Residência em Fisioterapia Cardiovascular e Respiratória</span>
                     </div>
                 </div>
             </section>
             <div id="login-card">
                 <div class="login-card-head">
-                    <span class="login-chip">Acesso institucional</span>
                     <div class="login-header-minimal">
                         <div class="login-logo-minimal">
                             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
@@ -96,28 +124,49 @@
                             <span class="login-brand-divider"></span>
                             <span class="login-brand-portal">Portal do Ensino</span>
                         </div>
-                        <p class="login-welcome">Use seu email institucional para entrar na plataforma completa do ensino clínico.</p>
                     </div>
+                    <h2 class="login-card-title">Acessar Plataforma</h2>
+                    <p class="login-welcome">Entre com suas credenciais institucionais para acessar o ambiente completo de ensino e gestão acadêmica.</p>
                 </div>
 
                 <form id="login-form" class="login-form-minimal">
-                    <div class="login-field-minimal">
-                        <label class="login-label" for="login-email">Email institucional</label>
-                        <input type="email" id="login-email" placeholder="nome@hc.fm.usp.br" class="login-input-minimal" required autocomplete="email">
-                    </div>
-                    <div class="login-field-minimal">
-                        <label class="login-label" for="login-password">Senha</label>
-                        <input type="password" id="login-password" placeholder="Digite sua senha" class="login-input-minimal" required autocomplete="current-password">
+                    <div class="login-field-group">
+                        <div class="login-field-minimal">
+                            <label class="login-label" for="login-email">
+                                <svg class="login-label-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                                </svg>
+                                Email institucional
+                            </label>
+                            <input type="email" id="login-email" placeholder="seu.nome@hc.fm.usp.br" class="login-input-minimal" required autocomplete="email">
+                        </div>
+                        <div class="login-field-minimal">
+                            <label class="login-label" for="login-password">
+                                <svg class="login-label-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                                Senha
+                            </label>
+                            <input type="password" id="login-password" placeholder="••••••••" class="login-input-minimal" required autocomplete="current-password">
+                        </div>
                     </div>
                     <button type="submit" id="login-button" class="login-btn-minimal">
-                        Entrar
+                        <span class="login-btn-text">Entrar no Portal</span>
+                        <svg class="login-btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        </svg>
                     </button>
                     <div id="login-error"></div>
                 </form>
                 
                 <div class="login-footer-minimal">
-                    <span>Ambiente exclusivo para docentes, residentes e alunos do InCor</span>
-                    <span class="login-footer-institution">InCor • HC FMUSP</span>
+                    <div class="login-footer-badge">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                        <span>Acesso restrito</span>
+                    </div>
+                    <span class="login-footer-text">Exclusivo para docentes, residentes e alunos vinculados ao programa de Fisioterapia do InCor • HC FMUSP</span>
                 </div>
             </div>
         </div>
