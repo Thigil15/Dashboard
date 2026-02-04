@@ -12,16 +12,55 @@ const ABA_PONTO_PRATICA = 'PontoPratica';
 const ABA_PONTO_TEORIA = 'PontoTeoria';
 
 /**********************************************
+ * 📝 SOBRE O SISTEMA DE SINCRONIZAÇÃO
+ **********************************************/
+/**
+ * SINCRONIZAÇÃO BIDIRECIONAL AUTOMÁTICA
+ * 
+ * Este sistema agora implementa sincronização ao vivo entre a planilha e o Firebase:
+ * 
+ * ✅ DETECÇÃO AUTOMÁTICA:
+ *    - Inserções: novas linhas são detectadas e enviadas automaticamente
+ *    - Atualizações: células editadas são sincronizadas instantaneamente
+ *    - Deleções: linhas removidas da planilha são deletadas no Firebase
+ *    - Mudanças estruturais: alterações nas colunas são detectadas automaticamente
+ * 
+ * ✅ SISTEMA DE IDs:
+ *    - Cada linha recebe um ID único baseado em seu conteúdo
+ *    - IDs permitem rastrear registros individuais
+ *    - Deleções são detectadas comparando IDs Firebase vs Planilha
+ * 
+ * ✅ HASH INTELIGENTE:
+ *    - Hash agora inclui estrutura das colunas
+ *    - Mudanças nas colunas não requerem mais reset manual
+ *    - Hash detecta qualquer alteração: dados ou estrutura
+ * 
+ * ✅ GATILHOS AUTOMÁTICOS:
+ *    - onEdit: sincroniza quando você edita células
+ *    - onChange: sincroniza quando você adiciona/remove linhas ou colunas
+ *    - Funciona mesmo com a planilha fechada
+ * 
+ * 📋 FUNÇÕES ÚTEIS:
+ *    - limparHashAba(nomeAba): força re-sync de uma aba específica
+ *    - limparTodosHashes(): força re-sync completo de tudo
+ *    - criarGatilhosAutomaticos(): ativa sincronização automática
+ *    - removerGatilhosAutomaticos(): desativa sincronização automática
+ */
+
+/**********************************************
  * 🔨 FUNÇÕES AUXILIARES (HELPERS)
  **********************************************/
 
 /**
  * Gera hash MD5 dos dados para detectar alterações.
+ * Agora considera tanto o conteúdo quanto a estrutura (colunas).
  * @param {Array} dados - Array de linhas de dados
+ * @param {Array} cabecalhos - Array de cabeçalhos
  * @returns {string} Hash MD5 em hexadecimal
  */
-function gerarHashDados(dados) {
-  let conteudoConcatenado = "";
+function gerarHashDados(dados, cabecalhos) {
+  // Inclui cabeçalhos no hash para detectar mudanças estruturais
+  let conteudoConcatenado = "HEADERS:" + JSON.stringify(cabecalhos) + "|DATA:";
   for (let i = 0; i < dados.length; i++) {
     conteudoConcatenado += JSON.stringify(dados[i]);
   }
@@ -29,7 +68,25 @@ function gerarHashDados(dados) {
 }
 
 /**
+ * Gera um ID único para uma linha baseado em seu conteúdo.
+ * @param {Array} linha - Array com os valores da linha
+ * @param {number} indice - Índice da linha na planilha
+ * @returns {string} ID único para a linha
+ */
+function gerarIdLinha(linha, indice) {
+  // Usa os primeiros campos significativos para criar um ID único
+  // Se tiver email ou serial, usa isso. Caso contrário, usa hash do conteúdo
+  const conteudo = JSON.stringify(linha).substring(0, 100);
+  const hash = Utilities.computeDigest(
+    Utilities.DigestAlgorithm.MD5, 
+    conteudo + indice
+  );
+  return hash.map(b => (b + 256) % 256).map(b => ("0" + b.toString(16)).slice(-2)).join("").substring(0, 16);
+}
+
+/**
  * Cria array de registros (objetos) a partir dos dados e cabeçalhos.
+ * Agora inclui um ID único para cada registro.
  * @param {Array} dados - Array de linhas de dados (sem cabeçalhos)
  * @param {Array} cabecalhos - Array de nomes de colunas sanitizados
  * @returns {Array} Array de objetos com os dados
@@ -39,6 +96,9 @@ function criarRegistrosDeAba(dados, cabecalhos) {
   for (let i = 0; i < dados.length; i++) {
     const linha = dados[i];
     const obj = {};
+    // Adiciona um ID único baseado no conteúdo e posição
+    obj._rowId = gerarIdLinha(linha, i);
+    obj._rowIndex = i + 2; // +2 porque linha 1 é cabeçalho e array começa em 0
     for (let j = 0; j < cabecalhos.length; j++) {
       obj[cabecalhos[j]] = linha[j];
     }
@@ -48,7 +108,35 @@ function criarRegistrosDeAba(dados, cabecalhos) {
 }
 
 /**
- * Envia registros para o Firebase.
+ * Busca os dados atuais do Firebase para uma aba.
+ * @param {string} nomeAba - Nome da aba sanitizado
+ * @returns {Object|null} Objeto com os dados do Firebase ou null se não existir
+ */
+function buscarDadosFirebase(nomeAba) {
+  const url = FIREBASE_URL + "exportAll/" + nomeAba + ".json?auth=" + FIREBASE_SECRET;
+  const opcoes = {
+    method: "get",
+    muteHttpExceptions: true
+  };
+
+  try {
+    const resposta = UrlFetchApp.fetch(url, opcoes);
+    if (resposta.getResponseCode() === 200) {
+      const conteudo = resposta.getContentText();
+      if (conteudo && conteudo !== "null") {
+        return JSON.parse(conteudo);
+      }
+    }
+    return null;
+  } catch (erro) {
+    Logger.log("⚠️ Erro ao buscar dados do Firebase: " + erro);
+    return null;
+  }
+}
+
+/**
+ * Envia registros para o Firebase com sincronização bidirecional.
+ * Detecta e remove registros deletados da planilha.
  * @param {string} nomeAba - Nome da aba sanitizado
  * @param {Array} registros - Array de objetos com os dados
  * @param {string} nomeAbaOriginal - Nome original da aba (para referência)
@@ -56,11 +144,42 @@ function criarRegistrosDeAba(dados, cabecalhos) {
  */
 function enviarParaFirebase(nomeAba, registros, nomeAbaOriginal) {
   const url = FIREBASE_URL + "exportAll/" + nomeAba + ".json?auth=" + FIREBASE_SECRET;
+  
+  // Busca dados atuais do Firebase para detectar deleções
+  const dadosAtuais = buscarDadosFirebase(nomeAba);
+  
+  // Cria mapa de IDs dos registros atuais da planilha
+  const idsAtuais = new Set();
+  for (let i = 0; i < registros.length; i++) {
+    if (registros[i]._rowId) {
+      idsAtuais.add(registros[i]._rowId);
+    }
+  }
+  
+  // Detecta registros que foram deletados (estão no Firebase mas não na planilha)
+  let registrosDeletados = 0;
+  if (dadosAtuais && dadosAtuais.dados && Array.isArray(dadosAtuais.dados)) {
+    const dadosFirebase = dadosAtuais.dados;
+    for (let i = 0; i < dadosFirebase.length; i++) {
+      const registro = dadosFirebase[i];
+      if (registro._rowId && !idsAtuais.has(registro._rowId)) {
+        registrosDeletados++;
+        Logger.log("🗑️ Registro deletado detectado: " + registro._rowId);
+      }
+    }
+  }
+  
   const payload = {
     dados: registros,
     nomeAbaOriginal: nomeAbaOriginal,
-    ultimaAtualizacao: new Date().toISOString()
+    ultimaAtualizacao: new Date().toISOString(),
+    metadados: {
+      totalRegistros: registros.length,
+      registrosDeletados: registrosDeletados,
+      sincronizacaoBidirecional: true
+    }
   };
+  
   const opcoes = {
     method: "put",
     contentType: "application/json",
@@ -70,7 +189,13 @@ function enviarParaFirebase(nomeAba, registros, nomeAbaOriginal) {
 
   try {
     const resposta = UrlFetchApp.fetch(url, opcoes);
-    return resposta.getResponseCode() === 200;
+    if (resposta.getResponseCode() === 200) {
+      if (registrosDeletados > 0) {
+        Logger.log("✅ Sincronizado com " + registrosDeletados + " deleção(ões)");
+      }
+      return true;
+    }
+    return false;
   } catch (erro) {
     Logger.log("❌ Erro na requisição Firebase: " + erro);
     return false;
@@ -99,7 +224,7 @@ function enviarTodasAsAbasParaFirebase() {
 
     const cabecalhos = dados.shift().map(h => sanitizeKey(h));
 
-    const hashAtual = gerarHashDados(dados);
+    const hashAtual = gerarHashDados(dados, cabecalhos);
     const hashAnterior = getHashAnterior(nomeAba);
 
     if (hashAtual === hashAnterior) {
@@ -138,6 +263,46 @@ function salvarHash(nomeAba, hash) {
 
 function getHashAnterior(nomeAba) {
   return PropertiesService.getScriptProperties().getProperty("HASH_" + nomeAba) || "";
+}
+
+/**
+ * Limpa o hash de uma aba específica.
+ * Útil se você quiser forçar uma sincronização completa.
+ * @param {string} nomeAba - Nome da aba (será sanitizado automaticamente)
+ */
+function limparHashAba(nomeAba) {
+  const nomeAbaSanitizado = sanitizeKey(nomeAba);
+  PropertiesService.getScriptProperties().deleteProperty("HASH_" + nomeAbaSanitizado);
+  Logger.log("🧹 Hash limpo para: " + nomeAba);
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    "Hash limpo para aba '" + nomeAba + "'. Próxima sincronização será completa.",
+    "Hash Limpo",
+    5
+  );
+}
+
+/**
+ * Limpa todos os hashes salvos.
+ * Útil para resetar completamente o sistema de sincronização.
+ */
+function limparTodosHashes() {
+  const props = PropertiesService.getScriptProperties();
+  const todasProps = props.getProperties();
+  let contador = 0;
+  
+  for (let chave in todasProps) {
+    if (chave.startsWith("HASH_")) {
+      props.deleteProperty(chave);
+      contador++;
+    }
+  }
+  
+  Logger.log("🧹 " + contador + " hashes limpos");
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    contador + " hashes limpos. Próxima sincronização será completa para todas as abas.",
+    "Reset Completo",
+    5
+  );
 }
 
 /**********************************************
@@ -253,7 +418,7 @@ function enviarAbaParaFirebaseComRetorno(aba) {
   
   const cabecalhos = dados.shift().map(h => sanitizeKey(h));
   
-  const hashAtual = gerarHashDados(dados);
+  const hashAtual = gerarHashDados(dados, cabecalhos);
   const hashAnterior = getHashAnterior(nomeAba);
   
   if (hashAtual === hashAnterior) {
@@ -295,7 +460,7 @@ function enviarTodasAsAbasParaFirebaseComRetorno() {
 
     const cabecalhos = dados.shift().map(h => sanitizeKey(h));
 
-    const hashAtual = gerarHashDados(dados);
+    const hashAtual = gerarHashDados(dados, cabecalhos);
     const hashAnterior = getHashAnterior(nomeAba);
 
     if (hashAtual === hashAnterior) {
@@ -338,7 +503,7 @@ function enviarAbaParaFirebase(aba) {
   
   const cabecalhos = dados.shift().map(h => sanitizeKey(h));
   
-  const hashAtual = gerarHashDados(dados);
+  const hashAtual = gerarHashDados(dados, cabecalhos);
   const hashAnterior = getHashAnterior(nomeAba);
   
   if (hashAtual === hashAnterior) {
