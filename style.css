@@ -18599,3 +18599,45 @@ tr.student-type-residente:hover {
     height: 16px;
     color: var(--content-text-muted);
 }
+
+/* Google Login Divider */
+.login-divider {
+    display: flex;
+    align-items: center;
+    margin: 1.5rem 0;
+    gap: 1rem;
+}
+
+.login-divider-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, transparent, #e5e7eb, transparent);
+}
+
+.login-divider-text {
+    color: #6b7280;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+/* Google Login Button */
+.login-btn-google {
+    background: white;
+    color: #1f2937;
+    border: 1px solid #e5e7eb;
+    margin-top: 0;
+}
+
+.login-btn-google:hover {
+    background: #f9fafb;
+    border-color: #d1d5db;
+    box-shadow: 
+        0 8px 28px rgba(0, 0, 0, 0.08),
+        0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.login-btn-google svg {
+    width: 20px;
+    height: 20px;
+    margin-right: 0.5rem;
+}
