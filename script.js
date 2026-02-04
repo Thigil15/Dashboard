@@ -64,7 +64,7 @@
                     if (exportAllSnapshot.exists()) {
                         const data = exportAllSnapshot.val();
                         const keys = Object.keys(data || {});
-                        console.log(`[checkFirebaseConnection] ✅ Caminho /exportAll encontrado com ${keys.length} subpaths:`, keys.slice(0, 10).join(', '));
+                        console.log(`[checkFirebaseConnection] ✅ Caminho /exportAll encontrado com ${keys.length} child nodes:`, keys.slice(0, 10).join(', '));
                         return { connected: true, hasData: true, dataKeys: keys };
                     } else {
                         console.warn('[checkFirebaseConnection] ⚠️ Caminho /exportAll não existe');
@@ -2143,7 +2143,12 @@ function extractTimeFromISO(isoString) {
                 
                 if (!connectionStatus.connected) {
                     showLoading(false);
-                    showError(`Erro de Conexão: ${connectionStatus.error}. Verifique sua conexão com a internet e tente novamente.`, false);
+                    let errorMsg = `Erro de Conexão: ${connectionStatus.error}.`;
+                    // Only suggest internet check if it's not an initialization error
+                    if (!connectionStatus.error.includes('inicializado')) {
+                        errorMsg += ' Verifique sua conexão com a internet e tente novamente.';
+                    }
+                    showError(errorMsg, false);
                     console.error('[initDashboard] Falha na conexão com Firebase:', connectionStatus.error);
                     return;
                 }
@@ -2198,15 +2203,16 @@ function extractTimeFromISO(isoString) {
                     if (!anyDataLoaded) {
                         showLoading(false);
                         console.warn("[initDashboard] AVISO: Nenhum dado foi carregado após 10 segundos!");
-                        console.warn("[initDashboard] Possíveis causas:");
+                        console.warn("[initDashboard] Possíveis causas (conexão e dados verificados anteriormente):");
                         console.warn("  1. Regras do Firebase estão bloqueando a leitura");
                         console.warn("  2. Estrutura de dados está incorreta");
-                        console.warn("  3. Problema de permissões no Firebase");
+                        console.warn("  3. Problema de permissões no Firebase (usuário não autenticado)");
                         console.warn("[initDashboard] Verifique o Firebase Console:");
                         console.warn("  https://console.firebase.google.com/project/dashboardalunos/database/dashboardalunos-default-rtdb/data");
                         
                         // Show user-friendly error with more specific information
-                        showError('Os dados do Firebase não puderam ser carregados. Possíveis causas: (1) Regras do Firebase bloqueando leitura, (2) Você não está autenticado, ou (3) Estrutura de dados incorreta. Verifique o console do navegador para mais detalhes.', false);
+                        // Note: Connection and /exportAll existence already verified, so this is about read permissions
+                        showError('Os dados do Firebase não puderam ser carregados após verificar a conexão. Possíveis causas: (1) Regras do Firebase bloqueando leitura, (2) Você não está autenticado, ou (3) Estrutura de dados incorreta. Verifique o console do navegador para mais detalhes.', false);
                     } else {
                         console.log("[initDashboard] Inicialização completa. Real-time updates ativos.");
                         showLoading(false);
