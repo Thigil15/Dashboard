@@ -45,6 +45,11 @@ O site está **completamente configurado** para ler dados do Firebase Realtime D
   - Teste de 3 minutos
   - Problemas comuns
 
+- **[TROUBLESHOOTING_FIREBASE.md](./docs/TROUBLESHOOTING_FIREBASE.md)** 🔧
+  - Resolver erros de conexão
+  - Mensagens de erro e soluções
+  - Guia passo a passo
+
 - **[COMO_FUNCIONA_FIREBASE.md](./docs/COMO_FUNCIONA_FIREBASE.md)** 📖
   - Explicação completa
   - Como o sistema funciona
