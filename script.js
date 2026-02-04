@@ -3409,6 +3409,8 @@ function extractTimeFromISO(isoString) {
             console.log('[setupEventHandlers] Configurando listeners...');
             // Login form event listener - registered only once to prevent duplicate submissions
             document.getElementById('login-form').addEventListener('submit', handleLogin);
+            // Google login button event listener
+            document.getElementById('google-login-button').addEventListener('click', handleGoogleLogin);
             setupHeaderNavigation();
             
             // Sidebar toggle - only if element exists (legacy support)
@@ -3909,6 +3911,70 @@ function extractTimeFromISO(isoString) {
                 // Remove loading state on error
                 loginButton.classList.remove('loading');
                 loginButton.disabled = false;
+                showError(errorMessage, true);
+            }
+        }
+
+        // Google Login function
+        async function handleGoogleLogin(event) {
+            event.preventDefault();
+            console.log("[handleGoogleLogin] Iniciando login com Google...");
+
+            const googleButton = document.getElementById("google-login-button");
+            const errorBox = document.getElementById("login-error");
+
+            // Add loading state to button
+            googleButton.classList.add('loading');
+            googleButton.disabled = true;
+            errorBox.style.display = "none";
+
+            // CRITICAL FIX: Wait for Firebase to initialize if not ready yet
+            if (!fbAuth) {
+                console.warn("[handleGoogleLogin] Firebase Auth ainda não está disponível. Aguardando inicialização...");
+                
+                // Wait for Firebase to be ready (max 5 seconds)
+                const maxWaitTime = 5000;
+                const startTime = Date.now();
+                
+                while (!fbAuth && (Date.now() - startTime) < maxWaitTime) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+                
+                if (!fbAuth) {
+                    console.error("[handleGoogleLogin] Firebase Auth não está disponível após espera.");
+                    googleButton.classList.remove('loading');
+                    googleButton.disabled = false;
+                    showError("Firebase não inicializado. Por favor, verifique sua conexão com a internet e recarregue a página.", true);
+                    return;
+                }
+                
+                console.log("[handleGoogleLogin] Firebase Auth agora está disponível. Prosseguindo com login...");
+            }
+
+            try {
+                const provider = new window.firebase.GoogleAuthProvider();
+                const userCredential = await window.firebase.signInWithPopup(fbAuth, provider);
+                console.log("[handleGoogleLogin] Login com Google bem-sucedido:", userCredential.user.email);
+                // Keep button loading - will show loading overlay next
+                // onAuthStateChanged will handle the rest (redirect to dashboard)
+            } catch (error) {
+                console.error("[handleGoogleLogin] Erro no login com Google:", error);
+                let errorMessage = "Erro ao fazer login com Google.";
+                
+                // Provide more specific error messages
+                if (error.code === 'auth/popup-closed-by-user') {
+                    errorMessage = "Login cancelado pelo usuário.";
+                } else if (error.code === 'auth/popup-blocked') {
+                    errorMessage = "Pop-up bloqueado. Por favor, permita pop-ups para este site.";
+                } else if (error.code === 'auth/network-request-failed') {
+                    errorMessage = "Erro de conexão. Verifique sua internet.";
+                } else if (error.code === 'auth/cancelled-popup-request') {
+                    errorMessage = "Solicitação de login cancelada.";
+                }
+                
+                // Remove loading state on error
+                googleButton.classList.remove('loading');
+                googleButton.disabled = false;
                 showError(errorMessage, true);
             }
         }
