@@ -3999,6 +3999,10 @@ function extractTimeFromISO(isoString) {
         }
 
         // Google Login function with domain restriction
+        /**
+         * Handle Google login with domain validation
+         * @param {Event} [event] - Optional click event from button
+         */
         async function handleGoogleLogin(event) {
             event?.preventDefault?.();
             console.log("[handleGoogleLogin] Iniciando login com Google...");
@@ -4012,18 +4016,18 @@ function extractTimeFromISO(isoString) {
             errorBox.style.display = "none";
 
             // CRITICAL FIX: Wait for Firebase to initialize if not ready yet
-            if (!fbAuth || !window.firebase) {
+            if (!fbAuth) {
                 console.warn("[handleGoogleLogin] Firebase Auth ainda não está disponível. Aguardando inicialização...");
                 
                 // Wait for Firebase to be ready (max 5 seconds)
                 const maxWaitTime = 5000;
                 const startTime = Date.now();
                 
-                while ((!fbAuth || !window.firebase) && (Date.now() - startTime) < maxWaitTime) {
+                while (!fbAuth && (Date.now() - startTime) < maxWaitTime) {
                     await new Promise(resolve => setTimeout(resolve, 100));
                 }
                 
-                if (!fbAuth || !window.firebase) {
+                if (!fbAuth) {
                     console.error("[handleGoogleLogin] Firebase Auth não está disponível após espera.");
                     googleButton.classList.remove('loading');
                     googleButton.disabled = false;
@@ -4054,17 +4058,17 @@ function extractTimeFromISO(isoString) {
                 // onAuthStateChanged will handle the rest (redirect to dashboard)
             } catch (error) {
                 console.error("[handleGoogleLogin] Erro no login com Google:", error);
-                const code = error?.code || '';
+                const errorCode = error?.code || '';
                 let errorMessage = error?.message || 'Não foi possível entrar com Google. Tente novamente.';
                 
                 // Provide more specific error messages
-                if (code === 'auth/popup-closed-by-user') {
+                if (errorCode === 'auth/popup-closed-by-user') {
                     errorMessage = "Login cancelado. Tente novamente.";
-                } else if (code === 'auth/popup-blocked') {
+                } else if (errorCode === 'auth/popup-blocked') {
                     errorMessage = "Popup bloqueado. Permita popups e tente novamente.";
-                } else if (code === 'auth/network-request-failed') {
+                } else if (errorCode === 'auth/network-request-failed') {
                     errorMessage = "Falha de rede. Verifique sua conexão.";
-                } else if (code === 'auth/cancelled-popup-request') {
+                } else if (errorCode === 'auth/cancelled-popup-request') {
                     errorMessage = "Solicitação de login cancelada.";
                 }
                 
