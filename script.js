@@ -6,6 +6,18 @@
         let fbApp, fbAuth, fbDB;
         const dbListenerUnsubscribes = []; // Store unsubscribe functions for cleanup
         
+        // Domain restriction for Google login
+        const ALLOWED_DOMAIN = 'hc.fm.usp.br';
+        
+        /**
+         * Extract domain from email address
+         * @param {string} email - Email address
+         * @returns {string} - Domain part of the email
+         */
+        function getEmailDomain(email) {
+            return String(email || '').split('@')[1] || '';
+        }
+        
         // Initialize Firebase (will be called after window.firebase is available)
         // CRITICAL: Auth and Database are essential.
         function initializeFirebase() {
@@ -3986,9 +3998,13 @@ function extractTimeFromISO(isoString) {
             }
         }
 
-        // Google Login function
+        // Google Login function with domain restriction
+        /**
+         * Handle Google login with domain validation
+         * @param {Event} [event] - Optional click event from button
+         */
         async function handleGoogleLogin(event) {
-            event.preventDefault();
+            event?.preventDefault?.();
             console.log("[handleGoogleLogin] Iniciando login com Google...");
 
             const googleButton = document.getElementById("google-login-button");
@@ -4015,7 +4031,7 @@ function extractTimeFromISO(isoString) {
                     console.error("[handleGoogleLogin] Firebase Auth não está disponível após espera.");
                     googleButton.classList.remove('loading');
                     googleButton.disabled = false;
-                    showError("Firebase não inicializado. Por favor, verifique sua conexão com a internet e recarregue a página.", true);
+                    showError("Firebase não inicializado. Recarregue a página.", true);
                     return;
                 }
                 
@@ -4024,22 +4040,35 @@ function extractTimeFromISO(isoString) {
 
             try {
                 const provider = new window.firebase.GoogleAuthProvider();
-                const userCredential = await window.firebase.signInWithPopup(fbAuth, provider);
-                console.log("[handleGoogleLogin] Login com Google bem-sucedido:", userCredential.user.email);
+                // hd parameter is a hint for Google account picker (not enforcement)
+                provider.setCustomParameters({ hd: ALLOWED_DOMAIN });
+                
+                const cred = await window.firebase.signInWithPopup(fbAuth, provider);
+                console.log("[handleGoogleLogin] Login com Google bem-sucedido:", cred.user?.email);
+                
+                // Validate domain on client side
+                const domain = getEmailDomain(cred.user?.email);
+                if (domain !== ALLOWED_DOMAIN) {
+                    console.warn(`[handleGoogleLogin] Domínio não permitido: ${domain}`);
+                    await window.firebase.signOut(fbAuth);
+                    throw new Error(`Domínio não permitido. Use uma conta @${ALLOWED_DOMAIN}.`);
+                }
+                
                 // Keep button loading - will show loading overlay next
                 // onAuthStateChanged will handle the rest (redirect to dashboard)
             } catch (error) {
                 console.error("[handleGoogleLogin] Erro no login com Google:", error);
-                let errorMessage = "Erro ao fazer login com Google.";
+                const errorCode = error?.code || '';
+                let errorMessage = error?.message || 'Não foi possível entrar com Google. Tente novamente.';
                 
                 // Provide more specific error messages
-                if (error.code === 'auth/popup-closed-by-user') {
-                    errorMessage = "Login cancelado pelo usuário.";
-                } else if (error.code === 'auth/popup-blocked') {
-                    errorMessage = "Pop-up bloqueado. Por favor, permita pop-ups para este site.";
-                } else if (error.code === 'auth/network-request-failed') {
-                    errorMessage = "Erro de conexão. Verifique sua internet.";
-                } else if (error.code === 'auth/cancelled-popup-request') {
+                if (errorCode === 'auth/popup-closed-by-user') {
+                    errorMessage = "Login cancelado. Tente novamente.";
+                } else if (errorCode === 'auth/popup-blocked') {
+                    errorMessage = "Popup bloqueado. Permita popups e tente novamente.";
+                } else if (errorCode === 'auth/network-request-failed') {
+                    errorMessage = "Falha de rede. Verifique sua conexão.";
+                } else if (errorCode === 'auth/cancelled-popup-request') {
                     errorMessage = "Solicitação de login cancelada.";
                 }
                 
@@ -11419,18 +11448,7 @@ function renderTabEscala(escalas) {
                 // Setup Firebase Authentication State Observer
                 // This is the new entry point for the application
                 window.firebase.onAuthStateChanged(fbAuth, (user) => {
-                    if (user) {
-                        // User is signed in
-                        console.log('[onAuthStateChanged] Usuário autenticado:', user.email);
-                        
-                        // Update user menu with logged-in user info
-                        updateUserMenuInfo(user);
-                        
-                        // CRITICAL FIX: Always show dashboard-view (never student-detail-view)
-                        // This ensures that after login, the user always lands on the dashboard
-                        showView('dashboard-view');
-                        initDashboard();
-                    } else {
+                    if (!user) {
                         // User is signed out
                         console.log('[onAuthStateChanged] Usuário não autenticado. Mostrando login.');
                         
@@ -11484,6 +11502,29 @@ function renderTabEscala(escalas) {
                         // This ensures the app never gets stuck on a student detail page when logged out
                         showLoading(false); // Ensure loading overlay is hidden
                         showView('login-view');
+                    } else {
+                        // User is signed in - validate domain
+                        console.log('[onAuthStateChanged] Usuário autenticado:', user.email);
+                        
+                        // Domain validation: only allow @hc.fm.usp.br
+                        const domain = getEmailDomain(user.email);
+                        if (domain !== ALLOWED_DOMAIN) {
+                            console.warn(`[onAuthStateChanged] Domínio não permitido: ${domain}. Deslogando usuário.`);
+                            showError(`Domínio não permitido. Use uma conta @${ALLOWED_DOMAIN}.`, true);
+                            window.firebase.signOut(fbAuth);
+                            return;
+                        }
+                        
+                        // User is authenticated and domain is valid
+                        console.log('[onAuthStateChanged] Domínio válido. Mostrando dashboard.');
+                        
+                        // Update user menu with logged-in user info
+                        updateUserMenuInfo(user);
+                        
+                        // CRITICAL FIX: Always show dashboard-view (never student-detail-view)
+                        // This ensures that after login, the user always lands on the dashboard
+                        showView('dashboard-view');
+                        initDashboard();
                     }
                 });
             };
