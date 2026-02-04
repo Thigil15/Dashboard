@@ -1106,7 +1106,6 @@
                 linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 50%, #E8EFF7 100%);
             position: relative;
             overflow-x: hidden;
-            overflow-y: auto;
             opacity: 0;
             transition: opacity 0.5s ease;
         }
