@@ -39,6 +39,13 @@
             --info-cyan: #0891B2;
             --info-cyan-light: #CFFAFE;
             
+            /* Cores com transparência para login */
+            --incor-blue-500-60: rgba(30, 111, 217, 0.6);
+            --incor-blue-500-20: rgba(30, 111, 217, 0.2);
+            --incor-blue-500-10: rgba(30, 111, 217, 0.1);
+            --incor-blue-600-20: rgba(0, 84, 180, 0.2);
+            --incor-blue-600-10: rgba(0, 84, 180, 0.1);
+            
             /* === CORES BASE DO TEMA === */
             --body-bg: linear-gradient(135deg, #F0F4F8 0%, #E8EEF4 50%, #F5F8FB 100%);
             --body-bg-color: #F0F4F8;
@@ -456,7 +463,7 @@
             height: 6px;
             border-radius: 50%;
             background: linear-gradient(135deg, var(--incor-blue-400), var(--incor-blue-500));
-            box-shadow: 0 0 12px rgba(30, 111, 217, 0.6);
+            box-shadow: 0 0 12px var(--incor-blue-500-60);
             animation: pulse 2s ease-in-out infinite;
         }
 
@@ -523,7 +530,7 @@
             content: '';
             position: absolute;
             inset: 0;
-            background: linear-gradient(135deg, rgba(30, 111, 217, 0.1), rgba(0, 84, 180, 0.1));
+            background: linear-gradient(135deg, var(--incor-blue-500-10), var(--incor-blue-600-10));
             opacity: 0;
             transition: opacity 0.4s ease;
         }
@@ -546,7 +553,7 @@
             align-items: center;
             justify-content: center;
             border-radius: 12px;
-            background: linear-gradient(135deg, rgba(30, 111, 217, 0.2), rgba(0, 84, 180, 0.2));
+            background: linear-gradient(135deg, var(--incor-blue-500-20), var(--incor-blue-600-20));
             position: relative;
             z-index: 1;
         }
