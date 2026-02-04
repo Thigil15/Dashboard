@@ -3412,10 +3412,6 @@ function extractTimeFromISO(isoString) {
             setupHeaderNavigation();
             
             // Sidebar toggle - only if element exists (legacy support)
-            const sidebarToggle = document.getElementById('sidebar-toggle');
-            if (sidebarToggle) {
-                sidebarToggle.addEventListener('click', toggleSidebar); 
-            }
             
             document.getElementById('back-to-dashboard').addEventListener('click', (e) => {
                 e.preventDefault();
@@ -4475,12 +4471,6 @@ function extractTimeFromISO(isoString) {
             if (headerNav) {
                 headerNav.addEventListener('click', (e) => handleNavLinkClick(e, '.header-nav-link'));
             }
-            
-            // Legacy sidebar support (backward compatibility)
-            const sidebar = document.querySelector('#app-sidebar nav');
-            if (sidebar) {
-                sidebar.addEventListener('click', (e) => handleNavLinkClick(e, '.sidebar-link'));
-            }
         }
         
         // Keep legacy function name for compatibility
@@ -4503,8 +4493,8 @@ function extractTimeFromISO(isoString) {
                 studentEmail: null
             });
             
-            // Update all navigation links (both header and legacy sidebar)
-            document.querySelectorAll('.header-nav-link, .sidebar-link').forEach(l => {
+            // Update all navigation links (header only - sidebar removed)
+            document.querySelectorAll('.header-nav-link').forEach(l => {
                 l.classList.toggle('active', l.getAttribute('data-tab') === tabName);
             });
             
