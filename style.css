@@ -1118,7 +1118,11 @@
         }
         
         .dashboard-layout-modern::after {
-            content: none;
+            content: '';
+            position: absolute;
+            inset: 0 0 auto;
+            height: 1px;
+            background: transparent;
         }
         
         .dashboard-layout-modern[style*="display: flex"],
@@ -9984,9 +9988,7 @@
 .dashboard-hero::after {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
+    inset: 0 0 auto;
     height: 3px;
     background: linear-gradient(90deg, var(--incor-blue-600), var(--incor-blue-500), var(--incor-red-500));
     opacity: 0.8;
