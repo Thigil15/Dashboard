@@ -898,11 +898,6 @@ function onOpen() {
  * 📊 FUNÇÕES DE INFORMAÇÃO E STATUS
  **********************************************/
 
-/**
- * Calcula o tempo decorrido desde um timestamp
- * @param {number} timestamp - Timestamp em milissegundos
- * @returns {string} Tempo decorrido formatado
- */
 /**********************************************
  * 🔄 FUNÇÕES DE SINCRONIZAÇÃO ESPECÍFICAS
  **********************************************/
