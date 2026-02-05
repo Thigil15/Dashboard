@@ -214,39 +214,30 @@ function verificarStatusGatilhos() {
   const gatilhos = ScriptApp.getProjectTriggers();
   let onEditAtivo = false;
   let onChangeAtivo = false;
-  let diarioAtivo = false;
   
   for (const t of gatilhos) {
     const funcao = t.getHandlerFunction();
+    if (funcao === 'onEditPontoInstalavel') onEditAtivo = true;
+    if (funcao === 'onChangePontoInstalavel') onChangeAtivo = true;
   }
   
   Logger.log("📊 STATUS DOS GATILHOS:");
   Logger.log("  • onEdit (auto sync): " + (onEditAtivo ? "✅ ATIVO" : "❌ INATIVO"));
   Logger.log("  • onChange (auto sync): " + (onChangeAtivo ? "✅ ATIVO" : "❌ INATIVO"));
-  Logger.log("  • Diário (21h): " + (diarioAtivo ? "✅ ATIVO" : "❌ INATIVO"));
-  
-  const ultimaSync = getUltimaSync();
-  let ultimaSyncStr = "Nunca sincronizado";
-  if (ultimaSync > 0) {
-    const dataUltimaSync = new Date(ultimaSync);
-    ultimaSyncStr = dataUltimaSync.toLocaleString("pt-BR");
-    Logger.log("  • Última sync: " + ultimaSyncStr);
-  }
   
   // Mostra alerta visual para o usuário
   const mensagem = 
     "📊 STATUS DOS GATILHOS\n\n" +
     "• Sincronização automática (onEdit): " + (onEditAtivo ? "✅ ATIVO" : "❌ INATIVO") + "\n" +
-    "• Sincronização automática (onChange): " + (onChangeAtivo ? "✅ ATIVO" : "❌ INATIVO") + "\n" +
-    "• Envio diário às 21h: " + (diarioAtivo ? "✅ ATIVO" : "❌ INATIVO") + "\n\n" +
-    "📅 Última sincronização: " + ultimaSyncStr;
+    "• Sincronização automática (onChange): " + (onChangeAtivo ? "✅ ATIVO" : "❌ INATIVO") + "\n\n" +
+    "💡 Os gatilhos sincronizam automaticamente os pontos para as escalas\n" +
+    "quando você edita ou adiciona dados na planilha.";
   
   SpreadsheetApp.getUi().alert("⚙️ Status dos Gatilhos", mensagem, SpreadsheetApp.getUi().ButtonSet.OK);
   
   return {
     onEdit: onEditAtivo,
-    onChange: onChangeAtivo,
-    diario: diarioAtivo
+    onChange: onChangeAtivo
   };
 }
 
@@ -256,6 +247,7 @@ function verificarStatusGatilhos() {
  **********************************************/
 
 // Nomes das funções de gatilhos para evitar duplicação
+// Usado em ativarTodosGatilhosAutomaticos() e desativarTodosGatilhosAutomaticos()
 const TRIGGER_FUNCTIONS = [
   'onEditPontoInstalavel', 'onChangePontoInstalavel',
 ];
