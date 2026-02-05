@@ -1,5 +1,8 @@
 {
   "rules": {
+    ".info": {
+      ".read": true
+    },
     "cache": {
       ".read": "auth != null",
       ".write": false,

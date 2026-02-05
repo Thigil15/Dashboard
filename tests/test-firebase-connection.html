@@ -178,25 +178,25 @@
                     throw new Error('Não conectado ao Firebase');
                 }
                 
-                // Test 5: Check if exportAll exists
-                addTestResult('5. Verificar estrutura /exportAll', 'pending');
-                const exportAllRef = window.firebaseTest.ref(db, 'exportAll');
-                const exportAllSnapshot = await window.firebaseTest.get(exportAllRef);
+                // Test 5: Check if cache exists (new architecture)
+                addTestResult('5. Verificar estrutura /cache', 'pending');
+                const cacheRef = window.firebaseTest.ref(db, 'cache');
+                const cacheSnapshot = await window.firebaseTest.get(cacheRef);
                 
-                if (exportAllSnapshot.exists()) {
-                    const data = exportAllSnapshot.val();
+                if (cacheSnapshot.exists()) {
+                    const data = cacheSnapshot.val();
                     const keys = Object.keys(data || {});
-                    addTestResult('5. Verificar estrutura /exportAll', 'success', 
+                    addTestResult('5. Verificar estrutura /cache', 'success', 
                         `Encontrados ${keys.length} caminhos de dados`, 
                         { caminhos: keys.slice(0, 10) });
                 } else {
-                    addTestResult('5. Verificar estrutura /exportAll', 'error', 
-                        '⚠️ O caminho /exportAll não existe ainda. O App Script precisa enviar dados primeiro.');
+                    addTestResult('5. Verificar estrutura /cache', 'error', 
+                        '⚠️ O caminho /cache não existe ainda. O App Script precisa enviar dados primeiro.');
                 }
                 
                 // Test 6: Check for Alunos data
                 addTestResult('6. Verificar dados de Alunos', 'pending');
-                const alunosRef = window.firebaseTest.ref(db, 'exportAll/Alunos/dados');
+                const alunosRef = window.firebaseTest.ref(db, 'cache/Alunos/registros');
                 const alunosSnapshot = await window.firebaseTest.get(alunosRef);
                 
                 if (alunosSnapshot.exists()) {
