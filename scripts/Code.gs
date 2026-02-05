@@ -72,7 +72,7 @@ function doGet(e) {
       if (!aba) {
         return ContentService.createTextOutput(JSON.stringify({
           erro: "Aba não encontrada",
-          abasolicitada: abaEspecifica
+          abaSolicitada: abaEspecifica
         })).setMimeType(ContentService.MimeType.JSON);
       }
       

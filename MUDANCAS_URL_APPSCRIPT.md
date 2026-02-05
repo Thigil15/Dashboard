@@ -225,7 +225,7 @@ Nenhuma mudança visível! O site funciona da mesma forma:
 - ✅ Sintaxe JavaScript válida
 - ✅ Estrutura de dados compatível
 - ✅ Funções auxiliares mantidas
-- ✅ Page de teste criada
+- ✅ Página de teste criada
 - ⏳ Teste com Apps Script real (requer deployment pelo usuário)
 
 ## Suporte
