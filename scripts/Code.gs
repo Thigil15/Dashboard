@@ -256,7 +256,7 @@ function verificarStatusGatilhos() {
  **********************************************/
 
 // Nomes das funções de gatilhos para evitar duplicação
-var TRIGGER_FUNCTIONS = [
+const TRIGGER_FUNCTIONS = [
   'onEditPontoInstalavel', 'onChangePontoInstalavel',
 ];
 
@@ -891,8 +891,8 @@ function syncAllPontos(){
  * Menu personalizado ao abrir a planilha
  */
 function onOpen() {
-  var ui = SpreadsheetApp.getUi();
-  // Menu pode ser expandido conforme necessário
+  // Menu pode ser adicionado aqui conforme necessário
+  // Por exemplo: SpreadsheetApp.getUi().createMenu('Menu').addItem('Item', 'funcao').addToUi();
 }
 
 /**********************************************
@@ -1042,17 +1042,14 @@ function mostrarAjuda() {
   var ui = SpreadsheetApp.getUi();
   
   var mensagem = 
-    '📋 GUIA DO MENU DE GESTÃO DE PONTOS\n\n' +
-    '═══════════════════════════════════════\n\n' +
-    '📊 VER STATUS:\n' +
-    '• Ver Status dos Gatilhos - Mostra quais automações estão ativas\n\n' +
+    '📋 GUIA DE SINCRONIZAÇÃO DE PONTOS\n\n' +
     '═══════════════════════════════════════\n\n' +
     '🔄 SINCRONIZAR PONTOS:\n' +
     '• Sincroniza pontos de PontoPratica e PontoTeoria para Escalas\n' +
     '• Evita duplicatas automaticamente\n\n' +
     '═══════════════════════════════════════\n\n' +
     '⚙️ CONFIGURAR GATILHOS:\n' +
-    '• Ativar sincronização automática - Ativa TUDO automaticamente:\n' +
+    '• Ativar sincronização automática:\n' +
     '  → Pontos para Escalas\n' +
     '  → Funciona mesmo com a planilha FECHADA!\n' +
     '• Desativar - Remove todas as automações\n' +
