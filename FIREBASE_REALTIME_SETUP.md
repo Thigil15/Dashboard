@@ -66,6 +66,26 @@ Acesse o Firebase Console:
 - `".indexOn"` - Otimiza consultas por campos específicos
 - Regra padrão (`.read` e `.write` no root) protege outros caminhos
 
+**⚠️ Considerações de Segurança:**
+
+Esta configuração permite escritas públicas no caminho `/exportAll`. Isso é **aceitável neste contexto** porque:
+
+1. ✅ **URL não é pública**: A URL do Firebase não está exposta publicamente
+2. ✅ **Apps Script é confiável**: Apenas você tem acesso ao script no Google Sheets
+3. ✅ **Dados não são sensíveis críticos**: São dados educacionais internos
+4. ✅ **Leituras protegidas**: Usuários precisam estar autenticados para visualizar
+5. ✅ **Escopo limitado**: Apenas `/exportAll` permite escritas, outros caminhos são protegidos
+
+**⚠️ Para ambientes de alta segurança:**
+
+Se você precisa de segurança máxima, considere usar Firebase Admin SDK no Apps Script:
+- Requer configuração de Service Account
+- Permite autenticação com credenciais do servidor
+- Mais complexo de implementar
+- Veja: https://firebase.google.com/docs/admin/setup
+
+Para a maioria dos casos de uso educacional/interno, a configuração atual é adequada e muito mais simples.
+
 ### Passo 2: Verificar Autenticação no Website
 
 O website já está configurado para usar Firebase Authentication. Os usuários devem:
