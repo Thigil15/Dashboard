@@ -1597,6 +1597,7 @@
         // Import Firebase configuration
         import firebaseConfigModule from './firebase-config.js';
         const firebaseConfig = firebaseConfigModule.firebaseConfig || firebaseConfigModule;
+        const appsScriptConfig = firebaseConfigModule.appsScriptConfig || { dataURL: "" };
 
         // Make Firebase functions globally available
         window.firebase = {
@@ -1611,7 +1612,8 @@
             get,
             set,
             push,
-            firebaseConfig
+            firebaseConfig,
+            appsScriptConfig
         };
         
         // Dispatch custom event to signal Firebase SDK is ready

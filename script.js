@@ -7,7 +7,7 @@
         const dbListenerUnsubscribes = []; // Store unsubscribe functions for cleanup
         
         // Initialize Firebase (will be called after window.firebase is available)
-        // CRITICAL: Auth and Database are essential.
+        // NOTE: Only Auth is required now. Database is optional (data comes from Apps Script URL)
         function initializeFirebase() {
             if (!window.firebase) {
                 console.error('[Firebase] window.firebase not available yet');
@@ -15,7 +15,7 @@
             }
             
             try {
-                // Step 1: Initialize Firebase App (required for everything)
+                // Step 1: Initialize Firebase App (required for Auth)
                 fbApp = window.firebase.initializeApp(window.firebase.firebaseConfig);
                 console.log('[Firebase] App initialized successfully');
                 
@@ -23,15 +23,20 @@
                 fbAuth = window.firebase.getAuth(fbApp);
                 console.log('[Firebase] Auth initialized successfully');
                 
-                // Step 3: Initialize Realtime Database (REQUIRED - site data won't load without this)
-                fbDB = window.firebase.getDatabase(fbApp);
-                console.log('[Firebase] Realtime Database initialized successfully');
+                // Step 3: Initialize Realtime Database (OPTIONAL - kept for compatibility but not used)
+                try {
+                    fbDB = window.firebase.getDatabase(fbApp);
+                    console.log('[Firebase] Realtime Database initialized (not used for data loading)');
+                } catch (dbError) {
+                    console.warn('[Firebase] Database initialization failed (not critical):', dbError);
+                    fbDB = null;
+                }
                 
-                console.log('[Firebase] Core services (Auth + Database) initialized successfully');
+                console.log('[Firebase] Auth initialized successfully - ready for login');
                 return true;
             } catch (error) {
                 console.error('[Firebase] Critical initialization error:', error);
-                console.error('[Firebase] Auth or Database failed to initialize - login will not work.');
+                console.error('[Firebase] Auth failed to initialize - login will not work.');
                 return false;
             }
         }
@@ -91,7 +96,220 @@
         }
         
         // ====================================================================
-        // FIREBASE REALTIME DATABASE LISTENERS
+        // URL-BASED DATA FETCHING (Apps Script)
+        // ====================================================================
+        
+        /**
+         * Fetch all data from Apps Script URL
+         * This is the new approach that fetches JSON directly from Google Sheets
+         */
+        async function fetchDataFromURL() {
+            console.log('[fetchDataFromURL] Buscando dados da URL do Apps Script...');
+            
+            const dataURL = window.firebase.appsScriptConfig?.dataURL;
+            if (!dataURL || dataURL.includes('YOUR_DEPLOYMENT_ID')) {
+                console.error('[fetchDataFromURL] URL do Apps Script não configurada.');
+                console.error('[fetchDataFromURL] Configure a URL em firebase-config.js');
+                showError('URL do Apps Script não configurada. Verifique firebase-config.js', false);
+                return false;
+            }
+            
+            try {
+                console.log('[fetchDataFromURL] Fazendo requisição para:', dataURL);
+                const response = await fetch(dataURL);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('[fetchDataFromURL] ✅ Dados recebidos:', {
+                    abas: Object.keys(data.cache || {}).length,
+                    metadados: data.metadados
+                });
+                
+                // Process the data - map it to appState
+                if (data.cache) {
+                    // Process each sheet data
+                    if (data.cache.Alunos) {
+                        const alunosData = data.cache.Alunos.registros || [];
+                        appState.alunos = alunosData;
+                        appState.dataLoadingState.alunos = true;
+                        console.log(`[fetchDataFromURL] ✅ Alunos carregados: ${alunosData.length} registros`);
+                    }
+                    
+                    if (data.cache.AusenciasReposicoes) {
+                        const ausRepData = data.cache.AusenciasReposicoes.registros || [];
+                        appState.ausenciasReposicoes = normalizeAusenciasReposicoes(ausRepData);
+                        appState.dataLoadingState.ausenciasReposicoes = true;
+                        console.log(`[fetchDataFromURL] ✅ Ausências/Reposições carregadas: ${ausRepData.length} registros`);
+                    }
+                    
+                    if (data.cache.Ausencias) {
+                        const ausData = data.cache.Ausencias.registros || [];
+                        appState.ausencias = ausData.map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
+                        appState.dataLoadingState.ausencias = true;
+                        console.log(`[fetchDataFromURL] ✅ Ausências carregadas: ${ausData.length} registros`);
+                    }
+                    
+                    if (data.cache.Reposicoes) {
+                        const repData = data.cache.Reposicoes.registros || [];
+                        appState.reposicoes = repData.map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
+                        appState.dataLoadingState.reposicoes = true;
+                        console.log(`[fetchDataFromURL] ✅ Reposições carregadas: ${repData.length} registros`);
+                    }
+                    
+                    if (data.cache.NotasTeoricas) {
+                        const notasData = data.cache.NotasTeoricas.registros || [];
+                        const normalized = notasData.map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
+                        appState.notasTeoricas = { registros: normalized };
+                        appState.dataLoadingState.notasTeoricas = true;
+                        console.log(`[fetchDataFromURL] ✅ Notas Teóricas carregadas: ${notasData.length} registros`);
+                    }
+                    
+                    if (data.cache.Ponto) {
+                        const pontoData = data.cache.Ponto.registros || [];
+                        const processed = pontoData.map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
+                        appState.pontoStaticRows = processed;
+                        appState.dataLoadingState.pontoStaticRows = true;
+                        
+                        // Process ponto data immediately
+                        try {
+                            extractAndPopulatePontoDates(processed);
+                            updatePontoHojeMap();
+                            console.log('[fetchDataFromURL] ✅ Ponto processado:', {
+                                datas: pontoState.dates.length,
+                                registros: pontoState.byDate.size
+                            });
+                        } catch (error) {
+                            console.error('[fetchDataFromURL] ❌ Erro ao processar ponto:', error);
+                        }
+                        
+                        console.log(`[fetchDataFromURL] ✅ Ponto carregado: ${pontoData.length} registros`);
+                    }
+                    
+                    // Process Escalas
+                    const escalasData = {};
+                    let maxScaleNumber = 0;
+                    const allKeys = Object.keys(data.cache);
+                    const escalaKeys = allKeys.filter(key => key.match(/^Escala(Teoria|Pratica)?\d+$/i));
+                    
+                    escalaKeys.forEach(key => {
+                        const escalaData = data.cache[key];
+                        const scaleMatch = key.match(/^Escala(Teoria|Pratica)?(\d+)$/i);
+                        if (scaleMatch) {
+                            const scaleNumber = parseInt(scaleMatch[2], 10);
+                            if (scaleNumber > maxScaleNumber) {
+                                maxScaleNumber = scaleNumber;
+                            }
+                        }
+                        
+                        if (escalaData && escalaData.registros) {
+                            const alunos = escalaData.registros || [];
+                            
+                            // Extract date headers
+                            const headersDay = [];
+                            const dayKeyRegex = /^(\d{1,2})_(\d{2})(?:_(\d{2}))?$/;
+                            
+                            if (alunos.length > 0 && alunos[0]) {
+                                const firstRow = alunos[0];
+                                const dayKeyMap = new Map();
+                                
+                                Object.keys(firstRow).forEach((rowKey) => {
+                                    const match = rowKey.match(dayKeyRegex);
+                                    if (match) {
+                                        const day = match[1].padStart(2, '0');
+                                        const month = match[2].padStart(2, '0');
+                                        const yearSuffix = match[3];
+                                        const pretty = yearSuffix ? `${day}/${month}/${yearSuffix}` : `${day}/${month}`;
+                                        if (!dayKeyMap.has(rowKey)) {
+                                            dayKeyMap.set(rowKey, pretty);
+                                        }
+                                    }
+                                });
+                                
+                                const uniqueDates = Array.from(new Set(dayKeyMap.values()));
+                                headersDay.push(...uniqueDates);
+                                
+                                alunos.forEach((row) => {
+                                    if (row && typeof row === 'object') {
+                                        dayKeyMap.forEach((pretty, normalizedKey) => {
+                                            if (typeof row[pretty] === 'undefined') {
+                                                row[pretty] = row[normalizedKey];
+                                            }
+                                        });
+                                    }
+                                });
+                            }
+                            
+                            escalasData[key] = {
+                                alunos: alunos,
+                                headersDay: headersDay
+                            };
+                            
+                            console.log(`[fetchDataFromURL] ✅ Escala ${key} carregada: ${alunos.length} alunos`);
+                        }
+                    });
+                    
+                    if (Object.keys(escalasData).length > 0) {
+                        appState.escalas = escalasData;
+                        appState.currentEscalaNumber = maxScaleNumber;
+                        appState.dataLoadingState.escalas = true;
+                        
+                        // Extract ponto from escalas
+                        try {
+                            extractPontoFromEscalas(escalasData);
+                        } catch (error) {
+                            console.error('[fetchDataFromURL] Erro ao extrair ponto das escalas:', error);
+                        }
+                        
+                        console.log(`[fetchDataFromURL] ✅ Escalas carregadas: ${Object.keys(escalasData).length} escalas`);
+                    }
+                }
+                
+                // Check and hide loading overlay if critical data is loaded
+                checkAndHideLoadingOverlay();
+                
+                return true;
+                
+            } catch (error) {
+                console.error('[fetchDataFromURL] ❌ Erro ao buscar dados:', error);
+                showError(`Erro ao carregar dados: ${error.message}`, false);
+                return false;
+            }
+        }
+        
+        /**
+         * Setup periodic refresh for URL-based data
+         * Since we don't have real-time updates, we need to poll periodically
+         */
+        let dataRefreshInterval = null;
+        
+        function startPeriodicDataRefresh(intervalMinutes = 5) {
+            console.log(`[startPeriodicDataRefresh] Iniciando refresh automático a cada ${intervalMinutes} minutos`);
+            
+            // Clear any existing interval
+            if (dataRefreshInterval) {
+                clearInterval(dataRefreshInterval);
+            }
+            
+            // Set up new interval
+            dataRefreshInterval = setInterval(() => {
+                console.log('[startPeriodicDataRefresh] Atualizando dados...');
+                fetchDataFromURL();
+            }, intervalMinutes * 60 * 1000);
+        }
+        
+        function stopPeriodicDataRefresh() {
+            if (dataRefreshInterval) {
+                clearInterval(dataRefreshInterval);
+                dataRefreshInterval = null;
+                console.log('[stopPeriodicDataRefresh] Refresh automático desativado');
+            }
+        }
+        
+        // ====================================================================
+        // FIREBASE REALTIME DATABASE LISTENERS (LEGACY - NOT USED)
         // ====================================================================
         
         /**
@@ -2149,39 +2367,27 @@ function extractTimeFromISO(isoString) {
             try {
                 showLoading(true);
                 
-                // Check Firebase connection first
-                const connectionStatus = await checkFirebaseConnection();
-                
-                if (!connectionStatus.connected) {
-                    showLoading(false);
-                    let errorMsg = `Erro de Conexão: ${connectionStatus.error}.`;
-                    // Only suggest internet check if it's not an initialization error
-                    if (!connectionStatus.error.includes('inicializado')) {
-                        errorMsg += ' Verifique sua conexão com a internet e tente novamente.';
-                    }
-                    showError(errorMsg, false);
-                    console.error('[initDashboard] Falha na conexão com Firebase:', connectionStatus.error);
-                    return;
-                }
-                
-                if (!connectionStatus.hasData) {
-                    showLoading(false);
-                    const errorMsg = 'Os dados não foram encontrados no Firebase. Por favor, execute o Google Apps Script para exportar os dados da planilha para o Firebase.';
-                    showError(errorMsg, false);
-                    console.error('[initDashboard] Dados não encontrados:', connectionStatus.error);
-                    console.error('[initDashboard] Execute o script de exportação no Google Sheets para enviar os dados.');
-                    return;
-                }
-                
-                console.log('[initDashboard] ✅ Conexão verificada, iniciando carregamento de dados...');
+                // URL-based data loading (no Firebase connection check needed)
+                console.log('[initDashboard] ✅ Iniciando carregamento de dados via URL...');
                 
                 // Reset data loading state
                 Object.keys(appState.dataLoadingState).forEach(key => {
                     appState.dataLoadingState[key] = false;
                 });
                 
-                // Setup database listeners - data will arrive asynchronously
-                setupDatabaseListeners();
+                // Fetch data from Apps Script URL
+                const dataLoaded = await fetchDataFromURL();
+                
+                if (!dataLoaded) {
+                    showLoading(false);
+                    const errorMsg = 'Erro ao carregar dados do Apps Script. Verifique a configuração da URL em firebase-config.js';
+                    showError(errorMsg, false);
+                    console.error('[initDashboard] Falha ao carregar dados da URL');
+                    return;
+                }
+                
+                // Start periodic refresh (every 5 minutes)
+                startPeriodicDataRefresh(5);
                 
                 // Check for saved navigation state to restore on refresh
                 const savedState = loadNavigationState();
