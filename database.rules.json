@@ -1,0 +1,11 @@
+{
+  "rules": {
+    "exportAll": {
+      ".read": "auth != null",
+      ".write": true,
+      ".indexOn": ["_rowId", "EmailHC", "SerialHC"]
+    },
+    ".read": "auth != null",
+    ".write": false
+  }
+}
