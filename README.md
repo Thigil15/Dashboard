@@ -2,48 +2,48 @@
 
 Dashboard interativo para gerenciamento de alunos, notas, faltas e escalas do programa de ensino de fisioterapia.
 
-## ⚠️ AÇÃO NECESSÁRIA - Configuração Firebase
-
-**Se você está vendo o erro "Invalid token in path"**, siga o guia:
-
-📋 **[CONFIGURAR_FIREBASE.md](./CONFIGURAR_FIREBASE.md)** - Guia rápido (5 minutos)
-
-Este guia irá configurar as regras do Firebase para:
-- ✅ Permitir que Apps Script envie dados
-- ✅ Habilitar atualizações em tempo real
-- ✅ Resolver o erro "Invalid token in path"
-
 ## ✨ Status Atual
 
-✅ **Sistema 100% funcional e integrado com Firebase!**
+✅ **Sistema 100% funcional e integrado com Google Apps Script!**
 
-O site está **completamente configurado** para ler dados do Firebase Realtime Database em tempo real.
+O site está **completamente configurado** para ler dados do Google Sheets através do Apps Script em tempo real, com atualização automática a cada 5 minutos.
 
 ---
 
 ## 🚀 Como Usar
 
-### Início Rápido (5 minutos)
+### Início Rápido (2 minutos)
 
-1. **Abra o arquivo de teste**
-   ```
-   Abra: tests/test-firebase-connection.html
-   ```
+1. **Configure a URL do Apps Script** (se ainda não configurou)
+   - Abra: `firebase-config.js`
+   - A URL já está configurada: https://script.google.com/macros/s/AKfycbx6x-I0PCc1Ym8vx7VYyXmwvx3mY-9i3P16z6-5sJB2v728SlzENKnwy-4uAIHIiDLxGg/exec
 
-2. **Execute os testes**
-   - Clique em "Executar Testes"
-   - Veja se todos ficam verdes ✅
-
-3. **Configure usuários** (se ainda não tiver)
+2. **Configure usuários no Firebase** (apenas para login)
    - Acesse: https://console.firebase.google.com/
    - Projeto: dashboardalunos
    - Authentication → Users → Add user
 
-4. **Acesse o site**
+3. **Acesse o site**
    ```
    Abra: index.html
    Faça login com as credenciais do Firebase
    ```
+
+---
+
+## 🏗️ Arquitetura
+
+```
+Google Sheets (Apps Script)
+    ↓
+    Gera JSON
+    ↓
+Website (fetch a cada 5 minutos) ⚡
+    ↓
+Firebase Auth (apenas login) 🔒
+```
+
+**Nota:** Firebase é usado APENAS para autenticação (login). Todos os dados vêm do Google Apps Script.
 
 ---
 
