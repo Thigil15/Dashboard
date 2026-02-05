@@ -57,18 +57,18 @@
                 if (isConnected) {
                     console.log('[checkFirebaseConnection] ✅ Conectado ao Firebase');
                     
-                    // Also check if exportAll path exists
-                    const exportAllRef = window.firebase.ref(fbDB, 'exportAll');
-                    const exportAllSnapshot = await window.firebase.get(exportAllRef);
+                    // Verifica se o caminho /cache existe (nova arquitetura)
+                    const cacheRef = window.firebase.ref(fbDB, 'cache');
+                    const cacheSnapshot = await window.firebase.get(cacheRef);
                     
-                    if (exportAllSnapshot.exists()) {
-                        const data = exportAllSnapshot.val();
+                    if (cacheSnapshot.exists()) {
+                        const data = cacheSnapshot.val();
                         const keys = Object.keys(data || {});
-                        console.log(`[checkFirebaseConnection] ✅ Caminho /exportAll encontrado com ${keys.length} child nodes:`, keys.slice(0, 10).join(', '));
+                        console.log(`[checkFirebaseConnection] ✅ Caminho /cache encontrado com ${keys.length} abas:`, keys.slice(0, 10).join(', '));
                         return { connected: true, hasData: true, dataKeys: keys };
                     } else {
-                        console.warn('[checkFirebaseConnection] ⚠️ Caminho /exportAll não existe');
-                        return { connected: true, hasData: false, error: 'Caminho /exportAll não encontrado no Firebase' };
+                        console.warn('[checkFirebaseConnection] ⚠️ Caminho /cache não existe');
+                        return { connected: true, hasData: false, error: 'Caminho /cache não encontrado no Firebase. Execute o Apps Script para sincronizar os dados.' };
                     }
                 } else {
                     console.error('[checkFirebaseConnection] ❌ Não conectado ao Firebase');
@@ -109,13 +109,14 @@
             // Cancel any existing listeners first (cleanup)
             cancelAllDatabaseListeners();
             
-            // Map database paths to appState keys
+            // Mapeamento dos caminhos do RTDB para chaves do appState
+            // NOVA ARQUITETURA: lê de /cache/* (espelho gerenciado por Cloud Function)
             const pathMappings = [
-                { path: 'exportAll/Alunos/dados', stateKey: 'alunos', processor: (data) => data || [] },
-                { path: 'exportAll/AusenciasReposicoes/dados', stateKey: 'ausenciasReposicoes', processor: (data) => normalizeAusenciasReposicoes(data || []) },
-                { path: 'exportAll/Ausencias/dados', stateKey: 'ausencias', processor: (data) => (data || []).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row) },
-                { path: 'exportAll/Reposicoes/dados', stateKey: 'reposicoes', processor: (data) => (data || []).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row) },
-                { path: 'exportAll/NotasTeoricas/dados', stateKey: 'notasTeoricas', processor: (data) => {
+                { path: 'cache/Alunos/registros', stateKey: 'alunos', processor: (data) => data || [] },
+                { path: 'cache/AusenciasReposicoes/registros', stateKey: 'ausenciasReposicoes', processor: (data) => normalizeAusenciasReposicoes(data || []) },
+                { path: 'cache/Ausencias/registros', stateKey: 'ausencias', processor: (data) => (data || []).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row) },
+                { path: 'cache/Reposicoes/registros', stateKey: 'reposicoes', processor: (data) => (data || []).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row) },
+                { path: 'cache/NotasTeoricas/registros', stateKey: 'notasTeoricas', processor: (data) => {
                     // Handle different possible data structures from Firebase
                     let registros = [];
                     if (!data) {
@@ -150,7 +151,7 @@
                     
                     return { registros: normalized };
                 }},
-                { path: 'exportAll/Ponto/dados', stateKey: 'pontoStaticRows', processor: (data) => {
+                { path: 'cache/Ponto/registros', stateKey: 'pontoStaticRows', processor: (data) => {
                     const processed = (data || []).map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
                     
                     // Log sample of available fields from first row for debugging
@@ -199,7 +200,7 @@
                 // directly into EscalaPratica/EscalaTeoria tabs. See syncPontoToEscalas_() function.
                 // This website reads ONLY from EscalaPratica/EscalaTeoria to avoid duplicates
                 // Escalas - may need special handling
-                { path: 'exportAll', stateKey: 'escalas', processor: (data) => {
+                { path: 'cache', stateKey: 'escalas', processor: (data) => {
                     // Extract escala sheets (Escala1, Escala2, etc.)
                     const escalasData = {};
                     let maxScaleNumber = 0;
@@ -439,9 +440,9 @@
          */
         function setupEscalaAtualListeners() {
             const escalaAtualPaths = [
-                { path: 'exportAll/EscalaAtualEnfermaria/dados', stateKey: 'escalaAtualEnfermaria' },
-                { path: 'exportAll/EscalaAtualUTI/dados', stateKey: 'escalaAtualUTI' },
-                { path: 'exportAll/EscalaAtualCardiopediatria/dados', stateKey: 'escalaAtualCardiopediatria' }
+                { path: 'cache/EscalaAtualEnfermaria/registros', stateKey: 'escalaAtualEnfermaria' },
+                { path: 'cache/EscalaAtualUTI/registros', stateKey: 'escalaAtualUTI' },
+                { path: 'cache/EscalaAtualCardiopediatria/registros', stateKey: 'escalaAtualCardiopediatria' }
             ];
             
             escalaAtualPaths.forEach(({ path, stateKey }) => {
@@ -815,7 +816,7 @@
          * [SISTEMA ÚNICO] Setup listeners for dynamic practical grades sheets com validação
          */
         function setupNotasPraticasListeners() {
-            const exportAllRef = window.firebase.ref(fbDB, 'exportAll');
+            const exportAllRef = window.firebase.ref(fbDB, 'cache');
             
             const unsubscribe = window.firebase.onValue(exportAllRef, (snapshot) => {
                 try {
@@ -1842,7 +1843,7 @@ const appState = {
     reposicoes: [],
     notasTeoricas: {},
     notasPraticas: {},
-    pontoStaticRows: [], // Legacy ponto data from exportAll/Ponto/dados
+    pontoStaticRows: [], // Legacy ponto data from cache/Ponto/registros
     // NOTE: pontoPraticaRows and pontoTeoriaRows are NOT used for data display
     // They only serve for spreadsheet control - all data comes from EscalaPratica/EscalaTeoria
     pontoPraticaRows: [], // DEPRECATED: kept for backwards compatibility
@@ -3246,7 +3247,7 @@ function extractTimeFromISO(isoString) {
                 }
                 
                 // Get reference to Ausencias data path
-                const ausenciasRef = window.firebase.ref(fbDB, 'exportAll/Ausencias/dados');
+                const ausenciasRef = window.firebase.ref(fbDB, 'cache/Ausencias/registros');
                 
                 // Push new absence to the array
                 const newAusenciaRef = window.firebase.push(ausenciasRef);
@@ -7984,7 +7985,7 @@ function extractTimeFromISO(isoString) {
                                  <p class="font-semibold mb-2">Possíveis soluções:</p>
                                  <ol class="list-decimal list-inside space-y-1">
                                      <li>Execute o Google Apps Script para enviar dados para o Firebase</li>
-                                     <li>Verifique se há dados em <code class="bg-white px-1 py-0.5 rounded">/exportAll/Alunos/dados</code> no Firebase Console</li>
+                                     <li>Verifique se há dados em <code class="bg-white px-1 py-0.5 rounded">/cache/Alunos/registros</code> no Firebase Console</li>
                                      <li>Verifique as regras do Firebase Realtime Database</li>
                                      <li>Abra o console do navegador (F12) para ver mensagens de erro</li>
                                  </ol>
