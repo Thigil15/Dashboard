@@ -1,0 +1,11 @@
+{
+  "rules": {
+    "cache": {
+      ".read": "auth != null",
+      ".write": false,
+      ".indexOn": ["_rowId", "EmailHC", "SerialHC"]
+    },
+    ".read": "auth != null",
+    ".write": false
+  }
+}

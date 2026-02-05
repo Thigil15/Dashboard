@@ -1,8 +1,9 @@
 /**********************************************
  * 🔧 CONFIGURAÇÕES GERAIS
  **********************************************/
-const FIREBASE_URL = "https://dashboardalunos-default-rtdb.firebaseio.com/"; // ⚠️ Substitua pelo seu
-const FIREBASE_SECRET = PropertiesService.getScriptProperties().getProperty("FIREBASE_SECRET");
+// Cloud Function endpoint e token de sincronização
+const FUNCTION_URL = PropertiesService.getScriptProperties().getProperty("FUNCTION_URL");
+const SYNC_TOKEN = PropertiesService.getScriptProperties().getProperty("SYNC_TOKEN");
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Nomes das abas (constantes para evitar erros de digitação)
@@ -68,15 +69,28 @@ function gerarHashDados(dados, cabecalhos) {
 }
 
 /**
- * Gera um ID único para uma linha baseado em seu conteúdo.
- * @param {Array} linha - Array com os valores da linha
- * @param {number} indice - Índice da linha na planilha
+ * Gera um ID único para uma linha baseado em campos estáveis.
+ * Prioriza campos que não mudam (SerialHC, EmailHC) ao invés de índice.
+ * @param {Object} registro - Objeto com os valores da linha (já mapeado com cabeçalhos)
+ * @param {number} indice - Índice da linha (fallback se não houver campo estável)
  * @returns {string} ID único para a linha
  */
-function gerarIdLinha(linha, indice) {
-  // Usa os primeiros campos significativos para criar um ID único
-  // Se tiver email ou serial, usa isso. Caso contrário, usa hash do conteúdo
-  const conteudo = JSON.stringify(linha).substring(0, 100);
+function gerarIdLinha(registro, indice) {
+  // Tenta usar campos estáveis primeiro
+  if (registro.SerialHC || registro.serialHC || registro.serialhc) {
+    return String(registro.SerialHC || registro.serialHC || registro.serialhc);
+  }
+  
+  if (registro.EmailHC || registro.emailHC || registro.emailhc) {
+    return String(registro.EmailHC || registro.emailHC || registro.emailhc);
+  }
+  
+  if (registro.ID || registro.id || registro.Id) {
+    return String(registro.ID || registro.id || registro.Id);
+  }
+  
+  // Fallback: usa hash do conteúdo + índice (instável mas melhor que nada)
+  const conteudo = JSON.stringify(registro).substring(0, 100);
   const hash = Utilities.computeDigest(
     Utilities.DigestAlgorithm.MD5, 
     conteudo + indice
@@ -86,7 +100,7 @@ function gerarIdLinha(linha, indice) {
 
 /**
  * Cria array de registros (objetos) a partir dos dados e cabeçalhos.
- * Agora inclui um ID único para cada registro.
+ * IDs são gerados com base em campos estáveis (SerialHC, EmailHC, ID) quando disponíveis.
  * @param {Array} dados - Array de linhas de dados (sem cabeçalhos)
  * @param {Array} cabecalhos - Array de nomes de colunas sanitizados
  * @returns {Array} Array de objetos com os dados
@@ -96,119 +110,91 @@ function criarRegistrosDeAba(dados, cabecalhos) {
   for (let i = 0; i < dados.length; i++) {
     const linha = dados[i];
     const obj = {};
-    // Adiciona um ID único baseado no conteúdo e posição
-    obj._rowId = gerarIdLinha(linha, i);
-    obj._rowIndex = i + 2; // +2 porque linha 1 é cabeçalho e array começa em 0
+    
+    // Mapeia colunas para objeto primeiro
     for (let j = 0; j < cabecalhos.length; j++) {
       obj[cabecalhos[j]] = linha[j];
     }
+    
+    // Gera ID baseado em campos estáveis do objeto (não do índice)
+    obj._rowId = gerarIdLinha(obj, i);
+    obj._rowIndex = i + 2; // +2 porque linha 1 é cabeçalho e array começa em 0
+    
     registros.push(obj);
   }
   return registros;
 }
 
 /**
- * Busca os dados atuais do Firebase para uma aba.
- * @param {string} nomeAba - Nome da aba sanitizado
- * @returns {Object|null} Objeto com os dados do Firebase ou null se não existir
- */
-function buscarDadosFirebase(nomeAba) {
-  const url = FIREBASE_URL + "exportAll/" + nomeAba + ".json?auth=" + FIREBASE_SECRET;
-  const opcoes = {
-    method: "get",
-    muteHttpExceptions: true
-  };
-
-  try {
-    const resposta = UrlFetchApp.fetch(url, opcoes);
-    if (resposta.getResponseCode() === 200) {
-      const conteudo = resposta.getContentText();
-      if (conteudo && conteudo !== "null") {
-        return JSON.parse(conteudo);
-      }
-    }
-    return null;
-  } catch (erro) {
-    Logger.log("⚠️ Erro ao buscar dados do Firebase: " + erro);
-    return null;
-  }
-}
-
-/**
- * Envia registros para o Firebase com sincronização bidirecional.
- * Detecta e remove registros deletados da planilha.
+ * Envia registros para Cloud Function (cache espelho com sobrescrita total).
+ * A Cloud Function valida o token e escreve no Firebase RTDB.
  * @param {string} nomeAba - Nome da aba sanitizado
  * @param {Array} registros - Array de objetos com os dados
  * @param {string} nomeAbaOriginal - Nome original da aba (para referência)
  * @returns {boolean} true se enviou com sucesso, false caso contrário
  */
-function enviarParaFirebase(nomeAba, registros, nomeAbaOriginal) {
-  const url = FIREBASE_URL + "exportAll/" + nomeAba + ".json?auth=" + FIREBASE_SECRET;
-  
-  // Busca dados atuais do Firebase para detectar deleções
-  const dadosAtuais = buscarDadosFirebase(nomeAba);
-  
-  // Cria mapa de IDs dos registros atuais da planilha
-  const idsAtuais = new Set();
-  for (let i = 0; i < registros.length; i++) {
-    if (registros[i]._rowId) {
-      idsAtuais.add(registros[i]._rowId);
-    }
+function enviarParaEndpoint(nomeAba, registros, nomeAbaOriginal) {
+  if (!FUNCTION_URL) {
+    Logger.log("❌ ERRO: FUNCTION_URL não configurada. Configure nas propriedades do script.");
+    return false;
   }
   
-  // Detecta registros que foram deletados (estão no Firebase mas não na planilha)
-  let registrosDeletados = 0;
-  if (dadosAtuais && dadosAtuais.dados && Array.isArray(dadosAtuais.dados)) {
-    const dadosFirebase = dadosAtuais.dados;
-    for (let i = 0; i < dadosFirebase.length; i++) {
-      const registro = dadosFirebase[i];
-      if (registro._rowId && !idsAtuais.has(registro._rowId)) {
-        registrosDeletados++;
-        Logger.log("🗑️ Registro deletado detectado: " + registro._rowId);
-      }
-    }
+  if (!SYNC_TOKEN) {
+    Logger.log("❌ ERRO: SYNC_TOKEN não configurado. Configure nas propriedades do script.");
+    return false;
   }
   
+  // Payload com estrutura de cache espelho
   const payload = {
+    aba: nomeAba,
     dados: registros,
     nomeAbaOriginal: nomeAbaOriginal,
     ultimaAtualizacao: new Date().toISOString(),
     metadados: {
       totalRegistros: registros.length,
-      registrosDeletados: registrosDeletados,
-      sincronizacaoBidirecional: true
+      tipoSincronizacao: 'sobrescrita_total'
     }
   };
   
   const opcoes = {
-    method: "put",
+    method: "post",
     contentType: "application/json",
+    headers: {
+      "X-SYNC-TOKEN": SYNC_TOKEN
+    },
     payload: JSON.stringify(payload),
     muteHttpExceptions: true
   };
 
   try {
-    const resposta = UrlFetchApp.fetch(url, opcoes);
-    if (resposta.getResponseCode() === 200) {
-      if (registrosDeletados > 0) {
-        Logger.log("✅ Sincronizado com " + registrosDeletados + " deleção(ões)");
-      }
+    Logger.log(`📤 Enviando ${registros.length} registros da aba "${nomeAbaOriginal}" para Cloud Function...`);
+    const resposta = UrlFetchApp.fetch(FUNCTION_URL, opcoes);
+    const codigo = resposta.getResponseCode();
+    
+    if (codigo === 200) {
+      Logger.log(`✅ Aba "${nomeAbaOriginal}" enviada com sucesso (${registros.length} registros)`);
       return true;
+    } else {
+      Logger.log(`❌ Erro HTTP ${codigo} ao enviar "${nomeAbaOriginal}"`);
+      Logger.log(`    Resposta: ${resposta.getContentText()}`);
+      return false;
     }
-    return false;
   } catch (erro) {
-    Logger.log("❌ Erro na requisição Firebase: " + erro);
+    Logger.log(`❌ Erro na requisição para Cloud Function: ${erro}`);
     return false;
   }
 }
 
 /**********************************************
- * 📤 FUNÇÃO PRINCIPAL — Envia todas as abas alteradas
+ * 📤 FUNÇÃO PRINCIPAL — Envia todas as abas alteradas para Cloud Function
  **********************************************/
 function enviarTodasAsAbasParaFirebase() {
-  if (!FIREBASE_SECRET) {
-    Logger.log("❌ ERRO: chave do Firebase não configurada. Rode salvarChaveFirebase() primeiro.");
-    SpreadsheetApp.getActiveSpreadsheet().toast("Erro: chave Firebase não configurada ❌", "Firebase", 6);
+  if (!FUNCTION_URL || !SYNC_TOKEN) {
+    Logger.log("❌ ERRO: FUNCTION_URL ou SYNC_TOKEN não configurados.");
+    Logger.log("   Configure nas propriedades do script (Configurações → Propriedades de script):");
+    Logger.log("   - FUNCTION_URL: URL da Cloud Function");
+    Logger.log("   - SYNC_TOKEN: Token secreto para autenticação");
+    SpreadsheetApp.getActiveSpreadsheet().toast("Erro: Cloud Function não configurada ❌", "Sync", 6);
     return;
   }
 
@@ -234,7 +220,7 @@ function enviarTodasAsAbasParaFirebase() {
     }
 
     const registros = criarRegistrosDeAba(dados, cabecalhos);
-    const sucesso = enviarParaFirebase(nomeAba, registros, aba.getName());
+    const sucesso = enviarParaEndpoint(nomeAba, registros, aba.getName());
 
     if (sucesso) {
       salvarHash(nomeAba, hashAtual);
@@ -246,7 +232,7 @@ function enviarTodasAsAbasParaFirebase() {
   }
 
   Logger.log("🚀 Envio concluído — Enviadas: " + totalEnviadas + " | Ignoradas: " + totalIgnoradas);
-  SpreadsheetApp.getActiveSpreadsheet().toast(`Firebase atualizado! ✅ Enviadas: ${totalEnviadas} | Ignoradas: ${totalIgnoradas}`, "Firebase Sync", 8);
+  SpreadsheetApp.getActiveSpreadsheet().toast(`Sync via Cloud Function! ✅ Enviadas: ${totalEnviadas} | Ignoradas: ${totalIgnoradas}`, "Firebase Sync", 8);
 }
 
 /**********************************************
@@ -398,16 +384,11 @@ function onChangeFirebase(e) {
 }
 
 /**
- * Envia uma aba para o Firebase e retorna true se bem-sucedido.
+ * Envia uma aba para Cloud Function e retorna true se bem-sucedido.
  * @param {Sheet} aba - A aba a ser enviada
  * @returns {boolean} true se enviou com sucesso
  */
 function enviarAbaParaFirebaseComRetorno(aba) {
-  if (!FIREBASE_SECRET) {
-    Logger.log("❌ ERRO: chave do Firebase não configurada.");
-    return false;
-  }
-  
   const nomeAba = sanitizeKey(aba.getName());
   const dados = aba.getDataRange().getValues();
   
@@ -427,7 +408,7 @@ function enviarAbaParaFirebaseComRetorno(aba) {
   }
   
   const registros = criarRegistrosDeAba(dados, cabecalhos);
-  const sucesso = enviarParaFirebase(nomeAba, registros, aba.getName());
+  const sucesso = enviarParaEndpoint(nomeAba, registros, aba.getName());
   
   if (sucesso) {
     salvarHash(nomeAba, hashAtual);
@@ -444,11 +425,6 @@ function enviarAbaParaFirebaseComRetorno(aba) {
  * @returns {boolean} true se todas as abas foram enviadas com sucesso
  */
 function enviarTodasAsAbasParaFirebaseComRetorno() {
-  if (!FIREBASE_SECRET) {
-    Logger.log("❌ ERRO: chave do Firebase não configurada.");
-    return false;
-  }
-
   const planilha = SpreadsheetApp.getActiveSpreadsheet();
   const abas = planilha.getSheets();
   let todasSucesso = true;
@@ -468,7 +444,7 @@ function enviarTodasAsAbasParaFirebaseComRetorno() {
     }
 
     const registros = criarRegistrosDeAba(dados, cabecalhos);
-    const sucesso = enviarParaFirebase(nomeAba, registros, aba.getName());
+    const sucesso = enviarParaEndpoint(nomeAba, registros, aba.getName());
 
     if (sucesso) {
       salvarHash(nomeAba, hashAtual);
@@ -488,11 +464,6 @@ function enviarTodasAsAbasParaFirebaseComRetorno() {
  * @param {Sheet} aba - A aba a ser enviada
  */
 function enviarAbaParaFirebase(aba) {
-  if (!FIREBASE_SECRET) {
-    Logger.log("❌ ERRO: chave do Firebase não configurada.");
-    return;
-  }
-  
   const nomeAba = sanitizeKey(aba.getName());
   const dados = aba.getDataRange().getValues();
   
@@ -512,7 +483,7 @@ function enviarAbaParaFirebase(aba) {
   }
   
   const registros = criarRegistrosDeAba(dados, cabecalhos);
-  const sucesso = enviarParaFirebase(nomeAba, registros, aba.getName());
+  const sucesso = enviarParaEndpoint(nomeAba, registros, aba.getName());
   
   if (sucesso) {
     salvarHash(nomeAba, hashAtual);
@@ -1601,25 +1572,81 @@ function removerGatilhoDiario() {
  **********************************************/
 
 /**
- * Verifica se o Firebase está configurado corretamente
+ * Verifica se a Cloud Function está configurada corretamente
  */
 function verificarConfiguracaoFirebase() {
-  var secret = PropertiesService.getScriptProperties().getProperty('FIREBASE_SECRET');
   var ui = SpreadsheetApp.getUi();
   
-  if (secret) {
-    ui.alert('✅ Configuração OK', 
-             'A chave do Firebase está configurada.\n\n' +
-             'Você pode enviar dados para o Firebase.',
-             ui.ButtonSet.OK);
-  } else {
-    ui.alert('❌ Firebase NÃO configurado', 
-             'A chave do Firebase (FIREBASE_SECRET) não está configurada.\n\n' +
+  if (!FUNCTION_URL) {
+    ui.alert('❌ Cloud Function NÃO configurada', 
+             'A URL da Cloud Function (FUNCTION_URL) não está configurada.\n\n' +
              'Para configurar:\n' +
              '1. Vá em "Extensões" → "Apps Script"\n' +
              '2. Clique em "Configurações do projeto" (ícone de engrenagem)\n' +
              '3. Role até "Propriedades de script"\n' +
-             '4. Adicione a propriedade FIREBASE_SECRET com sua chave',
+             '4. Adicione:\n' +
+             '   - Chave: FUNCTION_URL\n' +
+             '   - Valor: URL da sua Cloud Function\n' +
+             '   - Chave: SYNC_TOKEN\n' +
+             '   - Valor: Token secreto (ex: gere com: openssl rand -hex 32)',
+             ui.ButtonSet.OK);
+    return;
+  }
+  
+  if (!SYNC_TOKEN) {
+    ui.alert('❌ Token de Sync NÃO configurado', 
+             'O SYNC_TOKEN não está configurado.\n\n' +
+             'Configure nas propriedades do script.',
+             ui.ButtonSet.OK);
+    return;
+  }
+  
+  // Test connection to Cloud Function
+  try {
+    const testPayload = {
+      aba: "_test",
+      dados: [],
+      nomeAbaOriginal: "Test",
+      ultimaAtualizacao: new Date().toISOString(),
+      metadados: { totalRegistros: 0, tipoSincronizacao: 'test' }
+    };
+    
+    const opcoes = {
+      method: "post",
+      contentType: "application/json",
+      headers: { "X-SYNC-TOKEN": SYNC_TOKEN },
+      payload: JSON.stringify(testPayload),
+      muteHttpExceptions: true
+    };
+    
+    const resposta = UrlFetchApp.fetch(FUNCTION_URL, opcoes);
+    const codigo = resposta.getResponseCode();
+    
+    if (codigo === 200) {
+      ui.alert('✅ Configuração OK', 
+               'A conexão com a Cloud Function está funcionando!\n\n' +
+               'URL: ' + FUNCTION_URL + '\n' +
+               'Token: Configurado ✓\n\n' +
+               'Você pode enviar dados para o Firebase.',
+               ui.ButtonSet.OK);
+    } else {
+      ui.alert('⚠️ Cloud Function Respondeu, mas com Erro', 
+               'Código de resposta: ' + codigo + '\n' +
+               'Resposta: ' + resposta.getContentText().substring(0, 200) + '\n\n' +
+               'Verifique:\n' +
+               '1. Token está correto\n' +
+               '2. Cloud Function está deployada\n' +
+               '3. Permissões do Firebase',
+               ui.ButtonSet.OK);
+    }
+  } catch (erro) {
+    ui.alert('❌ Erro de Conexão', 
+             'Não foi possível conectar à Cloud Function.\n\n' +
+             'Erro: ' + erro.message + '\n\n' +
+             'Verifique:\n' +
+             '1. URL está correta\n' +
+             '2. Cloud Function está deployada\n' +
+             '3. Conexão com internet',
              ui.ButtonSet.OK);
   }
 }

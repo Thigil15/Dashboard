@@ -2,6 +2,17 @@
 
 Dashboard interativo para gerenciamento de alunos, notas, faltas e escalas do programa de ensino de fisioterapia.
 
+## ⚠️ AÇÃO NECESSÁRIA - Configuração Firebase
+
+**Se você está vendo o erro "Invalid token in path"**, siga o guia:
+
+📋 **[CONFIGURAR_FIREBASE.md](./CONFIGURAR_FIREBASE.md)** - Guia rápido (5 minutos)
+
+Este guia irá configurar as regras do Firebase para:
+- ✅ Permitir que Apps Script envie dados
+- ✅ Habilitar atualizações em tempo real
+- ✅ Resolver o erro "Invalid token in path"
+
 ## ✨ Status Atual
 
 ✅ **Sistema 100% funcional e integrado com Firebase!**
@@ -37,6 +48,18 @@ O site está **completamente configurado** para ler dados do Firebase Realtime D
 ---
 
 ## 📚 Documentação
+
+### ⚡ Início Rápido
+
+- **[CONFIGURAR_FIREBASE.md](./CONFIGURAR_FIREBASE.md)** 🔥 **COMECE AQUI!**
+  - Resolver erro "Invalid token in path"
+  - Configurar regras do Firebase (5 minutos)
+  - Habilitar tempo real
+
+- **[FIREBASE_REALTIME_SETUP.md](./FIREBASE_REALTIME_SETUP.md)** 📖
+  - Documentação técnica completa
+  - Arquitetura do sistema
+  - Troubleshooting detalhado
 
 ### Para Usuários
 
