@@ -6,18 +6,6 @@
         let fbApp, fbAuth, fbDB;
         const dbListenerUnsubscribes = []; // Store unsubscribe functions for cleanup
         
-        // Domain restriction for Google login
-        const ALLOWED_DOMAIN = 'hc.fm.usp.br';
-        
-        /**
-         * Extract domain from email address
-         * @param {string} email - Email address
-         * @returns {string} - Domain part of the email
-         */
-        function getEmailDomain(email) {
-            return String(email || '').split('@')[1] || '';
-        }
-        
         // Initialize Firebase (will be called after window.firebase is available)
         // CRITICAL: Auth and Database are essential.
         function initializeFirebase() {
@@ -3492,8 +3480,6 @@ function extractTimeFromISO(isoString) {
             console.log('[setupEventHandlers] Configurando listeners...');
             // Login form event listener - registered only once to prevent duplicate submissions
             document.getElementById('login-form').addEventListener('submit', handleLogin);
-            // Google login button event listener
-            document.getElementById('google-login-button').addEventListener('click', handleGoogleLogin);
             setupHeaderNavigation();
             
             // Sidebar toggle - only if element exists (legacy support)
@@ -3994,87 +3980,6 @@ function extractTimeFromISO(isoString) {
                 // Remove loading state on error
                 loginButton.classList.remove('loading');
                 loginButton.disabled = false;
-                showError(errorMessage, true);
-            }
-        }
-
-        // Google Login function with domain restriction
-        /**
-         * Handle Google login with domain validation
-         * @param {Event} [event] - Optional click event from button
-         */
-        async function handleGoogleLogin(event) {
-            event?.preventDefault?.();
-            console.log("[handleGoogleLogin] Iniciando login com Google...");
-
-            const googleButton = document.getElementById("google-login-button");
-            const errorBox = document.getElementById("login-error");
-
-            // Add loading state to button
-            googleButton.classList.add('loading');
-            googleButton.disabled = true;
-            errorBox.style.display = "none";
-
-            // CRITICAL FIX: Wait for Firebase to initialize if not ready yet
-            if (!fbAuth) {
-                console.warn("[handleGoogleLogin] Firebase Auth ainda não está disponível. Aguardando inicialização...");
-                
-                // Wait for Firebase to be ready (max 5 seconds)
-                const maxWaitTime = 5000;
-                const startTime = Date.now();
-                
-                while (!fbAuth && (Date.now() - startTime) < maxWaitTime) {
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                }
-                
-                if (!fbAuth) {
-                    console.error("[handleGoogleLogin] Firebase Auth não está disponível após espera.");
-                    googleButton.classList.remove('loading');
-                    googleButton.disabled = false;
-                    showError("Firebase não inicializado. Recarregue a página.", true);
-                    return;
-                }
-                
-                console.log("[handleGoogleLogin] Firebase Auth agora está disponível. Prosseguindo com login...");
-            }
-
-            try {
-                const provider = new window.firebase.GoogleAuthProvider();
-                // hd parameter is a hint for Google account picker (not enforcement)
-                provider.setCustomParameters({ hd: ALLOWED_DOMAIN });
-                
-                const cred = await window.firebase.signInWithPopup(fbAuth, provider);
-                console.log("[handleGoogleLogin] Login com Google bem-sucedido:", cred.user?.email);
-                
-                // Validate domain on client side
-                const domain = getEmailDomain(cred.user?.email);
-                if (domain !== ALLOWED_DOMAIN) {
-                    console.warn(`[handleGoogleLogin] Domínio não permitido: ${domain}`);
-                    await window.firebase.signOut(fbAuth);
-                    throw new Error(`Domínio não permitido. Use uma conta @${ALLOWED_DOMAIN}.`);
-                }
-                
-                // Keep button loading - will show loading overlay next
-                // onAuthStateChanged will handle the rest (redirect to dashboard)
-            } catch (error) {
-                console.error("[handleGoogleLogin] Erro no login com Google:", error);
-                const errorCode = error?.code || '';
-                let errorMessage = error?.message || 'Não foi possível entrar com Google. Tente novamente.';
-                
-                // Provide more specific error messages
-                if (errorCode === 'auth/popup-closed-by-user') {
-                    errorMessage = "Login cancelado. Tente novamente.";
-                } else if (errorCode === 'auth/popup-blocked') {
-                    errorMessage = "Popup bloqueado. Permita popups e tente novamente.";
-                } else if (errorCode === 'auth/network-request-failed') {
-                    errorMessage = "Falha de rede. Verifique sua conexão.";
-                } else if (errorCode === 'auth/cancelled-popup-request') {
-                    errorMessage = "Solicitação de login cancelada.";
-                }
-                
-                // Remove loading state on error
-                googleButton.classList.remove('loading');
-                googleButton.disabled = false;
                 showError(errorMessage, true);
             }
         }
@@ -11503,20 +11408,11 @@ function renderTabEscala(escalas) {
                         showLoading(false); // Ensure loading overlay is hidden
                         showView('login-view');
                     } else {
-                        // User is signed in - validate domain
+                        // User is signed in
                         console.log('[onAuthStateChanged] Usuário autenticado:', user.email);
                         
-                        // Domain validation: only allow @hc.fm.usp.br
-                        const domain = getEmailDomain(user.email);
-                        if (domain !== ALLOWED_DOMAIN) {
-                            console.warn(`[onAuthStateChanged] Domínio não permitido: ${domain}. Deslogando usuário.`);
-                            showError(`Domínio não permitido. Use uma conta @${ALLOWED_DOMAIN}.`, true);
-                            window.firebase.signOut(fbAuth);
-                            return;
-                        }
-                        
-                        // User is authenticated and domain is valid
-                        console.log('[onAuthStateChanged] Domínio válido. Mostrando dashboard.');
+                        // User is authenticated
+                        console.log('[onAuthStateChanged] Mostrando dashboard.');
                         
                         // Update user menu with logged-in user info
                         updateUserMenuInfo(user);
