@@ -1,8 +1,7 @@
 /**********************************************
  * 🔧 CONFIGURAÇÕES GERAIS
  **********************************************/
-const FIREBASE_URL = "https://dashboardalunos-default-rtdb.firebaseio.com/"; // ⚠️ Substitua pelo seu
-const FIREBASE_SECRET = PropertiesService.getScriptProperties().getProperty("FIREBASE_SECRET");
+const FIREBASE_URL = "https://dashboardalunos-default-rtdb.firebaseio.com/"; // URL do Firebase Realtime Database
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Nomes das abas (constantes para evitar erros de digitação)
@@ -113,7 +112,7 @@ function criarRegistrosDeAba(dados, cabecalhos) {
  * @returns {Object|null} Objeto com os dados do Firebase ou null se não existir
  */
 function buscarDadosFirebase(nomeAba) {
-  const url = FIREBASE_URL + "exportAll/" + nomeAba + ".json?auth=" + FIREBASE_SECRET;
+  const url = FIREBASE_URL + "exportAll/" + nomeAba + ".json";
   const opcoes = {
     method: "get",
     muteHttpExceptions: true
@@ -143,7 +142,7 @@ function buscarDadosFirebase(nomeAba) {
  * @returns {boolean} true se enviou com sucesso, false caso contrário
  */
 function enviarParaFirebase(nomeAba, registros, nomeAbaOriginal) {
-  const url = FIREBASE_URL + "exportAll/" + nomeAba + ".json?auth=" + FIREBASE_SECRET;
+  const url = FIREBASE_URL + "exportAll/" + nomeAba + ".json";
   
   // Busca dados atuais do Firebase para detectar deleções
   const dadosAtuais = buscarDadosFirebase(nomeAba);
@@ -195,6 +194,8 @@ function enviarParaFirebase(nomeAba, registros, nomeAbaOriginal) {
       }
       return true;
     }
+    Logger.log("❌ Erro HTTP ao enviar para Firebase: " + resposta.getResponseCode());
+    Logger.log("    Resposta: " + resposta.getContentText());
     return false;
   } catch (erro) {
     Logger.log("❌ Erro na requisição Firebase: " + erro);
@@ -206,12 +207,6 @@ function enviarParaFirebase(nomeAba, registros, nomeAbaOriginal) {
  * 📤 FUNÇÃO PRINCIPAL — Envia todas as abas alteradas
  **********************************************/
 function enviarTodasAsAbasParaFirebase() {
-  if (!FIREBASE_SECRET) {
-    Logger.log("❌ ERRO: chave do Firebase não configurada. Rode salvarChaveFirebase() primeiro.");
-    SpreadsheetApp.getActiveSpreadsheet().toast("Erro: chave Firebase não configurada ❌", "Firebase", 6);
-    return;
-  }
-
   const planilha = SpreadsheetApp.getActiveSpreadsheet();
   const abas = planilha.getSheets();
   let totalEnviadas = 0;
@@ -403,11 +398,6 @@ function onChangeFirebase(e) {
  * @returns {boolean} true se enviou com sucesso
  */
 function enviarAbaParaFirebaseComRetorno(aba) {
-  if (!FIREBASE_SECRET) {
-    Logger.log("❌ ERRO: chave do Firebase não configurada.");
-    return false;
-  }
-  
   const nomeAba = sanitizeKey(aba.getName());
   const dados = aba.getDataRange().getValues();
   
@@ -444,11 +434,6 @@ function enviarAbaParaFirebaseComRetorno(aba) {
  * @returns {boolean} true se todas as abas foram enviadas com sucesso
  */
 function enviarTodasAsAbasParaFirebaseComRetorno() {
-  if (!FIREBASE_SECRET) {
-    Logger.log("❌ ERRO: chave do Firebase não configurada.");
-    return false;
-  }
-
   const planilha = SpreadsheetApp.getActiveSpreadsheet();
   const abas = planilha.getSheets();
   let todasSucesso = true;
@@ -488,11 +473,6 @@ function enviarTodasAsAbasParaFirebaseComRetorno() {
  * @param {Sheet} aba - A aba a ser enviada
  */
 function enviarAbaParaFirebase(aba) {
-  if (!FIREBASE_SECRET) {
-    Logger.log("❌ ERRO: chave do Firebase não configurada.");
-    return;
-  }
-  
   const nomeAba = sanitizeKey(aba.getName());
   const dados = aba.getDataRange().getValues();
   
@@ -1604,22 +1584,34 @@ function removerGatilhoDiario() {
  * Verifica se o Firebase está configurado corretamente
  */
 function verificarConfiguracaoFirebase() {
-  var secret = PropertiesService.getScriptProperties().getProperty('FIREBASE_SECRET');
   var ui = SpreadsheetApp.getUi();
   
-  if (secret) {
-    ui.alert('✅ Configuração OK', 
-             'A chave do Firebase está configurada.\n\n' +
-             'Você pode enviar dados para o Firebase.',
-             ui.ButtonSet.OK);
-  } else {
-    ui.alert('❌ Firebase NÃO configurado', 
-             'A chave do Firebase (FIREBASE_SECRET) não está configurada.\n\n' +
-             'Para configurar:\n' +
-             '1. Vá em "Extensões" → "Apps Script"\n' +
-             '2. Clique em "Configurações do projeto" (ícone de engrenagem)\n' +
-             '3. Role até "Propriedades de script"\n' +
-             '4. Adicione a propriedade FIREBASE_SECRET com sua chave',
+  // Test connection to Firebase
+  try {
+    const testUrl = FIREBASE_URL + ".json";
+    const resposta = UrlFetchApp.fetch(testUrl, { method: "get", muteHttpExceptions: true });
+    
+    if (resposta.getResponseCode() === 200) {
+      ui.alert('✅ Configuração OK', 
+               'A conexão com o Firebase está funcionando.\n\n' +
+               'Você pode enviar dados para o Firebase.\n\n' +
+               'URL: ' + FIREBASE_URL,
+               ui.ButtonSet.OK);
+    } else {
+      ui.alert('⚠️ Firebase Acessível, mas com Restrições', 
+               'O Firebase está acessível, mas pode haver regras de segurança.\n\n' +
+               'Código de resposta: ' + resposta.getResponseCode() + '\n\n' +
+               'Certifique-se de que as regras do Firebase permitem escritas no caminho /exportAll',
+               ui.ButtonSet.OK);
+    }
+  } catch (erro) {
+    ui.alert('❌ Erro de Conexão com Firebase', 
+             'Não foi possível conectar ao Firebase.\n\n' +
+             'Erro: ' + erro.message + '\n\n' +
+             'Verifique:\n' +
+             '1. URL do Firebase está correta\n' +
+             '2. Conexão com internet está funcionando\n' +
+             '3. Firebase Realtime Database está ativado',
              ui.ButtonSet.OK);
   }
 }
