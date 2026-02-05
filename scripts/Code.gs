@@ -49,6 +49,112 @@ const ABA_PONTO_TEORIA = 'PontoTeoria';
  */
 
 /**********************************************
+ * 📡 API - Servir dados via URL (doGet)
+ **********************************************/
+
+/**
+ * Serve todos os dados das abas como JSON via URL
+ * Exemplo de URL: https://script.google.com/.../exec
+ * Exemplo com aba específica: https://script.google.com/.../exec?aba=Alunos
+ * 
+ * @param {Object} e - Objeto de evento com parâmetros da query string
+ * @returns {TextOutput} JSON com os dados solicitados
+ */
+function doGet(e) {
+  try {
+    const planilha = SpreadsheetApp.getActiveSpreadsheet();
+    const parametros = e.parameter || {};
+    const abaEspecifica = parametros.aba;
+    
+    // Se uma aba específica foi solicitada
+    if (abaEspecifica) {
+      const aba = planilha.getSheetByName(abaEspecifica);
+      if (!aba) {
+        return ContentService.createTextOutput(JSON.stringify({
+          erro: "Aba não encontrada",
+          abasolicitada: abaEspecifica
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+      
+      const dados = aba.getDataRange().getValues();
+      if (dados.length < 2) {
+        return ContentService.createTextOutput(JSON.stringify({
+          aba: abaEspecifica,
+          registros: [],
+          metadados: {
+            totalRegistros: 0,
+            ultimaAtualizacao: new Date().toISOString()
+          }
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+      
+      const cabecalhos = dados.shift().map(h => sanitizeKey(h));
+      const registros = criarRegistrosDeAba(dados, cabecalhos);
+      
+      return ContentService.createTextOutput(JSON.stringify({
+        aba: abaEspecifica,
+        registros: registros,
+        metadados: {
+          totalRegistros: registros.length,
+          ultimaAtualizacao: new Date().toISOString()
+        }
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    // Se nenhuma aba específica foi solicitada, retorna todas as abas
+    const abas = planilha.getSheets();
+    const resultado = {
+      cache: {},
+      metadados: {
+        totalAbas: 0,
+        ultimaAtualizacao: new Date().toISOString()
+      }
+    };
+    
+    for (let aba of abas) {
+      const nomeAba = aba.getName();
+      const nomeAbaSanitizado = sanitizeKey(nomeAba);
+      const dados = aba.getDataRange().getValues();
+      
+      if (dados.length < 2) {
+        // Aba vazia ou só com cabeçalho
+        resultado.cache[nomeAbaSanitizado] = {
+          registros: [],
+          metadados: {
+            nomeOriginal: nomeAba,
+            totalRegistros: 0
+          }
+        };
+        continue;
+      }
+      
+      const cabecalhos = dados.shift().map(h => sanitizeKey(h));
+      const registros = criarRegistrosDeAba(dados, cabecalhos);
+      
+      resultado.cache[nomeAbaSanitizado] = {
+        registros: registros,
+        metadados: {
+          nomeOriginal: nomeAba,
+          totalRegistros: registros.length
+        }
+      };
+      
+      resultado.metadados.totalAbas++;
+    }
+    
+    return ContentService.createTextOutput(JSON.stringify(resultado))
+      .setMimeType(ContentService.MimeType.JSON);
+      
+  } catch (erro) {
+    Logger.log('❌ Erro no doGet: ' + erro);
+    return ContentService.createTextOutput(JSON.stringify({
+      erro: "Erro ao processar requisição",
+      mensagem: erro.toString()
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+/**********************************************
  * 🔨 FUNÇÕES AUXILIARES (HELPERS)
  **********************************************/
 

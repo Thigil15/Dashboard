@@ -11,6 +11,13 @@ const firebaseConfig = {
   appId: "1:897767302445:web:61dc5f0c3419ac680adfa4"
 };
 
+// Apps Script URL configuration
+// This URL serves the JSON data directly from Google Sheets
+// Replace with your deployed Apps Script web app URL
+const appsScriptConfig = {
+  dataURL: "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec"
+};
+
 // Export configuration for ES6 module import
 export default firebaseConfig;
-export { firebaseConfig };
+export { firebaseConfig, appsScriptConfig };
