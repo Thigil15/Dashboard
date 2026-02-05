@@ -1,9 +1,6 @@
 /**********************************************
  * 🔧 CONFIGURAÇÕES GERAIS
  **********************************************/
-// Cloud Function endpoint e token de sincronização
-const FUNCTION_URL = PropertiesService.getScriptProperties().getProperty("FUNCTION_URL");
-const SYNC_TOKEN = PropertiesService.getScriptProperties().getProperty("SYNC_TOKEN");
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Nomes das abas (constantes para evitar erros de digitação)
@@ -11,42 +8,6 @@ const ABA_AUSENCIAS = 'Ausencias';
 const ABA_REPOSICOES = 'Reposicoes';
 const ABA_PONTO_PRATICA = 'PontoPratica';
 const ABA_PONTO_TEORIA = 'PontoTeoria';
-
-/**********************************************
- * 📝 SOBRE O SISTEMA DE SINCRONIZAÇÃO
- **********************************************/
-/**
- * SINCRONIZAÇÃO BIDIRECIONAL AUTOMÁTICA
- * 
- * Este sistema agora implementa sincronização ao vivo entre a planilha e o Firebase:
- * 
- * ✅ DETECÇÃO AUTOMÁTICA:
- *    - Inserções: novas linhas são detectadas e enviadas automaticamente
- *    - Atualizações: células editadas são sincronizadas instantaneamente
- *    - Deleções: linhas removidas da planilha são deletadas no Firebase
- *    - Mudanças estruturais: alterações nas colunas são detectadas automaticamente
- * 
- * ✅ SISTEMA DE IDs:
- *    - Cada linha recebe um ID único baseado em seu conteúdo
- *    - IDs permitem rastrear registros individuais
- *    - Deleções são detectadas comparando IDs Firebase vs Planilha
- * 
- * ✅ HASH INTELIGENTE:
- *    - Hash agora inclui estrutura das colunas
- *    - Mudanças nas colunas não requerem mais reset manual
- *    - Hash detecta qualquer alteração: dados ou estrutura
- * 
- * ✅ GATILHOS AUTOMÁTICOS:
- *    - onEdit: sincroniza quando você edita células
- *    - onChange: sincroniza quando você adiciona/remove linhas ou colunas
- *    - Funciona mesmo com a planilha fechada
- * 
- * 📋 FUNÇÕES ÚTEIS:
- *    - limparHashAba(nomeAba): força re-sync de uma aba específica
- *    - limparTodosHashes(): força re-sync completo de tudo
- *    - criarGatilhosAutomaticos(): ativa sincronização automática
- *    - removerGatilhosAutomaticos(): desativa sincronização automática
- */
 
 /**********************************************
  * 📡 API - Servir dados via URL (doGet)
@@ -159,22 +120,6 @@ function doGet(e) {
  **********************************************/
 
 /**
- * Gera hash MD5 dos dados para detectar alterações.
- * Agora considera tanto o conteúdo quanto a estrutura (colunas).
- * @param {Array} dados - Array de linhas de dados
- * @param {Array} cabecalhos - Array de cabeçalhos
- * @returns {string} Hash MD5 em hexadecimal
- */
-function gerarHashDados(dados, cabecalhos) {
-  // Inclui cabeçalhos no hash para detectar mudanças estruturais
-  let conteudoConcatenado = "HEADERS:" + JSON.stringify(cabecalhos) + "|DATA:";
-  for (let i = 0; i < dados.length; i++) {
-    conteudoConcatenado += JSON.stringify(dados[i]);
-  }
-  return gerarHash(conteudoConcatenado);
-}
-
-/**
  * Gera um ID único para uma linha baseado em campos estáveis.
  * Prioriza campos que não mudam (SerialHC, EmailHC) ao invés de índice.
  * @param {Object} registro - Objeto com os valores da linha (já mapeado com cabeçalhos)
@@ -231,172 +176,12 @@ function criarRegistrosDeAba(dados, cabecalhos) {
   return registros;
 }
 
-/**
- * Envia registros para Cloud Function (cache espelho com sobrescrita total).
- * A Cloud Function valida o token e escreve no Firebase RTDB.
- * @param {string} nomeAba - Nome da aba sanitizado
- * @param {Array} registros - Array de objetos com os dados
- * @param {string} nomeAbaOriginal - Nome original da aba (para referência)
- * @returns {boolean} true se enviou com sucesso, false caso contrário
- */
-function enviarParaEndpoint(nomeAba, registros, nomeAbaOriginal) {
-  if (!FUNCTION_URL) {
-    Logger.log("❌ ERRO: FUNCTION_URL não configurada. Configure nas propriedades do script.");
-    return false;
-  }
-  
-  if (!SYNC_TOKEN) {
-    Logger.log("❌ ERRO: SYNC_TOKEN não configurado. Configure nas propriedades do script.");
-    return false;
-  }
-  
-  // Payload com estrutura de cache espelho
-  const payload = {
-    aba: nomeAba,
-    dados: registros,
-    nomeAbaOriginal: nomeAbaOriginal,
-    ultimaAtualizacao: new Date().toISOString(),
-    metadados: {
-      totalRegistros: registros.length,
-      tipoSincronizacao: 'sobrescrita_total'
-    }
-  };
-  
-  const opcoes = {
-    method: "post",
-    contentType: "application/json",
-    headers: {
-      "X-SYNC-TOKEN": SYNC_TOKEN
-    },
-    payload: JSON.stringify(payload),
-    muteHttpExceptions: true
-  };
-
-  try {
-    Logger.log(`📤 Enviando ${registros.length} registros da aba "${nomeAbaOriginal}" para Cloud Function...`);
-    const resposta = UrlFetchApp.fetch(FUNCTION_URL, opcoes);
-    const codigo = resposta.getResponseCode();
-    
-    if (codigo === 200) {
-      Logger.log(`✅ Aba "${nomeAbaOriginal}" enviada com sucesso (${registros.length} registros)`);
-      return true;
-    } else {
-      Logger.log(`❌ Erro HTTP ${codigo} ao enviar "${nomeAbaOriginal}"`);
-      Logger.log(`    Resposta: ${resposta.getContentText()}`);
-      return false;
-    }
-  } catch (erro) {
-    Logger.log(`❌ Erro na requisição para Cloud Function: ${erro}`);
-    return false;
-  }
-}
-
 /**********************************************
  * 📤 FUNÇÃO PRINCIPAL — Envia todas as abas alteradas para Cloud Function
  **********************************************/
-function enviarTodasAsAbasParaFirebase() {
-  if (!FUNCTION_URL || !SYNC_TOKEN) {
-    Logger.log("❌ ERRO: FUNCTION_URL ou SYNC_TOKEN não configurados.");
-    Logger.log("   Configure nas propriedades do script (Configurações → Propriedades de script):");
-    Logger.log("   - FUNCTION_URL: URL da Cloud Function");
-    Logger.log("   - SYNC_TOKEN: Token secreto para autenticação");
-    SpreadsheetApp.getActiveSpreadsheet().toast("Erro: Cloud Function não configurada ❌", "Sync", 6);
-    return;
-  }
-
-  const planilha = SpreadsheetApp.getActiveSpreadsheet();
-  const abas = planilha.getSheets();
-  let totalEnviadas = 0;
-  let totalIgnoradas = 0;
-
-  for (let aba of abas) {
-    const nomeAba = sanitizeKey(aba.getName());
-    const dados = aba.getDataRange().getValues();
-    if (dados.length < 2) continue; // ignora abas vazias
-
-    const cabecalhos = dados.shift().map(h => sanitizeKey(h));
-
-    const hashAtual = gerarHashDados(dados, cabecalhos);
-    const hashAnterior = getHashAnterior(nomeAba);
-
-    if (hashAtual === hashAnterior) {
-      Logger.log("⏭️ Nenhuma alteração em: " + nomeAba);
-      totalIgnoradas++;
-      continue;
-    }
-
-    const registros = criarRegistrosDeAba(dados, cabecalhos);
-    const sucesso = enviarParaEndpoint(nomeAba, registros, aba.getName());
-
-    if (sucesso) {
-      salvarHash(nomeAba, hashAtual);
-      Logger.log("✅ Enviado com sucesso: " + nomeAba);
-      totalEnviadas++;
-    } else {
-      Logger.log("⚠️ Falha ao enviar " + nomeAba);
-    }
-  }
-
-  Logger.log("🚀 Envio concluído — Enviadas: " + totalEnviadas + " | Ignoradas: " + totalIgnoradas);
-  SpreadsheetApp.getActiveSpreadsheet().toast(`Sync via Cloud Function! ✅ Enviadas: ${totalEnviadas} | Ignoradas: ${totalIgnoradas}`, "Firebase Sync", 8);
-}
-
 /**********************************************
  * 🧮 HASH (detecta alterações)
  **********************************************/
-function gerarHash(texto) {
-  const digest = Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, texto);
-  return digest.map(b => (b + 256) % 256).map(b => ("0" + b.toString(16)).slice(-2)).join("");
-}
-
-function salvarHash(nomeAba, hash) {
-  PropertiesService.getScriptProperties().setProperty("HASH_" + nomeAba, hash);
-}
-
-function getHashAnterior(nomeAba) {
-  return PropertiesService.getScriptProperties().getProperty("HASH_" + nomeAba) || "";
-}
-
-/**
- * Limpa o hash de uma aba específica.
- * Útil se você quiser forçar uma sincronização completa.
- * @param {string} nomeAba - Nome da aba (será sanitizado automaticamente)
- */
-function limparHashAba(nomeAba) {
-  const nomeAbaSanitizado = sanitizeKey(nomeAba);
-  PropertiesService.getScriptProperties().deleteProperty("HASH_" + nomeAbaSanitizado);
-  Logger.log("🧹 Hash limpo para: " + nomeAba);
-  SpreadsheetApp.getActiveSpreadsheet().toast(
-    "Hash limpo para aba '" + nomeAba + "'. Próxima sincronização será completa.",
-    "Hash Limpo",
-    5
-  );
-}
-
-/**
- * Limpa todos os hashes salvos.
- * Útil para resetar completamente o sistema de sincronização.
- */
-function limparTodosHashes() {
-  const props = PropertiesService.getScriptProperties();
-  const todasProps = props.getProperties();
-  let contador = 0;
-  
-  for (let chave in todasProps) {
-    if (chave.startsWith("HASH_")) {
-      props.deleteProperty(chave);
-      contador++;
-    }
-  }
-  
-  Logger.log("🧹 " + contador + " hashes limpos");
-  SpreadsheetApp.getActiveSpreadsheet().toast(
-    contador + " hashes limpos. Próxima sincronização será completa para todas as abas.",
-    "Reset Completo",
-    5
-  );
-}
-
 /**********************************************
  * 🧹 SANITIZAÇÃO DE CHAVES
  **********************************************/
@@ -414,278 +199,13 @@ function sanitizeKey(texto) {
 /**********************************************
  * 🕒 GATILHO AUTOMÁTICO — Executa todo dia às 21h
  **********************************************/
-function criarGatilhoDiario() {
-  // Apaga gatilhos antigos pra evitar duplicação
-  const gatilhos = ScriptApp.getProjectTriggers();
-  for (const t of gatilhos) {
-    if (t.getHandlerFunction() === "enviarTodasAsAbasParaFirebase") {
-      ScriptApp.deleteTrigger(t);
-    }
-  }
-
-  // Cria novo gatilho diário às 21h
-  ScriptApp.newTrigger("enviarTodasAsAbasParaFirebase")
-    .timeBased()
-    .everyDays(1)
-    .atHour(21)
-    .create();
-
-  Logger.log("🕒 Gatilho criado: execução diária às 21h.");
-}
-
 /**********************************************
  * ⚡ SINCRONIZAÇÃO AUTOMÁTICA — Detecta alterações
  **********************************************/
 
-/**
- * Função chamada automaticamente quando há alteração na planilha.
- * Sincroniza imediatamente com o Firebase sem debounce.
- * NOTA: Esta função precisa ser configurada como gatilho instalável
- * para funcionar com UrlFetchApp (veja criarGatilhosAutomaticos).
- * Gatilhos instaláveis funcionam mesmo com a planilha fechada.
- * @param {Object} e - Objeto evento do Google Apps Script
- */
-function onEditFirebase(e) {
-  try {
-    let sucesso = false;
-    
-    // Sincroniza a aba que foi editada imediatamente
-    if (e && e.source && e.range) {
-      const abaEditada = e.range.getSheet();
-      sucesso = enviarAbaParaFirebaseComRetorno(abaEditada);
-    } else {
-      // Se não tiver informação da aba, sincroniza tudo
-      sucesso = enviarTodasAsAbasParaFirebaseComRetorno();
-    }
-    
-    // Registra timestamp apenas se a sync foi bem-sucedida
-    if (sucesso) {
-      const agora = new Date().getTime();
-      salvarUltimaSync(agora);
-    }
-  } catch (erro) {
-    Logger.log("❌ Erro no onEditFirebase: " + erro);
-  }
-}
-
-/**
- * Função chamada quando há alterações estruturais na planilha
- * (adicionar/remover abas, linhas, colunas, etc.)
- * Sincroniza imediatamente com o Firebase.
- * Gatilhos instaláveis funcionam mesmo com a planilha fechada.
- * @param {Object} e - Objeto evento do Google Apps Script
- */
-function onChangeFirebase(e) {
-  try {
-    const sucesso = enviarTodasAsAbasParaFirebaseComRetorno();
-    
-    // Registra timestamp apenas se a sync foi bem-sucedida
-    if (sucesso) {
-      const agora = new Date().getTime();
-      salvarUltimaSync(agora);
-    }
-  } catch (erro) {
-    Logger.log("❌ Erro no onChangeFirebase: " + erro);
-  }
-}
-
-/**
- * Envia uma aba para Cloud Function e retorna true se bem-sucedido.
- * @param {Sheet} aba - A aba a ser enviada
- * @returns {boolean} true se enviou com sucesso
- */
-function enviarAbaParaFirebaseComRetorno(aba) {
-  const nomeAba = sanitizeKey(aba.getName());
-  const dados = aba.getDataRange().getValues();
-  
-  if (dados.length < 2) {
-    Logger.log("⏭️ Aba vazia ignorada: " + nomeAba);
-    return true; // Considera sucesso pois não havia nada para enviar
-  }
-  
-  const cabecalhos = dados.shift().map(h => sanitizeKey(h));
-  
-  const hashAtual = gerarHashDados(dados, cabecalhos);
-  const hashAnterior = getHashAnterior(nomeAba);
-  
-  if (hashAtual === hashAnterior) {
-    Logger.log("⏭️ Nenhuma alteração real em: " + nomeAba);
-    return true; // Considera sucesso pois não havia alteração
-  }
-  
-  const registros = criarRegistrosDeAba(dados, cabecalhos);
-  const sucesso = enviarParaEndpoint(nomeAba, registros, aba.getName());
-  
-  if (sucesso) {
-    salvarHash(nomeAba, hashAtual);
-    Logger.log("✅ Sincronizado automaticamente: " + nomeAba);
-  } else {
-    Logger.log("⚠️ Falha ao sincronizar " + nomeAba);
-  }
-  
-  return sucesso;
-}
-
-/**
- * Envia todas as abas para o Firebase e retorna true se todas foram bem-sucedidas.
- * @returns {boolean} true se todas as abas foram enviadas com sucesso
- */
-function enviarTodasAsAbasParaFirebaseComRetorno() {
-  const planilha = SpreadsheetApp.getActiveSpreadsheet();
-  const abas = planilha.getSheets();
-  let todasSucesso = true;
-
-  for (let aba of abas) {
-    const nomeAba = sanitizeKey(aba.getName());
-    const dados = aba.getDataRange().getValues();
-    if (dados.length < 2) continue;
-
-    const cabecalhos = dados.shift().map(h => sanitizeKey(h));
-
-    const hashAtual = gerarHashDados(dados, cabecalhos);
-    const hashAnterior = getHashAnterior(nomeAba);
-
-    if (hashAtual === hashAnterior) {
-      continue;
-    }
-
-    const registros = criarRegistrosDeAba(dados, cabecalhos);
-    const sucesso = enviarParaEndpoint(nomeAba, registros, aba.getName());
-
-    if (sucesso) {
-      salvarHash(nomeAba, hashAtual);
-      Logger.log("✅ Enviado com sucesso: " + nomeAba);
-    } else {
-      Logger.log("⚠️ Falha ao enviar " + nomeAba);
-      todasSucesso = false;
-    }
-  }
-
-  return todasSucesso;
-}
-
-/**
- * Envia apenas uma aba específica para o Firebase.
- * Mais eficiente que enviar todas as abas quando apenas uma foi alterada.
- * @param {Sheet} aba - A aba a ser enviada
- */
-function enviarAbaParaFirebase(aba) {
-  const nomeAba = sanitizeKey(aba.getName());
-  const dados = aba.getDataRange().getValues();
-  
-  if (dados.length < 2) {
-    Logger.log("⏭️ Aba vazia ignorada: " + nomeAba);
-    return;
-  }
-  
-  const cabecalhos = dados.shift().map(h => sanitizeKey(h));
-  
-  const hashAtual = gerarHashDados(dados, cabecalhos);
-  const hashAnterior = getHashAnterior(nomeAba);
-  
-  if (hashAtual === hashAnterior) {
-    Logger.log("⏭️ Nenhuma alteração real em: " + nomeAba);
-    return;
-  }
-  
-  const registros = criarRegistrosDeAba(dados, cabecalhos);
-  const sucesso = enviarParaEndpoint(nomeAba, registros, aba.getName());
-  
-  if (sucesso) {
-    salvarHash(nomeAba, hashAtual);
-    Logger.log("✅ Sincronizado automaticamente: " + nomeAba);
-    SpreadsheetApp.getActiveSpreadsheet().toast(
-      "Aba '" + aba.getName() + "' sincronizada com Firebase! ✅", 
-      "Auto Sync", 
-      3
-    );
-  } else {
-    Logger.log("⚠️ Falha ao sincronizar " + nomeAba);
-  }
-}
-
-/**
- * Salva o timestamp da última sincronização
- * @param {number} timestamp - Timestamp em milissegundos
- */
-function salvarUltimaSync(timestamp) {
-  PropertiesService.getScriptProperties().setProperty("ULTIMA_SYNC", timestamp.toString());
-}
-
-/**
- * Obtém o timestamp da última sincronização
- * @returns {number} Timestamp em milissegundos (0 se nunca sincronizou)
- */
-function getUltimaSync() {
-  const valor = PropertiesService.getScriptProperties().getProperty("ULTIMA_SYNC");
-  return valor ? parseInt(valor, 10) : 0;
-}
-
 /**********************************************
  * 🔧 CONFIGURAR GATILHOS AUTOMÁTICOS
  **********************************************/
-
-/**
- * ⚡ EXECUTE ESTA FUNÇÃO UMA VEZ para ativar a sincronização automática!
- * Cria gatilhos instaláveis para onEdit e onChange.
- * Gatilhos instaláveis são necessários porque gatilhos simples
- * não podem usar UrlFetchApp (requerido para chamadas ao Firebase).
- */
-function criarGatilhosAutomaticos() {
-  // Remove gatilhos antigos para evitar duplicação
-  const gatilhos = ScriptApp.getProjectTriggers();
-  for (const t of gatilhos) {
-    const funcao = t.getHandlerFunction();
-    if (funcao === "onEditFirebase" || funcao === "onChangeFirebase") {
-      ScriptApp.deleteTrigger(t);
-    }
-  }
-  
-  // Cria gatilho onEdit instalável
-  ScriptApp.newTrigger("onEditFirebase")
-    .forSpreadsheet(SpreadsheetApp.getActive())
-    .onEdit()
-    .create();
-  
-  // Cria gatilho onChange instalável
-  ScriptApp.newTrigger("onChangeFirebase")
-    .forSpreadsheet(SpreadsheetApp.getActive())
-    .onChange()
-    .create();
-  
-  Logger.log("✅ Gatilhos automáticos criados!");
-  Logger.log("📝 onEditFirebase: sincroniza ao editar células");
-  Logger.log("📝 onChangeFirebase: sincroniza ao adicionar/remover abas ou linhas");
-  
-  SpreadsheetApp.getActiveSpreadsheet().toast(
-    "Sincronização automática ATIVADA! 🚀\nAlterações serão enviadas automaticamente para o Firebase.",
-    "Firebase Auto Sync",
-    10
-  );
-}
-
-/**
- * Remove todos os gatilhos automáticos (caso queira desativar).
- */
-function removerGatilhosAutomaticos() {
-  const gatilhos = ScriptApp.getProjectTriggers();
-  let removidos = 0;
-  
-  for (const t of gatilhos) {
-    const funcao = t.getHandlerFunction();
-    if (funcao === "onEditFirebase" || funcao === "onChangeFirebase") {
-      ScriptApp.deleteTrigger(t);
-      removidos++;
-    }
-  }
-  
-  Logger.log("🗑️ " + removidos + " gatilho(s) removido(s).");
-  SpreadsheetApp.getActiveSpreadsheet().toast(
-    "Sincronização automática DESATIVADA. ⏸️",
-    "Firebase Auto Sync",
-    5
-  );
-}
 
 /**
  * Verifica o status dos gatilhos automáticos.
@@ -698,9 +218,6 @@ function verificarStatusGatilhos() {
   
   for (const t of gatilhos) {
     const funcao = t.getHandlerFunction();
-    if (funcao === "onEditFirebase") onEditAtivo = true;
-    if (funcao === "onChangeFirebase") onChangeAtivo = true;
-    if (funcao === "enviarTodasAsAbasParaFirebase") diarioAtivo = true;
   }
   
   Logger.log("📊 STATUS DOS GATILHOS:");
@@ -737,33 +254,10 @@ function verificarStatusGatilhos() {
 /**********************************************
  * 📌 PONTO E ESCALA (unificado)
  **********************************************/
-/**
- * Sistema de sincronização de pontos para escalas.
- * 
- * Funcionalidade:
- * - PontoTeoria sincroniza para EscalaTeoria + número (ex: EscalaTeoria1, EscalaTeoria2, etc.)
- * - PontoPratica sincroniza para EscalaPratica + número (ex: EscalaPratica1, EscalaPratica2, etc.)
- * 
- * Identificação de alunos:
- * - O aluno é identificado por pelo menos 2 dos 3 campos: SerialNumber, EmailHC, NomeCompleto
- * - Os dois identificadores precisam coincidir para encontrar o aluno na escala
- * 
- * Formato das datas nas colunas da escala:
- * - Formato DD_MM (ex: 10_03 para 10 de março)
- * - Também aceita DD/MM, DD/MM/YYYY, DD_MM/YYYY
- * 
- * Atualizado para inserir apenas "HH:MM:SS às HH:MM:SS" (sem "Prática:"/ "Teoria:")
- * Cole em Extensions → Apps Script do seu Google Sheets.
- * 
- * IMPORTANTE: Para funcionar automaticamente mesmo com a planilha fechada,
- * execute a função criarGatilhosPontoAutomatico() UMA VEZ para criar
- * os gatilhos instaláveis.
- */
 
 // Nomes das funções de gatilhos para evitar duplicação
 var TRIGGER_FUNCTIONS = [
   'onEditPontoInstalavel', 'onChangePontoInstalavel',
-  'onEditFirebase', 'onChangeFirebase'
 ];
 
 /**
@@ -781,7 +275,7 @@ function onEdit(e){
 /**
  * Função chamada pelo gatilho INSTALÁVEL onEdit.
  * Funciona mesmo quando a planilha está fechada.
- * Sincroniza pontos para Escalas e envia para Firebase automaticamente.
+ * Sincroniza pontos para Escalas.
  * @param {Object} e - Objeto evento do Google Apps Script
  */
 function onEditPontoInstalavel(e) {
@@ -792,20 +286,8 @@ function onEditPontoInstalavel(e) {
       sheetName = e.range.getSheet().getName();
     }
     
-    // Primeiro sincroniza para as escalas
+    // Sincroniza para as escalas
     handlePontoChange(e);
-    
-    // Depois envia para o Firebase (se a função existir no Code.gs)
-    if (typeof enviarTodasAsAbasParaFirebase === 'function') {
-      enviarTodasAsAbasParaFirebase();
-    }
-    
-    // Salva detalhes da sincronização
-    var agora = new Date().getTime();
-    salvarUltimaSync(agora);
-    var detalhe = '• Alteração em: ' + sheetName + '\n• Pontos sincronizados para Escalas\n• Dados enviados para Firebase';
-    salvarDetalheSincronizacao(detalhe);
-    
   } catch(err) {
     console.error("Erro em onEditPontoInstalavel:", err);
   }
@@ -872,17 +354,6 @@ function onChangePontoInstalavel(e) {
           syncedSheets.push(sheets[i]);
         }
       }
-      
-      // Envia para Firebase
-      if (typeof enviarTodasAsAbasParaFirebase === 'function') {
-        enviarTodasAsAbasParaFirebase();
-      }
-      
-      // Salva detalhes da sincronização
-      var agora = new Date().getTime();
-      salvarUltimaSync(agora);
-      var detalhe = '• Tipo de alteração: ' + e.changeType + '\n• Abas sincronizadas: ' + syncedSheets.join(', ') + '\n• Dados enviados para Firebase';
-      salvarDetalheSincronizacao(detalhe);
     }
   } catch(err) {
     console.error("Erro em onChangePontoInstalavel:", err);
@@ -1416,17 +887,12 @@ function syncAllPontos(){
 /**********************************************
  * 📋 MENU PRINCIPAL — Criado ao abrir a planilha
  **********************************************/
-function onOpen(){
+/**
+ * Menu personalizado ao abrir a planilha
+ */
+function onOpen() {
   var ui = SpreadsheetApp.getUi();
-  
-  ui.createMenu('📋 Gestão de Pontos')
-    .addItem('📊 Ver Última Sincronização', 'mostrarUltimaSincronizacao')
-    .addSeparator()
-    .addItem('✅ Ativar Sincronização Automática', 'ativarSincronizacaoAutomatica')
-    .addItem('⏸️ Desativar Sincronização Automática', 'desativarSincronizacaoAutomatica')
-    .addSeparator()
-    .addItem('🔥 Enviar Todos os Dados para Firebase', 'enviarDadosParaFirebase')
-    .addToUi();
+  // Menu pode ser expandido conforme necessário
 }
 
 /**********************************************
@@ -1434,96 +900,10 @@ function onOpen(){
  **********************************************/
 
 /**
- * Mostra a última sincronização realizada e detalhes do que foi sincronizado
- */
-function mostrarUltimaSincronizacao() {
-  var ultimaSync = getUltimaSync();
-  var ultimoDetalhe = getUltimoDetalheSincronizacao();
-  var mensagem = '';
-  
-  if (ultimaSync > 0) {
-    var dataUltimaSync = new Date(ultimaSync);
-    mensagem = '📅 Última sincronização:\n' + 
-               dataUltimaSync.toLocaleString('pt-BR') + 
-               '\n(há ' + calcularTempoDecorrido(ultimaSync) + ')\n\n';
-    
-    if (ultimoDetalhe) {
-      mensagem += '📋 O que foi sincronizado:\n' + ultimoDetalhe;
-    } else {
-      mensagem += '📋 Sincronização automática ativa.';
-    }
-  } else {
-    mensagem = '⚠️ Nenhuma sincronização foi realizada ainda.\n\n' +
-               'Ative a sincronização automática para começar.';
-  }
-  
-  // Verifica status dos gatilhos
-  var statusGatilhos = verificarStatusGatilhosInterno();
-  mensagem += '\n\n═══════════════════════════════════════\n';
-  mensagem += '⚙️ Status da Sincronização Automática:\n';
-  mensagem += statusGatilhos.ativo ? '✅ ATIVADA' : '❌ DESATIVADA';
-  
-  SpreadsheetApp.getUi().alert('📊 Status da Sincronização', mensagem, SpreadsheetApp.getUi().ButtonSet.OK);
-}
-
-/**
- * Verifica o status dos gatilhos internamente (sem mostrar UI)
- * @returns {Object} Objeto com status dos gatilhos
- */
-function verificarStatusGatilhosInterno() {
-  var gatilhos = ScriptApp.getProjectTriggers();
-  var onEditAtivo = false;
-  var onChangeAtivo = false;
-  
-  for (var i = 0; i < gatilhos.length; i++) {
-    var funcao = gatilhos[i].getHandlerFunction();
-    if (funcao === 'onEditPontoInstalavel' || funcao === 'onEditFirebase') onEditAtivo = true;
-    if (funcao === 'onChangePontoInstalavel' || funcao === 'onChangeFirebase') onChangeAtivo = true;
-  }
-  
-  return {
-    ativo: onEditAtivo && onChangeAtivo,
-    onEdit: onEditAtivo,
-    onChange: onChangeAtivo
-  };
-}
-
-/**
- * Obtém os detalhes da última sincronização
- * @returns {string} Detalhes da última sincronização
- */
-function getUltimoDetalheSincronizacao() {
-  return PropertiesService.getScriptProperties().getProperty('ULTIMO_DETALHE_SYNC') || '';
-}
-
-/**
- * Salva os detalhes da última sincronização
- * @param {string} detalhe - Detalhes do que foi sincronizado
- */
-function salvarDetalheSincronizacao(detalhe) {
-  PropertiesService.getScriptProperties().setProperty('ULTIMO_DETALHE_SYNC', detalhe);
-}
-
-/**
  * Calcula o tempo decorrido desde um timestamp
  * @param {number} timestamp - Timestamp em milissegundos
  * @returns {string} Tempo decorrido formatado
  */
-function calcularTempoDecorrido(timestamp) {
-  var agora = new Date().getTime();
-  var diferenca = agora - timestamp;
-  
-  var segundos = Math.floor(diferenca / 1000);
-  var minutos = Math.floor(segundos / 60);
-  var horas = Math.floor(minutos / 60);
-  var dias = Math.floor(horas / 24);
-  
-  if (dias > 0) return dias + ' dia(s)';
-  if (horas > 0) return horas + ' hora(s)';
-  if (minutos > 0) return minutos + ' minuto(s)';
-  return segundos + ' segundo(s)';
-}
-
 /**********************************************
  * 🔄 FUNÇÕES DE SINCRONIZAÇÃO ESPECÍFICAS
  **********************************************/
@@ -1651,136 +1031,6 @@ function syncAllFrequenciaTeorica() {
  * ⚙️ FUNÇÕES DE GATILHOS
  **********************************************/
 
-/**
- * Remove o gatilho diário
- */
-function removerGatilhoDiario() {
-  var gatilhos = ScriptApp.getProjectTriggers();
-  var removidos = 0;
-  
-  for (var i = 0; i < gatilhos.length; i++) {
-    var t = gatilhos[i];
-    if (t.getHandlerFunction() === 'enviarTodasAsAbasParaFirebase') {
-      ScriptApp.deleteTrigger(t);
-      removidos++;
-    }
-  }
-  
-  if (removidos > 0) {
-    SpreadsheetApp.getActiveSpreadsheet().toast('🗑️ Gatilho diário removido!', 'Gatilhos', 5);
-  } else {
-    SpreadsheetApp.getActiveSpreadsheet().toast('⚠️ Nenhum gatilho diário encontrado para remover.', 'Gatilhos', 5);
-  }
-}
-
-/**********************************************
- * 🔥 FUNÇÕES DO FIREBASE
- **********************************************/
-
-/**
- * Verifica se a Cloud Function está configurada corretamente
- */
-function verificarConfiguracaoFirebase() {
-  var ui = SpreadsheetApp.getUi();
-  
-  if (!FUNCTION_URL) {
-    ui.alert('❌ Cloud Function NÃO configurada', 
-             'A URL da Cloud Function (FUNCTION_URL) não está configurada.\n\n' +
-             'Para configurar:\n' +
-             '1. Vá em "Extensões" → "Apps Script"\n' +
-             '2. Clique em "Configurações do projeto" (ícone de engrenagem)\n' +
-             '3. Role até "Propriedades de script"\n' +
-             '4. Adicione:\n' +
-             '   - Chave: FUNCTION_URL\n' +
-             '   - Valor: URL da sua Cloud Function\n' +
-             '   - Chave: SYNC_TOKEN\n' +
-             '   - Valor: Token secreto (ex: gere com: openssl rand -hex 32)',
-             ui.ButtonSet.OK);
-    return;
-  }
-  
-  if (!SYNC_TOKEN) {
-    ui.alert('❌ Token de Sync NÃO configurado', 
-             'O SYNC_TOKEN não está configurado.\n\n' +
-             'Configure nas propriedades do script.',
-             ui.ButtonSet.OK);
-    return;
-  }
-  
-  // Test connection to Cloud Function
-  try {
-    const testPayload = {
-      aba: "_test",
-      dados: [],
-      nomeAbaOriginal: "Test",
-      ultimaAtualizacao: new Date().toISOString(),
-      metadados: { totalRegistros: 0, tipoSincronizacao: 'test' }
-    };
-    
-    const opcoes = {
-      method: "post",
-      contentType: "application/json",
-      headers: { "X-SYNC-TOKEN": SYNC_TOKEN },
-      payload: JSON.stringify(testPayload),
-      muteHttpExceptions: true
-    };
-    
-    const resposta = UrlFetchApp.fetch(FUNCTION_URL, opcoes);
-    const codigo = resposta.getResponseCode();
-    
-    if (codigo === 200) {
-      ui.alert('✅ Configuração OK', 
-               'A conexão com a Cloud Function está funcionando!\n\n' +
-               'URL: ' + FUNCTION_URL + '\n' +
-               'Token: Configurado ✓\n\n' +
-               'Você pode enviar dados para o Firebase.',
-               ui.ButtonSet.OK);
-    } else {
-      ui.alert('⚠️ Cloud Function Respondeu, mas com Erro', 
-               'Código de resposta: ' + codigo + '\n' +
-               'Resposta: ' + resposta.getContentText().substring(0, 200) + '\n\n' +
-               'Verifique:\n' +
-               '1. Token está correto\n' +
-               '2. Cloud Function está deployada\n' +
-               '3. Permissões do Firebase',
-               ui.ButtonSet.OK);
-    }
-  } catch (erro) {
-    ui.alert('❌ Erro de Conexão', 
-             'Não foi possível conectar à Cloud Function.\n\n' +
-             'Erro: ' + erro.message + '\n\n' +
-             'Verifique:\n' +
-             '1. URL está correta\n' +
-             '2. Cloud Function está deployada\n' +
-             '3. Conexão com internet',
-             ui.ButtonSet.OK);
-  }
-}
-
-/**
- * Confirmação antes de enviar dados para o Firebase
- */
-function confirmarEnvioFirebase() {
-  var ui = SpreadsheetApp.getUi();
-  
-  var resposta = ui.alert(
-    '🔥 Enviar Dados para o Firebase',
-    '⚠️ ATENÇÃO: Antes de enviar, certifique-se de que:\n\n' +
-    '1️⃣ Você sincronizou todos os pontos (menu "Sincronizar Pontos")\n' +
-    '2️⃣ Todas as alterações nos pontos foram feitas\n' +
-    '3️⃣ Os dados nas abas estão corretos\n\n' +
-    '📤 Deseja enviar TODOS os dados para o Firebase agora?\n\n' +
-    '(Esta ação irá atualizar o Firebase com os dados atuais da planilha)',
-    ui.ButtonSet.YES_NO
-  );
-  
-  if (resposta === ui.Button.YES) {
-    enviarTodasAsAbasParaFirebase();
-  } else {
-    SpreadsheetApp.getActiveSpreadsheet().toast('❌ Envio cancelado pelo usuário.', 'Firebase', 3);
-  }
-}
-
 /**********************************************
  * ❓ AJUDA
  **********************************************/
@@ -1795,8 +1045,7 @@ function mostrarAjuda() {
     '📋 GUIA DO MENU DE GESTÃO DE PONTOS\n\n' +
     '═══════════════════════════════════════\n\n' +
     '📊 VER STATUS:\n' +
-    '• Ver Status dos Gatilhos - Mostra quais automações estão ativas\n' +
-    '• Ver Última Sincronização - Mostra quando foi a última sync\n\n' +
+    '• Ver Status dos Gatilhos - Mostra quais automações estão ativas\n\n' +
     '═══════════════════════════════════════\n\n' +
     '🔄 SINCRONIZAR PONTOS:\n' +
     '• Sincroniza pontos de PontoPratica e PontoTeoria para Escalas\n' +
@@ -1805,14 +1054,9 @@ function mostrarAjuda() {
     '⚙️ CONFIGURAR GATILHOS:\n' +
     '• Ativar sincronização automática - Ativa TUDO automaticamente:\n' +
     '  → Pontos para Escalas\n' +
-    '  → Escalas para Firebase\n' +
     '  → Funciona mesmo com a planilha FECHADA!\n' +
     '• Desativar - Remove todas as automações\n' +
     '• Gatilhos específicos disponíveis separadamente\n\n' +
-    '═══════════════════════════════════════\n\n' +
-    '🔥 FIREBASE:\n' +
-    '• Verificar configuração - Checa se o Firebase está pronto\n' +
-    '• ENVIAR DADOS - Envia tudo manualmente para o Firebase\n\n' +
     '═══════════════════════════════════════\n\n' +
     '💡 RECOMENDAÇÃO:\n' +
     'Ative a sincronização automática uma vez e deixe o sistema\n' +
@@ -1829,7 +1073,6 @@ function mostrarAjuda() {
 /**
  * Ativa TODOS os gatilhos automáticos:
  * - Sincronização de pontos para Escalas
- * - Envio automático para Firebase
  * Funciona mesmo com a planilha fechada.
  */
 function ativarTodosGatilhosAutomaticos() {
@@ -1856,21 +1099,9 @@ function ativarTodosGatilhosAutomaticos() {
     .onChange()
     .create();
   
-  // Cria gatilhos para Firebase
-  ScriptApp.newTrigger('onEditFirebase')
-    .forSpreadsheet(ss)
-    .onEdit()
-    .create();
-  
-  ScriptApp.newTrigger('onChangeFirebase')
-    .forSpreadsheet(ss)
-    .onChange()
-    .create();
-  
   SpreadsheetApp.getActiveSpreadsheet().toast(
     '✅ Sincronização COMPLETA ativada!\n\n' +
-    '• Pontos → Escalas: Automático\n' +
-    '• Escalas → Firebase: Automático\n\n' +
+    '• Pontos → Escalas: Automático\n\n' +
     'Funciona mesmo com a planilha fechada!',
     'Sincronização Automática',
     10
@@ -1907,113 +1138,6 @@ function desativarTodosGatilhosAutomaticos() {
 /**********************************************
  * 📋 FUNÇÕES DO MENU SIMPLIFICADO
  **********************************************/
-
-/**
- * Ativa a sincronização automática completa:
- * 1. Primeiro sincroniza todos os pontos para as Escalas
- * 2. Depois envia todos os dados para o Firebase
- * 3. Configura gatilhos para sincronização automática em cada alteração
- */
-function ativarSincronizacaoAutomatica() {
-  var ui = SpreadsheetApp.getUi();
-  
-  SpreadsheetApp.getActiveSpreadsheet().toast('🔄 Ativando sincronização automática...', 'Aguarde', 3);
-  
-  try {
-    // 1. Sincroniza todos os pontos para as Escalas
-    console.log('Sincronizando pontos para Escalas...');
-    syncAllPontos();
-    
-    // 2. Envia todos os dados para o Firebase
-    console.log('Enviando dados para Firebase...');
-    if (typeof enviarTodasAsAbasParaFirebase === 'function') {
-      enviarTodasAsAbasParaFirebase();
-    }
-    
-    // 3. Salva detalhes da sincronização
-    var timestamp = new Date().getTime();
-    salvarUltimaSync(timestamp);
-    salvarDetalheSincronizacao('• PontoTeoria → EscalaTeoria\n• PontoPratica → EscalaPratica\n• Todas as abas → Firebase');
-    
-    // 4. Ativa os gatilhos automáticos
-    ativarTodosGatilhosAutomaticos();
-    
-    ui.alert('✅ Sincronização Automática Ativada', 
-      'A sincronização automática foi ativada com sucesso!\n\n' +
-      '📋 O que foi feito agora:\n' +
-      '• Pontos sincronizados para Escalas\n' +
-      '• Dados enviados para Firebase\n\n' +
-      '⚡ A partir de agora:\n' +
-      'Qualquer alteração na planilha será sincronizada automaticamente.',
-      ui.ButtonSet.OK);
-      
-  } catch (err) {
-    console.error('Erro ao ativar sincronização:', err);
-    ui.alert('❌ Erro', 'Ocorreu um erro ao ativar a sincronização:\n' + err.message, ui.ButtonSet.OK);
-  }
-}
-
-/**
- * Desativa a sincronização automática para manutenção
- */
-function desativarSincronizacaoAutomatica() {
-  var ui = SpreadsheetApp.getUi();
-  
-  var resposta = ui.alert(
-    '⏸️ Desativar Sincronização',
-    'Você está prestes a desativar a sincronização automática.\n\n' +
-    'Isso é útil para fazer manutenção na planilha sem que as alterações sejam sincronizadas.\n\n' +
-    'Deseja continuar?',
-    ui.ButtonSet.YES_NO
-  );
-  
-  if (resposta === ui.Button.YES) {
-    desativarTodosGatilhosAutomaticos();
-    
-    ui.alert('⏸️ Sincronização Desativada', 
-      'A sincronização automática foi desativada.\n\n' +
-      'Você pode fazer manutenção na planilha.\n\n' +
-      '⚠️ Lembre-se de reativar quando terminar!',
-      ui.ButtonSet.OK);
-  }
-}
-
-/**
- * Envia todos os dados para o Firebase manualmente
- */
-function enviarDadosParaFirebase() {
-  var ui = SpreadsheetApp.getUi();
-  
-  var resposta = ui.alert(
-    '🔥 Enviar para Firebase',
-    'Deseja enviar todos os dados da planilha para o Firebase agora?\n\n' +
-    '⚠️ Isso irá sobrescrever os dados atuais no Firebase.',
-    ui.ButtonSet.YES_NO
-  );
-  
-  if (resposta === ui.Button.YES) {
-    SpreadsheetApp.getActiveSpreadsheet().toast('🔄 Enviando dados para Firebase...', 'Aguarde', 5);
-    
-    try {
-      if (typeof enviarTodasAsAbasParaFirebase === 'function') {
-        enviarTodasAsAbasParaFirebase();
-        
-        // Salva o timestamp e detalhes
-        var agora = new Date().getTime();
-        salvarUltimaSync(agora);
-        salvarDetalheSincronizacao('• Envio manual para Firebase\n• Todas as abas enviadas');
-        
-        ui.alert('✅ Sucesso', 'Todos os dados foram enviados para o Firebase!', ui.ButtonSet.OK);
-      } else {
-        ui.alert('❌ Erro', 'Função de envio para Firebase não encontrada.\nVerifique se o arquivo Code.gs está configurado corretamente.', ui.ButtonSet.OK);
-      }
-    } catch (err) {
-      console.error('Erro ao enviar para Firebase:', err);
-      ui.alert('❌ Erro', 'Ocorreu um erro ao enviar para o Firebase:\n' + err.message, ui.ButtonSet.OK);
-    }
-  }
-}
-
 
 /**********************************************
  * 📌 API DE PONTO (unificado)
@@ -2081,9 +1205,6 @@ function doPost(e) {
   // Se existe teoria aberta → registrar saída e parar
   if (linhaTeoriaAberta) {
     abaTeoria.getRange(linhaTeoriaAberta, 6).setValue(horaStr);
-    if (typeof enviarAbaParaFirebase === "function") {
-      enviarAbaParaFirebase(abaTeoria);
-    }
     return resposta("Saída teórica registrada: " + horaStr);
   }
 
@@ -2115,9 +1236,6 @@ function doPost(e) {
         abaTeoria.appendRow([id, email, nome, dataStr, horaStr, "", escala, "Teoria"]);
         var novaLinhaTeoria = abaTeoria.getLastRow();
         syncToFrequenciaTeoricaFromPonto_(ss, abaTeoria, novaLinhaTeoria, escala);
-        if (typeof enviarAbaParaFirebase === "function") {
-          enviarAbaParaFirebase(abaTeoria);
-        }
         return resposta("Entrada teórica registrada: " + horaStr);
       }
       abaPratica.appendRow([id, email, nome, dataStr, horaStr, "", escala, "Prática"]);
@@ -2140,9 +1258,6 @@ function doPost(e) {
           // Sincroniza automaticamente para FrequenciaTeorica
           var novaLinha = abaTeoria.getLastRow();
           syncToFrequenciaTeoricaFromPonto_(ss, abaTeoria, novaLinha, escala);
-          if (typeof enviarAbaParaFirebase === "function") {
-            enviarAbaParaFirebase(abaTeoria);
-          }
           return resposta("Saída prática e entrada teórica registradas: " + horaStr);
         }
       }
@@ -2457,15 +1572,6 @@ function registrarAusencia(data) {
   
   Logger.log('✅ Ausência registrada: ' + data.NomeCompleto + ' - ' + data.DataAusencia);
   
-  // Sincronizar com Firebase se disponível
-  if (typeof enviarAbaParaFirebase === "function") {
-    try {
-      enviarAbaParaFirebase(aba);
-    } catch (e) {
-      Logger.log('⚠️ Erro ao sincronizar com Firebase: ' + e);
-    }
-  }
-  
   return { 
     success: true, 
     message: 'Ausência registrada com sucesso',
@@ -2516,15 +1622,6 @@ function registrarReposicao(data) {
   aba.appendRow(registro);
   
   Logger.log('✅ Reposição registrada: ' + data.NomeCompleto + ' - ' + data.DataReposicao);
-  
-  // Sincronizar com Firebase se disponível
-  if (typeof enviarAbaParaFirebase === "function") {
-    try {
-      enviarAbaParaFirebase(aba);
-    } catch (e) {
-      Logger.log('⚠️ Erro ao sincronizar com Firebase: ' + e);
-    }
-  }
   
   return { 
     success: true, 
