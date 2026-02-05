@@ -246,8 +246,8 @@ function verificarStatusGatilhos() {
  * 📌 PONTO E ESCALA (unificado)
  **********************************************/
 
-// Nomes das funções de gatilhos para evitar duplicação
-// Usado em ativarTodosGatilhosAutomaticos() e desativarTodosGatilhosAutomaticos()
+// Nomes das funções de gatilhos instaláveis
+// Usado para identificar e remover gatilhos em ativar/desativarTodosGatilhosAutomaticos()
 const TRIGGER_FUNCTIONS = [
   'onEditPontoInstalavel', 'onChangePontoInstalavel',
 ];
@@ -883,8 +883,15 @@ function syncAllPontos(){
  * Menu personalizado ao abrir a planilha
  */
 function onOpen() {
-  // Menu pode ser adicionado aqui conforme necessário
-  // Por exemplo: SpreadsheetApp.getUi().createMenu('Menu').addItem('Item', 'funcao').addToUi();
+  const ui = SpreadsheetApp.getUi();
+  ui.createMenu('📋 Gestão de Pontos')
+    .addItem('📊 Ver Status dos Gatilhos', 'verificarStatusGatilhos')
+    .addSeparator()
+    .addItem('✅ Ativar Sincronização Automática', 'ativarTodosGatilhosAutomaticos')
+    .addItem('⏸️ Desativar Sincronização Automática', 'desativarTodosGatilhosAutomaticos')
+    .addSeparator()
+    .addItem('❓ Ajuda', 'mostrarAjuda')
+    .addToUi();
 }
 
 /**********************************************
