@@ -76,6 +76,16 @@
                 }
             } catch (error) {
                 console.error('[checkFirebaseConnection] ❌ Erro ao verificar conexão:', error);
+                
+                // Check if it's a permission error
+                if (error.message && (error.message.includes('PERMISSION_DENIED') || error.message.includes('permission'))) {
+                    return { 
+                        connected: false, 
+                        error: 'Permissão negada. Por favor, faça login com uma conta autorizada. Se o erro persistir, verifique as regras de segurança do Firebase (veja CONFIGURAR_FIREBASE.md)',
+                        isPermissionError: true
+                    };
+                }
+                
                 return { connected: false, error: error.message };
             }
         }
