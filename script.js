@@ -7,7 +7,7 @@
         const dbListenerUnsubscribes = []; // Store unsubscribe functions for cleanup
         
         // Initialize Firebase (will be called after window.firebase is available)
-        // CRITICAL: Auth and Database are essential.
+        // NOTE: Only Auth is required now. Database is optional (data comes from Apps Script URL)
         function initializeFirebase() {
             if (!window.firebase) {
                 console.error('[Firebase] window.firebase not available yet');
@@ -15,7 +15,7 @@
             }
             
             try {
-                // Step 1: Initialize Firebase App (required for everything)
+                // Step 1: Initialize Firebase App (required for Auth)
                 fbApp = window.firebase.initializeApp(window.firebase.firebaseConfig);
                 console.log('[Firebase] App initialized successfully');
                 
@@ -23,15 +23,20 @@
                 fbAuth = window.firebase.getAuth(fbApp);
                 console.log('[Firebase] Auth initialized successfully');
                 
-                // Step 3: Initialize Realtime Database (REQUIRED - site data won't load without this)
-                fbDB = window.firebase.getDatabase(fbApp);
-                console.log('[Firebase] Realtime Database initialized successfully');
+                // Step 3: Initialize Realtime Database (OPTIONAL - kept for compatibility but not used)
+                try {
+                    fbDB = window.firebase.getDatabase(fbApp);
+                    console.log('[Firebase] Realtime Database initialized (not used for data loading)');
+                } catch (dbError) {
+                    console.warn('[Firebase] Database initialization failed (not critical):', dbError);
+                    fbDB = null;
+                }
                 
-                console.log('[Firebase] Core services (Auth + Database) initialized successfully');
+                console.log('[Firebase] Auth initialized successfully - ready for login');
                 return true;
             } catch (error) {
                 console.error('[Firebase] Critical initialization error:', error);
-                console.error('[Firebase] Auth or Database failed to initialize - login will not work.');
+                console.error('[Firebase] Auth failed to initialize - login will not work.');
                 return false;
             }
         }
