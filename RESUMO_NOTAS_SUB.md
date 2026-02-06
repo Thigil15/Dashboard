@@ -98,14 +98,12 @@ Exemplo:
 | Maria | 6,0              | 7,5                 | 9,0   |           |
 ```
 
-### Passo 3: Exportar para Firebase
+### Passo 3: Atualizar Dados
 
-Execute no Google Apps Script:
-```
-Extensões > Apps Script > enviarTodasAsAbasParaFirebase()
-```
-
-Ou configure o trigger automático para executar a cada 5 minutos.
+Os dados são atualizados automaticamente através do Apps Script:
+- O site busca os dados do Google Sheets através do Apps Script (doGet)
+- Atualização automática a cada 5 minutos
+- Não é necessária nenhuma sincronização manual
 
 ### Passo 4: Verificar no Site
 
@@ -275,7 +273,7 @@ Se você adicionar uma nova disciplina que pode ter SUB:
 
 1. Renomear colunas no Google Sheets
 2. Preencher notas SUB
-3. Exportar para Firebase
+3. Aguardar atualização automática (até 5 minutos)
 4. Pronto! Vai funcionar.
 
 ## 📞 Suporte
