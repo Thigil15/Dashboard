@@ -1575,36 +1575,16 @@
     </div>
     
     <!-- CLIENT-SIDE SCRIPT -->
-    <!-- Firebase SDK and Configuration -->
+    <!-- Apps Script Configuration -->
     <script type="module">
-        // Import Firebase SDK
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js';
-        import { 
-            getAuth, 
-            onAuthStateChanged, 
-            signInWithEmailAndPassword,
-            signOut 
-        } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js';
+        // Import Apps Script configuration
+        import configModule from './apps-script-config.js';
+        const appsScriptConfig = configModule.appsScriptConfig || configModule;
 
-        // Import configuration (Firebase for Auth + Apps Script for Data)
-        import configModule from './firebase-config.js';
-        const firebaseConfig = configModule.firebaseConfig || configModule;
-        const appsScriptConfig = configModule.appsScriptConfig || { dataURL: "" };
-
-        // Make Firebase Auth functions and configurations globally available
-        window.firebase = {
-            initializeApp,
-            getAuth,
-            onAuthStateChanged,
-            signInWithEmailAndPassword,
-            signOut,
-            firebaseConfig,
-            appsScriptConfig
-        };
+        // Make Apps Script configuration globally available
+        window.appsScriptConfig = appsScriptConfig;
         
-        // Dispatch custom event to signal Firebase SDK is ready
-        window.dispatchEvent(new CustomEvent('firebaseReady'));
-        console.log('[Firebase SDK] Loaded and ready for Authentication');
+        console.log('[Apps Script Config] Loaded successfully');
         console.log('[Apps Script Config] Data URL configured:', appsScriptConfig.dataURL);
     </script>
     <script type="module" src="script.js"></script>
