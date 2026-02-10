@@ -1584,8 +1584,6 @@
         // Make Apps Script configuration globally available
         window.appsScriptConfig = appsScriptConfig;
         
-        // Dispatch custom event to signal configuration is ready
-        window.dispatchEvent(new CustomEvent('configReady'));
         console.log('[Apps Script Config] Loaded successfully');
         console.log('[Apps Script Config] Data URL configured:', appsScriptConfig.dataURL);
     </script>

@@ -3228,8 +3228,8 @@ function extractTimeFromISO(isoString) {
             });
         }
 
-        // Firebase Authentication login handler
-        // Login function - Authentication DISABLED (bypass directly to dashboard)
+        // Login handler - NO AUTHENTICATION SYSTEM
+        // Simply bypasses directly to dashboard without any credential validation
         async function handleLogin(event) {
             event.preventDefault();
             console.log("[handleLogin] Login initiated - bypassing authentication (no auth system)");
