@@ -1734,6 +1734,12 @@ function extractTimeFromISO(isoString) {
                 return;
             }
             
+            // Defensive check: If alunosMap is empty but alunos array has data, rebuild the map
+            if (appState.alunosMap.size === 0 && appState.alunos && appState.alunos.length > 0) {
+                console.warn('[renderReposicoesPendentesList] alunosMap está vazio mas alunos tem dados. Reconstruindo mapa...');
+                buildAlunosMap();
+            }
+            
             // Prefer merged AusenciasReposicoes dataset (contains both ausência + reposição)
             const combined = Array.isArray(appState.ausenciasReposicoes) && appState.ausenciasReposicoes.length > 0
                 ? appState.ausenciasReposicoes
@@ -1821,6 +1827,12 @@ function extractTimeFromISO(isoString) {
             if (!container) {
                 console.error('[renderReposicoesMarcadasList] Container not found');
                 return;
+            }
+            
+            // Defensive check: If alunosMap is empty but alunos array has data, rebuild the map
+            if (appState.alunosMap.size === 0 && appState.alunos && appState.alunos.length > 0) {
+                console.warn('[renderReposicoesMarcadasList] alunosMap está vazio mas alunos tem dados. Reconstruindo mapa...');
+                buildAlunosMap();
             }
             
             // Prefer merged AusenciasReposicoes to show each ausência with reposição marcada
@@ -2408,6 +2420,12 @@ function extractTimeFromISO(isoString) {
             if (!container) {
                 console.error('[renderAusenciasStudentsList] Container not found');
                 return;
+            }
+            
+            // Defensive check: If alunosMap is empty but alunos array has data, rebuild the map
+            if (appState.alunosMap.size === 0 && appState.alunos && appState.alunos.length > 0) {
+                console.warn('[renderAusenciasStudentsList] alunosMap está vazio mas alunos tem dados. Reconstruindo mapa...');
+                buildAlunosMap();
             }
             
             // Get active students
@@ -7545,6 +7563,12 @@ function extractTimeFromISO(isoString) {
                     console.error('[showStudentDetail] Dados de alunos ainda não carregados. Aguarde...');
                     showError('Os dados ainda estão sendo carregados. Por favor, aguarde um momento e tente novamente.');
                     return;
+                }
+                
+                // Defensive check: If alunosMap is empty but alunos array has data, rebuild the map
+                if (appState.alunosMap.size === 0 && appState.alunos && appState.alunos.length > 0) {
+                    console.warn('[showStudentDetail] alunosMap está vazio mas alunos tem dados. Reconstruindo mapa...');
+                    buildAlunosMap();
                 }
                 
                 const info = appState.alunosMap.get(email);
