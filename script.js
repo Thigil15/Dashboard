@@ -704,8 +704,14 @@
                 return result;
             }
 
+            // Match Escala\d+, EscalaTeoria\d+, and EscalaPratica\d+
+            // This preserves the separation between teoria and pratica scales
             const escalaEntries = Object.entries(normalizedSheets)
-                .filter(([sheetName]) => /^escala\d+$/.test(normalizeSheetName(sheetName)))
+                .filter(([sheetName]) => {
+                    const normName = normalizeSheetName(sheetName);
+                    // Match: escala1, escalateoria1, escalapratica1, etc.
+                    return /^escala(teoria|pratica)?\d+$/.test(normName);
+                })
                 .sort(([nameA], [nameB]) => {
                     const numA = parseInt((nameA.match(/(\d+)/) || [])[1], 10) || 0;
                     const numB = parseInt((nameB.match(/(\d+)/) || [])[1], 10) || 0;
@@ -745,8 +751,26 @@
                     return clone;
                 });
 
-                const match = sheetName.match(/(\d+)/);
-                const nomeEscala = match ? `Escala${match[1]}` : sheetName.replace(/\s+/g, '');
+                // Preserve the original scale name (EscalaTeoria1, EscalaPratica1, or Escala1)
+                // This allows extractPontoFromEscalas to correctly determine tipo
+                const normName = normalizeSheetName(sheetName);
+                let nomeEscala;
+                
+                // Check for EscalaTeoria pattern
+                if (/^escalateoria\d+$/.test(normName)) {
+                    const match = sheetName.match(/(\d+)/);
+                    nomeEscala = match ? `EscalaTeoria${match[1]}` : sheetName.replace(/\s+/g, '');
+                }
+                // Check for EscalaPratica pattern
+                else if (/^escalapratica\d+$/.test(normName)) {
+                    const match = sheetName.match(/(\d+)/);
+                    nomeEscala = match ? `EscalaPratica${match[1]}` : sheetName.replace(/\s+/g, '');
+                }
+                // Default Escala pattern
+                else {
+                    const match = sheetName.match(/(\d+)/);
+                    nomeEscala = match ? `Escala${match[1]}` : sheetName.replace(/\s+/g, '');
+                }
 
                 result[nomeEscala] = {
                     nomeEscala,
@@ -755,6 +779,7 @@
                 };
             });
 
+            console.log('[aggregateEscalaSheets] Escalas agregadas:', Object.keys(result));
             return result;
         }
 
@@ -1074,6 +1099,9 @@
         function isPracticeSheetName(normName) {
             if (!normName) return false;
             if (normName.includes('resumo') || normName.includes('template') || normName.includes('config')) return false;
+            // Exclude Escala sheets (EscalaPratica, EscalaTeoria, Escala)
+            // These are schedule sheets, not grade sheets
+            if (normName.startsWith('escala')) return false;
             if (normName.startsWith('np')) return true;
             return normName.includes('pratica') || normName.includes('pratico');
         }
@@ -6675,6 +6703,25 @@ function extractTimeFromISO(isoString) {
 
         function refreshPontoView() {
             try {
+                // Early return if ponto panel is not visible (prevents unnecessary errors)
+                const pontoView = document.getElementById('ponto-view');
+                if (!pontoView || pontoView.style.display === 'none') {
+                    console.log('[refreshPontoView] Painel de ponto não está visível, pulando atualização');
+                    return;
+                }
+                
+                // Check if required data is available
+                if (!pontoState.selectedDate) {
+                    console.log('[refreshPontoView] selectedDate não definido ainda, aguardando inicialização');
+                    return;
+                }
+                
+                // Check if escalas data is loaded
+                if (!appState.escalas || Object.keys(appState.escalas).length === 0) {
+                    console.log('[refreshPontoView] Dados de escalas ainda não carregados');
+                    return;
+                }
+                
                 const dataset = buildPontoDataset(pontoState.selectedDate, pontoState.selectedScale);
                 const enriched = dataset.rows || [];
                 
@@ -6746,7 +6793,12 @@ function extractTimeFromISO(isoString) {
                 renderEscalaOverview();
             } catch (error) {
                 console.error('[refreshPontoView] Erro ao atualizar painel de ponto:', error);
-                showError('Erro ao atualizar o painel de ponto.');
+                console.error('[refreshPontoView] Stack trace:', error.stack);
+                // Only show error if the ponto panel is actually visible
+                const pontoView = document.getElementById('ponto-view');
+                if (pontoView && pontoView.style.display !== 'none') {
+                    showError('Erro ao atualizar o painel de ponto.');
+                }
             }
         }
 
