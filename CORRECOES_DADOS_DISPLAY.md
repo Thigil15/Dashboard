@@ -32,28 +32,24 @@ fetchDataFromURL()
 **Arquivo:** `script.js`, linhas 245-265
 
 **O que foi feito:**
-Adicionadas chamadas para `triggerUIUpdates()` após cada tipo de dado ser carregado em `fetchDataFromURL()`:
+Adicionadas chamadas para `triggerUIUpdates()` após cada tipo de dado ser carregado em `fetchDataFromURL()`, usando um padrão de iteração para melhor manutenibilidade:
 
 ```javascript
 // Trigger UI updates for loaded data
 console.log('[fetchDataFromURL] Atualizando UI com dados carregados...');
 
 // Update dashboard with all loaded data
-if (appState.dataLoadingState.alunos) {
-    triggerUIUpdates('alunos');
-}
-if (appState.dataLoadingState.ausenciasReposicoes) {
-    triggerUIUpdates('ausenciasReposicoes');
-}
-if (appState.dataLoadingState.notasTeoricas) {
-    triggerUIUpdates('notasTeoricas');
-}
-if (appState.dataLoadingState.escalas) {
-    triggerUIUpdates('escalas');
-}
-if (appState.dataLoadingState.pontoStaticRows) {
-    triggerUIUpdates('pontoStaticRows');
-}
+// Use forEach with try-catch to ensure all data types are processed even if one fails
+const dataTypes = ['alunos', 'ausenciasReposicoes', 'notasTeoricas', 'escalas', 'pontoStaticRows'];
+dataTypes.forEach(key => {
+    if (appState.dataLoadingState[key]) {
+        try {
+            triggerUIUpdates(key);
+        } catch (error) {
+            console.error(`[fetchDataFromURL] Erro ao atualizar UI para ${key}:`, error);
+        }
+    }
+});
 ```
 
 **Resultado:** Agora quando os dados são carregados, a função `renderAtAGlance()` é automaticamente chamada para atualizar o dashboard com:

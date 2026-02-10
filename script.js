@@ -246,10 +246,15 @@
                 console.log('[fetchDataFromURL] Atualizando UI com dados carregados...');
                 
                 // Update dashboard with all loaded data
+                // Use forEach with try-catch to ensure all data types are processed even if one fails
                 const dataTypes = ['alunos', 'ausenciasReposicoes', 'notasTeoricas', 'escalas', 'pontoStaticRows'];
                 dataTypes.forEach(key => {
                     if (appState.dataLoadingState[key]) {
-                        triggerUIUpdates(key);
+                        try {
+                            triggerUIUpdates(key);
+                        } catch (error) {
+                            console.error(`[fetchDataFromURL] Erro ao atualizar UI para ${key}:`, error);
+                        }
                     }
                 });
                 
