@@ -2562,8 +2562,8 @@ function extractTimeFromISO(isoString) {
                 console.log('[setupAusenciaFormHandler] Validation passed. Sending data to Google Apps Script:', ausenciaData);
                 
                 // Get Apps Script URL from configuration
-                const APPS_SCRIPT_URL = window.firebase?.appsScriptConfig?.dataURL;
-                if (!APPS_SCRIPT_URL) {
+                const appsScriptURL = window.firebase?.appsScriptConfig?.dataURL;
+                if (!appsScriptURL) {
                     console.error('[setupAusenciaFormHandler] Apps Script URL not configured');
                     resetSubmitButton(submitBtn);
                     showError('URL do Apps Script não configurada');
@@ -2572,7 +2572,7 @@ function extractTimeFromISO(isoString) {
                 
                 // Send to Google Apps Script
                 try {
-                    await fetch(APPS_SCRIPT_URL, {
+                    await fetch(appsScriptURL, {
                         method: 'POST',
                         mode: 'no-cors', // Google Apps Script requires no-cors mode
                         headers: {
@@ -2661,8 +2661,8 @@ function extractTimeFromISO(isoString) {
                 console.log('[setupReposicaoFormHandler] Validation passed. Sending data to Google Apps Script:', reposicaoData);
                 
                 // Get Apps Script URL from configuration
-                const APPS_SCRIPT_URL = window.firebase?.appsScriptConfig?.dataURL;
-                if (!APPS_SCRIPT_URL) {
+                const appsScriptURL = window.firebase?.appsScriptConfig?.dataURL;
+                if (!appsScriptURL) {
                     console.error('[setupReposicaoFormHandler] Apps Script URL not configured');
                     resetSubmitButton(submitBtn);
                     showError('URL do Apps Script não configurada');
@@ -2671,7 +2671,7 @@ function extractTimeFromISO(isoString) {
                 
                 // Send to Google Apps Script
                 try {
-                    await fetch(APPS_SCRIPT_URL, {
+                    await fetch(appsScriptURL, {
                         method: 'POST',
                         mode: 'no-cors', // Google Apps Script requires no-cors mode
                         headers: {
