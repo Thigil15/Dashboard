@@ -242,6 +242,26 @@
                     }
                 }
                 
+                // Trigger UI updates for loaded data
+                console.log('[fetchDataFromURL] Atualizando UI com dados carregados...');
+                
+                // Update dashboard with all loaded data
+                if (appState.dataLoadingState.alunos) {
+                    triggerUIUpdates('alunos');
+                }
+                if (appState.dataLoadingState.ausenciasReposicoes) {
+                    triggerUIUpdates('ausenciasReposicoes');
+                }
+                if (appState.dataLoadingState.notasTeoricas) {
+                    triggerUIUpdates('notasTeoricas');
+                }
+                if (appState.dataLoadingState.escalas) {
+                    triggerUIUpdates('escalas');
+                }
+                if (appState.dataLoadingState.pontoStaticRows) {
+                    triggerUIUpdates('pontoStaticRows');
+                }
+                
                 // Check and hide loading overlay if critical data is loaded
                 checkAndHideLoadingOverlay();
                 
@@ -386,17 +406,25 @@
                 }
             }
             
-            // Only update dashboard if it's visible
+            // Only update dashboard if it's visible OR if we're during initial load
+            // (dashboard view is shown but data is just arriving)
             if (!isDashboardVisible) {
+                console.log('[triggerUIUpdates] Dashboard não visível, pulando atualização da UI');
                 return;
             }
+            
+            // Check if the dashboard tab is currently active
+            const dashboardContent = document.getElementById('content-dashboard');
+            const isDashboardTabActive = dashboardContent && dashboardContent.style.display !== 'none';
             
             switch (stateKey) {
                 case 'alunos':
                     if (typeof renderStudentList === 'function') {
                         renderStudentList(appState.alunos);
                     }
+                    // Always render dashboard when alunos data arrives (it's the critical data)
                     if (typeof renderAtAGlance === 'function') {
+                        console.log('[triggerUIUpdates] Renderizando dashboard com dados de alunos');
                         renderAtAGlance();
                     }
                     break;
@@ -3893,6 +3921,14 @@ function extractTimeFromISO(isoString) {
                 }
             });
             
+            // Initialize dashboard panel when switching to dashboard tab
+            if (tabName === 'dashboard') {
+                console.log('[switchMainTab] Renderizando dashboard...');
+                if (appState.dataLoadingState.alunos && typeof renderAtAGlance === 'function') {
+                    renderAtAGlance();
+                }
+            }
+            
             // Initialize ponto panel when switching to ponto tab
             if (tabName === 'ponto') {
                 console.log('[switchMainTab] Inicializando painel de ponto...');
@@ -3917,8 +3953,13 @@ function extractTimeFromISO(isoString) {
                         }
                         updatePontoHojeMap();
                     }
-                    // Initialize or refresh the panel
-                    initializePontoPanel();
+                    // Initialize or refresh the panel with error handling
+                    try {
+                        initializePontoPanel();
+                    } catch (error) {
+                        console.error('[switchMainTab] Erro ao inicializar painel de ponto:', error);
+                        showError('Erro ao carregar o painel de frequência. Por favor, tente novamente.');
+                    }
                 } else {
                     console.log('[switchMainTab] Aguardando dados de ponto...');
                     // Show loading state in ponto panel
