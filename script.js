@@ -47,7 +47,7 @@
                     let errorMessage = `Erro HTTP ${response.status}: ${response.statusText}`;
                     if (response.status === 404) {
                         errorMessage += '\n\nA URL do Apps Script pode estar incorreta ou o deployment foi excluído.';
-                        errorMessage += '\nVerifique se a URL em firebase-config.js está correta.';
+                        errorMessage += '\nVerifique se a URL em apps-script-config.js está correta.';
                     } else if (response.status === 403) {
                         errorMessage += '\n\nAcesso negado. Verifique as permissões do Apps Script.';
                         errorMessage += '\nCertifique-se de que o deployment está configurado como "Qualquer pessoa" pode acessar.';
@@ -1475,7 +1475,7 @@ function extractTimeFromISO(isoString) {
                 
                 if (!dataLoaded) {
                     showLoading(false);
-                    const errorMsg = 'Erro ao carregar dados do Apps Script. Verifique a configuração da URL em firebase-config.js (appsScriptConfig.dataURL)';
+                    const errorMsg = 'Erro ao carregar dados do Apps Script. Verifique a configuração da URL em apps-script-config.js (appsScriptConfig.dataURL)';
                     showError(errorMsg, false);
                     console.error('[initDashboard] Falha ao carregar dados da URL');
                     return;
