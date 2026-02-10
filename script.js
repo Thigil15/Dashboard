@@ -754,22 +754,21 @@
                 // Preserve the original scale name (EscalaTeoria1, EscalaPratica1, or Escala1)
                 // This allows extractPontoFromEscalas to correctly determine tipo
                 const normName = normalizeSheetName(sheetName);
-                let nomeEscala;
+                const numMatch = sheetName.match(/(\d+)/);
+                const scaleNum = numMatch ? numMatch[1] : '';
                 
+                let nomeEscala;
                 // Check for EscalaTeoria pattern
                 if (/^escalateoria\d+$/.test(normName)) {
-                    const match = sheetName.match(/(\d+)/);
-                    nomeEscala = match ? `EscalaTeoria${match[1]}` : sheetName.replace(/\s+/g, '');
+                    nomeEscala = scaleNum ? `EscalaTeoria${scaleNum}` : sheetName.replace(/\s+/g, '');
                 }
                 // Check for EscalaPratica pattern
                 else if (/^escalapratica\d+$/.test(normName)) {
-                    const match = sheetName.match(/(\d+)/);
-                    nomeEscala = match ? `EscalaPratica${match[1]}` : sheetName.replace(/\s+/g, '');
+                    nomeEscala = scaleNum ? `EscalaPratica${scaleNum}` : sheetName.replace(/\s+/g, '');
                 }
                 // Default Escala pattern
                 else {
-                    const match = sheetName.match(/(\d+)/);
-                    nomeEscala = match ? `Escala${match[1]}` : sheetName.replace(/\s+/g, '');
+                    nomeEscala = scaleNum ? `Escala${scaleNum}` : sheetName.replace(/\s+/g, '');
                 }
 
                 result[nomeEscala] = {
@@ -6702,9 +6701,11 @@ function extractTimeFromISO(isoString) {
         let _pontoTeoriaCountEl = null;
 
         function refreshPontoView() {
+            // Cache pontoView element to avoid redundant DOM lookups
+            const pontoView = document.getElementById('ponto-view');
+            
             try {
                 // Early return if ponto panel is not visible (prevents unnecessary errors)
-                const pontoView = document.getElementById('ponto-view');
                 if (!pontoView || pontoView.style.display === 'none') {
                     console.log('[refreshPontoView] Painel de ponto não está visível, pulando atualização');
                     return;
@@ -6794,8 +6795,7 @@ function extractTimeFromISO(isoString) {
             } catch (error) {
                 console.error('[refreshPontoView] Erro ao atualizar painel de ponto:', error);
                 console.error('[refreshPontoView] Stack trace:', error.stack);
-                // Only show error if the ponto panel is actually visible
-                const pontoView = document.getElementById('ponto-view');
+                // Only show error if the ponto panel is actually visible (using cached element)
                 if (pontoView && pontoView.style.display !== 'none') {
                     showError('Erro ao atualizar o painel de ponto.');
                 }
