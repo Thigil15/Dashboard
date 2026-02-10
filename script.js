@@ -248,15 +248,27 @@
                 // Update dashboard with all loaded data
                 // Use forEach with try-catch to ensure all data types are processed even if one fails
                 const dataTypes = ['alunos', 'ausenciasReposicoes', 'notasTeoricas', 'escalas', 'pontoStaticRows'];
+                const updateResults = { success: [], failed: [] };
+                
                 dataTypes.forEach(key => {
                     if (appState.dataLoadingState[key]) {
                         try {
                             triggerUIUpdates(key);
+                            updateResults.success.push(key);
                         } catch (error) {
-                            console.error(`[fetchDataFromURL] Erro ao atualizar UI para ${key}:`, error);
+                            console.error(`[fetchDataFromURL] ❌ Erro ao atualizar UI para ${key}:`, error);
+                            updateResults.failed.push(key);
                         }
                     }
                 });
+                
+                // Log update results
+                if (updateResults.success.length > 0) {
+                    console.log('[fetchDataFromURL] ✅ UI atualizada com sucesso para:', updateResults.success.join(', '));
+                }
+                if (updateResults.failed.length > 0) {
+                    console.warn('[fetchDataFromURL] ⚠️ Falha ao atualizar UI para:', updateResults.failed.join(', '));
+                }
                 
                 // Check and hide loading overlay if critical data is loaded
                 checkAndHideLoadingOverlay();
@@ -402,8 +414,7 @@
                 }
             }
             
-            // Only update dashboard if it's visible OR if we're during initial load
-            // (dashboard view is shown but data is just arriving)
+            // Only update dashboard if it's visible
             if (!isDashboardVisible) {
                 console.log('[triggerUIUpdates] Dashboard não visível, pulando atualização da UI');
                 return;
@@ -414,7 +425,7 @@
                     if (typeof renderStudentList === 'function') {
                         renderStudentList(appState.alunos);
                     }
-                    // Always render dashboard when alunos data arrives (it's the critical data)
+                    // Render dashboard when alunos data arrives (critical data) if dashboard is visible
                     if (typeof renderAtAGlance === 'function') {
                         console.log('[triggerUIUpdates] Renderizando dashboard com dados de alunos');
                         renderAtAGlance();
