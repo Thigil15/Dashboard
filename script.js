@@ -2522,8 +2522,6 @@ function extractTimeFromISO(isoString) {
          * Handle form submission for Ausências
          * Sends data to Google Apps Script
          */
-        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx6x-I0PCc1Ym8vx7VYyXmwvx3mY-9i3P16z6-5sJB2v728SlzENKnwy-4uAIHIiDLxGg/exec';
-
         function setupAusenciaFormHandler() {
             const form = document.getElementById('form-ausencia');
             if (!form) {
@@ -2563,9 +2561,18 @@ function extractTimeFromISO(isoString) {
                 
                 console.log('[setupAusenciaFormHandler] Validation passed. Sending data to Google Apps Script:', ausenciaData);
                 
+                // Get Apps Script URL from configuration
+                const appsScriptURL = window.firebase?.appsScriptConfig?.dataURL;
+                if (!appsScriptURL) {
+                    console.error('[setupAusenciaFormHandler] Apps Script URL not configured');
+                    resetSubmitButton(submitBtn);
+                    showError('URL do Apps Script não configurada');
+                    return;
+                }
+                
                 // Send to Google Apps Script
                 try {
-                    await fetch(APPS_SCRIPT_URL, {
+                    await fetch(appsScriptURL, {
                         method: 'POST',
                         mode: 'no-cors', // Google Apps Script requires no-cors mode
                         headers: {
@@ -2653,9 +2660,18 @@ function extractTimeFromISO(isoString) {
                 
                 console.log('[setupReposicaoFormHandler] Validation passed. Sending data to Google Apps Script:', reposicaoData);
                 
+                // Get Apps Script URL from configuration
+                const appsScriptURL = window.firebase?.appsScriptConfig?.dataURL;
+                if (!appsScriptURL) {
+                    console.error('[setupReposicaoFormHandler] Apps Script URL not configured');
+                    resetSubmitButton(submitBtn);
+                    showError('URL do Apps Script não configurada');
+                    return;
+                }
+                
                 // Send to Google Apps Script
                 try {
-                    await fetch(APPS_SCRIPT_URL, {
+                    await fetch(appsScriptURL, {
                         method: 'POST',
                         mode: 'no-cors', // Google Apps Script requires no-cors mode
                         headers: {
