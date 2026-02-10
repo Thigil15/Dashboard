@@ -1,12 +1,12 @@
         // ====================================================================
-        // FIREBASE INITIALIZATION
+        // FIREBASE AUTHENTICATION INITIALIZATION
         // ====================================================================
         
         // Wait for window.firebase to be available (loaded by index.html)
         let fbApp, fbAuth;
         
         // Initialize Firebase (will be called after window.firebase is available)
-        // NOTE: Only Auth is used. Data comes from Apps Script URL.
+        // NOTE: Firebase is used ONLY for Authentication. Data comes from Apps Script URL.
         function initializeFirebase() {
             if (!window.firebase) {
                 console.error('[Firebase] window.firebase not available yet');
@@ -32,17 +32,17 @@
         
         
         // ====================================================================
-        // URL-BASED DATA FETCHING (Apps Script)
+        // APPS SCRIPT DATA FETCHING
         // ====================================================================
         
         /**
          * Fetch all data from Apps Script URL
-         * This is the new approach that fetches JSON directly from Google Sheets
+         * This fetches JSON directly from Google Sheets via Apps Script doGet endpoint
          */
         async function fetchDataFromURL() {
             console.log('[fetchDataFromURL] Buscando dados da URL do Apps Script...');
             
-            const dataURL = window.firebase.appsScriptConfig?.dataURL;
+            const dataURL = window.firebase?.appsScriptConfig?.dataURL;
             if (!dataURL || dataURL.includes('YOUR_DEPLOYMENT_ID')) {
                 console.error('[fetchDataFromURL] URL do Apps Script não configurada.');
                 console.error('[fetchDataFromURL] Configure a URL em firebase-config.js');
@@ -434,7 +434,7 @@
             }
         }
         
-        // Legacy API URL removed - all data now comes from Firebase
+        // Legacy API URL removed - all data now loaded from Apps Script
 
         function toPascalCaseKey(key = "") {
             const raw = String(key || "").trim();
@@ -1026,7 +1026,7 @@
 
         // Estado global da aplicação
 
-// Field name variants for robust matching (handles different casing/formatting from Firebase)
+// Field name variants for robust matching (handles different casing/formatting from data source)
 // These arrays are used for VALUE EXTRACTION - finding and reading field values from records
 const EMAIL_FIELD_VARIANTS = ['EmailHC', 'emailHC', 'emailhc', 'EMAILHC', 'Email', 'email'];
 const NAME_FIELD_VARIANTS = ['NomeCompleto', 'nomeCompleto', 'nomecompleto', 'NOMECOMPLETO', 'Nome', 'nome'];
@@ -1107,7 +1107,7 @@ const appState = {
         pdfRawUrl: '',
         pdfViewerUrl: ''
     },
-    // EscalaAtual data from Firebase - used to calculate real "Escalados" count
+    // EscalaAtual data - used to calculate real "Escalados" count
     escalaAtualEnfermaria: [],
     escalaAtualUTI: [],
     escalaAtualCardiopediatria: [],
@@ -1247,12 +1247,12 @@ const pontoState = {
 /**
  * Excel Epoch Dates for Time-Only Values
  * 
- * When Google Sheets exports data to Firebase, cells that contain only time values
+ * When Google Sheets exports data, cells that contain only time values
  * (without a date component) are serialized with the Excel epoch date (December 30, 1899).
  * This is because Excel/Google Sheets internally represents dates as serial numbers,
  * where December 30, 1899 is day 0 (or day 1 depending on the system).
  * 
- * Example: A cell with just "10:06:28" becomes "1899-12-30T10:06:28.000Z" in Firebase.
+ * Example: A cell with just "10:06:28" becomes "1899-12-30T10:06:28.000Z".
  * 
  * We need to detect these values to:
  * 1. Extract only the time portion for display (ignore the meaningless date)
@@ -1396,11 +1396,11 @@ function extractTimeFromISO(isoString) {
 
         // --- INICIALIZAÇÃO E CARGA DE DADOS ---
         async function initDashboard() {
-            console.log('[initDashboard] Iniciando Dashboard com Firebase Realtime Database...');
+            console.log('[initDashboard] Iniciando Dashboard...');
             try {
                 showLoading(true);
                 
-                // URL-based data loading (no Firebase connection check needed)
+                // URL-based data loading from Apps Script
                 console.log('[initDashboard] ✅ Iniciando carregamento de dados via URL...');
                 
                 // Reset data loading state
@@ -1413,7 +1413,7 @@ function extractTimeFromISO(isoString) {
                 
                 if (!dataLoaded) {
                     showLoading(false);
-                    const errorMsg = 'Erro ao carregar dados do Apps Script. Verifique a configuração da URL em firebase-config.js';
+                    const errorMsg = 'Erro ao carregar dados do Apps Script. Verifique a configuração da URL em apps-script-config.js';
                     showError(errorMsg, false);
                     console.error('[initDashboard] Falha ao carregar dados da URL');
                     return;
@@ -1453,16 +1453,12 @@ function extractTimeFromISO(isoString) {
                     if (!anyDataLoaded) {
                         showLoading(false);
                         console.warn("[initDashboard] AVISO: Nenhum dado foi carregado após 10 segundos!");
-                        console.warn("[initDashboard] Possíveis causas (conexão e dados verificados anteriormente):");
-                        console.warn("  1. Regras do Firebase estão bloqueando a leitura");
-                        console.warn("  2. Estrutura de dados está incorreta");
-                        console.warn("  3. Problema de permissões no Firebase (usuário não autenticado)");
-                        console.warn("[initDashboard] Verifique o Firebase Console:");
-                        console.warn("  https://console.firebase.google.com/project/dashboardalunos/database/dashboardalunos-default-rtdb/data");
+                        console.warn("[initDashboard] Possíveis causas:");
+                        console.warn("  1. URL do Apps Script não está configurada corretamente");
+                        console.warn("  2. O Apps Script não está respondendo");
+                        console.warn("  3. Problema de CORS ou permissões no Apps Script");
                         
-                        // Show user-friendly error with more specific information
-                        // Note: Connection and /exportAll existence already verified, so this is about read permissions
-                        showError('Os dados do Firebase não puderam ser carregados após verificar a conexão. Possíveis causas: (1) Regras do Firebase bloqueando leitura, (2) Você não está autenticado, ou (3) Estrutura de dados incorreta. Verifique o console do navegador para mais detalhes.', false);
+                        showError('Os dados não puderam ser carregados. Verifique se a URL do Apps Script está configurada corretamente e se o script está publicado. Verifique o console do navegador para mais detalhes.', false);
                     } else {
                         console.log("[initDashboard] Inicialização completa. Real-time updates ativos.");
                         showLoading(false);
@@ -2475,12 +2471,12 @@ function extractTimeFromISO(isoString) {
         }
 
         /**
-         * Save absence to Firebase
+         * Save absence to backend
          */
         async function saveAusencia(data) {
             console.log('[saveAusencia] Saving absence:', data);
             
-            // NOTE: Firebase Database write functionality has been removed
+            // NOTE: Database write functionality has been removed
             // Data is now read-only from Apps Script
             console.error('[saveAusencia] Write functionality not available - data is read-only from Apps Script');
             return { success: false, error: 'Write functionality not available - data is read-only from Apps Script' };
@@ -2524,7 +2520,7 @@ function extractTimeFromISO(isoString) {
         
         /**
          * Handle form submission for Ausências
-         * Sends data to Google Apps Script instead of Firebase
+         * Sends data to Google Apps Script
          */
         const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx6x-I0PCc1Ym8vx7VYyXmwvx3mY-9i3P16z6-5sJB2v728SlzENKnwy-4uAIHIiDLxGg/exec';
 
@@ -2586,7 +2582,7 @@ function extractTimeFromISO(isoString) {
                     showSuccess('✅ Ausência registrada com sucesso! Os dados foram enviados para a planilha "Ausencias".');
                     closeAusenciaModal();
                     
-                    // Refresh the view after a delay to allow Firebase sync
+                    // Refresh the view after a delay to allow data sync
                     setTimeout(() => {
                         console.log('[setupAusenciaFormHandler] Refreshing view after submission');
                         if (typeof renderAusenciasView === 'function') {
@@ -2676,7 +2672,7 @@ function extractTimeFromISO(isoString) {
                     showSuccess('✅ Reposição registrada com sucesso! Os dados foram enviados para a planilha "Reposicoes".');
                     closeReposicaoModal();
                     
-                    // Refresh the view after a delay to allow Firebase sync
+                    // Refresh the view after a delay to allow data sync
                     setTimeout(() => {
                         console.log('[setupReposicaoFormHandler] Refreshing view after submission');
                         if (typeof renderReposicoesView === 'function') {
@@ -3154,6 +3150,7 @@ function extractTimeFromISO(isoString) {
             });
         }
 
+        // Firebase Authentication login handler
         async function handleLogin(event) {
             event.preventDefault();
             console.log("[handleLogin] Tentativa de login com Firebase Authentication...");
@@ -3168,7 +3165,7 @@ function extractTimeFromISO(isoString) {
             loginButton.disabled = true;
             errorBox.style.display = "none";
 
-            // CRITICAL FIX: Wait for Firebase to initialize if not ready yet
+            // Wait for Firebase to initialize if not ready yet
             if (!fbAuth) {
                 console.warn("[handleLogin] Firebase Auth ainda não está disponível. Aguardando inicialização...");
                 
@@ -3181,10 +3178,10 @@ function extractTimeFromISO(isoString) {
                 }
                 
                 if (!fbAuth) {
-                    console.error("[handleLogin] Firebase Auth não está disponível após espera. window.firebase:", window.firebase, "fbAuth:", fbAuth);
+                    console.error("[handleLogin] Firebase Auth não está disponível após espera.");
                     loginButton.classList.remove('loading');
                     loginButton.disabled = false;
-                    showError("Firebase não inicializado. Por favor, verifique sua conexão com a internet e recarregue a página. Se o problema persistir, abra o Console do navegador (F12) para mais detalhes.", true);
+                    showError("Firebase não inicializado. Por favor, recarregue a página.", true);
                     return;
                 }
                 
@@ -3194,8 +3191,7 @@ function extractTimeFromISO(isoString) {
             try {
                 const userCredential = await window.firebase.signInWithEmailAndPassword(fbAuth, email, password);
                 console.log("[handleLogin] Login bem-sucedido via Firebase:", userCredential.user.email);
-                // Keep button loading - will show loading overlay next
-                // onAuthStateChanged will handle the rest (redirect to dashboard)
+                // Keep button loading - onAuthStateChanged will handle the rest
             } catch (error) {
                 console.error("[handleLogin] Erro no login Firebase:", error);
                 let errorMessage = "Email ou senha inválidos.";
@@ -3220,7 +3216,7 @@ function extractTimeFromISO(isoString) {
             }
         }
 
-        // Logout function
+        // Firebase logout function
         function handleLogout() {
             console.log("[handleLogout] Fazendo logout...");
             if (!fbAuth) {
@@ -3638,7 +3634,7 @@ function extractTimeFromISO(isoString) {
             }
 
             // BUGFIX: When processing Escala data (the source of truth), CLEAR existing ponto state
-            // to avoid duplicates when Firebase listener fires multiple times
+            // to avoid duplicates when data updates occur
             // Escala data should completely REPLACE any previous ponto data
             if (fromEscala) {
                 console.log('[extractAndPopulatePontoDates] Limpando dados anteriores - Escala é a fonte de verdade');
@@ -3848,13 +3844,13 @@ function extractTimeFromISO(isoString) {
                     // Initialize or refresh the panel
                     initializePontoPanel();
                 } else {
-                    console.log('[switchMainTab] Aguardando dados de ponto do Firebase...');
+                    console.log('[switchMainTab] Aguardando dados de ponto...');
                     // Show loading state in ponto panel
                     const loadingState = document.getElementById('ponto-loading-state');
                     const emptyState = document.getElementById('ponto-empty-state');
                     if (loadingState) {
                         loadingState.hidden = false;
-                        loadingState.textContent = 'Carregando dados do ponto do Firebase...';
+                        loadingState.textContent = 'Carregando dados do ponto...';
                     }
                     if (emptyState) {
                         emptyState.hidden = true;
@@ -3878,7 +3874,7 @@ function extractTimeFromISO(isoString) {
         }
         
         // ====================================================================
-        // ESCALA - MONTHLY VIEW FROM FIREBASE (kept for student detail page)
+        // ESCALA - MONTHLY VIEW (kept for student detail page)
         // Renders the complete monthly schedule from Escala sheets
         // ====================================================================
         
@@ -4171,7 +4167,7 @@ function extractTimeFromISO(isoString) {
          * @param {string} sector - The sector to render (enfermaria, uti, cardiopediatria)
          */
         /**
-         * Renders the monthly Escala table from Firebase Escala sheets.
+         * Renders the monthly Escala table from Escala sheets.
          * Aggregates data from all Escala sheets (Escala1, Escala2, etc.) and displays
          * students grouped by sector in a professional Excel-like table format.
          * 
@@ -4197,16 +4193,16 @@ function extractTimeFromISO(isoString) {
             }
             
             // NEW APPROACH: Pull from appState.escalas (Escala1, Escala2, etc.)
-            // These contain the real student schedule data from Firebase
+            // These contain the real student schedule data
             const escalasData = appState.escalas || {};
             const escalasKeys = Object.keys(escalasData).filter(key => key.match(/^Escala\d+$/i));
             
             if (escalasKeys.length === 0) {
-                console.warn('[renderMonthlyEscalaTable] No Escala sheets found in Firebase');
+                console.warn('[renderMonthlyEscalaTable] No Escala sheets found');
                 loadingEl.style.display = 'none';
                 emptyEl.style.display = 'flex';
                 contentEl.style.display = 'none';
-                emptyEl.querySelector('span').textContent = 'Nenhum dado de escala encontrado no Firebase.';
+                emptyEl.querySelector('span').textContent = 'Nenhum dado de escala encontrado.';
                 return;
             }
             
@@ -4742,7 +4738,7 @@ function extractTimeFromISO(isoString) {
 
             // --- Teóricas (com filtro R2) - with improved field matching ---
             const tSums = {}; const tCounts = {};
-            // Map to track canonical key names (normalized -> original Firebase key)
+            // Map to track canonical key names (normalized -> original key)
             const canonicalKeyMap = new Map();
             
             if(appState.notasTeoricas?.registros){
@@ -4835,7 +4831,7 @@ function extractTimeFromISO(isoString) {
                                     canonicalKey = rawKey;
                                     canonicalKeyMap.set(targetNormalized, canonicalKey);
                                 } else if (keyHasAccents(rawKey) && !keyHasAccents(canonicalKey)) {
-                                    // Update to key with accents (likely original Firebase name)
+                                    // Update to key with accents (likely original name)
                                     canonicalKeyMap.set(targetNormalized, rawKey);
                                     // Transfer sums/counts to new canonical key
                                     if (canonicalKey in tSums && canonicalKey in tCounts) {
@@ -5673,10 +5669,10 @@ function extractTimeFromISO(isoString) {
 
         function getRosterForDate(dateIso) {
             // ATUALIZADO: Por requisito do usuário, NÃO pré-popular roster de templates de escala
-            // Mostrar APENAS dados reais de presença do Firebase (via pontoState.byDate)
+            // Mostrar APENAS dados reais de presença (via pontoState.byDate)
             // O roster deve conter apenas alunos que têm registros reais de presença
-            // Isso previne duplicação e garante que mostramos apenas o que o Firebase traz
-            console.log('[getRosterForDate] Retornando roster vazio - apenas dados de ponto do Firebase serão exibidos');
+            // Isso previne duplicação e garante que mostramos apenas os dados reais
+            console.log('[getRosterForDate] Retornando roster vazio - apenas dados de ponto reais serão exibidos');
             return [];
         }
 
@@ -5850,7 +5846,7 @@ function extractTimeFromISO(isoString) {
             let trimmed = String(value).trim();
             if (!trimmed) return '';
             
-            // Handle ISO time format from Firebase: "1899-12-30T10:06:28.000Z"
+            // Handle ISO time format: "1899-12-30T10:06:28.000Z"
             // The date 1899-12-30 is the Excel epoch date for time-only values
             // We only need to extract the time portion
             if (trimmed.includes('T')) {
@@ -6019,7 +6015,7 @@ function extractTimeFromISO(isoString) {
 
         // Legacy helper functions removed (parseAvailableDates, parseAvailableScales, parseLastUpdated, resolvePontoRecords)
         // These were only used by the removed extractPontoPayload() and applyPontoData() functions
-        // Legacy extractPontoPayload() removed - no longer needed with Firebase-only approach
+        // Legacy extractPontoPayload() removed - no longer needed
 
         function normalizeScaleKey(scale) {
             return (!scale || scale === 'all') ? 'all' : normalizeString(scale);
@@ -6163,8 +6159,8 @@ function extractTimeFromISO(isoString) {
             return normalized;
         }
 
-        // Legacy applyPontoData() removed - data organization now handled by Firebase listeners
-        // Data is processed via extractAndPopulatePontoDates() when loaded from Firebase
+        // Legacy applyPontoData() removed - data organization now handled by data loading
+        // Data is processed via extractAndPopulatePontoDates() when loaded
 
         function getPontoRecords(date, scale = 'all') {
             const iso = normalizeDateInput(date);
@@ -6861,7 +6857,7 @@ function extractTimeFromISO(isoString) {
                             message.innerHTML = `
                                 <strong>Nenhum registro de ponto disponível.</strong><br>
                                 <span style="font-size: 0.9em; color: var(--text-secondary);">
-                                    Execute o Google Apps Script para enviar dados para o Firebase.
+                                    Execute o Google Apps Script para atualizar os dados.
                                 </span>
                             `;
                         }
@@ -7104,7 +7100,7 @@ function extractTimeFromISO(isoString) {
             const scaleLabel = scale || 'all';
             
             // If forceReload is requested, clear the cache
-            // This allows the data to be re-filtered from the Firebase-loaded data
+            // This allows the data to be re-filtered from the loaded data
             if (forceReload && isoDate) {
                 if (scaleLabel === 'all') {
                     pontoState.cache.delete(makePontoCacheKey(isoDate, 'all'));
@@ -7113,14 +7109,14 @@ function extractTimeFromISO(isoString) {
                 }
             }
             
-            // Check if data exists in Firebase-loaded state
+            // Check if data exists in loaded state
             if (isoDate && pontoState.byDate.has(isoDate)) {
-                // Data exists from Firebase, just need to ensure it's cached for the requested scale
+                // Data exists, just need to ensure it's cached for the requested scale
                 getPontoRecords(isoDate, scaleLabel); // This will cache it
                 return { success: true, cached: false, selectedDate: isoDate, selectedScale: scaleLabel };
             }
             
-            // Data not available yet - might still be loading from Firebase
+            // Data not available yet - might still be loading
             // Return a success response with available dates
             const availableDate = pontoState.dates.length > 0 ? pontoState.dates[0] : isoDate;
             console.log(`[ensurePontoData] Data para ${isoDate} não disponível. Usando data disponível: ${availableDate}`);
@@ -7204,14 +7200,13 @@ function extractTimeFromISO(isoString) {
                              </svg>
                              <h3 class="mt-2 text-sm font-medium text-slate-900">Nenhum aluno encontrado</h3>
                              <p class="mt-1 text-sm text-slate-500">
-                                 Os dados de alunos não foram carregados do Firebase.
+                                 Os dados de alunos não foram carregados.
                              </p>
                              <div class="mt-6 text-xs text-slate-600 text-left bg-slate-50 p-4 rounded-lg">
                                  <p class="font-semibold mb-2">Possíveis soluções:</p>
                                  <ol class="list-decimal list-inside space-y-1">
-                                     <li>Execute o Google Apps Script para enviar dados para o Firebase</li>
-                                     <li>Verifique se há dados em <code class="bg-white px-1 py-0.5 rounded">/cache/Alunos/registros</code> no Firebase Console</li>
-                                     <li>Verifique as regras do Firebase Realtime Database</li>
+                                     <li>Execute o Google Apps Script para atualizar os dados</li>
+                                     <li>Verifique se a configuração da URL está correta</li>
                                      <li>Abra o console do navegador (F12) para ver mensagens de erro</li>
                                  </ol>
                              </div>
@@ -7402,7 +7397,7 @@ function extractTimeFromISO(isoString) {
         function showStudentDetail(email) {
             console.log(`[showStudentDetail] Exibindo detalhes para: ${email}`);
              try {
-                // CRITICAL FIX: Verify that student data has been loaded from Firebase
+                // CRITICAL FIX: Verify that student data has been loaded
                 // This prevents the app from getting stuck on a non-existent student page
                 if (!appState.alunos || appState.alunos.length === 0) {
                     console.error('[showStudentDetail] Dados de alunos ainda não carregados. Aguarde...');
@@ -9213,7 +9208,7 @@ function renderTabEscala(escalas) {
             const MIN_FIELDS_FOR_TABLE = 5;
             
             // SUB prefix patterns for substitutive exams - shared constant to avoid duplication
-            // IMPORTANT: Firebase uses format "SubDoencasCardiacas" (no separator after Sub)
+            // IMPORTANT: Data uses format "SubDoencasCardiacas" (no separator after Sub)
             // We need to detect keys that start with "Sub" followed by an uppercase letter
             // Comparisons are done case-insensitively
             const SUB_PREFIXES = ['Sub/', 'Sub-', 'SUB/', 'SUB-', 'Sub_', 'SUB_', 'sub/', 'sub-', 'sub_', 'Sub', 'SUB', 'sub'];
@@ -9237,7 +9232,7 @@ function renderTabEscala(escalas) {
             }
             
             // Helper function to generate subKey from discipline name
-            // Firebase format: "SubDisciplineName" (no separator)
+            // Data format: "SubDisciplineName" (no separator)
             const generateSubKey = (disciplineName) => `Sub${disciplineName}`;
             
             // Helper function to check if a value is a valid grade
@@ -9249,7 +9244,7 @@ function renderTabEscala(escalas) {
             
             // Helper function to get value from notas object with accent-insensitive key matching
             // Enhanced to find SUB disciplines with multiple naming conventions
-            // Firebase format: "SubDoencasCardiacas" (no separator after Sub)
+            // Data format: "SubDoencasCardiacas" (no separator after Sub)
             const getNotaValue = (materia) => {
                 if (!notas) return undefined;
                 // Try exact match first
@@ -9391,8 +9386,8 @@ function renderTabEscala(escalas) {
             // - Média Fisio3: FisioAplicada + UTI
             // - Média Fisio4: Pediatria + Mobilizacao + ReabilitacaoPulmonar
             
-            // Firebase field mappings for disciplines
-            // Using normalized keys that match Firebase: Anatomopatologia, SubAnatomopatologia, etc.
+            // Field mappings for disciplines
+            // Using normalized keys: Anatomopatologia, SubAnatomopatologia, etc.
             const FIELD_MAPPINGS = {
                 // Individual disciplines
                 'Anatomopatologia': { key: 'Anatomopatologia', subKey: 'SubAnatomopatologia', displayName: 'Anatomopatologia' },
@@ -10514,26 +10509,22 @@ function renderTabEscala(escalas) {
         // --- Inicia ---
         document.addEventListener('DOMContentLoaded', () => {
             console.log("DOM Carregado. Aguardando Firebase SDK...");
-            
-            // CRITICAL FIX: Disable login button until Firebase is ready
+
+            // Disable login button until Firebase is ready
             const loginButton = document.getElementById('login-button');
-            const loginBtnText = loginButton ? loginButton.querySelector('.login-btn-text') : null;
-            if (loginButton && loginBtnText) {
+            if (loginButton) {
                 loginButton.disabled = true;
-                loginBtnText.textContent = 'Aguarde...';
                 console.log('[Firebase] Login button disabled - waiting for Firebase SDK');
             }
             
-            // Timeout reference for cleanup
+            // Track timeout for enabling login button
             let loginButtonTimeout = null;
             
-            // Helper function to enable login button and clear timeout
+            // Helper to enable login button with logging
             const enableLoginButton = (reason) => {
                 const btn = document.getElementById('login-button');
-                const btnText = btn ? btn.querySelector('.login-btn-text') : null;
-                if (btn && btnText) {
+                if (btn && btn.disabled) {
                     btn.disabled = false;
-                    btnText.textContent = 'Entrar no Portal';
                     console.log(`[Firebase] Login button enabled - ${reason}`);
                 }
                 if (loginButtonTimeout) {
@@ -10542,8 +10533,7 @@ function renderTabEscala(escalas) {
                 }
             };
             
-            // CRITICAL FIX: Ensure login button is enabled after max 5 seconds
-            // This prevents users from being stuck if Firebase is slow or blocked
+            // Ensure login button is enabled after max 5 seconds
             loginButtonTimeout = setTimeout(() => {
                 const btn = document.getElementById('login-button');
                 if (btn && btn.disabled) {
@@ -10552,8 +10542,6 @@ function renderTabEscala(escalas) {
             }, 5000);
             
             // Update footer years dynamically
-            // Note: This sets the year based on the browser's current date
-            // The application data dates are handled separately in date parsing functions
             const currentYear = new Date().getFullYear();
             document.querySelectorAll('.current-year').forEach(el => {
                 el.textContent = currentYear;
@@ -10573,21 +10561,19 @@ function renderTabEscala(escalas) {
                     console.error('1. Sua conexão com a internet está funcionando');
                     console.error('2. O arquivo firebase-config.js tem as configurações corretas');
                     console.error('3. Os scripts do Firebase SDK carregaram corretamente');
-                    console.error('Mostrando tela de login, mas o login não funcionará até que Firebase seja inicializado.');
                     showView('login-view');
                     
                     // Enable login button even on Firebase failure
                     enableLoginButton('despite Firebase initialization failure');
                     
-                    showError('Firebase falhou ao inicializar. Por favor, recarregue a página. Se o problema persistir, verifique sua conexão.', false);
+                    showError('Firebase falhou ao inicializar. Por favor, recarregue a página.', false);
                     return;
                 }
                 
-                // CRITICAL FIX: Enable login button now that Firebase is ready
+                // Enable login button now that Firebase is ready
                 enableLoginButton('Firebase is ready');
                 
                 // Setup Firebase Authentication State Observer
-                // This is the new entry point for the application
                 window.firebase.onAuthStateChanged(fbAuth, (user) => {
                     if (!user) {
                         // User is signed out
@@ -10626,7 +10612,7 @@ function renderTabEscala(escalas) {
                         pontoState.lastLoadedAt = null;
                         pontoState.isLoading = false;
                         
-                        // Clean up: reset login button state (in case it was stuck in loading)
+                        // Clean up: reset login button state
                         const loginButton = document.getElementById('login-button');
                         if (loginButton) {
                             loginButton.classList.remove('loading');
@@ -10639,22 +10625,17 @@ function renderTabEscala(escalas) {
                             errorBox.style.display = 'none';
                         }
                         
-                        // CRITICAL FIX: Always show login view when not authenticated
-                        // This ensures the app never gets stuck on a student detail page when logged out
-                        showLoading(false); // Ensure loading overlay is hidden
+                        // Always show login view when not authenticated
+                        showLoading(false);
                         showView('login-view');
                     } else {
                         // User is signed in
                         console.log('[onAuthStateChanged] Usuário autenticado:', user.email);
                         
-                        // User is authenticated
-                        console.log('[onAuthStateChanged] Mostrando dashboard.');
-                        
                         // Update user menu with logged-in user info
                         updateUserMenuInfo(user);
                         
-                        // CRITICAL FIX: Always show dashboard-view (never student-detail-view)
-                        // This ensures that after login, the user always lands on the dashboard
+                        // Show dashboard and load data from Apps Script
                         showView('dashboard-view');
                         initDashboard();
                     }
@@ -10674,11 +10655,6 @@ function renderTabEscala(escalas) {
                     if (!window.firebase) {
                         console.error('Timeout esperando Firebase SDK (3 segundos).');
                         console.error('Os scripts do Firebase podem estar bloqueados ou falhando ao carregar.');
-                        console.error('Verifique:');
-                        console.error('  - Sua conexão com a internet');
-                        console.error('  - Se há bloqueadores de anúncios/scripts ativos');
-                        console.error('  - O console de rede (Network tab) para erros de carregamento');
-                        console.error('Tentando inicializar mesmo assim...');
                         
                         // Ensure login button is enabled even if Firebase SDK never loaded
                         const btn = document.getElementById('login-button');

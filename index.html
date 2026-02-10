@@ -1575,7 +1575,7 @@
     </div>
     
     <!-- CLIENT-SIDE SCRIPT -->
-    <!-- Firebase SDK Imports -->
+    <!-- Firebase SDK and Configuration -->
     <script type="module">
         // Import Firebase SDK
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js';
@@ -1585,40 +1585,27 @@
             signInWithEmailAndPassword,
             signOut 
         } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js';
-        import { 
-            getDatabase, 
-            ref, 
-            onValue,
-            get,
-            set,
-            push
-        } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-database.js';
 
-        // Import Firebase configuration
-        import firebaseConfigModule from './firebase-config.js';
-        const firebaseConfig = firebaseConfigModule.firebaseConfig || firebaseConfigModule;
-        const appsScriptConfig = firebaseConfigModule.appsScriptConfig || { dataURL: "" };
+        // Import configuration (Firebase for Auth + Apps Script for Data)
+        import configModule from './firebase-config.js';
+        const firebaseConfig = configModule.firebaseConfig || configModule;
+        const appsScriptConfig = configModule.appsScriptConfig || { dataURL: "" };
 
-        // Make Firebase functions globally available
+        // Make Firebase Auth functions and configurations globally available
         window.firebase = {
             initializeApp,
             getAuth,
             onAuthStateChanged,
             signInWithEmailAndPassword,
             signOut,
-            getDatabase,
-            ref,
-            onValue,
-            get,
-            set,
-            push,
             firebaseConfig,
             appsScriptConfig
         };
         
         // Dispatch custom event to signal Firebase SDK is ready
         window.dispatchEvent(new CustomEvent('firebaseReady'));
-        console.log('[Firebase SDK] Loaded and ready');
+        console.log('[Firebase SDK] Loaded and ready for Authentication');
+        console.log('[Apps Script Config] Data URL configured:', appsScriptConfig.dataURL);
     </script>
     <script type="module" src="script.js"></script>
 </body>

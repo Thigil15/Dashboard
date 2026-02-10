@@ -1,6 +1,7 @@
-// Firebase configuration for Portal do Ensino
+// Firebase and Apps Script configuration for Portal do Ensino
 // This configuration is loaded by index.html and used by script.js
 
+// Firebase configuration - Used ONLY for Authentication
 const firebaseConfig = {
   apiKey: "AIzaSyCR3gZuiUUC-IMHduSGSuWWnFyn2sNYOEQ",
   authDomain: "dashboardalunos.firebaseapp.com",
@@ -11,7 +12,7 @@ const firebaseConfig = {
   appId: "1:897767302445:web:61dc5f0c3419ac680adfa4"
 };
 
-// Apps Script URL configuration
+// Apps Script URL configuration - Used for ALL data loading
 // This URL serves the JSON data directly from Google Sheets
 // NOTE: This URL is public (client-side code) and accessible to anyone.
 // Configure access controls in Apps Script deployment settings if needed.
