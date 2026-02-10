@@ -38,7 +38,7 @@ function buildAlunosMap() {
 }
 ```
 
-**Localização**: `script.js:540-558`
+**Localização**: `script.js:538-550`
 
 ### 2. Chamada Automática ao Carregar Dados
 O `buildAlunosMap()` agora é chamado automaticamente quando os dados dos alunos são carregados:
@@ -70,7 +70,7 @@ if (appState.alunosMap.size === 0 && appState.alunos && appState.alunos.length >
 }
 ```
 
-**Localização**: `script.js:2413-2417`
+**Localização**: `script.js:2426-2430`
 
 #### `showStudentDetail()`
 ```javascript
@@ -81,13 +81,13 @@ if (appState.alunosMap.size === 0 && appState.alunos && appState.alunos.length >
 }
 ```
 
-**Localização**: `script.js:7547-7551`
+**Localização**: `script.js:7569-7573`
 
 #### `renderReposicoesPendentesList()`
-**Localização**: `script.js:1736-1740`
+**Localização**: `script.js:1738-1742`
 
 #### `renderReposicoesMarcadasList()`
-**Localização**: `script.js:1827-1831`
+**Localização**: `script.js:1833-1837`
 
 ## 🧪 Como Testar
 
