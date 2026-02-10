@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico de Conexão Apps Script</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            background: white;
+            padding: 25px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .status-pending { background: #ffc107; color: #000; }
+        .status-success { background: #4caf50; color: white; }
+        .status-error { background: #f44336; color: white; }
+        .result-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 13px;
+            overflow-x: auto;
+        }
+        .error-box {
+            border-left-color: #f44336;
+            background: #ffebee;
+        }
+        .success-box {
+            border-left-color: #4caf50;
+            background: #e8f5e9;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .data-preview {
+            max-height: 300px;
+            overflow-y: auto;
+            background: #263238;
+            color: #aed581;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔍 Diagnóstico de Conexão Apps Script</h1>
+        <p>Ferramenta de diagnóstico para verificar a conexão e carregamento de dados do Google Apps Script</p>
+    </div>
+
+    <div class="info-box">
+        <strong>ℹ️ Informação:</strong> Esta ferramenta testa a conexão com o Apps Script e valida a estrutura dos dados retornados.
+    </div>
+
+    <div class="test-section">
+        <div class="test-title">📋 Configuração</div>
+        <div>
+            <strong>URL do Apps Script:</strong><br>
+            <input type="text" id="appsScriptUrl" style="width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;" 
+                   value="https://script.google.com/macros/s/AKfycbx6x-I0PCc1Ym8vx7VYyXmwvx3mY-9i3P16z6-5sJB2v728SlzENKnwy-4uAIHIiDLxGg/exec">
+        </div>
+        <button onclick="runAllTests()">🚀 Executar Todos os Testes</button>
+        <button onclick="testUrlOnly()">🔗 Testar Apenas URL</button>
+        <button onclick="clearResults()">🗑️ Limpar Resultados</button>
+    </div>
+
+    <!-- Test 1: URL Configuration -->
+    <div class="test-section">
+        <div class="test-title">1️⃣ Verificação de Configuração da URL</div>
+        <div id="test1-status" class="status status-pending">Pendente</div>
+        <div id="test1-result"></div>
+    </div>
+
+    <!-- Test 2: URL Format -->
+    <div class="test-section">
+        <div class="test-title">2️⃣ Validação de Formato da URL</div>
+        <div id="test2-status" class="status status-pending">Pendente</div>
+        <div id="test2-result"></div>
+    </div>
+
+    <!-- Test 3: Network Connection -->
+    <div class="test-section">
+        <div class="test-title">3️⃣ Teste de Conexão HTTP</div>
+        <div id="test3-status" class="status status-pending">Pendente</div>
+        <div id="test3-result"></div>
+    </div>
+
+    <!-- Test 4: Response Headers -->
+    <div class="test-section">
+        <div class="test-title">4️⃣ Verificação de Headers de Resposta</div>
+        <div id="test4-status" class="status status-pending">Pendente</div>
+        <div id="test4-result"></div>
+    </div>
+
+    <!-- Test 5: JSON Parsing -->
+    <div class="test-section">
+        <div class="test-title">5️⃣ Parsing de JSON</div>
+        <div id="test5-status" class="status status-pending">Pendente</div>
+        <div id="test5-result"></div>
+    </div>
+
+    <!-- Test 6: Data Structure -->
+    <div class="test-section">
+        <div class="test-title">6️⃣ Validação de Estrutura de Dados</div>
+        <div id="test6-status" class="status status-pending">Pendente</div>
+        <div id="test6-result"></div>
+    </div>
+
+    <!-- Test 7: Data Content -->
+    <div class="test-section">
+        <div class="test-title">7️⃣ Verificação de Conteúdo dos Dados</div>
+        <div id="test7-status" class="status status-pending">Pendente</div>
+        <div id="test7-result"></div>
+    </div>
+
+    <script>
+        let globalData = null;
+
+        function updateStatus(testNum, status, result, isError = false) {
+            const statusEl = document.getElementById(`test${testNum}-status`);
+            const resultEl = document.getElementById(`test${testNum}-result`);
+            
+            statusEl.className = 'status status-' + status;
+            statusEl.textContent = status === 'success' ? 'Sucesso' : status === 'error' ? 'Erro' : 'Testando...';
+            
+            if (result) {
+                resultEl.innerHTML = `<div class="result-box ${isError ? 'error-box' : 'success-box'}">${result}</div>`;
+            }
+        }
+
+        function clearResults() {
+            for (let i = 1; i <= 7; i++) {
+                updateStatus(i, 'pending', '');
+                document.getElementById(`test${i}-result`).innerHTML = '';
+            }
+            globalData = null;
+        }
+
+        async function runAllTests() {
+            clearResults();
+            
+            // Test 1: URL Configuration
+            await test1_checkConfiguration();
+            await sleep(500);
+            
+            // Test 2: URL Format
+            await test2_validateFormat();
+            await sleep(500);
+            
+            // Test 3: Network Connection
+            await test3_testConnection();
+            await sleep(500);
+        }
+
+        async function testUrlOnly() {
+            updateStatus(3, 'pending', 'Testando conexão...', false);
+            await test3_testConnection();
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function test1_checkConfiguration() {
+            try {
+                const url = document.getElementById('appsScriptUrl').value;
+                
+                if (!url) {
+                    updateStatus(1, 'error', '❌ URL não configurada', true);
+                    return false;
+                }
+                
+                if (url.includes('YOUR_DEPLOYMENT_ID') || url.includes('placeholder')) {
+                    updateStatus(1, 'error', '❌ URL contém placeholder. Configure a URL real do deployment.', true);
+                    return false;
+                }
+                
+                updateStatus(1, 'success', `✅ URL configurada: <br><code>${url}</code>`);
+                return true;
+            } catch (error) {
+                updateStatus(1, 'error', `❌ Erro: ${error.message}`, true);
+                return false;
+            }
+        }
+
+        async function test2_validateFormat() {
+            try {
+                const url = document.getElementById('appsScriptUrl').value;
+                
+                // Check if it's a valid URL
+                const urlObj = new URL(url);
+                
+                // Check if it's a Google Apps Script URL
+                if (!url.includes('script.google.com')) {
+                    updateStatus(2, 'error', '⚠️ URL não é do Google Apps Script (script.google.com)', true);
+                    return false;
+                }
+                
+                // Check if it's a macros URL
+                if (!url.includes('/macros/')) {
+                    updateStatus(2, 'error', '⚠️ URL não contém /macros/ - pode não ser um deployment', true);
+                    return false;
+                }
+                
+                updateStatus(2, 'success', `✅ Formato da URL válido<br>Protocolo: ${urlObj.protocol}<br>Host: ${urlObj.host}<br>Path: ${urlObj.pathname}`);
+                return true;
+            } catch (error) {
+                updateStatus(2, 'error', `❌ Erro ao validar URL: ${error.message}`, true);
+                return false;
+            }
+        }
+
+        async function test3_testConnection() {
+            try {
+                updateStatus(3, 'pending', 'Fazendo requisição HTTP...');
+                updateStatus(4, 'pending', '');
+                updateStatus(5, 'pending', '');
+                updateStatus(6, 'pending', '');
+                updateStatus(7, 'pending', '');
+                
+                const url = document.getElementById('appsScriptUrl').value;
+                const startTime = Date.now();
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                const endTime = Date.now();
+                const duration = endTime - startTime;
+                
+                if (!response.ok) {
+                    updateStatus(3, 'error', 
+                        `❌ Erro HTTP ${response.status}: ${response.statusText}<br>` +
+                        `Tempo de resposta: ${duration}ms<br><br>` +
+                        `<strong>Possíveis causas:</strong><br>` +
+                        `• Deployment não está ativo<br>` +
+                        `• URL incorreta<br>` +
+                        `• Permissões não configuradas corretamente`, true);
+                    return false;
+                }
+                
+                updateStatus(3, 'success', 
+                    `✅ Conexão estabelecida<br>` +
+                    `Status: ${response.status} ${response.statusText}<br>` +
+                    `Tempo de resposta: ${duration}ms`);
+                
+                // Test 4: Headers
+                await test4_checkHeaders(response);
+                
+                // Test 5: Parse JSON
+                await test5_parseJSON(response);
+                
+                return true;
+            } catch (error) {
+                updateStatus(3, 'error', 
+                    `❌ Erro de rede: ${error.message}<br><br>` +
+                    `<strong>Possíveis causas:</strong><br>` +
+                    `• Sem conexão com internet<br>` +
+                    `• Bloqueio CORS/Ad Blocker<br>` +
+                    `• URL inacessível<br>` +
+                    `• Firewall bloqueando acesso<br><br>` +
+                    `<strong>Solução:</strong><br>` +
+                    `1. Verifique sua conexão com internet<br>` +
+                    `2. Desative extensões de bloqueio (AdBlock, etc)<br>` +
+                    `3. Abra a URL diretamente em uma nova aba para testar`, true);
+                return false;
+            }
+        }
+
+        async function test4_checkHeaders(response) {
+            try {
+                const contentType = response.headers.get('content-type');
+                const cacheControl = response.headers.get('cache-control');
+                
+                let result = `<strong>Content-Type:</strong> ${contentType || 'Não definido'}<br>`;
+                result += `<strong>Cache-Control:</strong> ${cacheControl || 'Não definido'}<br>`;
+                
+                if (!contentType) {
+                    result += `<br>⚠️ Content-Type não definido - pode causar problemas de parsing`;
+                } else if (!contentType.includes('json')) {
+                    result += `<br>⚠️ Content-Type não é JSON - verifique o script`;
+                }
+                
+                updateStatus(4, 'success', `✅ Headers verificados:<br>${result}`);
+                return true;
+            } catch (error) {
+                updateStatus(4, 'error', `❌ Erro ao verificar headers: ${error.message}`, true);
+                return false;
+            }
+        }
+
+        async function test5_parseJSON(response) {
+            try {
+                const text = await response.text();
+                
+                if (!text || text.trim().length === 0) {
+                    updateStatus(5, 'error', '❌ Resposta vazia - Apps Script pode não estar retornando dados', true);
+                    return false;
+                }
+                
+                // Check if it looks like HTML
+                if (text.trim().startsWith('<') || text.toLowerCase().includes('<!doctype')) {
+                    updateStatus(5, 'error', 
+                        `❌ Resposta parece ser HTML, não JSON<br>` +
+                        `Primeiros 200 caracteres:<br>` +
+                        `<code>${text.substring(0, 200)}</code><br><br>` +
+                        `Verifique se o script está usando ContentService.createTextOutput()`, true);
+                    return false;
+                }
+                
+                // Try to parse JSON
+                const data = JSON.parse(text);
+                globalData = data;
+                
+                updateStatus(5, 'success', 
+                    `✅ JSON parseado com sucesso<br>` +
+                    `Tamanho da resposta: ${text.length} caracteres<br>` +
+                    `Tipo de dados: ${typeof data}`);
+                
+                // Test 6: Structure
+                await test6_validateStructure(data);
+                
+                return true;
+            } catch (error) {
+                updateStatus(5, 'error', 
+                    `❌ Erro ao parsear JSON: ${error.message}<br><br>` +
+                    `Verifique se o Code.gs está retornando JSON válido`, true);
+                return false;
+            }
+        }
+
+        async function test6_validateStructure(data) {
+            try {
+                let issues = [];
+                let success = [];
+                
+                // Check if data is an object
+                if (typeof data !== 'object' || data === null) {
+                    updateStatus(6, 'error', '❌ Dados não são um objeto válido', true);
+                    return false;
+                }
+                
+                // Check for cache object
+                if (!data.cache) {
+                    issues.push('⚠️ Propriedade "cache" não encontrada');
+                } else {
+                    success.push('✅ Propriedade "cache" encontrada');
+                    
+                    // Check expected tabs
+                    const expectedTabs = ['Alunos', 'Escalas', 'Ausencias', 'Reposicoes', 'NotasTeoricas', 'NotasPraticas', 'Ponto'];
+                    
+                    for (const tab of expectedTabs) {
+                        if (data.cache[tab]) {
+                            success.push(`✅ Tab "${tab}" encontrada`);
+                        } else {
+                            issues.push(`⚠️ Tab "${tab}" não encontrada`);
+                        }
+                    }
+                }
+                
+                // Check structure
+                const keys = Object.keys(data);
+                success.push(`✅ Propriedades encontradas: ${keys.join(', ')}`);
+                
+                const result = [...success, ...issues].join('<br>');
+                
+                if (issues.length > 0) {
+                    updateStatus(6, 'error', result, true);
+                } else {
+                    updateStatus(6, 'success', result);
+                }
+                
+                // Test 7: Content
+                await test7_checkContent(data);
+                
+                return issues.length === 0;
+            } catch (error) {
+                updateStatus(6, 'error', `❌ Erro ao validar estrutura: ${error.message}`, true);
+                return false;
+            }
+        }
+
+        async function test7_checkContent(data) {
+            try {
+                let result = '<strong>Resumo dos dados:</strong><br><br>';
+                
+                if (data.cache) {
+                    for (const [tab, content] of Object.entries(data.cache)) {
+                        if (content && content.registros) {
+                            const count = content.registros.length;
+                            result += `📊 <strong>${tab}:</strong> ${count} registros<br>`;
+                        } else if (Array.isArray(content)) {
+                            result += `📊 <strong>${tab}:</strong> ${content.length} registros<br>`;
+                        } else {
+                            result += `📊 <strong>${tab}:</strong> Estrutura desconhecida<br>`;
+                        }
+                    }
+                }
+                
+                // Add data preview
+                result += '<br><strong>Preview dos dados (primeiras 1000 caracteres):</strong>';
+                result += `<div class="data-preview"><pre>${JSON.stringify(data, null, 2).substring(0, 1000)}...</pre></div>`;
+                
+                // Add download button
+                result += '<br><button onclick="downloadData()">📥 Baixar Dados Completos (JSON)</button>';
+                
+                updateStatus(7, 'success', result);
+                return true;
+            } catch (error) {
+                updateStatus(7, 'error', `❌ Erro ao verificar conteúdo: ${error.message}`, true);
+                return false;
+            }
+        }
+
+        function downloadData() {
+            if (!globalData) {
+                alert('Nenhum dado disponível. Execute os testes primeiro.');
+                return;
+            }
+            
+            const dataStr = JSON.stringify(globalData, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'apps-script-data.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Auto-run tests on load
+        window.addEventListener('load', () => {
+            console.log('Diagnostic tool loaded. Ready to test Apps Script connection.');
+        });
+    </script>
+</body>
+</html>
