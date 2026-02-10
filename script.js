@@ -77,7 +77,7 @@
                     // Provide specific guidance based on status code
                     let errorMessage = `Erro HTTP ${response.status}: ${response.statusText}`;
                     if (response.status === 404) {
-                        errorMessage += '\n\nA URL do Apps Script pode estar incorreta ou o deployment foi deletado.';
+                        errorMessage += '\n\nA URL do Apps Script pode estar incorreta ou o deployment foi excluído.';
                         errorMessage += '\nVerifique se a URL em firebase-config.js está correta.';
                     } else if (response.status === 403) {
                         errorMessage += '\n\nAcesso negado. Verifique as permissões do Apps Script.';
