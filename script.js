@@ -45,8 +45,8 @@
             const dataURL = window.firebase?.appsScriptConfig?.dataURL;
             if (!dataURL || dataURL.includes('YOUR_DEPLOYMENT_ID')) {
                 console.error('[fetchDataFromURL] URL do Apps Script não configurada.');
-                console.error('[fetchDataFromURL] Configure a URL em firebase-config.js');
-                showError('URL do Apps Script não configurada. Verifique firebase-config.js', false);
+                console.error('[fetchDataFromURL] Configure a URL em firebase-config.js (appsScriptConfig.dataURL)');
+                showError('URL do Apps Script não configurada. Verifique firebase-config.js (appsScriptConfig.dataURL)', false);
                 return false;
             }
             
@@ -54,14 +54,84 @@
                 console.log('[fetchDataFromURL] Fazendo requisição para:', dataURL);
                 const response = await fetch(dataURL);
                 
+                // Enhanced error handling for common issues
                 if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    const errorDetails = {
+                        status: response.status,
+                        statusText: response.statusText,
+                        url: dataURL
+                    };
+                    
+                    // Try to get response body for more details
+                    let errorBody = '';
+                    try {
+                        errorBody = await response.text();
+                        errorBody = errorBody.substring(0, 200); // First 200 chars
+                    } catch (e) {
+                        errorBody = '(não foi possível ler o corpo da resposta)';
+                    }
+                    
+                    console.error('[fetchDataFromURL] ❌ Erro HTTP:', errorDetails);
+                    console.error('[fetchDataFromURL] ❌ Resposta (primeiros 200 chars):', errorBody);
+                    
+                    // Provide specific guidance based on status code
+                    let errorMessage = `Erro HTTP ${response.status}: ${response.statusText}`;
+                    if (response.status === 404) {
+                        errorMessage += '\n\nA URL do Apps Script pode estar incorreta ou o deployment foi deletado.';
+                        errorMessage += '\nVerifique se a URL em firebase-config.js está correta.';
+                    } else if (response.status === 403) {
+                        errorMessage += '\n\nAcesso negado. Verifique as permissões do Apps Script.';
+                        errorMessage += '\nCertifique-se de que o deployment está configurado como "Qualquer pessoa" pode acessar.';
+                    } else if (response.status >= 500) {
+                        errorMessage += '\n\nErro no servidor do Apps Script. Tente novamente em alguns instantes.';
+                    }
+                    
+                    throw new Error(errorMessage);
+                }
+                
+                // Check content-type to ensure we're getting JSON
+                const contentType = response.headers.get('content-type');
+                console.log('[fetchDataFromURL] Content-Type:', contentType);
+                
+                if (contentType && !contentType.includes('application/json') && !contentType.includes('text/plain')) {
+                    console.warn('[fetchDataFromURL] ⚠️ Content-Type inesperado:', contentType);
+                    console.warn('[fetchDataFromURL] ⚠️ Isso pode indicar uma página de login ou redirect HTML');
+                    
+                    // Try to get first 500 chars to check if it's HTML
+                    const textPreview = await response.text();
+                    const preview = textPreview.substring(0, 500);
+                    console.error('[fetchDataFromURL] ❌ Resposta (primeiros 500 chars):', preview);
+                    
+                    if (preview.toLowerCase().includes('<html') || preview.toLowerCase().includes('<!doctype')) {
+                        throw new Error('A URL retornou HTML ao invés de JSON. Verifique se a URL do Apps Script está correta e se o deployment está ativo.');
+                    }
+                    
+                    // If not HTML, try to parse as JSON anyway
+                    try {
+                        const data = JSON.parse(textPreview);
+                        console.log('[fetchDataFromURL] ✅ JSON parseado com sucesso apesar do Content-Type inesperado');
+                        return data;
+                    } catch (parseError) {
+                        throw new Error(`Resposta não é JSON válido. Content-Type: ${contentType}`);
+                    }
                 }
                 
                 const data = await response.json();
+                
+                // Validate JSON structure
+                if (!data || typeof data !== 'object') {
+                    throw new Error('Resposta JSON inválida: dados não são um objeto');
+                }
+                
+                if (!data.cache) {
+                    console.warn('[fetchDataFromURL] ⚠️ Estrutura JSON não contém "cache". Estrutura recebida:', Object.keys(data));
+                    console.warn('[fetchDataFromURL] ⚠️ Certifique-se de que o Code.gs está retornando a estrutura correta');
+                }
+                
                 console.log('[fetchDataFromURL] ✅ Dados recebidos:', {
                     abas: Object.keys(data.cache || {}).length,
-                    metadados: data.metadados
+                    metadados: data.metadados,
+                    estrutura: Object.keys(data)
                 });
                 
                 // Process the data - map it to appState
@@ -210,7 +280,30 @@
                 
             } catch (error) {
                 console.error('[fetchDataFromURL] ❌ Erro ao buscar dados:', error);
-                showError(`Erro ao carregar dados: ${error.message}`, false);
+                
+                // Provide detailed error information
+                let errorMessage = `Erro ao carregar dados: ${error.message}`;
+                
+                // Check for common issues
+                if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                    errorMessage += '\n\nPossíveis causas:\n';
+                    errorMessage += '• Problema de conexão com a internet\n';
+                    errorMessage += '• Bloqueio CORS (tente abrir via servidor HTTP, não file://)\n';
+                    errorMessage += '• URL do Apps Script incorreta\n';
+                    console.error('[fetchDataFromURL] ❌ Erro de rede. Verifique:');
+                    console.error('   1. Conexão com internet');
+                    console.error('   2. Está usando servidor HTTP local (não file://)?');
+                    console.error('   3. URL do Apps Script está correta?');
+                } else if (error.message.includes('JSON')) {
+                    errorMessage += '\n\nA resposta não é um JSON válido.';
+                    errorMessage += '\nVerifique se o Code.gs está retornando JSON corretamente.';
+                    console.error('[fetchDataFromURL] ❌ Erro de parse JSON. A resposta do servidor não é JSON válido.');
+                }
+                
+                console.error('[fetchDataFromURL] URL configurada:', dataURL);
+                console.error('[fetchDataFromURL] Para diagnosticar, abra a URL diretamente no navegador.');
+                
+                showError(errorMessage, false);
                 return false;
             }
         }
@@ -1413,7 +1506,7 @@ function extractTimeFromISO(isoString) {
                 
                 if (!dataLoaded) {
                     showLoading(false);
-                    const errorMsg = 'Erro ao carregar dados do Apps Script. Verifique a configuração da URL em apps-script-config.js';
+                    const errorMsg = 'Erro ao carregar dados do Apps Script. Verifique a configuração da URL em firebase-config.js (appsScriptConfig.dataURL)';
                     showError(errorMsg, false);
                     console.error('[initDashboard] Falha ao carregar dados da URL');
                     return;

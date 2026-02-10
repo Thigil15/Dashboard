@@ -31,9 +31,10 @@ Google Sheets → Apps Script (Code.gs) → Website
 - Removido todas as referências ao banco de dados
 - Dados vêm direto do Apps Script
 
-### ❌ firebase-config.js
-- Arquivo renomeado para `apps-script-config.js`
-- Contém apenas URL do Apps Script
+### ✅ firebase-config.js
+- Arquivo mantido mas simplificado
+- Contém apenas configuração mínima do Firebase Auth e a URL do Apps Script
+- **NOTA**: Firebase é usado APENAS para autenticação, não para dados
 
 ### ❌ Código Firebase em script.js
 - Removido `initializeFirebase()`
@@ -80,9 +81,10 @@ O arquivo `scripts/Code.gs` continua com todas suas funções:
 
 ### 2. Configurar o Dashboard
 ```
-1. Abra apps-script-config.js
-2. Cole a URL no campo dataURL
-3. Salve o arquivo
+1. Abra firebase-config.js
+2. Localize appsScriptConfig.dataURL
+3. Cole a URL do deployment
+4. Salve o arquivo
 ```
 
 ### 3. Acessar
@@ -150,10 +152,11 @@ grep -r "firebase" --include="*.js" --include="*.html" --exclude-dir=node_module
 
 ## Arquivos principais alterados:
 
-1. `apps-script-config.js` - Novo arquivo de configuração (antes firebase-config.js)
-2. `index.html` - Removido Firebase SDK, adicionado loader de config
-3. `script.js` - Removido todo código Firebase (auth, database, comentários)
+1. `firebase-config.js` - Contém configuração do Firebase Auth + Apps Script URL
+2. `index.html` - Carrega Firebase SDK apenas para Auth + configuração do Apps Script
+3. `script.js` - Código simplificado usando apenas Apps Script para dados
 4. `scripts/Code.gs` - SEM ALTERAÇÕES (já estava correto)
+5. `tests/test-appscript-url.html` - Nova página de diagnóstico para testar a URL
 
 ## Documentação adicional:
 
