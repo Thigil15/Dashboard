@@ -246,21 +246,12 @@
                 console.log('[fetchDataFromURL] Atualizando UI com dados carregados...');
                 
                 // Update dashboard with all loaded data
-                if (appState.dataLoadingState.alunos) {
-                    triggerUIUpdates('alunos');
-                }
-                if (appState.dataLoadingState.ausenciasReposicoes) {
-                    triggerUIUpdates('ausenciasReposicoes');
-                }
-                if (appState.dataLoadingState.notasTeoricas) {
-                    triggerUIUpdates('notasTeoricas');
-                }
-                if (appState.dataLoadingState.escalas) {
-                    triggerUIUpdates('escalas');
-                }
-                if (appState.dataLoadingState.pontoStaticRows) {
-                    triggerUIUpdates('pontoStaticRows');
-                }
+                const dataTypes = ['alunos', 'ausenciasReposicoes', 'notasTeoricas', 'escalas', 'pontoStaticRows'];
+                dataTypes.forEach(key => {
+                    if (appState.dataLoadingState[key]) {
+                        triggerUIUpdates(key);
+                    }
+                });
                 
                 // Check and hide loading overlay if critical data is loaded
                 checkAndHideLoadingOverlay();
@@ -412,10 +403,6 @@
                 console.log('[triggerUIUpdates] Dashboard não visível, pulando atualização da UI');
                 return;
             }
-            
-            // Check if the dashboard tab is currently active
-            const dashboardContent = document.getElementById('content-dashboard');
-            const isDashboardTabActive = dashboardContent && dashboardContent.style.display !== 'none';
             
             switch (stateKey) {
                 case 'alunos':
