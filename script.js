@@ -12,8 +12,8 @@
             const dataURL = window.appsScriptConfig?.dataURL;
             if (!dataURL || dataURL.includes('YOUR_DEPLOYMENT_ID')) {
                 console.error('[fetchDataFromURL] URL do Apps Script não configurada.');
-                console.error('[fetchDataFromURL] Configure a URL em firebase-config.js');
-                showError('URL do Apps Script não configurada. Verifique firebase-config.js', false);
+                console.error('[fetchDataFromURL] Configure a URL em apps-script-config.js');
+                showError('URL do Apps Script não configurada. Verifique apps-script-config.js', false);
                 return false;
             }
             
@@ -1380,7 +1380,7 @@ function extractTimeFromISO(isoString) {
                 
                 if (!dataLoaded) {
                     showLoading(false);
-                    const errorMsg = 'Erro ao carregar dados do Apps Script. Verifique a configuração da URL em firebase-config.js';
+                    const errorMsg = 'Erro ao carregar dados do Apps Script. Verifique a configuração da URL em apps-script-config.js';
                     showError(errorMsg, false);
                     console.error('[initDashboard] Falha ao carregar dados da URL');
                     return;
