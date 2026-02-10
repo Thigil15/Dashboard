@@ -3242,13 +3242,16 @@ function extractTimeFromISO(isoString) {
             loginButton.disabled = true;
             errorBox.style.display = "none";
 
-            // Small delay for UX (show loading animation)
-            await new Promise(resolve => setTimeout(resolve, 500));
-
             // Bypass authentication and go directly to dashboard
             console.log("[handleLogin] Bypassing authentication - loading dashboard");
             showView('dashboard-view');
             initDashboard();
+            
+            // Remove loading state after dashboard is shown
+            setTimeout(() => {
+                loginButton.classList.remove('loading');
+                loginButton.disabled = false;
+            }, 100);
         }
 
         // Logout function - Authentication DISABLED
