@@ -1,4 +1,37 @@
         // ====================================================================
+        // FIREBASE AUTHENTICATION INITIALIZATION
+        // ====================================================================
+        
+        // Wait for window.firebase to be available (loaded by index.html)
+        let fbApp, fbAuth;
+        
+        // Initialize Firebase (will be called after window.firebase is available)
+        // NOTE: Firebase is used ONLY for Authentication. Data comes from Apps Script URL.
+        function initializeFirebase() {
+            if (!window.firebase) {
+                console.error('[Firebase] window.firebase not available yet');
+                return false;
+            }
+            
+            try {
+                // Step 1: Initialize Firebase App (required for Auth)
+                fbApp = window.firebase.initializeApp(window.firebase.firebaseConfig);
+                console.log('[Firebase] App initialized successfully');
+                
+                // Step 2: Initialize Auth (REQUIRED - login won't work without this)
+                fbAuth = window.firebase.getAuth(fbApp);
+                console.log('[Firebase] Auth initialized successfully - ready for login');
+                
+                return true;
+            } catch (error) {
+                console.error('[Firebase] Critical initialization error:', error);
+                console.error('[Firebase] Auth failed to initialize - login will not work.');
+                return false;
+            }
+        }
+        
+        
+        // ====================================================================
         // APPS SCRIPT DATA FETCHING
         // ====================================================================
         
@@ -9,11 +42,11 @@
         async function fetchDataFromURL() {
             console.log('[fetchDataFromURL] Buscando dados da URL do Apps Script...');
             
-            const dataURL = window.appsScriptConfig?.dataURL;
+            const dataURL = window.firebase?.appsScriptConfig?.dataURL;
             if (!dataURL || dataURL.includes('YOUR_DEPLOYMENT_ID')) {
                 console.error('[fetchDataFromURL] URL do Apps Script não configurada.');
-                console.error('[fetchDataFromURL] Configure a URL em apps-script-config.js');
-                showError('URL do Apps Script não configurada. Verifique apps-script-config.js', false);
+                console.error('[fetchDataFromURL] Configure a URL em firebase-config.js');
+                showError('URL do Apps Script não configurada. Verifique firebase-config.js', false);
                 return false;
             }
             
@@ -3117,37 +3150,79 @@ function extractTimeFromISO(isoString) {
             });
         }
 
-        // Simple login bypass - no authentication
-        // User just clicks to enter the dashboard
+        // Firebase Authentication login handler
         async function handleLogin(event) {
             event.preventDefault();
-            console.log("[handleLogin] Carregando dashboard...");
+            console.log("[handleLogin] Tentativa de login com Firebase Authentication...");
 
-            const loginButton = document.getElementById("login-button");
+            const email = document.getElementById("login-email").value.trim();
+            const password = document.getElementById("login-password").value.trim();
             const errorBox = document.getElementById("login-error");
+            const loginButton = document.getElementById("login-button");
 
+            // Add loading state to button
             loginButton.classList.add('loading');
             loginButton.disabled = true;
             errorBox.style.display = "none";
 
-            try {
-                // Update user menu with default user info
-                updateUserMenuInfo();
+            // Wait for Firebase to initialize if not ready yet
+            if (!fbAuth) {
+                console.warn("[handleLogin] Firebase Auth ainda não está disponível. Aguardando inicialização...");
                 
-                // Directly show dashboard without authentication
-                showView('dashboard-view');
-                initDashboard();
+                // Wait for Firebase to be ready (max 5 seconds)
+                const maxWaitTime = 5000;
+                const startTime = Date.now();
+                
+                while (!fbAuth && (Date.now() - startTime) < maxWaitTime) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+                
+                if (!fbAuth) {
+                    console.error("[handleLogin] Firebase Auth não está disponível após espera.");
+                    loginButton.classList.remove('loading');
+                    loginButton.disabled = false;
+                    showError("Firebase não inicializado. Por favor, recarregue a página.", true);
+                    return;
+                }
+                
+                console.log("[handleLogin] Firebase Auth agora está disponível. Prosseguindo com login...");
+            }
+
+            try {
+                const userCredential = await window.firebase.signInWithEmailAndPassword(fbAuth, email, password);
+                console.log("[handleLogin] Login bem-sucedido via Firebase:", userCredential.user.email);
+                // Keep button loading - onAuthStateChanged will handle the rest
             } catch (error) {
-                console.error("[handleLogin] Erro ao carregar dashboard:", error);
+                console.error("[handleLogin] Erro no login Firebase:", error);
+                let errorMessage = "Email ou senha inválidos.";
+                
+                // Provide more specific error messages
+                if (error.code === 'auth/user-not-found') {
+                    errorMessage = "Usuário não encontrado.";
+                } else if (error.code === 'auth/wrong-password') {
+                    errorMessage = "Senha incorreta.";
+                } else if (error.code === 'auth/invalid-email') {
+                    errorMessage = "Email inválido.";
+                } else if (error.code === 'auth/too-many-requests') {
+                    errorMessage = "Muitas tentativas falhadas. Tente novamente mais tarde.";
+                } else if (error.code === 'auth/network-request-failed') {
+                    errorMessage = "Erro de conexão. Verifique sua internet.";
+                }
+                
+                // Remove loading state on error
                 loginButton.classList.remove('loading');
                 loginButton.disabled = false;
-                showError("Erro ao carregar o dashboard. Por favor, tente novamente.", true);
+                showError(errorMessage, true);
             }
         }
 
-        // Logout function - just returns to login
+        // Firebase logout function
         function handleLogout() {
-            console.log("[handleLogout] Retornando para login...");
+            console.log("[handleLogout] Fazendo logout...");
+            if (!fbAuth) {
+                console.error("[handleLogout] Firebase não inicializado.");
+                return;
+            }
             
             // Close user menu before logout
             const userMenu = document.getElementById('user-menu');
@@ -3158,42 +3233,13 @@ function extractTimeFromISO(isoString) {
             // Clear saved navigation state on logout
             clearNavigationState();
             
-            // Stop data refresh
-            stopPeriodicDataRefresh();
-            
-            // Clear appState
-            appState.alunos = [];
-            appState.alunosMap.clear();
-            appState.escalas = {};
-            appState.ausenciasReposicoes = [];
-            appState.notasTeoricas = {};
-            appState.notasPraticas = {};
-            appState.pontoStaticRows = [];
-            
-            // Reset dataLoadingState
-            Object.keys(appState.dataLoadingState).forEach(key => {
-                appState.dataLoadingState[key] = false;
+            window.firebase.signOut(fbAuth).then(() => {
+                console.log("[handleLogout] Logout bem-sucedido.");
+                // onAuthStateChanged will handle cleanup and redirect to login
+            }).catch((error) => {
+                console.error("[handleLogout] Erro ao fazer logout:", error);
+                showError("Erro ao fazer logout.");
             });
-            
-            // Reset pontoState
-            pontoState.rawRows = [];
-            pontoState.byDate.clear();
-            pontoState.cache.clear();
-            pontoState.scalesByDate.clear();
-            pontoState.autoScaleByDate.clear();
-            pontoState.dates = [];
-            pontoState.selectedDate = '';
-            pontoState.selectedScale = 'all';
-            pontoState.selectedType = 'pratica';
-            pontoState.filter = 'all';
-            pontoState.search = '';
-            pontoState.searchRaw = '';
-            pontoState.lastLoadedAt = null;
-            pontoState.isLoading = false;
-            
-            // Show login view
-            showLoading(false);
-            showView('login-view');
         }
         
         // Toggle user menu (Google-style dropdown)
@@ -3224,10 +3270,12 @@ function extractTimeFromISO(isoString) {
             }
         }
         
-        // Update user menu with generic info (no authentication)
-        function updateUserMenuInfo() {
-            const userName = "Usuário";
-            const userEmail = "dashboard@sistema.com";
+        // Update user menu with logged-in user info
+        function updateUserMenuInfo(user) {
+            if (!user) return;
+            
+            const userName = user.displayName || user.email.split('@')[0];
+            const userEmail = user.email;
             
             // Update dashboard topbar user info
             const userNameEl = document.getElementById('user-name');
@@ -10460,7 +10508,38 @@ function renderTabEscala(escalas) {
 
         // --- Inicia ---
         document.addEventListener('DOMContentLoaded', () => {
-            console.log("DOM Carregado. Inicializando aplicação...");
+            console.log("DOM Carregado. Aguardando Firebase SDK...");
+
+            // Disable login button until Firebase is ready
+            const loginButton = document.getElementById('login-button');
+            if (loginButton) {
+                loginButton.disabled = true;
+                console.log('[Firebase] Login button disabled - waiting for Firebase SDK');
+            }
+            
+            // Track timeout for enabling login button
+            let loginButtonTimeout = null;
+            
+            // Helper to enable login button with logging
+            const enableLoginButton = (reason) => {
+                const btn = document.getElementById('login-button');
+                if (btn && btn.disabled) {
+                    btn.disabled = false;
+                    console.log(`[Firebase] Login button enabled - ${reason}`);
+                }
+                if (loginButtonTimeout) {
+                    clearTimeout(loginButtonTimeout);
+                    loginButtonTimeout = null;
+                }
+            };
+            
+            // Ensure login button is enabled after max 5 seconds
+            loginButtonTimeout = setTimeout(() => {
+                const btn = document.getElementById('login-button');
+                if (btn && btn.disabled) {
+                    enableLoginButton('timeout (5s), Firebase may still be loading');
+                }
+            }, 5000);
             
             // Update footer years dynamically
             const currentYear = new Date().getFullYear();
@@ -10468,11 +10547,123 @@ function renderTabEscala(escalas) {
                 el.textContent = currentYear;
             });
             
-            // Setup event handlers
+            // Setup event handlers first
             setupEventHandlers();
             
-            // Show login view on startup
-            showView('login-view');
+            // Function to initialize app once Firebase is ready
+            const initializeApp = () => {
+                console.log("Inicializando Firebase e configurando autenticação.");
+                
+                // Initialize Firebase
+                const firebaseReady = initializeFirebase();
+                if (!firebaseReady) {
+                    console.error('Falha ao inicializar Firebase. Verifique se:');
+                    console.error('1. Sua conexão com a internet está funcionando');
+                    console.error('2. O arquivo firebase-config.js tem as configurações corretas');
+                    console.error('3. Os scripts do Firebase SDK carregaram corretamente');
+                    showView('login-view');
+                    
+                    // Enable login button even on Firebase failure
+                    enableLoginButton('despite Firebase initialization failure');
+                    
+                    showError('Firebase falhou ao inicializar. Por favor, recarregue a página.', false);
+                    return;
+                }
+                
+                // Enable login button now that Firebase is ready
+                enableLoginButton('Firebase is ready');
+                
+                // Setup Firebase Authentication State Observer
+                window.firebase.onAuthStateChanged(fbAuth, (user) => {
+                    if (!user) {
+                        // User is signed out
+                        console.log('[onAuthStateChanged] Usuário não autenticado. Mostrando login.');
+                        
+                        // Clean up: stop periodic data refresh
+                        stopPeriodicDataRefresh();
+                        
+                        // Clean up: clear appState
+                        appState.alunos = [];
+                        appState.alunosMap.clear();
+                        appState.escalas = {};
+                        appState.ausenciasReposicoes = [];
+                        appState.notasTeoricas = {};
+                        appState.notasPraticas = {};
+                        appState.pontoStaticRows = [];
+                        
+                        // Clean up: reset dataLoadingState to all false
+                        Object.keys(appState.dataLoadingState).forEach(key => {
+                            appState.dataLoadingState[key] = false;
+                        });
+                        
+                        // Clean up: reset pontoState
+                        pontoState.rawRows = [];
+                        pontoState.byDate.clear();
+                        pontoState.cache.clear();
+                        pontoState.scalesByDate.clear();
+                        pontoState.autoScaleByDate.clear();
+                        pontoState.dates = [];
+                        pontoState.selectedDate = '';
+                        pontoState.selectedScale = 'all';
+                        pontoState.selectedType = 'pratica';
+                        pontoState.filter = 'all';
+                        pontoState.search = '';
+                        pontoState.searchRaw = '';
+                        pontoState.lastLoadedAt = null;
+                        pontoState.isLoading = false;
+                        
+                        // Clean up: reset login button state
+                        const loginButton = document.getElementById('login-button');
+                        if (loginButton) {
+                            loginButton.classList.remove('loading');
+                            loginButton.disabled = false;
+                        }
+                        
+                        // Clean up: hide login error messages
+                        const errorBox = document.getElementById('login-error');
+                        if (errorBox) {
+                            errorBox.style.display = 'none';
+                        }
+                        
+                        // Always show login view when not authenticated
+                        showLoading(false);
+                        showView('login-view');
+                    } else {
+                        // User is signed in
+                        console.log('[onAuthStateChanged] Usuário autenticado:', user.email);
+                        
+                        // Update user menu with logged-in user info
+                        updateUserMenuInfo(user);
+                        
+                        // Show dashboard and load data from Apps Script
+                        showView('dashboard-view');
+                        initDashboard();
+                    }
+                });
+            };
             
-            console.log("Aplicação pronta. Mostrando tela de login.");
+            // Wait for Firebase SDK to be ready
+            if (window.firebase) {
+                // Already loaded (unlikely in module context, but possible)
+                initializeApp();
+            } else {
+                // Wait for firebaseReady event
+                window.addEventListener('firebaseReady', initializeApp, { once: true });
+                
+                // Fallback timeout in case event doesn't fire
+                setTimeout(() => {
+                    if (!window.firebase) {
+                        console.error('Timeout esperando Firebase SDK (3 segundos).');
+                        console.error('Os scripts do Firebase podem estar bloqueados ou falhando ao carregar.');
+                        
+                        // Ensure login button is enabled even if Firebase SDK never loaded
+                        const btn = document.getElementById('login-button');
+                        if (btn && btn.disabled) {
+                            enableLoginButton('force-enabled after SDK timeout');
+                        }
+                        
+                        initializeApp();
+                    }
+                }, 3000);
+            }
         });

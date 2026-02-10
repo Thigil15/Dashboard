@@ -1575,18 +1575,37 @@
     </div>
     
     <!-- CLIENT-SIDE SCRIPT -->
-    <!-- Apps Script Configuration -->
+    <!-- Firebase SDK and Configuration -->
     <script type="module">
-        // Import Apps Script configuration
-        import appsScriptConfigModule from './apps-script-config.js';
-        const appsScriptConfig = appsScriptConfigModule.appsScriptConfig || appsScriptConfigModule;
+        // Import Firebase SDK
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js';
+        import { 
+            getAuth, 
+            onAuthStateChanged, 
+            signInWithEmailAndPassword,
+            signOut 
+        } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js';
 
-        // Make configuration globally available
-        window.appsScriptConfig = appsScriptConfig;
+        // Import configuration (Firebase for Auth + Apps Script for Data)
+        import configModule from './firebase-config.js';
+        const firebaseConfig = configModule.firebaseConfig || configModule;
+        const appsScriptConfig = configModule.appsScriptConfig || { dataURL: "" };
+
+        // Make Firebase Auth functions and configurations globally available
+        window.firebase = {
+            initializeApp,
+            getAuth,
+            onAuthStateChanged,
+            signInWithEmailAndPassword,
+            signOut,
+            firebaseConfig,
+            appsScriptConfig
+        };
         
-        // Dispatch custom event to signal configuration is ready
-        window.dispatchEvent(new CustomEvent('configReady'));
-        console.log('[Apps Script Config] Loaded and ready');
+        // Dispatch custom event to signal Firebase SDK is ready
+        window.dispatchEvent(new CustomEvent('firebaseReady'));
+        console.log('[Firebase SDK] Loaded and ready for Authentication');
+        console.log('[Apps Script Config] Data URL configured:', appsScriptConfig.dataURL);
     </script>
     <script type="module" src="script.js"></script>
 </body>
