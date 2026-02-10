@@ -1575,50 +1575,18 @@
     </div>
     
     <!-- CLIENT-SIDE SCRIPT -->
-    <!-- Firebase SDK Imports -->
+    <!-- Apps Script Configuration -->
     <script type="module">
-        // Import Firebase SDK
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js';
-        import { 
-            getAuth, 
-            onAuthStateChanged, 
-            signInWithEmailAndPassword,
-            signOut 
-        } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js';
-        import { 
-            getDatabase, 
-            ref, 
-            onValue,
-            get,
-            set,
-            push
-        } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-database.js';
+        // Import Apps Script configuration
+        import appsScriptConfigModule from './firebase-config.js';
+        const appsScriptConfig = appsScriptConfigModule.appsScriptConfig || appsScriptConfigModule;
 
-        // Import Firebase configuration
-        import firebaseConfigModule from './firebase-config.js';
-        const firebaseConfig = firebaseConfigModule.firebaseConfig || firebaseConfigModule;
-        const appsScriptConfig = firebaseConfigModule.appsScriptConfig || { dataURL: "" };
-
-        // Make Firebase functions globally available
-        window.firebase = {
-            initializeApp,
-            getAuth,
-            onAuthStateChanged,
-            signInWithEmailAndPassword,
-            signOut,
-            getDatabase,
-            ref,
-            onValue,
-            get,
-            set,
-            push,
-            firebaseConfig,
-            appsScriptConfig
-        };
+        // Make configuration globally available
+        window.appsScriptConfig = appsScriptConfig;
         
-        // Dispatch custom event to signal Firebase SDK is ready
-        window.dispatchEvent(new CustomEvent('firebaseReady'));
-        console.log('[Firebase SDK] Loaded and ready');
+        // Dispatch custom event to signal configuration is ready
+        window.dispatchEvent(new CustomEvent('configReady'));
+        console.log('[Apps Script Config] Loaded and ready');
     </script>
     <script type="module" src="script.js"></script>
 </body>
