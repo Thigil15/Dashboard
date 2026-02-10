@@ -13,8 +13,9 @@ O sistema Firebase foi **completamente removido** do Dashboard. Agora o sistema 
 - ❌ Firebase Cloud Functions
 - ❌ Todas as referências e comentários do Firebase
 
-### Arquivos Removidos/Renomeados
-- `firebase-config.js` → `apps-script-config.js` (renomeado e simplificado)
+### Configuração Atualizada
+- `firebase-config.js` agora contém apenas configuração do Firebase Auth e Apps Script URL
+- **NOTA**: Apesar do nome, o arquivo `firebase-config.js` é mantido para compatibilidade, mas o Firebase é usado **APENAS para autenticação**
 
 ## 🚀 Como Funciona Agora
 
@@ -25,7 +26,7 @@ O sistema Firebase foi **completamente removido** do Dashboard. Agora o sistema 
 ### 2. Carregamento de Dados
 - **Fonte única**: Google Apps Script doGet endpoint
 - **Frequência**: Atualização automática a cada 5 minutos
-- **Endpoint**: Configurado em `apps-script-config.js`
+- **Endpoint**: Configurado em `firebase-config.js` → `appsScriptConfig.dataURL`
 
 ### 3. Code.gs (Apps Script)
 O arquivo `scripts/Code.gs` já está configurado para:
@@ -36,12 +37,18 @@ O arquivo `scripts/Code.gs` já está configurado para:
 
 ## 📁 Arquivos Principais
 
-### apps-script-config.js
+### firebase-config.js
 ```javascript
+// Firebase configuration - Used ONLY for Authentication
+const firebaseConfig = { ... };
+
+// Apps Script URL configuration - Used for ALL data loading
 const appsScriptConfig = {
   dataURL: "https://script.google.com/macros/s/[SEU_ID]/exec"
 };
 ```
+
+**NOTA**: Apesar do nome do arquivo, o Firebase é usado apenas para autenticação. Todos os dados vêm do Apps Script.
 
 ### index.html
 - Carrega apenas a configuração do Apps Script
@@ -69,9 +76,10 @@ const appsScriptConfig = {
 8. Copie a URL gerada
 
 ### Passo 2: Configurar o Dashboard
-1. Abra o arquivo `apps-script-config.js`
-2. Cole a URL do Apps Script no campo `dataURL`
-3. Salve o arquivo
+1. Abra o arquivo `firebase-config.js`
+2. Localize a seção `appsScriptConfig`
+3. Cole a URL do Apps Script no campo `dataURL`
+4. Salve o arquivo
 
 ### Passo 3: Testar
 1. Abra o `index.html` no navegador
@@ -88,7 +96,7 @@ Code.gs (Apps Script) - doGet()
     ↓
 JSON com todas as abas
     ↓
-apps-script-config.js (URL)
+firebase-config.js (appsScriptConfig.dataURL)
     ↓
 script.js (fetchDataFromURL)
     ↓
@@ -133,8 +141,9 @@ Dashboard (interface)
 ## 🐛 Solução de Problemas
 
 ### Erro: "URL do Apps Script não configurada"
-- Verifique se `apps-script-config.js` tem a URL correta
+- Verifique se `firebase-config.js` tem a URL correta no campo `appsScriptConfig.dataURL`
 - A URL deve terminar com `/exec`
+- Certifique-se de que a URL não contém placeholders como `YOUR_DEPLOYMENT_ID`
 
 ### Erro: "Erro ao carregar dados"
 - Verifique se o Apps Script está publicado corretamente
@@ -146,6 +155,7 @@ Dashboard (interface)
 - Procure por mensagens com `[fetchDataFromURL]`
 - Verifique se o JSON está sendo retornado corretamente
 - Teste a URL diretamente no navegador
+- Use a página de diagnóstico: `tests/test-appscript-url.html`
 
 ## 📝 Próximos Passos (Opcional)
 
@@ -157,9 +167,10 @@ Se precisar adicionar autenticação no futuro:
 ## ✅ Checklist de Verificação
 
 - [ ] Apps Script publicado como "Aplicativo da Web"
-- [ ] URL do Apps Script copiada para `apps-script-config.js`
-- [ ] Arquivo `apps-script-config.js` salvo
+- [ ] URL do Apps Script copiada para `firebase-config.js` (campo `appsScriptConfig.dataURL`)
+- [ ] Arquivo `firebase-config.js` salvo
 - [ ] Dashboard abre sem erros no Console
 - [ ] Botão "Entrar" funciona
 - [ ] Dados aparecem no dashboard
 - [ ] Abas diferentes (Alunos, Ausências, etc) mostram dados corretos
+- [ ] Teste de diagnóstico em `tests/test-appscript-url.html` passa com sucesso

@@ -210,30 +210,121 @@ setupDatabaseListeners() {
 
 ## 🧪 Testes
 
-### Teste Automático
+### ⚡ Teste Rápido de Apps Script
 
+**Página de Diagnóstico:**
 ```bash
 # Abra no navegador:
+tests/test-appscript-url.html
+```
+
+Esta página testa:
+- ✅ URL configurada corretamente
+- ✅ Conexão HTTP bem-sucedida
+- ✅ Headers HTTP válidos
+- ✅ JSON válido retornado
+- ✅ Estrutura de dados correta
+- ✅ Dados de alunos presentes
+
+**Resultado esperado:** Todos os testes devem passar ✅
+
+### 🔬 Smoke Test Manual (Teste Completo)
+
+Execute estes passos para validar a instalação completa:
+
+#### 1. Verificar Configuração
+```bash
+# Abra firebase-config.js e verifique:
+✓ appsScriptConfig.dataURL está preenchido
+✓ URL termina com /exec
+✓ Não contém placeholders como YOUR_DEPLOYMENT_ID
+```
+
+#### 2. Testar Servidor Local
+```bash
+# Opção A: Live Server (VS Code)
+# Clique com botão direito em index.html → "Open with Live Server"
+
+# Opção B: Python HTTP Server
+python -m http.server 8000
+# Acesse: http://localhost:8000
+
+# Opção C: Node.js HTTP Server
+npx http-server -p 8000
+```
+
+**⚠️ IMPORTANTE:** Não abra via `file://` - use sempre um servidor HTTP local para evitar problemas de CORS.
+
+#### 3. Verificar URL do Apps Script
+```bash
+# Teste a URL diretamente no navegador:
+# Cole a URL do appsScriptConfig.dataURL no navegador
+
+✓ Deve retornar JSON (não HTML)
+✓ JSON deve ter estrutura: { cache: {...}, metadados: {...} }
+✓ cache deve conter abas como: Alunos, Ausencias, etc.
+```
+
+#### 4. Testar Login e Carregamento
+```bash
+1. Abra http://localhost:8000 no navegador
+2. Abra o Console do navegador (F12 → Console)
+3. Faça login com credenciais do Firebase
+4. Observe o console:
+   ✓ Deve mostrar: "[fetchDataFromURL] ✅ Dados recebidos"
+   ✓ Deve mostrar: "[fetchDataFromURL] ✅ Alunos carregados: N registros"
+   ✓ NÃO deve mostrar erros em vermelho
+```
+
+#### 5. Verificar `window.firebase.appsScriptConfig`
+```bash
+# No Console do navegador (após login):
+console.log(window.firebase.appsScriptConfig.dataURL)
+
+✓ Deve retornar a URL configurada
+✓ Se retornar undefined, há problema no carregamento da configuração
+```
+
+#### 6. Verificar Network Tab
+```bash
+1. Abra DevTools (F12) → Network tab
+2. Recarregue a página
+3. Procure por requisição para script.google.com
+   ✓ Status deve ser 200 OK
+   ✓ Type deve ser fetch ou xhr
+   ✓ Response deve ser JSON (não HTML)
+   ✓ Preview deve mostrar { cache: {...} }
+```
+
+#### 7. Testar Funcionalidades
+```bash
+# Após login bem-sucedido:
+✓ Dashboard mostra KPIs e gráficos
+✓ Aba Alunos mostra lista de estudantes
+✓ Aba Ponto mostra registros de frequência
+✓ Aba Escala mostra escalas mensais
+✓ Dados carregam em menos de 5 segundos
+```
+
+### ❌ Troubleshooting - Problemas Comuns
+
+| Problema | Causa Provável | Solução |
+|----------|----------------|---------|
+| "URL do Apps Script não configurada" | URL vazia ou com placeholder | Configure `appsScriptConfig.dataURL` em `firebase-config.js` |
+| "Failed to fetch" | Usando file:// ou bloqueio CORS | Use servidor HTTP local (Live Server, Python, etc) |
+| JSON parseado como HTML | URL incorreta ou deployment inativo | Verifique URL e status do deployment no Apps Script |
+| Erro 403 Forbidden | Permissões do Apps Script | Configure deployment como "Qualquer pessoa" pode acessar |
+| Erro 404 Not Found | URL incorreta ou deployment deletado | Verifique se a URL está correta |
+| `window.firebase.appsScriptConfig` undefined | Configuração não carregou | Verifique se `firebase-config.js` exporta `appsScriptConfig` |
+
+### Teste Automático (Legacy)
+
+```bash
+# Teste antigo de conexão Firebase:
 tests/test-firebase-connection.html
 ```
 
-Verifica:
-- ✅ SDK carregado
-- ✅ Configuração válida
-- ✅ Conexão estabelecida
-- ✅ Dados existem
-- ✅ Estrutura correta
-
-### Teste Manual
-
-1. Abra `index.html`
-2. Faça login
-3. Navegue pelas abas:
-   - Dashboard (KPIs, gráficos)
-   - Alunos (lista, detalhes)
-   - Ponto (registros de frequência)
-   - Escala (visualização de escalas)
-4. Verifique se os dados aparecem
+**NOTA:** Este teste verifica Firebase Realtime Database, que não é mais usado para dados (apenas Auth).
 
 ---
 
