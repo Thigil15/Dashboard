@@ -141,14 +141,14 @@ function setupAusenciaFormHandler() {
         // ... código de validação
         
         // Lê URL da configuração global
-        const APPS_SCRIPT_URL = window.firebase?.appsScriptConfig?.dataURL;
-        if (!APPS_SCRIPT_URL) {
+        const appsScriptURL = window.firebase?.appsScriptConfig?.dataURL;
+        if (!appsScriptURL) {
             showError('URL do Apps Script não configurada');
             return;
         }
         
         // Envia dados para Apps Script
-        await fetch(APPS_SCRIPT_URL, {
+        await fetch(appsScriptURL, {
             method: 'POST',
             mode: 'no-cors',
             body: JSON.stringify(ausenciaData)
