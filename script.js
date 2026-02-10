@@ -109,6 +109,10 @@
                     if (data.cache.Alunos) {
                         const alunosData = data.cache.Alunos.registros || [];
                         appState.alunos = alunosData;
+                        
+                        // Build alunosMap for quick lookups by email
+                        buildAlunosMap();
+                        
                         appState.dataLoadingState.alunos = true;
                         console.log(`[fetchDataFromURL] ✅ Alunos carregados: ${alunosData.length} registros`);
                     }
@@ -524,6 +528,24 @@
                     if (typeof renderAtAGlance === 'function') {
                         renderAtAGlance();
                     }
+            }
+        }
+        
+        /**
+         * Build alunosMap from alunos array for quick lookups by email
+         * This function should be called whenever appState.alunos is updated
+         */
+        function buildAlunosMap() {
+            appState.alunosMap.clear();
+            if (appState.alunos && appState.alunos.length > 0) {
+                appState.alunos.forEach(aluno => {
+                    if (aluno && aluno.EmailHC) {
+                        appState.alunosMap.set(aluno.EmailHC, aluno);
+                    }
+                });
+                console.log(`[buildAlunosMap] Map construído: ${appState.alunosMap.size} alunos`);
+            } else {
+                console.warn('[buildAlunosMap] Nenhum aluno para mapear');
             }
         }
         
@@ -1712,6 +1734,12 @@ function extractTimeFromISO(isoString) {
                 return;
             }
             
+            // Defensive check: If alunosMap is empty but alunos array has data, rebuild the map
+            if (appState.alunosMap.size === 0 && appState.alunos && appState.alunos.length > 0) {
+                console.warn('[renderReposicoesPendentesList] alunosMap está vazio mas alunos tem dados. Reconstruindo mapa...');
+                buildAlunosMap();
+            }
+            
             // Prefer merged AusenciasReposicoes dataset (contains both ausência + reposição)
             const combined = Array.isArray(appState.ausenciasReposicoes) && appState.ausenciasReposicoes.length > 0
                 ? appState.ausenciasReposicoes
@@ -1799,6 +1827,12 @@ function extractTimeFromISO(isoString) {
             if (!container) {
                 console.error('[renderReposicoesMarcadasList] Container not found');
                 return;
+            }
+            
+            // Defensive check: If alunosMap is empty but alunos array has data, rebuild the map
+            if (appState.alunosMap.size === 0 && appState.alunos && appState.alunos.length > 0) {
+                console.warn('[renderReposicoesMarcadasList] alunosMap está vazio mas alunos tem dados. Reconstruindo mapa...');
+                buildAlunosMap();
             }
             
             // Prefer merged AusenciasReposicoes to show each ausência with reposição marcada
@@ -2386,6 +2420,12 @@ function extractTimeFromISO(isoString) {
             if (!container) {
                 console.error('[renderAusenciasStudentsList] Container not found');
                 return;
+            }
+            
+            // Defensive check: If alunosMap is empty but alunos array has data, rebuild the map
+            if (appState.alunosMap.size === 0 && appState.alunos && appState.alunos.length > 0) {
+                console.warn('[renderAusenciasStudentsList] alunosMap está vazio mas alunos tem dados. Reconstruindo mapa...');
+                buildAlunosMap();
             }
             
             // Get active students
@@ -7523,6 +7563,12 @@ function extractTimeFromISO(isoString) {
                     console.error('[showStudentDetail] Dados de alunos ainda não carregados. Aguarde...');
                     showError('Os dados ainda estão sendo carregados. Por favor, aguarde um momento e tente novamente.');
                     return;
+                }
+                
+                // Defensive check: If alunosMap is empty but alunos array has data, rebuild the map
+                if (appState.alunosMap.size === 0 && appState.alunos && appState.alunos.length > 0) {
+                    console.warn('[showStudentDetail] alunosMap está vazio mas alunos tem dados. Reconstruindo mapa...');
+                    buildAlunosMap();
                 }
                 
                 const info = appState.alunosMap.get(email);
