@@ -242,6 +242,34 @@
                     }
                 }
                 
+                // Trigger UI updates for loaded data
+                console.log('[fetchDataFromURL] Atualizando UI com dados carregados...');
+                
+                // Update dashboard with all loaded data
+                // Use forEach with try-catch to ensure all data types are processed even if one fails
+                const dataTypes = ['alunos', 'ausenciasReposicoes', 'notasTeoricas', 'escalas', 'pontoStaticRows'];
+                const updateResults = { success: [], failed: [] };
+                
+                dataTypes.forEach(key => {
+                    if (appState.dataLoadingState[key]) {
+                        try {
+                            triggerUIUpdates(key);
+                            updateResults.success.push(key);
+                        } catch (error) {
+                            console.error(`[fetchDataFromURL] ❌ Erro ao atualizar UI para ${key}:`, error);
+                            updateResults.failed.push(key);
+                        }
+                    }
+                });
+                
+                // Log update results
+                if (updateResults.success.length > 0) {
+                    console.log('[fetchDataFromURL] ✅ UI atualizada com sucesso para:', updateResults.success.join(', '));
+                }
+                if (updateResults.failed.length > 0) {
+                    console.warn('[fetchDataFromURL] ⚠️ Falha ao atualizar UI para:', updateResults.failed.join(', '));
+                }
+                
                 // Check and hide loading overlay if critical data is loaded
                 checkAndHideLoadingOverlay();
                 
@@ -388,6 +416,7 @@
             
             // Only update dashboard if it's visible
             if (!isDashboardVisible) {
+                console.log('[triggerUIUpdates] Dashboard não visível, pulando atualização da UI');
                 return;
             }
             
@@ -396,7 +425,9 @@
                     if (typeof renderStudentList === 'function') {
                         renderStudentList(appState.alunos);
                     }
+                    // Render dashboard when alunos data arrives (critical data) if dashboard is visible
                     if (typeof renderAtAGlance === 'function') {
+                        console.log('[triggerUIUpdates] Renderizando dashboard com dados de alunos');
                         renderAtAGlance();
                     }
                     break;
@@ -3893,6 +3924,14 @@ function extractTimeFromISO(isoString) {
                 }
             });
             
+            // Initialize dashboard panel when switching to dashboard tab
+            if (tabName === 'dashboard') {
+                console.log('[switchMainTab] Renderizando dashboard...');
+                if (appState.dataLoadingState.alunos && typeof renderAtAGlance === 'function') {
+                    renderAtAGlance();
+                }
+            }
+            
             // Initialize ponto panel when switching to ponto tab
             if (tabName === 'ponto') {
                 console.log('[switchMainTab] Inicializando painel de ponto...');
@@ -3917,8 +3956,13 @@ function extractTimeFromISO(isoString) {
                         }
                         updatePontoHojeMap();
                     }
-                    // Initialize or refresh the panel
-                    initializePontoPanel();
+                    // Initialize or refresh the panel with error handling
+                    try {
+                        initializePontoPanel();
+                    } catch (error) {
+                        console.error('[switchMainTab] Erro ao inicializar painel de ponto:', error);
+                        showError('Erro ao carregar o painel de frequência. Por favor, tente novamente.');
+                    }
                 } else {
                     console.log('[switchMainTab] Aguardando dados de ponto...');
                     // Show loading state in ponto panel
