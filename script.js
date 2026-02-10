@@ -109,6 +109,10 @@
                     if (data.cache.Alunos) {
                         const alunosData = data.cache.Alunos.registros || [];
                         appState.alunos = alunosData;
+                        
+                        // Build alunosMap for quick lookups by email
+                        buildAlunosMap();
+                        
                         appState.dataLoadingState.alunos = true;
                         console.log(`[fetchDataFromURL] ✅ Alunos carregados: ${alunosData.length} registros`);
                     }
@@ -524,6 +528,24 @@
                     if (typeof renderAtAGlance === 'function') {
                         renderAtAGlance();
                     }
+            }
+        }
+        
+        /**
+         * Build alunosMap from alunos array for quick lookups by email
+         * This function should be called whenever appState.alunos is updated
+         */
+        function buildAlunosMap() {
+            appState.alunosMap.clear();
+            if (appState.alunos && appState.alunos.length > 0) {
+                appState.alunos.forEach(aluno => {
+                    if (aluno && aluno.EmailHC) {
+                        appState.alunosMap.set(aluno.EmailHC, aluno);
+                    }
+                });
+                console.log(`[buildAlunosMap] Map construído: ${appState.alunosMap.size} alunos`);
+            } else {
+                console.warn('[buildAlunosMap] Nenhum aluno para mapear');
             }
         }
         
