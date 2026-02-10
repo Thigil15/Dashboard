@@ -32,7 +32,7 @@ fetchDataFromURL()
 **Arquivo:** `script.js`, linhas 245-265
 
 **O que foi feito:**
-Adicionadas chamadas para `triggerUIUpdates()` após cada tipo de dado ser carregado em `fetchDataFromURL()`, usando um padrão de iteração para melhor manutenibilidade:
+Adicionadas chamadas para `triggerUIUpdates()` após cada tipo de dado ser carregado em `fetchDataFromURL()`, usando um padrão de iteração para melhor manutenibilidade e rastreamento de erros:
 
 ```javascript
 // Trigger UI updates for loaded data
@@ -41,15 +41,27 @@ console.log('[fetchDataFromURL] Atualizando UI com dados carregados...');
 // Update dashboard with all loaded data
 // Use forEach with try-catch to ensure all data types are processed even if one fails
 const dataTypes = ['alunos', 'ausenciasReposicoes', 'notasTeoricas', 'escalas', 'pontoStaticRows'];
+const updateResults = { success: [], failed: [] };
+
 dataTypes.forEach(key => {
     if (appState.dataLoadingState[key]) {
         try {
             triggerUIUpdates(key);
+            updateResults.success.push(key);
         } catch (error) {
-            console.error(`[fetchDataFromURL] Erro ao atualizar UI para ${key}:`, error);
+            console.error(`[fetchDataFromURL] ❌ Erro ao atualizar UI para ${key}:`, error);
+            updateResults.failed.push(key);
         }
     }
 });
+
+// Log update results
+if (updateResults.success.length > 0) {
+    console.log('[fetchDataFromURL] ✅ UI atualizada com sucesso para:', updateResults.success.join(', '));
+}
+if (updateResults.failed.length > 0) {
+    console.warn('[fetchDataFromURL] ⚠️ Falha ao atualizar UI para:', updateResults.failed.join(', '));
+}
 ```
 
 **Resultado:** Agora quando os dados são carregados, a função `renderAtAGlance()` é automaticamente chamada para atualizar o dashboard com:
