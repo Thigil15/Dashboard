@@ -259,7 +259,10 @@ function onChangePontoInstalavel(e) {
  * Usado quando há inserção de linhas via onChange.
  */
 function syncAllRowsInSheet_(ss, sheet, sheetName) {
+  if (!sheet) return;
+  
   var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  if (!headers || headers.length === 0) return;
   
   var idx = function(colName){
     var i = headers.indexOf(colName);
@@ -274,7 +277,10 @@ function syncAllRowsInSheet_(ss, sheet, sheetName) {
   var escalaCol = idx('Escala');
   
   // Requer pelo menos um identificador e data/hora entrada
-  if ((emailCol < 0 && serialCol < 0 && nomeCol < 0) || dataCol < 0 || horaEntCol < 0) return;
+  if ((emailCol < 1 && serialCol < 1 && nomeCol < 1) || dataCol < 1 || horaEntCol < 1) {
+    console.warn('Cabeçalhos essenciais não encontrados na aba ' + sheetName);
+    return;
+  }
   
   var lastRow = sheet.getLastRow();
   if (lastRow < 2) return;
@@ -889,21 +895,31 @@ function doPost(e) {
 
     // === 1. Verifica se há linha aberta na TEORIA ===
     var dadosTeoria = abaTeoria.getDataRange().getValues();
+    if (dadosTeoria.length < 2) {
+      // Só tem cabeçalho ou está vazia
+      dadosTeoria = [['SerialNumber', 'EmailHC', 'NomeCompleto', 'Data', 'HoraEntrada', 'HoraSaida', 'Escala', 'Tipo']];
+    }
+    
     var linhaTeoriaAberta = null;
     var linhaTeoriaCompleta = false;
 
-    // Mapeia cabeçalhos da teoria
-    var headerTeoria = dadosTeoria.length > 0 ? dadosTeoria[0] : [];
+    // Mapeia cabeçalhos da teoria com validação
+    var headerTeoria = dadosTeoria[0] || [];
     var colIdxTeoria = {
       id: headerTeoria.indexOf('SerialNumber'),
       data: headerTeoria.indexOf('Data'),
       entrada: headerTeoria.indexOf('HoraEntrada'),
       saida: headerTeoria.indexOf('HoraSaida')
     };
+    
+    // Valida se encontrou as colunas essenciais
+    if (colIdxTeoria.id < 0 || colIdxTeoria.data < 0) {
+      return resposta("Erro: Colunas essenciais não encontradas na aba PontoTeoria");
+    }
 
     for (var i = 1; i < dadosTeoria.length; i++) {
-      var linhaId = colIdxTeoria.id >= 0 ? dadosTeoria[i][colIdxTeoria.id] : null;
-      var linhaData = colIdxTeoria.data >= 0 ? formatarData(dadosTeoria[i][colIdxTeoria.data]) : null;
+      var linhaId = dadosTeoria[i][colIdxTeoria.id];
+      var linhaData = formatarData(dadosTeoria[i][colIdxTeoria.data]);
       var entrada = colIdxTeoria.entrada >= 0 ? dadosTeoria[i][colIdxTeoria.entrada] : null;
       var saida = colIdxTeoria.saida >= 0 ? dadosTeoria[i][colIdxTeoria.saida] : null;
 
@@ -926,21 +942,31 @@ function doPost(e) {
 
     // === 2. Verifica se há linha aberta na PRÁTICA ===
     var dadosPratica = abaPratica.getDataRange().getValues();
+    if (dadosPratica.length < 2) {
+      // Só tem cabeçalho ou está vazia
+      dadosPratica = [['SerialNumber', 'EmailHC', 'NomeCompleto', 'Data', 'HoraEntrada', 'HoraSaida', 'Escala', 'Tipo']];
+    }
+    
     var linhaPraticaAberta = null;
     var linhaPraticaCompleta = false;
 
-    // Mapeia cabeçalhos da prática
-    var headerPratica = dadosPratica.length > 0 ? dadosPratica[0] : [];
+    // Mapeia cabeçalhos da prática com validação
+    var headerPratica = dadosPratica[0] || [];
     var colIdxPratica = {
       id: headerPratica.indexOf('SerialNumber'),
       data: headerPratica.indexOf('Data'),
       entrada: headerPratica.indexOf('HoraEntrada'),
       saida: headerPratica.indexOf('HoraSaida')
     };
+    
+    // Valida se encontrou as colunas essenciais
+    if (colIdxPratica.id < 0 || colIdxPratica.data < 0) {
+      return resposta("Erro: Colunas essenciais não encontradas na aba PontoPratica");
+    }
 
     for (var i = 1; i < dadosPratica.length; i++) {
-      var linhaId = colIdxPratica.id >= 0 ? dadosPratica[i][colIdxPratica.id] : null;
-      var linhaData = colIdxPratica.data >= 0 ? formatarData(dadosPratica[i][colIdxPratica.data]) : null;
+      var linhaId = dadosPratica[i][colIdxPratica.id];
+      var linhaData = formatarData(dadosPratica[i][colIdxPratica.data]);
       var entrada = colIdxPratica.entrada >= 0 ? dadosPratica[i][colIdxPratica.entrada] : null;
       var saida = colIdxPratica.saida >= 0 ? dadosPratica[i][colIdxPratica.saida] : null;
 
@@ -1002,7 +1028,8 @@ function doPost(e) {
  * Trata Date objects, números (timestamps) e strings.
  */
 function formatarData(valor) {
-  if (!valor) return valor;
+  // Retorna apenas se for null ou undefined (não 0 ou false)
+  if (valor === null || valor === undefined) return valor;
   
   // Se é um Date object válido
   if (valor instanceof Date && !isNaN(valor)) {
@@ -1010,14 +1037,16 @@ function formatarData(valor) {
   }
   
   // Se é um número (timestamp ou serial do Excel)
-  if (typeof valor === 'number') {
+  if (typeof valor === 'number' && valor !== 0) {
     // Números maiores que 50000 são provavelmente seriais do Excel (dias desde 1/1/1900)
     // Números menores são provavelmente timestamps Unix
     if (valor > 50000) {
       // Serial do Excel: converte para Date
       var date = new Date((valor - 25569) * 86400 * 1000);
-      return Utilities.formatDate(date, "America/Sao_Paulo", "dd/MM/yyyy");
-    } else {
+      if (!isNaN(date)) {
+        return Utilities.formatDate(date, "America/Sao_Paulo", "dd/MM/yyyy");
+      }
+    } else if (valor > 0) {
       // Timestamp Unix (assumindo milissegundos)
       var date = new Date(valor);
       if (!isNaN(date)) {
