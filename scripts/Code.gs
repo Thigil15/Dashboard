@@ -242,9 +242,10 @@ function onChangePontoInstalavel(e) {
       var sheets = ['PontoPratica', 'PontoTeoria'];
       
       for (var i = 0; i < sheets.length; i++) {
-        var sheet = ss.getSheetByName(sheets[i]);
+        var sheetName = sheets[i];
+        var sheet = ss.getSheetByName(sheetName);
         if (sheet) {
-          syncAllRowsInSheet_(ss, sheet, sheets[i]);
+          syncAllRowsInSheet_(ss, sheet, sheetName);
         }
       }
     }
@@ -424,9 +425,9 @@ function syncOnePontoRow_(spreadsheet, escalaNumber, serial, email, nome, dataRa
     var row = escalaRows[i];
     var matches = 0;
     
-    if (escalaSerialCol > 0 && serial && row[escalaSerialCol-1] == serial) matches++;
-    if (escalaEmailCol > 0 && email && row[escalaEmailCol-1] == email) matches++;
-    if (escalaNomeCol > 0 && nome && row[escalaNomeCol-1] == nome) matches++;
+    if (escalaSerialCol > 0 && serial && row[escalaSerialCol-1] === serial) matches++;
+    if (escalaEmailCol > 0 && email && row[escalaEmailCol-1] === email) matches++;
+    if (escalaNomeCol > 0 && nome && row[escalaNomeCol-1] === nome) matches++;
     
     if (matches >= 2) {
       targetRow = i + 2;
@@ -515,9 +516,9 @@ function syncToFrequenciaTeorica_(spreadsheet, pontoTeoriaSheet, rowNumber, esca
     var row = freqRows[i];
     var matches = 0;
     
-    if (freqSerialCol > 0 && serial && row[freqSerialCol-1] == serial) matches++;
-    if (freqEmailCol > 0 && email && row[freqEmailCol-1] == email) matches++;
-    if (freqNomeCol > 0 && nome && row[freqNomeCol-1] == nome) matches++;
+    if (freqSerialCol > 0 && serial && row[freqSerialCol-1] === serial) matches++;
+    if (freqEmailCol > 0 && email && row[freqEmailCol-1] === email) matches++;
+    if (freqNomeCol > 0 && nome && row[freqNomeCol-1] === nome) matches++;
     
     if (matches >= 2) {
       targetRow = i + 2;
@@ -839,7 +840,7 @@ function doPost(e) {
       var entrada = dadosTeoria[i][4];
       var saida = dadosTeoria[i][5];
 
-      if (linhaId == id && linhaData == dataStr) {
+      if (String(linhaId) === String(id) && linhaData === dataStr) {
         if (!saida) linhaTeoriaAberta = i + 1;
         else linhaTeoriaCompleta = true;
       }
@@ -865,7 +866,7 @@ function doPost(e) {
       var entrada = dadosPratica[i][4];
       var saida = dadosPratica[i][5];
 
-      if (linhaId == id && linhaData == dataStr) {
+      if (String(linhaId) === String(id) && linhaData === dataStr) {
         if (!saida) linhaPraticaAberta = i + 1;
         else linhaPraticaCompleta = true;
       }
@@ -893,7 +894,7 @@ function doPost(e) {
 
       if (ehDiaTeoria) {
         var existeTeoriaHoje = dadosTeoria.some(function (r) {
-          return r[0] == id && formatarData(r[3]) == dataStr;
+          return String(r[0]) === String(id) && formatarData(r[3]) === dataStr;
         });
         if (!existeTeoriaHoje) {
           abaTeoria.appendRow([id, email, nome, dataStr, horaStr, "", escala, "Teoria"]);
