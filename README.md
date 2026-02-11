@@ -49,6 +49,19 @@ Firebase Auth (apenas login) 🔒
 
 ## 📚 Documentação
 
+**📖 [Acesse a documentação completa](docs/INDICE.md)**
+
+Toda a documentação do projeto está organizada na pasta `docs/` com as seguintes categorias:
+
+- **[Guias de Usuário](docs/guias-usuario/)** - Manuais e guias para usuários finais
+- **[Arquitetura](docs/arquitetura/)** - Documentação técnica e arquitetura do sistema
+- **[Correções](docs/correcoes/)** - Histórico de correções e fixes
+- **[Refatoração](docs/refatoracao/)** - Documentação de refatorações de código
+- **[Resumos](docs/resumos/)** - Resumos executivos e relatórios
+- **[Deploy](docs/deploy/)** - Guias de deploy e troubleshooting
+
+### Documentos Principais
+
 ### ⚡ Início Rápido
 
 - **[CONFIGURAR_FIREBASE.md](./CONFIGURAR_FIREBASE.md)** 🔥 **COMECE AQUI!**
