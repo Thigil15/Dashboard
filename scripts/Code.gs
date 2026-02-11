@@ -392,16 +392,21 @@ function syncOnePontoRow_(spreadsheet, escalaNumber, serial, email, nome, dataRa
 
   var escalaHeaders = escalaSheet.getRange(1,1,1,escalaSheet.getLastColumn()).getValues()[0];
   
-  // Encontra índices dos identificadores
-  var escalaSerialCol = escalaHeaders.indexOf('SerialNumber') + 1;
-  var escalaEmailCol = escalaHeaders.indexOf('EmailHC') + 1;
-  var escalaNomeCol = escalaHeaders.indexOf('NomeCompleto') + 1;
+  // Encontra índices dos identificadores (com proteção contra -1)
+  var escalaSerialCol = escalaHeaders.indexOf('SerialNumber');
+  var escalaEmailCol = escalaHeaders.indexOf('EmailHC');
+  var escalaNomeCol = escalaHeaders.indexOf('NomeCompleto');
   
   // Precisa ter pelo menos 2 colunas de identificadores na escala
-  var numEscalaIdCols = (escalaSerialCol > 0 ? 1 : 0) + (escalaEmailCol > 0 ? 1 : 0) + (escalaNomeCol > 0 ? 1 : 0);
+  var numEscalaIdCols = (escalaSerialCol >= 0 ? 1 : 0) + (escalaEmailCol >= 0 ? 1 : 0) + (escalaNomeCol >= 0 ? 1 : 0);
   if (numEscalaIdCols < 2) {
     return;
   }
+  
+  // Converte para índice 1-based apenas se encontrado (proteção contra -1)
+  escalaSerialCol = escalaSerialCol >= 0 ? escalaSerialCol + 1 : -1;
+  escalaEmailCol = escalaEmailCol >= 0 ? escalaEmailCol + 1 : -1;
+  escalaNomeCol = escalaNomeCol >= 0 ? escalaNomeCol + 1 : -1;
 
   // Encontra coluna de data correspondente
   var dataColIndex = -1;
@@ -491,12 +496,18 @@ function syncToFrequenciaTeorica_(spreadsheet, pontoTeoriaSheet, rowNumber, esca
   
   var freqHeaders = freqSheet.getRange(1,1,1,freqSheet.getLastColumn()).getValues()[0];
   
-  var freqSerialCol = freqHeaders.indexOf('SerialNumber') + 1;
-  var freqEmailCol = freqHeaders.indexOf('EmailHC') + 1;
-  var freqNomeCol = freqHeaders.indexOf('NomeCompleto') + 1;
+  // Encontra índices com proteção contra -1
+  var freqSerialCol = freqHeaders.indexOf('SerialNumber');
+  var freqEmailCol = freqHeaders.indexOf('EmailHC');
+  var freqNomeCol = freqHeaders.indexOf('NomeCompleto');
   
-  var numFreqIdCols = (freqSerialCol > 0 ? 1 : 0) + (freqEmailCol > 0 ? 1 : 0) + (freqNomeCol > 0 ? 1 : 0);
+  var numFreqIdCols = (freqSerialCol >= 0 ? 1 : 0) + (freqEmailCol >= 0 ? 1 : 0) + (freqNomeCol >= 0 ? 1 : 0);
   if (numFreqIdCols < 2) return;
+  
+  // Converte para 1-based apenas se encontrado
+  freqSerialCol = freqSerialCol >= 0 ? freqSerialCol + 1 : -1;
+  freqEmailCol = freqEmailCol >= 0 ? freqEmailCol + 1 : -1;
+  freqNomeCol = freqNomeCol >= 0 ? freqNomeCol + 1 : -1;
   
   var dataColIndex = -1;
   for (var h = 0; h < freqHeaders.length; h++){
@@ -578,6 +589,7 @@ function two(n){ return ('0' + n).slice(-2); }
 
 /**
  * Parse flexível de data (suporta Date objects e strings DD/MM/YYYY, DD/MM/YY, DD/MM).
+ * Valida se dia e mês são válidos antes de criar a data.
  */
 function parseDateFlexible_(v){
   if (!v) return null;
@@ -585,12 +597,29 @@ function parseDateFlexible_(v){
   
   var s = String(v).trim();
   
+  // Função auxiliar para validar dia e mês
+  function isValidDate(day, month, year) {
+    if (month < 0 || month > 11) return false; // Mês 0-11 em JS
+    if (day < 1 || day > 31) return false;
+    
+    // Verifica dias válidos por mês
+    var daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    
+    // Ano bissexto
+    if (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)) {
+      daysInMonth[1] = 29;
+    }
+    
+    return day <= daysInMonth[month];
+  }
+  
   // Tenta DD/MM/YYYY
   var m = s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
   if (m){
     var d = parseInt(m[1],10);
     var mm = parseInt(m[2],10) - 1;
     var y = parseInt(m[3],10);
+    if (!isValidDate(d, mm, y)) return null;
     return new Date(y, mm, d);
   }
   
@@ -602,6 +631,7 @@ function parseDateFlexible_(v){
     var y = parseInt(m[3],10);
     // Assume 20xx para anos 00-99
     y = y < 100 ? 2000 + y : y;
+    if (!isValidDate(d, mm, y)) return null;
     return new Date(y, mm, d);
   }
   
@@ -611,6 +641,7 @@ function parseDateFlexible_(v){
     var d = parseInt(m[1],10);
     var mm = parseInt(m[2],10) - 1;
     var y = new Date().getFullYear();
+    if (!isValidDate(d, mm, y)) return null;
     return new Date(y, mm, d);
   }
   
@@ -861,13 +892,22 @@ function doPost(e) {
     var linhaTeoriaAberta = null;
     var linhaTeoriaCompleta = false;
 
-    for (var i = 1; i < dadosTeoria.length; i++) {
-      var linhaId = dadosTeoria[i][0];
-      var linhaData = formatarData(dadosTeoria[i][3]);
-      var entrada = dadosTeoria[i][4];
-      var saida = dadosTeoria[i][5];
+    // Mapeia cabeçalhos da teoria
+    var headerTeoria = dadosTeoria.length > 0 ? dadosTeoria[0] : [];
+    var colIdxTeoria = {
+      id: headerTeoria.indexOf('SerialNumber'),
+      data: headerTeoria.indexOf('Data'),
+      entrada: headerTeoria.indexOf('HoraEntrada'),
+      saida: headerTeoria.indexOf('HoraSaida')
+    };
 
-      if (String(linhaId) === String(id) && linhaData === dataStr) {
+    for (var i = 1; i < dadosTeoria.length; i++) {
+      var linhaId = colIdxTeoria.id >= 0 ? dadosTeoria[i][colIdxTeoria.id] : null;
+      var linhaData = colIdxTeoria.data >= 0 ? formatarData(dadosTeoria[i][colIdxTeoria.data]) : null;
+      var entrada = colIdxTeoria.entrada >= 0 ? dadosTeoria[i][colIdxTeoria.entrada] : null;
+      var saida = colIdxTeoria.saida >= 0 ? dadosTeoria[i][colIdxTeoria.saida] : null;
+
+      if (String(linhaId) === String(id) && String(linhaData) === String(dataStr)) {
         if (!saida) linhaTeoriaAberta = i + 1;
         else linhaTeoriaCompleta = true;
       }
@@ -878,7 +918,9 @@ function doPost(e) {
     }
 
     if (linhaTeoriaAberta) {
-      abaTeoria.getRange(linhaTeoriaAberta, 6).setValue(horaStr);
+      if (colIdxTeoria.saida >= 0) {
+        abaTeoria.getRange(linhaTeoriaAberta, colIdxTeoria.saida + 1).setValue(horaStr);
+      }
       return resposta("Saída teórica registrada: " + horaStr);
     }
 
@@ -887,13 +929,22 @@ function doPost(e) {
     var linhaPraticaAberta = null;
     var linhaPraticaCompleta = false;
 
-    for (var i = 1; i < dadosPratica.length; i++) {
-      var linhaId = dadosPratica[i][0];
-      var linhaData = formatarData(dadosPratica[i][3]);
-      var entrada = dadosPratica[i][4];
-      var saida = dadosPratica[i][5];
+    // Mapeia cabeçalhos da prática
+    var headerPratica = dadosPratica.length > 0 ? dadosPratica[0] : [];
+    var colIdxPratica = {
+      id: headerPratica.indexOf('SerialNumber'),
+      data: headerPratica.indexOf('Data'),
+      entrada: headerPratica.indexOf('HoraEntrada'),
+      saida: headerPratica.indexOf('HoraSaida')
+    };
 
-      if (String(linhaId) === String(id) && linhaData === dataStr) {
+    for (var i = 1; i < dadosPratica.length; i++) {
+      var linhaId = colIdxPratica.id >= 0 ? dadosPratica[i][colIdxPratica.id] : null;
+      var linhaData = colIdxPratica.data >= 0 ? formatarData(dadosPratica[i][colIdxPratica.data]) : null;
+      var entrada = colIdxPratica.entrada >= 0 ? dadosPratica[i][colIdxPratica.entrada] : null;
+      var saida = colIdxPratica.saida >= 0 ? dadosPratica[i][colIdxPratica.saida] : null;
+
+      if (String(linhaId) === String(id) && String(linhaData) === String(dataStr)) {
         if (!saida) linhaPraticaAberta = i + 1;
         else linhaPraticaCompleta = true;
       }
@@ -917,11 +968,16 @@ function doPost(e) {
 
     // === 4. Caso exista prática aberta → registra saída ===
     if (linhaPraticaAberta) {
-      abaPratica.getRange(linhaPraticaAberta, 6).setValue(horaStr);
+      if (colIdxPratica.saida >= 0) {
+        abaPratica.getRange(linhaPraticaAberta, colIdxPratica.saida + 1).setValue(horaStr);
+      }
 
       if (ehDiaTeoria) {
-        var existeTeoriaHoje = dadosTeoria.some(function (r) {
-          return String(r[0]) === String(id) && formatarData(r[3]) === dataStr;
+        var existeTeoriaHoje = dadosTeoria.some(function (r, idx) {
+          if (idx === 0) return false; // Pula cabeçalho
+          var rId = colIdxTeoria.id >= 0 ? r[colIdxTeoria.id] : null;
+          var rData = colIdxTeoria.data >= 0 ? formatarData(r[colIdxTeoria.data]) : null;
+          return String(rId) === String(id) && String(rData) === String(dataStr);
         });
         if (!existeTeoriaHoje) {
           abaTeoria.appendRow([id, email, nome, dataStr, horaStr, "", escala, "Teoria"]);
@@ -942,12 +998,35 @@ function doPost(e) {
 }
 
 /**
- * Formata data (Date object para DD/MM/YYYY).
+ * Formata data (Date object ou número para DD/MM/YYYY).
+ * Trata Date objects, números (timestamps) e strings.
  */
 function formatarData(valor) {
-  if (valor instanceof Date) {
+  if (!valor) return valor;
+  
+  // Se é um Date object válido
+  if (valor instanceof Date && !isNaN(valor)) {
     return Utilities.formatDate(valor, "America/Sao_Paulo", "dd/MM/yyyy");
   }
+  
+  // Se é um número (timestamp ou serial do Excel)
+  if (typeof valor === 'number') {
+    // Números maiores que 50000 são provavelmente seriais do Excel (dias desde 1/1/1900)
+    // Números menores são provavelmente timestamps Unix
+    if (valor > 50000) {
+      // Serial do Excel: converte para Date
+      var date = new Date((valor - 25569) * 86400 * 1000);
+      return Utilities.formatDate(date, "America/Sao_Paulo", "dd/MM/yyyy");
+    } else {
+      // Timestamp Unix (assumindo milissegundos)
+      var date = new Date(valor);
+      if (!isNaN(date)) {
+        return Utilities.formatDate(date, "America/Sao_Paulo", "dd/MM/yyyy");
+      }
+    }
+  }
+  
+  // Retorna o valor como está (pode ser string já formatada)
   return valor;
 }
 
@@ -1001,6 +1080,12 @@ function validarDadosReposicao(data) {
     return { valid: false, message: 'Data da reposição é obrigatória' };
   }
   
+  // Valida formato da DataReposicao (campo correto para reposição)
+  if (data.DataReposicao && typeof data.DataReposicao !== 'string') {
+    return { valid: false, message: 'Data da reposição deve ser texto (YYYY-MM-DD)' };
+  }
+  
+  // DataAusencia é opcional em reposições
   if (data.DataAusencia && typeof data.DataAusencia !== 'string') {
     return { valid: false, message: 'Data da ausência deve ser texto (YYYY-MM-DD)' };
   }
