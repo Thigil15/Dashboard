@@ -425,9 +425,9 @@ function syncOnePontoRow_(spreadsheet, escalaNumber, serial, email, nome, dataRa
     var row = escalaRows[i];
     var matches = 0;
     
-    if (escalaSerialCol > 0 && serial && row[escalaSerialCol-1] === serial) matches++;
-    if (escalaEmailCol > 0 && email && row[escalaEmailCol-1] === email) matches++;
-    if (escalaNomeCol > 0 && nome && row[escalaNomeCol-1] === nome) matches++;
+    if (escalaSerialCol > 0 && serial && String(row[escalaSerialCol-1]) === String(serial)) matches++;
+    if (escalaEmailCol > 0 && email && String(row[escalaEmailCol-1]) === String(email)) matches++;
+    if (escalaNomeCol > 0 && nome && String(row[escalaNomeCol-1]) === String(nome)) matches++;
     
     if (matches >= 2) {
       targetRow = i + 2;
@@ -516,9 +516,9 @@ function syncToFrequenciaTeorica_(spreadsheet, pontoTeoriaSheet, rowNumber, esca
     var row = freqRows[i];
     var matches = 0;
     
-    if (freqSerialCol > 0 && serial && row[freqSerialCol-1] === serial) matches++;
-    if (freqEmailCol > 0 && email && row[freqEmailCol-1] === email) matches++;
-    if (freqNomeCol > 0 && nome && row[freqNomeCol-1] === nome) matches++;
+    if (freqSerialCol > 0 && serial && String(row[freqSerialCol-1]) === String(serial)) matches++;
+    if (freqEmailCol > 0 && email && String(row[freqEmailCol-1]) === String(email)) matches++;
+    if (freqNomeCol > 0 && nome && String(row[freqNomeCol-1]) === String(nome)) matches++;
     
     if (matches >= 2) {
       targetRow = i + 2;
@@ -565,6 +565,9 @@ function formatDateForComparison_(value) {
  */
 function formatTimeForComparison_(value) {
   if (!value) return '';
+  if (Object.prototype.toString.call(value) === '[object Date]' && !isNaN(value)){
+    return two(value.getHours()) + ':' + two(value.getMinutes()) + ':' + two(value.getSeconds());
+  }
   return String(value).trim();
 }
 
@@ -574,18 +577,40 @@ function formatTimeForComparison_(value) {
 function two(n){ return ('0' + n).slice(-2); }
 
 /**
- * Parse flexível de data (suporta Date objects e strings DD/MM/YYYY).
+ * Parse flexível de data (suporta Date objects e strings DD/MM/YYYY, DD/MM/YY, DD/MM).
  */
 function parseDateFlexible_(v){
   if (!v) return null;
   if (Object.prototype.toString.call(v) === '[object Date]' && !isNaN(v)) return v;
   
   var s = String(v).trim();
+  
+  // Tenta DD/MM/YYYY
   var m = s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
   if (m){
     var d = parseInt(m[1],10);
     var mm = parseInt(m[2],10) - 1;
     var y = parseInt(m[3],10);
+    return new Date(y, mm, d);
+  }
+  
+  // Tenta DD/MM/YY (2 dígitos)
+  m = s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2})$/);
+  if (m){
+    var d = parseInt(m[1],10);
+    var mm = parseInt(m[2],10) - 1;
+    var y = parseInt(m[3],10);
+    // Assume 20xx para anos 00-99
+    y = y < 100 ? 2000 + y : y;
+    return new Date(y, mm, d);
+  }
+  
+  // Tenta DD/MM (sem ano, assume ano atual)
+  m = s.match(/^(\d{1,2})[\/\-](\d{1,2})$/);
+  if (m){
+    var d = parseInt(m[1],10);
+    var mm = parseInt(m[2],10) - 1;
+    var y = new Date().getFullYear();
     return new Date(y, mm, d);
   }
   
@@ -642,7 +667,8 @@ function entradaSaidaToString_(ent, sai){
 }
 
 /**
- * Aliases para compatibilidade.
+ * Aliases para compatibilidade com código legado.
+ * Mantidos porque podem ser referenciados em outras partes do sistema.
  */
 function formatarDataParaComparacao_(value) { return formatDateForComparison_(value); }
 function formatarHoraParaComparacao_(value) { return formatTimeForComparison_(value); }
