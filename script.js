@@ -6148,6 +6148,67 @@ function extractTimeFromISO(isoString) {
         }
 
         /**
+         * Format a date/time value for display, returning separate date and time strings.
+         * Handles various input formats including ISO timestamps, Brazilian format, and empty values.
+         * @param {string|Date} dataHoraValue - The date/time value to format
+         * @returns {{data: string, hora: string}} - Object with formatted date (DD/MM/YYYY) and time (HH:MM)
+         */
+        function formatDataHoraDisplay(dataHoraValue) {
+            // Handle empty or undefined values
+            if (!dataHoraValue) {
+                return { data: '--', hora: '--' };
+            }
+
+            try {
+                let dateObj;
+                
+                // Convert to Date object if it's a string
+                if (typeof dataHoraValue === 'string') {
+                    // Check if it's already in Brazilian format (DD/MM/YYYY HH:MM or DD/MM/YYYY)
+                    const brFormatMatch = dataHoraValue.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{1,2}))?/);
+                    if (brFormatMatch) {
+                        const [, day, month, year, hours, minutes] = brFormatMatch;
+                        dateObj = new Date(year, month - 1, day, hours || 0, minutes || 0);
+                    } else {
+                        // Try to parse as ISO format or other standard formats
+                        dateObj = new Date(dataHoraValue);
+                    }
+                } else if (dataHoraValue instanceof Date) {
+                    dateObj = dataHoraValue;
+                } else {
+                    // Unsupported type
+                    return { data: '--', hora: '--' };
+                }
+
+                // Check if dateObj is valid
+                if (isNaN(dateObj.getTime())) {
+                    // If parsing failed, try to extract at least the date part
+                    if (typeof dataHoraValue === 'string') {
+                        const datePart = dataHoraValue.split('T')[0] || dataHoraValue.split(' ')[0];
+                        return { data: formatDateBR(datePart), hora: '--' };
+                    }
+                    return { data: '--', hora: '--' };
+                }
+
+                // Format date as DD/MM/YYYY
+                const day = String(dateObj.getDate()).padStart(2, '0');
+                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const year = dateObj.getFullYear();
+                const data = `${day}/${month}/${year}`;
+
+                // Format time as HH:MM
+                const hours = String(dateObj.getHours()).padStart(2, '0');
+                const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+                const hora = `${hours}:${minutes}`;
+
+                return { data, hora };
+            } catch (error) {
+                console.error('[formatDataHoraDisplay] Error formatting date/time:', error, dataHoraValue);
+                return { data: '--', hora: '--' };
+            }
+        }
+
+        /**
          * Infer the correct year for a date with only day and month (DD/MM format).
          * Uses intelligent logic to determine the most likely year based on context:
          * - If we're in Jan-Feb and the data month is Oct-Dec, use previous year (end of previous year data)
