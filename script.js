@@ -4776,6 +4776,56 @@ function extractTimeFromISO(isoString) {
                 .trim() || 'Avaliação Prática';
         }
 
+        /**
+         * Split concatenated field names into readable labels
+         * Transforms: "AspiracaoNasotraquealQuantoARealizacao..." → "Aspiracao Nasotraqueal Quanto a Realizacao..."
+         * Used for NotasPraticas fields that come from Google Sheets with sanitized column names
+         * @param {string} fieldName - The concatenated field name
+         * @returns {string} Formatted field name with proper spacing
+         */
+        function splitConcatenatedFieldName(fieldName) {
+            if (!fieldName || typeof fieldName !== 'string') return fieldName;
+            
+            // Skip if it's a short field or already has spaces
+            if (fieldName.length < 20 || fieldName.includes(' ')) {
+                return fieldName;
+            }
+            
+            // First pass: Insert space before uppercase letters that follow lowercase letters
+            let result = fieldName.replace(/([a-z])([A-Z])/g, '$1 $2');
+            
+            // Second pass: Handle consecutive uppercase letters
+            // EEquipe -> E Equipe, ARealizacao -> A Realizacao
+            result = result.replace(/([A-Z])([A-Z][a-z])/g, '$1 $2');
+            
+            // Clean up common Portuguese articles and prepositions to lowercase
+            result = result
+                .replace(/\bDa\b/g, 'da')
+                .replace(/\bDe\b/g, 'de')
+                .replace(/\bDo\b/g, 'do')
+                .replace(/\bDos\b/g, 'dos')
+                .replace(/\bDas\b/g, 'das')
+                .replace(/\bE\b/g, 'e')
+                .replace(/\bA\b/g, 'a')
+                .replace(/\bO\b/g, 'o')
+                .replace(/\bNa\b/g, 'na')
+                .replace(/\bNo\b/g, 'no')
+                .replace(/\bNos\b/g, 'nos')
+                .replace(/\bNas\b/g, 'nas')
+                .replace(/\bEm\b/g, 'em')
+                .replace(/\bPor\b/g, 'por')
+                .replace(/\bCom\b/g, 'com')
+                .replace(/\bPara\b/g, 'para')
+                .replace(/\bQue\b/g, 'que');
+            
+            // Limit length for display (show first part + ellipsis if too long)
+            if (result.length > 80) {
+                result = result.substring(0, 77) + '...';
+            }
+            
+            return result.trim();
+        }
+
         // [ORION] Helper para centralizar a busca de dados do aluno
         function findDataByStudent(emailNormalizado, alunoNomeNormalizado) {
             // Escalas
