@@ -44,7 +44,7 @@ allKeys.forEach(key => {
         const sheetData = data.cache[key];
         
         if (sheetData && sheetData.registros) {
-            const registros = sheetData.registros || [];
+            const registros = sheetData.registros;
             
             // Normalize each registro
             const normalized = registros.map(row => 
