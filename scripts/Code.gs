@@ -9,6 +9,14 @@ const ABA_REPOSICOES = 'Reposicoes';
 const ABA_PONTO_PRATICA = 'PontoPratica';
 const ABA_PONTO_TEORIA = 'PontoTeoria';
 
+// Headers padrão para abas de ponto (usado quando aba está vazia)
+const HEADERS_PONTO_PADRAO = ['SerialNumber', 'EmailHC', 'NomeCompleto', 'Data', 'HoraEntrada', 'HoraSaida', 'Escala', 'Tipo'];
+
+// Threshold para distinguir seriais do Excel de timestamps Unix
+// Números > 50000 são seriais Excel (dias desde 1/1/1900)
+// Números < 50000 são timestamps Unix (milissegundos desde 1/1/1970)
+const EXCEL_SERIAL_THRESHOLD = 50000;
+
 // Nomes das funções de gatilhos instaláveis
 const TRIGGER_FUNCTIONS = [
   'onEditPontoInstalavel', 'onChangePontoInstalavel',
@@ -896,8 +904,8 @@ function doPost(e) {
     // === 1. Verifica se há linha aberta na TEORIA ===
     var dadosTeoria = abaTeoria.getDataRange().getValues();
     if (dadosTeoria.length < 2) {
-      // Só tem cabeçalho ou está vazia
-      dadosTeoria = [['SerialNumber', 'EmailHC', 'NomeCompleto', 'Data', 'HoraEntrada', 'HoraSaida', 'Escala', 'Tipo']];
+      // Só tem cabeçalho ou está vazia - usa headers padrão
+      dadosTeoria = [HEADERS_PONTO_PADRAO];
     }
     
     var linhaTeoriaAberta = null;
@@ -943,8 +951,8 @@ function doPost(e) {
     // === 2. Verifica se há linha aberta na PRÁTICA ===
     var dadosPratica = abaPratica.getDataRange().getValues();
     if (dadosPratica.length < 2) {
-      // Só tem cabeçalho ou está vazia
-      dadosPratica = [['SerialNumber', 'EmailHC', 'NomeCompleto', 'Data', 'HoraEntrada', 'HoraSaida', 'Escala', 'Tipo']];
+      // Só tem cabeçalho ou está vazia - usa headers padrão
+      dadosPratica = [HEADERS_PONTO_PADRAO];
     }
     
     var linhaPraticaAberta = null;
@@ -1038,9 +1046,8 @@ function formatarData(valor) {
   
   // Se é um número (timestamp ou serial do Excel)
   if (typeof valor === 'number' && valor !== 0) {
-    // Números maiores que 50000 são provavelmente seriais do Excel (dias desde 1/1/1900)
-    // Números menores são provavelmente timestamps Unix
-    if (valor > 50000) {
+    // Usa threshold definido para distinguir entre tipos
+    if (valor > EXCEL_SERIAL_THRESHOLD) {
       // Serial do Excel: converte para Date
       var date = new Date((valor - 25569) * 86400 * 1000);
       if (!isNaN(date)) {
