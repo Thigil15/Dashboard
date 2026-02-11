@@ -13,11 +13,12 @@ const ABA_PONTO_TEORIA = 'PontoTeoria';
 const HEADERS_PONTO_PADRAO = ['SerialNumber', 'EmailHC', 'NomeCompleto', 'Data', 'HoraEntrada', 'HoraSaida', 'Escala', 'Tipo'];
 
 // Threshold para distinguir seriais do Excel de timestamps Unix
-// Seriais Excel: números pequenos (dias desde 30/12/1899), tipicamente 1-50000
+// Seriais Excel: números pequenos (dias desde 31/12/1899), tipicamente 1-50000
 // Timestamps Unix modernos em milissegundos: números grandes (>= 1000000000000, ano 2001+)
 // Timestamps Unix em segundos: números médios (>= 946684800, ano 2000+)
 const EXCEL_SERIAL_THRESHOLD = 50000;
 const UNIX_TIMESTAMP_SECONDS_THRESHOLD = 946684800; // 01/01/2000 em segundos
+const EXCEL_EPOCH_OFFSET = 25569; // Dias entre 31/12/1899 (Excel) e 01/01/1970 (Unix)
 
 // Nomes das funções de gatilhos instaláveis
 const TRIGGER_FUNCTIONS = [
@@ -1055,7 +1056,8 @@ function formatarData(valor) {
     
     if (valor > 0 && valor <= EXCEL_SERIAL_THRESHOLD) {
       // Serial do Excel: converte para Date
-      var date = new Date((valor - 25569) * 86400 * 1000);
+      // Usa EXCEL_EPOCH_OFFSET (25569) para ajustar entre epoch Excel e Unix
+      var date = new Date((valor - EXCEL_EPOCH_OFFSET) * 86400 * 1000);
       if (!isNaN(date)) {
         return Utilities.formatDate(date, "America/Sao_Paulo", "dd/MM/yyyy");
       }
