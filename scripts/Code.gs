@@ -13,9 +13,11 @@ const ABA_PONTO_TEORIA = 'PontoTeoria';
 const HEADERS_PONTO_PADRAO = ['SerialNumber', 'EmailHC', 'NomeCompleto', 'Data', 'HoraEntrada', 'HoraSaida', 'Escala', 'Tipo'];
 
 // Threshold para distinguir seriais do Excel de timestamps Unix
-// Números > 50000 são seriais Excel (dias desde 1/1/1900)
-// Números < 50000 são timestamps Unix (milissegundos desde 1/1/1970)
+// Seriais Excel: números pequenos (dias desde 30/12/1899), tipicamente 1-50000
+// Timestamps Unix modernos em milissegundos: números grandes (>= 1000000000000, ano 2001+)
+// Timestamps Unix em segundos: números médios (>= 946684800, ano 2000+)
 const EXCEL_SERIAL_THRESHOLD = 50000;
+const UNIX_TIMESTAMP_SECONDS_THRESHOLD = 946684800; // 01/01/2000 em segundos
 
 // Nomes das funções de gatilhos instaláveis
 const TRIGGER_FUNCTIONS = [
@@ -285,7 +287,7 @@ function syncAllRowsInSheet_(ss, sheet, sheetName) {
   var escalaCol = idx('Escala');
   
   // Requer pelo menos um identificador e data/hora entrada
-  if ((emailCol < 1 && serialCol < 1 && nomeCol < 1) || dataCol < 1 || horaEntCol < 1) {
+  if ((emailCol < 0 && serialCol < 0 && nomeCol < 0) || dataCol < 0 || horaEntCol < 0) {
     console.warn('Cabeçalhos essenciais não encontrados na aba ' + sheetName);
     return;
   }
@@ -1046,15 +1048,25 @@ function formatarData(valor) {
   
   // Se é um número (timestamp ou serial do Excel)
   if (typeof valor === 'number' && valor !== 0) {
-    // Usa threshold definido para distinguir entre tipos
-    if (valor > EXCEL_SERIAL_THRESHOLD) {
+    // Lógica de detecção:
+    // 1-50000: Serial do Excel (dias desde 30/12/1899)
+    // 946684800-9999999999: Unix timestamp em SEGUNDOS (desde 01/01/2000)
+    // >= 10000000000: Unix timestamp em MILISSEGUNDOS
+    
+    if (valor > 0 && valor <= EXCEL_SERIAL_THRESHOLD) {
       // Serial do Excel: converte para Date
       var date = new Date((valor - 25569) * 86400 * 1000);
       if (!isNaN(date)) {
         return Utilities.formatDate(date, "America/Sao_Paulo", "dd/MM/yyyy");
       }
-    } else if (valor > 0) {
-      // Timestamp Unix (assumindo milissegundos)
+    } else if (valor >= UNIX_TIMESTAMP_SECONDS_THRESHOLD && valor < 10000000000) {
+      // Unix timestamp em SEGUNDOS: multiplica por 1000
+      var date = new Date(valor * 1000);
+      if (!isNaN(date)) {
+        return Utilities.formatDate(date, "America/Sao_Paulo", "dd/MM/yyyy");
+      }
+    } else if (valor >= 10000000000) {
+      // Unix timestamp em MILISSEGUNDOS
       var date = new Date(valor);
       if (!isNaN(date)) {
         return Utilities.formatDate(date, "America/Sao_Paulo", "dd/MM/yyyy");
