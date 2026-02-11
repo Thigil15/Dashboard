@@ -188,7 +188,7 @@ O arquivo original foi salvo como `Code.gs.backup`. Se alguma função removida 
 | Métrica | Antes | Depois | Melhoria |
 |---------|-------|--------|----------|
 | **Linhas de código** | 1.759 | 1.118 | -36% |
-| **Número de funções** | 44 | 30 | -32% |
+| **Número de funções** | 44 | 33 | -25% |
 | **Funções públicas (API)** | 3 | 3 | 0% |
 | **Funções no menu** | 5 | 5 | 0% |
 | **Funcionalidades** | 100% | 100% | 0% |

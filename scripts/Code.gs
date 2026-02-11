@@ -667,8 +667,9 @@ function entradaSaidaToString_(ent, sai){
 }
 
 /**
- * Aliases para compatibilidade com código legado.
- * Mantidos porque podem ser referenciados em outras partes do sistema.
+ * Aliases para compatibilidade com código legado e sistema externo.
+ * Mantidos porque formatarData*() pode ser referenciado pelo sistema Python
+ * ou por outras partes do código que ainda não foram migradas.
  */
 function formatarDataParaComparacao_(value) { return formatDateForComparison_(value); }
 function formatarHoraParaComparacao_(value) { return formatTimeForComparison_(value); }
