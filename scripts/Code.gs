@@ -9,6 +9,22 @@ const ABA_REPOSICOES = 'Reposicoes';
 const ABA_PONTO_PRATICA = 'PontoPratica';
 const ABA_PONTO_TEORIA = 'PontoTeoria';
 
+// Headers padrão para abas de ponto (usado quando aba está vazia)
+const HEADERS_PONTO_PADRAO = ['SerialNumber', 'EmailHC', 'NomeCompleto', 'Data', 'HoraEntrada', 'HoraSaida', 'Escala', 'Tipo'];
+
+// Threshold para distinguir seriais do Excel de timestamps Unix
+// Seriais Excel: números pequenos (dias desde 31/12/1899), tipicamente 1-50000
+// Timestamps Unix modernos em milissegundos: números grandes (>= 1000000000000, ano 2001+)
+// Timestamps Unix em segundos: números médios (>= 946684800, ano 2000+)
+const EXCEL_SERIAL_THRESHOLD = 50000;
+const UNIX_TIMESTAMP_SECONDS_THRESHOLD = 946684800; // 01/01/2000 em segundos
+const EXCEL_EPOCH_OFFSET = 25569; // Dias entre 31/12/1899 (Excel) e 01/01/1970 (Unix)
+
+// Nomes das funções de gatilhos instaláveis
+const TRIGGER_FUNCTIONS = [
+  'onEditPontoInstalavel', 'onChangePontoInstalavel',
+];
+
 /**********************************************
  * 📡 API - Servir dados via URL (doGet)
  **********************************************/
@@ -176,15 +192,11 @@ function criarRegistrosDeAba(dados, cabecalhos) {
   return registros;
 }
 
-/**********************************************
- * 📤 FUNÇÃO PRINCIPAL — Envia todas as abas alteradas para Cloud Function
- **********************************************/
-/**********************************************
- * 🧮 HASH (detecta alterações)
- **********************************************/
-/**********************************************
- * 🧹 SANITIZAÇÃO DE CHAVES
- **********************************************/
+/**
+ * Sanitiza chaves/nomes de campos removendo caracteres especiais e acentos.
+ * @param {string} texto - Texto a ser sanitizado
+ * @returns {string} Texto sanitizado
+ */
 function sanitizeKey(texto) {
   if (!texto) return "";
   return texto
@@ -197,64 +209,12 @@ function sanitizeKey(texto) {
 }
 
 /**********************************************
- * 🕒 GATILHO AUTOMÁTICO — Executa todo dia às 21h
+ * 📌 PONTO E ESCALA - Sistema de Sincronização
  **********************************************/
-/**********************************************
- * ⚡ SINCRONIZAÇÃO AUTOMÁTICA — Detecta alterações
- **********************************************/
-
-/**********************************************
- * 🔧 CONFIGURAR GATILHOS AUTOMÁTICOS
- **********************************************/
-
-/**
- * Verifica o status dos gatilhos automáticos.
- */
-function verificarStatusGatilhos() {
-  const gatilhos = ScriptApp.getProjectTriggers();
-  let onEditAtivo = false;
-  let onChangeAtivo = false;
-  
-  for (const t of gatilhos) {
-    const funcao = t.getHandlerFunction();
-    if (funcao === 'onEditPontoInstalavel') onEditAtivo = true;
-    if (funcao === 'onChangePontoInstalavel') onChangeAtivo = true;
-  }
-  
-  Logger.log("📊 STATUS DOS GATILHOS:");
-  Logger.log("  • onEdit (auto sync): " + (onEditAtivo ? "✅ ATIVO" : "❌ INATIVO"));
-  Logger.log("  • onChange (auto sync): " + (onChangeAtivo ? "✅ ATIVO" : "❌ INATIVO"));
-  
-  // Mostra alerta visual para o usuário
-  const mensagem = 
-    "📊 STATUS DOS GATILHOS\n\n" +
-    "• Sincronização automática (onEdit): " + (onEditAtivo ? "✅ ATIVO" : "❌ INATIVO") + "\n" +
-    "• Sincronização automática (onChange): " + (onChangeAtivo ? "✅ ATIVO" : "❌ INATIVO") + "\n\n" +
-    "💡 Os gatilhos sincronizam automaticamente os pontos para as escalas\n" +
-    "quando você edita ou adiciona dados na planilha.";
-  
-  SpreadsheetApp.getUi().alert("⚙️ Status dos Gatilhos", mensagem, SpreadsheetApp.getUi().ButtonSet.OK);
-  
-  return {
-    onEdit: onEditAtivo,
-    onChange: onChangeAtivo
-  };
-}
-
-
-/**********************************************
- * 📌 PONTO E ESCALA (unificado)
- **********************************************/
-
-// Nomes das funções de gatilhos instaláveis
-// Usado para identificar e remover gatilhos em ativar/desativarTodosGatilhosAutomaticos()
-const TRIGGER_FUNCTIONS = [
-  'onEditPontoInstalavel', 'onChangePontoInstalavel',
-];
 
 /**
  * Função simples onEdit (gatilho simples) - funciona apenas com planilha aberta.
- * Para funcionar com planilha fechada, use o gatilho instalável (criarGatilhosPontoAutomatico).
+ * Para funcionar com planilha fechada, use o gatilho instalável (Menu > Ativar Sincronização).
  */
 function onEdit(e){
   try {
@@ -272,56 +232,10 @@ function onEdit(e){
  */
 function onEditPontoInstalavel(e) {
   try {
-    // Identifica a aba editada
-    var sheetName = '';
-    if (e && e.range) {
-      sheetName = e.range.getSheet().getName();
-    }
-    
-    // Sincroniza para as escalas
     handlePontoChange(e);
   } catch(err) {
     console.error("Erro em onEditPontoInstalavel:", err);
   }
-}
-
-/**
- * Cria gatilhos instaláveis para sincronização automática de pontos.
- * EXECUTE ESTA FUNÇÃO UMA VEZ para ativar a sincronização automática
- * mesmo quando a planilha está fechada.
- */
-function criarGatilhosPontoAutomatico() {
-  var ss = SpreadsheetApp.getActive();
-  
-  // Remove gatilhos antigos para evitar duplicação
-  var gatilhos = ScriptApp.getProjectTriggers();
-  for (var i = 0; i < gatilhos.length; i++) {
-    var funcao = gatilhos[i].getHandlerFunction();
-    if (funcao === 'onEditPontoInstalavel' || funcao === 'onChangePontoInstalavel') {
-      ScriptApp.deleteTrigger(gatilhos[i]);
-    }
-  }
-  
-  // Cria gatilho onEdit instalável
-  ScriptApp.newTrigger('onEditPontoInstalavel')
-    .forSpreadsheet(ss)
-    .onEdit()
-    .create();
-  
-  // Cria gatilho onChange instalável (para inserção de linhas)
-  ScriptApp.newTrigger('onChangePontoInstalavel')
-    .forSpreadsheet(ss)
-    .onChange()
-    .create();
-  
-  SpreadsheetApp.getActiveSpreadsheet().toast(
-    '✅ Gatilhos de sincronização automática criados!\n' +
-    'Os pontos serão sincronizados automaticamente mesmo com a planilha fechada.',
-    'Sincronização Automática',
-    10
-  );
-  
-  console.log('✅ Gatilhos instaláveis criados: onEditPontoInstalavel e onChangePontoInstalavel');
 }
 
 /**
@@ -337,13 +251,12 @@ function onChangePontoInstalavel(e) {
     if (e.changeType === 'INSERT_ROW' || e.changeType === 'EDIT') {
       var ss = e.source;
       var sheets = ['PontoPratica', 'PontoTeoria'];
-      var syncedSheets = [];
       
       for (var i = 0; i < sheets.length; i++) {
-        var sheet = ss.getSheetByName(sheets[i]);
+        var sheetName = sheets[i];
+        var sheet = ss.getSheetByName(sheetName);
         if (sheet) {
-          syncAllRowsInSheet_(ss, sheet, sheets[i]);
-          syncedSheets.push(sheets[i]);
+          syncAllRowsInSheet_(ss, sheet, sheetName);
         }
       }
     }
@@ -357,7 +270,10 @@ function onChangePontoInstalavel(e) {
  * Usado quando há inserção de linhas via onChange.
  */
 function syncAllRowsInSheet_(ss, sheet, sheetName) {
+  if (!sheet) return;
+  
   var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  if (!headers || headers.length === 0) return;
   
   var idx = function(colName){
     var i = headers.indexOf(colName);
@@ -372,7 +288,10 @@ function syncAllRowsInSheet_(ss, sheet, sheetName) {
   var escalaCol = idx('Escala');
   
   // Requer pelo menos um identificador e data/hora entrada
-  if ((emailCol < 0 && serialCol < 0 && nomeCol < 0) || dataCol < 0 || horaEntCol < 0) return;
+  if ((emailCol < 0 && serialCol < 0 && nomeCol < 0) || dataCol < 0 || horaEntCol < 0) {
+    console.warn('Cabeçalhos essenciais não encontrados na aba ' + sheetName);
+    return;
+  }
   
   var lastRow = sheet.getLastRow();
   if (lastRow < 2) return;
@@ -404,6 +323,10 @@ function syncAllRowsInSheet_(ss, sheet, sheetName) {
   }
 }
 
+/**
+ * Processa mudanças nas abas PontoPratica ou PontoTeoria.
+ * Sincroniza dados para as escalas correspondentes.
+ */
 function handlePontoChange(e){
   if (!e || !e.range) return;
   var sheet = e.range.getSheet();
@@ -464,344 +387,304 @@ function handlePontoChange(e){
  * PontoTeoria -> EscalaTeoria + número (ex: EscalaTeoria1)
  * PontoPratica -> EscalaPratica + número (ex: EscalaPratica1)
  * Identifica o aluno por pelo menos 2 dos 3 identificadores: SerialNumber, EmailHC, NomeCompleto
- * @param {Spreadsheet} spreadsheet - A planilha ativa
- * @param {string} escalaNumber - O número da escala (1-12)
- * @param {string} serial - Número de série do aluno (SerialNumber)
- * @param {string} email - Email do aluno (EmailHC)
- * @param {string} nome - Nome completo do aluno (NomeCompleto)
- * @param {*} dataRaw - Data do ponto
- * @param {*} horaEnt - Hora de entrada
- * @param {*} horaSai - Hora de saída
- * @param {string} pontoSheetName - Nome da aba de origem ('PontoTeoria' ou 'PontoPratica')
  */
 function syncOnePontoRow_(spreadsheet, escalaNumber, serial, email, nome, dataRaw, horaEnt, horaSai, pontoSheetName){
   // Verifica se há pelo menos 2 identificadores no registro de origem
   var numSourceIds = (serial ? 1 : 0) + (email ? 1 : 0) + (nome ? 1 : 0);
   if (numSourceIds < 2) {
-    var idInfo = [];
-    if (serial) idInfo.push('Serial: ' + serial);
-    if (email) idInfo.push('Email: ' + email);
-    if (nome) idInfo.push('Nome: ' + nome);
-    console.warn('Registro com identificadores insuficientes (' + idInfo.join(', ') + '). Precisa de pelo menos 2 identificadores.');
-    return;
+    return; // Precisa de pelo menos 2 identificadores
   }
-  
-  // Determina o prefixo da escala baseado na aba de origem
-  var escalaPrefix = (pontoSheetName === 'PontoTeoria') ? 'EscalaTeoria' : 'EscalaPratica';
-  var escalaName = escalaPrefix + escalaNumber;
-  var escalaSheet = spreadsheet.getSheetByName(escalaName);
-  if (!escalaSheet){
-    console.warn('Aba ' + escalaName + ' não encontrada.');
+
+  var base = (pontoSheetName === 'PontoTeoria') ? 'EscalaTeoria' : 'EscalaPratica';
+  var escalaSheetName = base + escalaNumber;
+  var escalaSheet = spreadsheet.getSheetByName(escalaSheetName);
+  if (!escalaSheet) {
     return;
   }
 
-  // ler cabeçalho da escala
-  var headersEsc = escalaSheet.getRange(1,1,1,escalaSheet.getLastColumn()).getValues()[0];
+  var parsedDate = parseDateFlexible_(dataRaw);
+  if (!parsedDate) {
+    return;
+  }
+
+  var escalaHeaders = escalaSheet.getRange(1,1,1,escalaSheet.getLastColumn()).getValues()[0];
   
-  // Encontrar colunas de identificação na escala
-  var serialColEsc = -1;
-  var emailColEsc = -1;
-  var nomeColEsc = -1;
+  // Encontra índices dos identificadores (com proteção contra -1)
+  var escalaSerialCol = escalaHeaders.indexOf('SerialNumber');
+  var escalaEmailCol = escalaHeaders.indexOf('EmailHC');
+  var escalaNomeCol = escalaHeaders.indexOf('NomeCompleto');
   
-  for (var i = 0; i < headersEsc.length; i++) {
-    var h = String(headersEsc[i] || '').toLowerCase().trim();
-    if (h === 'serialnumber' || h === 'serial') {
-      serialColEsc = i + 1;
-    } else if (h === 'emailhc' || h === 'email') {
-      emailColEsc = i + 1;
-    } else if (h === 'nomecompleto' || h === 'nome') {
-      nomeColEsc = i + 1;
+  // Precisa ter pelo menos 2 colunas de identificadores na escala
+  var numEscalaIdCols = (escalaSerialCol >= 0 ? 1 : 0) + (escalaEmailCol >= 0 ? 1 : 0) + (escalaNomeCol >= 0 ? 1 : 0);
+  if (numEscalaIdCols < 2) {
+    return;
+  }
+  
+  // Converte para índice 1-based apenas se encontrado (proteção contra -1)
+  escalaSerialCol = escalaSerialCol >= 0 ? escalaSerialCol + 1 : -1;
+  escalaEmailCol = escalaEmailCol >= 0 ? escalaEmailCol + 1 : -1;
+  escalaNomeCol = escalaNomeCol >= 0 ? escalaNomeCol + 1 : -1;
+
+  // Encontra coluna de data correspondente
+  var dataColIndex = -1;
+  for (var h = 0; h < escalaHeaders.length; h++){
+    if (isDateHeaderMatch_(escalaHeaders[h], parsedDate)){
+      dataColIndex = h + 1;
+      break;
     }
   }
-  
-  // Precisa de pelo menos duas colunas de identificação
-  var numIdCols = (serialColEsc > 0 ? 1 : 0) + (emailColEsc > 0 ? 1 : 0) + (nomeColEsc > 0 ? 1 : 0);
-  if (numIdCols < 2) {
-    console.warn('A aba ' + escalaName + ' precisa de pelo menos 2 colunas de identificação (SerialNumber, EmailHC, NomeCompleto)');
+  if (dataColIndex < 1) {
     return;
   }
 
-  // localizar a linha do aluno (verificando pelo menos 2 identificadores)
-  var lastRow = Math.max(escalaSheet.getLastRow(), 2);
-  if (lastRow < 2) { console.warn('Escala vazia'); return; }
+  // Procura linha do aluno usando até 2 identificadores
+  var lastRow = escalaSheet.getLastRow();
+  if (lastRow < 2) return;
+  var escalaRows = escalaSheet.getRange(2,1,lastRow-1,escalaSheet.getLastColumn()).getValues();
   
-  var allData = escalaSheet.getRange(2, 1, lastRow - 1, escalaSheet.getLastColumn()).getValues();
-  var studentRow = -1;
-  
-  for (var rr = 0; rr < allData.length; rr++) {
-    var rowData = allData[rr];
+  var targetRow = -1;
+  for (var i = 0; i < escalaRows.length; i++){
+    var row = escalaRows[i];
     var matches = 0;
     
-    // Verificar SerialNumber
-    if (serialColEsc > 0 && serial) {
-      var escSerial = String(rowData[serialColEsc - 1] || '').trim();
-      if (escSerial && escSerial.toLowerCase() === String(serial).trim().toLowerCase()) {
-        matches++;
-      }
-    }
+    if (escalaSerialCol > 0 && serial && String(row[escalaSerialCol-1]) === String(serial)) matches++;
+    if (escalaEmailCol > 0 && email && String(row[escalaEmailCol-1]) === String(email)) matches++;
+    if (escalaNomeCol > 0 && nome && String(row[escalaNomeCol-1]) === String(nome)) matches++;
     
-    // Verificar EmailHC
-    if (emailColEsc > 0 && email) {
-      var escEmail = String(rowData[emailColEsc - 1] || '').trim();
-      if (escEmail && escEmail.toLowerCase() === String(email).trim().toLowerCase()) {
-        matches++;
-      }
-    }
-    
-    // Verificar NomeCompleto
-    if (nomeColEsc > 0 && nome) {
-      var escNome = String(rowData[nomeColEsc - 1] || '').trim();
-      if (escNome && escNome.toLowerCase() === String(nome).trim().toLowerCase()) {
-        matches++;
-      }
-    }
-    
-    // Precisa de pelo menos 2 matches
     if (matches >= 2) {
-      studentRow = rr + 2;
+      targetRow = i + 2;
       break;
     }
   }
   
-  if (studentRow === -1){
-    var idInfo = [];
-    if (serial) idInfo.push('Serial: ' + serial);
-    if (email) idInfo.push('Email: ' + email);
-    if (nome) idInfo.push('Nome: ' + nome);
-    console.warn('Aluno com ' + idInfo.join(', ') + ' não encontrado em ' + escalaName + ' (precisa de pelo menos 2 identificadores correspondentes)');
+  if (targetRow < 0) {
     return;
   }
 
-  // formatar data (procuramos dd/mm ou dd_mm nas colunas)
-  var parsed = parseDateFlexible_(dataRaw);
-  if (!parsed){
-    console.warn('Data inválida:', dataRaw);
-    return;
-  }
-  var ddmm = two(parsed.getDate()) + '/' + two(parsed.getMonth()+1);
-  var ddmm_underscore = two(parsed.getDate()) + '_' + two(parsed.getMonth()+1);
-
-  // localizar coluna de data na escala usando a função helper
-  var dateColIndex = -1;
-  for (var j=0;j<headersEsc.length;j++){
-    if (isDateHeaderMatch_(headersEsc[j], parsed)) {
-      dateColIndex = j+1;
-      break;
-    }
-  }
-  if (dateColIndex === -1){
-    console.warn('Coluna de data ' + ddmm + ' (ou ' + ddmm_underscore + ') não encontrada em ' + escalaName);
-    return;
-  }
-
-  // construir string de horário (somente hora - com segundos se disponíveis)
-  var timeStr = '';
-  if (horaEnt && horaSai) timeStr = entradaSaidaToString_(horaEnt, horaSai);
-  else if (horaEnt) timeStr = entradaSaidaToString_(horaEnt, '');
-  else if (horaSai) timeStr = entradaSaidaToString_('', horaSai);
-  else {
-    console.warn('Sem horário para gravar para aluno na linha ' + studentRow + ' em ' + ddmm);
-    return;
-  }
-
-  var cell = escalaSheet.getRange(studentRow, dateColIndex);
-  var existing = cell.getValue();
-  var newEntry = timeStr; // **somente o horário** (ex: 07:00:54 - 12:00:54)
+  // Monta string de entrada/saída
+  var entSaiStr = entradaSaidaToString_(horaEnt, horaSai);
   
-  // Verifica se já existe esse horário exato para evitar duplicatas
-  if (existing) {
-    var existingStr = String(existing);
-    // Se o horário já existe, não sobrescreve
-    if (existingStr.indexOf(newEntry) !== -1) {
-      console.log('Horário já registrado na linha ' + studentRow + ' em ' + ddmm + '. Ignorando duplicata.');
-      return;
-    }
-    // Adiciona nova entrada em nova linha
-    cell.setValue(existingStr + '\n' + newEntry);
-  } else {
-    cell.setValue(newEntry);
+  // Atualiza célula se houver diferença
+  var cellValue = escalaSheet.getRange(targetRow, dataColIndex).getValue();
+  var currentStr = formatTimeForComparison_(cellValue);
+  var newStr = formatTimeForComparison_(entSaiStr);
+  
+  if (currentStr !== newStr){
+    escalaSheet.getRange(targetRow, dataColIndex).setValue(entSaiStr);
   }
 }
 
 /**
  * Sincroniza uma linha da aba PontoTeoria para a aba FrequenciaTeorica correspondente.
- * O número da escala (1-12) determina qual aba FrequenciaTeorica receberá a linha.
- * @param {Spreadsheet} spreadsheet - A planilha ativa
- * @param {Sheet} pontoTeoriaSheet - A aba PontoTeoria
- * @param {number} rowNumber - O número da linha a ser copiada
- * @param {string} escalaNumber - O número da escala (1-12)
  */
 function syncToFrequenciaTeorica_(spreadsheet, pontoTeoriaSheet, rowNumber, escalaNumber) {
-  // Valida se o número da escala está no intervalo 1-12
-  var escalaNum = parseInt(escalaNumber, 10);
-  if (isNaN(escalaNum) || escalaNum < 1 || escalaNum > 12) {
-    console.warn('Número de escala inválido para FrequenciaTeorica: ' + escalaNumber);
-    return;
-  }
-
-  var freqSheetName = 'FrequenciaTeorica' + escalaNum;
+  var freqSheetName = 'FrequenciaTeorica' + escalaNumber;
   var freqSheet = spreadsheet.getSheetByName(freqSheetName);
   if (!freqSheet) {
-    console.warn('Aba ' + freqSheetName + ' não encontrada.');
     return;
   }
 
-  // Obtém os dados da linha inteira de PontoTeoria
-  var lastCol = pontoTeoriaSheet.getLastColumn();
-  var rowData = pontoTeoriaSheet.getRange(rowNumber, 1, 1, lastCol).getValues()[0];
-
-  // Obtém os cabeçalhos de PontoTeoria e FrequenciaTeorica
-  var headersOrigem = pontoTeoriaSheet.getRange(1, 1, 1, lastCol).getValues()[0];
-  var headersDestino = freqSheet.getRange(1, 1, 1, freqSheet.getLastColumn()).getValues()[0];
-
-  // Verifica se já existe uma linha com os mesmos dados para evitar duplicatas
-  // Usa SerialNumber + Data + HoraEntrada + HoraSaida como identificador único
-  var serialColOrigem = headersOrigem.indexOf('SerialNumber');
-  var dataColOrigem = headersOrigem.indexOf('Data');
-  var horaEntColOrigem = headersOrigem.indexOf('HoraEntrada');
-  var horaSaiColOrigem = headersOrigem.indexOf('HoraSaida');
-
-  // Se não encontrar SerialNumber, usa a primeira coluna (índice 0)
-  if (serialColOrigem < 0) serialColOrigem = 0;
-
-  if (dataColOrigem < 0 || horaEntColOrigem < 0 || horaSaiColOrigem < 0) {
-    console.warn('Colunas Data, HoraEntrada ou HoraSaida não encontradas em PontoTeoria');
-    return;
-  }
-
-  var serialValue = rowData[serialColOrigem];
-  var dataValue = rowData[dataColOrigem];
-  var horaEntValue = rowData[horaEntColOrigem];
-  var horaSaiValue = rowData[horaSaiColOrigem];
-
-  if (!serialValue) {
-    console.warn('SerialNumber vazio na linha ' + rowNumber);
-    return;
-  }
-
-  // Procura colunas correspondentes em FrequenciaTeorica
-  var serialColDestino = headersDestino.indexOf('SerialNumber');
-  var dataColDestino = headersDestino.indexOf('Data');
-  var horaEntColDestino = headersDestino.indexOf('HoraEntrada');
-  var horaSaiColDestino = headersDestino.indexOf('HoraSaida');
-
-  // Se não encontrar SerialNumber, usa a primeira coluna
-  if (serialColDestino < 0) serialColDestino = 0;
-
-  // Verifica se já existe a mesma linha em FrequenciaTeorica (evita duplicatas)
-  var lastRowFreq = freqSheet.getLastRow();
-  if (lastRowFreq >= 2 && dataColDestino >= 0 && horaEntColDestino >= 0 && horaSaiColDestino >= 0) {
-    var existingData = freqSheet.getRange(2, 1, lastRowFreq - 1, freqSheet.getLastColumn()).getValues();
-    var dataFormatada = formatDateForComparison_(dataValue);
-    var horaEntFormatada = formatTimeForComparison_(horaEntValue);
-    var horaSaiFormatada = formatTimeForComparison_(horaSaiValue);
-
-    for (var i = 0; i < existingData.length; i++) {
-      var existingSerial = String(existingData[i][serialColDestino] || '').trim();
-      var existingDataRow = formatDateForComparison_(existingData[i][dataColDestino]);
-      var existingHoraEnt = formatTimeForComparison_(existingData[i][horaEntColDestino]);
-      var existingHoraSai = formatTimeForComparison_(existingData[i][horaSaiColDestino]);
-
-      if (existingSerial === String(serialValue).trim() &&
-          existingDataRow === dataFormatada &&
-          existingHoraEnt === horaEntFormatada &&
-          existingHoraSai === horaSaiFormatada) {
-        console.log('Linha já existe em ' + freqSheetName + '. Ignorando duplicata.');
-        return;
-      }
+  var pontoHeaders = pontoTeoriaSheet.getRange(1,1,1,pontoTeoriaSheet.getLastColumn()).getValues()[0];
+  var pontoRow = pontoTeoriaSheet.getRange(rowNumber,1,1,pontoTeoriaSheet.getLastColumn()).getValues()[0];
+  
+  var serialCol = pontoHeaders.indexOf('SerialNumber');
+  var emailCol = pontoHeaders.indexOf('EmailHC');
+  var nomeCol = pontoHeaders.indexOf('NomeCompleto');
+  var dataCol = pontoHeaders.indexOf('Data');
+  var horaEntCol = pontoHeaders.indexOf('HoraEntrada');
+  var horaSaiCol = pontoHeaders.indexOf('HoraSaida');
+  
+  if (serialCol < 0 && emailCol < 0 && nomeCol < 0) return;
+  if (dataCol < 0 || horaEntCol < 0) return;
+  
+  var serial = (serialCol >= 0) ? pontoRow[serialCol] : '';
+  var email = (emailCol >= 0) ? pontoRow[emailCol] : '';
+  var nome = (nomeCol >= 0) ? pontoRow[nomeCol] : '';
+  var dataRaw = pontoRow[dataCol];
+  var horaEnt = pontoRow[horaEntCol];
+  var horaSai = (horaSaiCol >= 0) ? pontoRow[horaSaiCol] : '';
+  
+  // Precisa de pelo menos 2 identificadores
+  var numIds = (serial ? 1 : 0) + (email ? 1 : 0) + (nome ? 1 : 0);
+  if (numIds < 2) return;
+  
+  var parsedDate = parseDateFlexible_(dataRaw);
+  if (!parsedDate) return;
+  
+  var freqHeaders = freqSheet.getRange(1,1,1,freqSheet.getLastColumn()).getValues()[0];
+  
+  // Encontra índices com proteção contra -1
+  var freqSerialCol = freqHeaders.indexOf('SerialNumber');
+  var freqEmailCol = freqHeaders.indexOf('EmailHC');
+  var freqNomeCol = freqHeaders.indexOf('NomeCompleto');
+  
+  var numFreqIdCols = (freqSerialCol >= 0 ? 1 : 0) + (freqEmailCol >= 0 ? 1 : 0) + (freqNomeCol >= 0 ? 1 : 0);
+  if (numFreqIdCols < 2) return;
+  
+  // Converte para 1-based apenas se encontrado
+  freqSerialCol = freqSerialCol >= 0 ? freqSerialCol + 1 : -1;
+  freqEmailCol = freqEmailCol >= 0 ? freqEmailCol + 1 : -1;
+  freqNomeCol = freqNomeCol >= 0 ? freqNomeCol + 1 : -1;
+  
+  var dataColIndex = -1;
+  for (var h = 0; h < freqHeaders.length; h++){
+    if (isDateHeaderMatch_(freqHeaders[h], parsedDate)){
+      dataColIndex = h + 1;
+      break;
     }
   }
-
-  // Adiciona a linha inteira na aba FrequenciaTeorica
-  freqSheet.appendRow(rowData);
-  console.log('Linha sincronizada para ' + freqSheetName + ': SerialNumber ' + serialValue);
+  if (dataColIndex < 1) return;
+  
+  var lastRow = freqSheet.getLastRow();
+  if (lastRow < 2) return;
+  var freqRows = freqSheet.getRange(2,1,lastRow-1,freqSheet.getLastColumn()).getValues();
+  
+  var targetRow = -1;
+  for (var i = 0; i < freqRows.length; i++){
+    var row = freqRows[i];
+    var matches = 0;
+    
+    if (freqSerialCol > 0 && serial && String(row[freqSerialCol-1]) === String(serial)) matches++;
+    if (freqEmailCol > 0 && email && String(row[freqEmailCol-1]) === String(email)) matches++;
+    if (freqNomeCol > 0 && nome && String(row[freqNomeCol-1]) === String(nome)) matches++;
+    
+    if (matches >= 2) {
+      targetRow = i + 2;
+      break;
+    }
+  }
+  
+  if (targetRow < 0) return;
+  
+  var entSaiStr = entradaSaidaToString_(horaEnt, horaSai);
+  var cellValue = freqSheet.getRange(targetRow, dataColIndex).getValue();
+  var currentStr = formatTimeForComparison_(cellValue);
+  var newStr = formatTimeForComparison_(entSaiStr);
+  
+  if (currentStr !== newStr){
+    freqSheet.getRange(targetRow, dataColIndex).setValue(entSaiStr);
+  }
 }
 
 /**
- * Formata uma data para comparação (dd/MM/yyyy)
- * @param {Date|string} value - O valor da data
- * @returns {string} A data formatada como string
+ * Sincroniza uma linha de PontoTeoria para FrequenciaTeorica após registro via doPost.
+ */
+function syncToFrequenciaTeoricaFromPonto_(spreadsheet, pontoTeoriaSheet, rowNumber, escalaNumber) {
+  syncToFrequenciaTeorica_(spreadsheet, pontoTeoriaSheet, rowNumber, escalaNumber);
+}
+
+/**********************************************
+ * 🔧 FUNÇÕES AUXILIARES DE DATA/HORA
+ **********************************************/
+
+/**
+ * Formata data para comparação.
  */
 function formatDateForComparison_(value) {
   if (!value) return '';
-  if (Object.prototype.toString.call(value) === '[object Date]' && !isNaN(value)) {
-    return two(value.getDate()) + '/' + two(value.getMonth() + 1) + '/' + value.getFullYear();
+  if (Object.prototype.toString.call(value) === '[object Date]' && !isNaN(value)){
+    return two(value.getDate()) + '/' + two(value.getMonth()+1) + '/' + value.getFullYear();
   }
   return String(value).trim();
 }
 
 /**
- * Formata uma hora para comparação (HH:MM:SS)
- * @param {Date|string} value - O valor da hora
- * @returns {string} A hora formatada como string
+ * Formata hora para comparação.
  */
 function formatTimeForComparison_(value) {
   if (!value) return '';
-  if (Object.prototype.toString.call(value) === '[object Date]' && !isNaN(value)) {
+  if (Object.prototype.toString.call(value) === '[object Date]' && !isNaN(value)){
     return two(value.getHours()) + ':' + two(value.getMinutes()) + ':' + two(value.getSeconds());
   }
   return String(value).trim();
 }
 
-/** helper: pad 2 */
+/**
+ * Formata número com 2 dígitos.
+ */
 function two(n){ return ('0' + n).slice(-2); }
 
-/** tenta parsear datas em formatos comuns (dd/mm/yyyy, dd/mm, Date object, strings) */
+/**
+ * Parse flexível de data (suporta Date objects e strings DD/MM/YYYY, DD/MM/YY, DD/MM).
+ * Valida se dia e mês são válidos antes de criar a data.
+ */
 function parseDateFlexible_(v){
   if (!v) return null;
   if (Object.prototype.toString.call(v) === '[object Date]' && !isNaN(v)) return v;
+  
   var s = String(v).trim();
-  var m = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
-  if (m) {
-    var d = parseInt(m[1],10), mo = parseInt(m[2],10)-1, y = parseInt(m[3],10);
-    if (y < 100) y += 2000;
-    return new Date(y,mo,d);
+  
+  // Função auxiliar para validar dia e mês
+  function isValidDate(day, month, year) {
+    if (month < 0 || month > 11) return false; // Mês 0-11 em JS
+    if (day < 1 || day > 31) return false;
+    
+    // Verifica dias válidos por mês
+    var daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    
+    // Ano bissexto
+    if (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)) {
+      daysInMonth[1] = 29;
+    }
+    
+    return day <= daysInMonth[month];
   }
-  m = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})$/);
+  
+  // Tenta DD/MM/YYYY
+  var m = s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
   if (m){
-    var d2 = parseInt(m[1],10), mo2 = parseInt(m[2],10)-1, y2 = (new Date()).getFullYear();
-    return new Date(y2,mo2,d2);
+    var d = parseInt(m[1],10);
+    var mm = parseInt(m[2],10) - 1;
+    var y = parseInt(m[3],10);
+    if (!isValidDate(d, mm, y)) return null;
+    return new Date(y, mm, d);
   }
-  var dt = new Date(s);
-  if (!isNaN(dt)) return dt;
+  
+  // Tenta DD/MM/YY (2 dígitos)
+  m = s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2})$/);
+  if (m){
+    var d = parseInt(m[1],10);
+    var mm = parseInt(m[2],10) - 1;
+    var y = parseInt(m[3],10);
+    // Assume 20xx para anos 00-99
+    y = y < 100 ? 2000 + y : y;
+    if (!isValidDate(d, mm, y)) return null;
+    return new Date(y, mm, d);
+  }
+  
+  // Tenta DD/MM (sem ano, assume ano atual)
+  m = s.match(/^(\d{1,2})[\/\-](\d{1,2})$/);
+  if (m){
+    var d = parseInt(m[1],10);
+    var mm = parseInt(m[2],10) - 1;
+    var y = new Date().getFullYear();
+    if (!isValidDate(d, mm, y)) return null;
+    return new Date(y, mm, d);
+  }
+  
   return null;
 }
 
 /**
- * Verifica se um cabeçalho de coluna corresponde a uma data.
- * Suporta formatos: dd/mm, dd_mm, dd/mm/yyyy, dd_mm/yyyy, ou objetos Date.
- * @param {*} header - O valor do cabeçalho (string ou Date)
- * @param {Date} parsedDate - A data parseada para comparar
- * @returns {boolean} true se o cabeçalho corresponde à data
+ * Verifica se cabeçalho corresponde à data.
  */
 function isDateHeaderMatch_(header, parsedDate) {
   if (!header || !parsedDate) return false;
-  
-  // Se o cabeçalho é um objeto Date
-  if (Object.prototype.toString.call(header) === '[object Date]' && !isNaN(header)) {
-    return header.getDate() === parsedDate.getDate() && 
-           header.getMonth() === parsedDate.getMonth();
-  }
-  
-  // Converte para string e verifica os formatos
   var hs = String(header).trim();
-  var dd = two(parsedDate.getDate());
-  var mm = two(parsedDate.getMonth() + 1);
+  var day = parsedDate.getDate();
+  var month = parsedDate.getMonth() + 1;
   var year = parsedDate.getFullYear();
+  var ddmm = two(day) + '/' + two(month);
+  var ddmm_underscore = two(day) + '_' + two(month);
   
-  // Formatos suportados: dd/mm, dd_mm, dd/mm/yyyy, dd_mm/yyyy
-  var ddmm_slash = dd + '/' + mm;
-  var ddmm_underscore = dd + '_' + mm;
-  
-  // Verifica se o cabeçalho contém a data em qualquer formato suportado
-  return hs.indexOf(ddmm_slash) !== -1 || 
+  return hs.indexOf(ddmm) !== -1 || 
+         hs.indexOf(ddmm + '/' + year) !== -1 ||
          hs.indexOf(ddmm_underscore) !== -1 ||
-         hs.indexOf(ddmm_slash + '/' + year) !== -1 ||
          hs.indexOf(ddmm_underscore + '/' + year) !== -1;
 }
 
-/** normaliza entrada/saida para formato HH:MM:SS - HH:MM:SS
- * aceita strings como "7:00:36", "07:00", "07:00:00" ou Date objects.
+/**
+ * Normaliza entrada/saida para formato HH:MM:SS às HH:MM:SS.
  */
 function entradaSaidaToString_(ent, sai){
   function norm(t){
@@ -810,7 +693,6 @@ function entradaSaidaToString_(ent, sai){
       return two(t.getHours()) + ':' + two(t.getMinutes()) + ':' + two(t.getSeconds());
     }
     var s = String(t).trim();
-    // já no formato HH:MM[:SS]
     var m = s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
     if (m) {
       var hh = two(parseInt(m[1],10));
@@ -818,7 +700,6 @@ function entradaSaidaToString_(ent, sai){
       var ss = (m[3] ? two(parseInt(m[3],10)) : '00');
       return hh + ':' + mm + ':' + ss;
     }
-    // se vier no formato "07h às 12h" tentamos extrair apenas HH e MM
     m = s.match(/(\d{1,2})[:hH](\d{2})?/);
     if (m) {
       var h = two(parseInt(m[1],10));
@@ -833,54 +714,20 @@ function entradaSaidaToString_(ent, sai){
   return e || s || '';
 }
 
-/** sincroniza tudo manualmente */
-function syncAllPontos(){
-  var ss = SpreadsheetApp.getActive();
-  var sheets = ['PontoPratica','PontoTeoria'];
-  sheets.forEach(function(name){
-    var sheet = ss.getSheetByName(name);
-    if (!sheet) return;
-    var headers = sheet.getRange(1,1,1,sheet.getLastColumn()).getValues()[0];
-    var serialCol = headers.indexOf('SerialNumber') + 1;
-    var emailCol = headers.indexOf('EmailHC') + 1;
-    var nomeCol = headers.indexOf('NomeCompleto') + 1;
-    var dataCol = headers.indexOf('Data') + 1;
-    var horaEntCol = headers.indexOf('HoraEntrada') + 1;
-    var horaSaiCol = headers.indexOf('HoraSaida') + 1;
-    var escalaCol = headers.indexOf('Escala') + 1;
-
-    // Requer pelo menos um identificador e data/hora entrada
-    if ((emailCol < 1 && serialCol < 1 && nomeCol < 1) || dataCol < 1 || horaEntCol < 1) return;
-    var lastRow = sheet.getLastRow();
-    if (lastRow < 2) return;
-    var rows = sheet.getRange(2,1,lastRow-1,sheet.getLastColumn()).getValues();
-    for (var i=0;i<rows.length;i++){
-      var r = rows[i];
-      var serial = (serialCol > 0) ? r[serialCol-1] : '';
-      var email = (emailCol > 0) ? r[emailCol-1] : '';
-      var nome = (nomeCol > 0) ? r[nomeCol-1] : '';
-      
-      // Precisa de pelo menos um identificador
-      if (!email && !serial && !nome) continue;
-      
-      var dataRaw = r[dataCol-1];
-      var horaEnt = r[horaEntCol-1];
-      var horaSai = (horaSaiCol>0) ? r[horaSaiCol-1] : '';
-      var escalaNumber = (escalaCol>0 && r[escalaCol-1]) ? String(r[escalaCol-1]) : '9';
-      syncOnePontoRow_(ss, escalaNumber, serial, email, nome, dataRaw, horaEnt, horaSai, name);
-      // Sincroniza também para FrequenciaTeorica se for aba PontoTeoria
-      if (name === 'PontoTeoria') {
-        syncToFrequenciaTeorica_(ss, sheet, i + 2, escalaNumber);
-      }
-    }
-  });
-}
+/**
+ * Aliases para compatibilidade com código legado e sistema externo.
+ * Mantidos porque formatarData*() pode ser referenciado pelo sistema Python
+ * ou por outras partes do código que ainda não foram migradas.
+ */
+function formatarDataParaComparacao_(value) { return formatDateForComparison_(value); }
+function formatarHoraParaComparacao_(value) { return formatTimeForComparison_(value); }
 
 /**********************************************
- * 📋 MENU PRINCIPAL — Criado ao abrir a planilha
+ * 📋 MENU PRINCIPAL
  **********************************************/
+
 /**
- * Menu personalizado ao abrir a planilha
+ * Menu personalizado ao abrir a planilha.
  */
 function onOpen() {
   const ui = SpreadsheetApp.getUi();
@@ -894,143 +741,41 @@ function onOpen() {
     .addToUi();
 }
 
-/**********************************************
- * 📊 FUNÇÕES DE INFORMAÇÃO E STATUS
- **********************************************/
-
-/**********************************************
- * 🔄 FUNÇÕES DE SINCRONIZAÇÃO ESPECÍFICAS
- **********************************************/
-
 /**
- * Sincroniza apenas a aba PontoPrática para as Escalas
+ * Verifica o status dos gatilhos automáticos.
  */
-function syncPontoPraticaOnly() {
-  var ss = SpreadsheetApp.getActive();
-  var sheet = ss.getSheetByName('PontoPratica');
+function verificarStatusGatilhos() {
+  const gatilhos = ScriptApp.getProjectTriggers();
+  let onEditAtivo = false;
+  let onChangeAtivo = false;
   
-  if (!sheet) {
-    SpreadsheetApp.getUi().alert('❌ Erro', 'Aba "PontoPratica" não encontrada!', SpreadsheetApp.getUi().ButtonSet.OK);
-    return;
+  for (const t of gatilhos) {
+    const funcao = t.getHandlerFunction();
+    if (funcao === 'onEditPontoInstalavel') onEditAtivo = true;
+    if (funcao === 'onChangePontoInstalavel') onChangeAtivo = true;
   }
   
-  syncSinglePontoSheet_(ss, sheet, 'PontoPratica');
-  SpreadsheetApp.getActiveSpreadsheet().toast('✅ PontoPrática sincronizado com sucesso!', 'Sincronização', 5);
+  Logger.log("📊 STATUS DOS GATILHOS:");
+  Logger.log("  • onEdit (auto sync): " + (onEditAtivo ? "✅ ATIVO" : "❌ INATIVO"));
+  Logger.log("  • onChange (auto sync): " + (onChangeAtivo ? "✅ ATIVO" : "❌ INATIVO"));
+  
+  const mensagem = 
+    "📊 STATUS DOS GATILHOS\n\n" +
+    "• Sincronização automática (onEdit): " + (onEditAtivo ? "✅ ATIVO" : "❌ INATIVO") + "\n" +
+    "• Sincronização automática (onChange): " + (onChangeAtivo ? "✅ ATIVO" : "❌ INATIVO") + "\n\n" +
+    "💡 Os gatilhos sincronizam automaticamente os pontos para as escalas\n" +
+    "quando você edita ou adiciona dados na planilha.";
+  
+  SpreadsheetApp.getUi().alert("⚙️ Status dos Gatilhos", mensagem, SpreadsheetApp.getUi().ButtonSet.OK);
+  
+  return {
+    onEdit: onEditAtivo,
+    onChange: onChangeAtivo
+  };
 }
 
 /**
- * Sincroniza apenas a aba PontoTeoria para as Escalas
- */
-function syncPontoTeoriaOnly() {
-  var ss = SpreadsheetApp.getActive();
-  var sheet = ss.getSheetByName('PontoTeoria');
-  
-  if (!sheet) {
-    SpreadsheetApp.getUi().alert('❌ Erro', 'Aba "PontoTeoria" não encontrada!', SpreadsheetApp.getUi().ButtonSet.OK);
-    return;
-  }
-  
-  syncSinglePontoSheet_(ss, sheet, 'PontoTeoria');
-  SpreadsheetApp.getActiveSpreadsheet().toast('✅ PontoTeoria sincronizado com sucesso!', 'Sincronização', 5);
-}
-
-/**
- * Sincroniza uma aba de ponto específica
- * @param {Spreadsheet} ss - A planilha ativa
- * @param {Sheet} sheet - A aba a ser sincronizada
- * @param {string} sheetName - Nome da aba
- */
-function syncSinglePontoSheet_(ss, sheet, sheetName) {
-  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  var serialCol = headers.indexOf('SerialNumber') + 1;
-  var emailCol = headers.indexOf('EmailHC') + 1;
-  var nomeCol = headers.indexOf('NomeCompleto') + 1;
-  var dataCol = headers.indexOf('Data') + 1;
-  var horaEntCol = headers.indexOf('HoraEntrada') + 1;
-  var horaSaiCol = headers.indexOf('HoraSaida') + 1;
-  var escalaCol = headers.indexOf('Escala') + 1;
-
-  // Requer pelo menos um identificador e data/hora entrada
-  if ((emailCol < 1 && serialCol < 1 && nomeCol < 1) || dataCol < 1 || horaEntCol < 1) {
-    console.warn('Cabeçalhos obrigatórios não encontrados na aba ' + sheetName);
-    return;
-  }
-  
-  var lastRow = sheet.getLastRow();
-  if (lastRow < 2) return;
-  
-  var rows = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
-  var sincronizados = 0;
-  
-  for (var i = 0; i < rows.length; i++) {
-    var r = rows[i];
-    var serial = (serialCol > 0) ? r[serialCol - 1] : '';
-    var email = (emailCol > 0) ? r[emailCol - 1] : '';
-    var nome = (nomeCol > 0) ? r[nomeCol - 1] : '';
-    
-    // Precisa de pelo menos um identificador
-    if (!email && !serial && !nome) continue;
-    
-    var dataRaw = r[dataCol - 1];
-    var horaEnt = r[horaEntCol - 1];
-    var horaSai = (horaSaiCol > 0) ? r[horaSaiCol - 1] : '';
-    var escalaNumber = (escalaCol > 0 && r[escalaCol - 1]) ? String(r[escalaCol - 1]) : '9';
-    
-    syncOnePontoRow_(ss, escalaNumber, serial, email, nome, dataRaw, horaEnt, horaSai, sheetName);
-    
-    if (sheetName === 'PontoTeoria') {
-      syncToFrequenciaTeorica_(ss, sheet, i + 2, escalaNumber);
-    }
-    sincronizados++;
-  }
-  
-  console.log('✅ ' + sincronizados + ' registros sincronizados de ' + sheetName);
-}
-
-/**
- * Sincroniza todas as linhas de PontoTeoria para FrequenciaTeorica
- */
-function syncAllFrequenciaTeorica() {
-  var ss = SpreadsheetApp.getActive();
-  var sheet = ss.getSheetByName('PontoTeoria');
-  
-  if (!sheet) {
-    SpreadsheetApp.getUi().alert('❌ Erro', 'Aba "PontoTeoria" não encontrada!', SpreadsheetApp.getUi().ButtonSet.OK);
-    return;
-  }
-  
-  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  var escalaCol = headers.indexOf('Escala') + 1;
-  
-  var lastRow = sheet.getLastRow();
-  if (lastRow < 2) {
-    SpreadsheetApp.getActiveSpreadsheet().toast('⚠️ Nenhum dado para sincronizar em PontoTeoria', 'Sincronização', 5);
-    return;
-  }
-  
-  var rows = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
-  var sincronizados = 0;
-  
-  for (var i = 0; i < rows.length; i++) {
-    var r = rows[i];
-    var escalaNumber = (escalaCol > 0 && r[escalaCol - 1]) ? String(r[escalaCol - 1]) : '9';
-    syncToFrequenciaTeorica_(ss, sheet, i + 2, escalaNumber);
-    sincronizados++;
-  }
-  
-  SpreadsheetApp.getActiveSpreadsheet().toast('✅ ' + sincronizados + ' registros sincronizados para FrequenciaTeorica!', 'Sincronização', 5);
-}
-
-/**********************************************
- * ⚙️ FUNÇÕES DE GATILHOS
- **********************************************/
-
-/**********************************************
- * ❓ AJUDA
- **********************************************/
-
-/**
- * Mostra a ajuda sobre como usar o menu
+ * Mostra a ajuda sobre como usar o menu.
  */
 function mostrarAjuda() {
   var ui = SpreadsheetApp.getUi();
@@ -1038,16 +783,15 @@ function mostrarAjuda() {
   var mensagem = 
     '📋 GUIA DE SINCRONIZAÇÃO DE PONTOS\n\n' +
     '═══════════════════════════════════════\n\n' +
-    '🔄 SINCRONIZAR PONTOS:\n' +
+    '🔄 SINCRONIZAÇÃO AUTOMÁTICA:\n' +
     '• Sincroniza pontos de PontoPratica e PontoTeoria para Escalas\n' +
-    '• Evita duplicatas automaticamente\n\n' +
+    '• Evita duplicatas automaticamente\n' +
+    '• Funciona mesmo com a planilha FECHADA!\n\n' +
     '═══════════════════════════════════════\n\n' +
-    '⚙️ CONFIGURAR GATILHOS:\n' +
-    '• Ativar sincronização automática:\n' +
-    '  → Pontos para Escalas\n' +
-    '  → Funciona mesmo com a planilha FECHADA!\n' +
-    '• Desativar - Remove todas as automações\n' +
-    '• Gatilhos específicos disponíveis separadamente\n\n' +
+    '⚙️ COMO USAR O MENU:\n' +
+    '• Ver Status: Verifica se gatilhos estão ativos\n' +
+    '• Ativar: Liga a sincronização automática\n' +
+    '• Desativar: Desliga a sincronização automática\n\n' +
     '═══════════════════════════════════════\n\n' +
     '💡 RECOMENDAÇÃO:\n' +
     'Ative a sincronização automática uma vez e deixe o sistema\n' +
@@ -1057,14 +801,8 @@ function mostrarAjuda() {
   ui.alert('❓ Ajuda - Menu de Gestão de Pontos', mensagem, ui.ButtonSet.OK);
 }
 
-/**********************************************
- * 🔧 FUNÇÕES COMBINADAS DE GATILHOS
- **********************************************/
-
 /**
- * Ativa TODOS os gatilhos automáticos:
- * - Sincronização de pontos para Escalas
- * Funciona mesmo com a planilha fechada.
+ * Ativa TODOS os gatilhos automáticos.
  */
 function ativarTodosGatilhosAutomaticos() {
   var ss = SpreadsheetApp.getActive();
@@ -1127,21 +865,21 @@ function desativarTodosGatilhosAutomaticos() {
 }
 
 /**********************************************
- * 📋 FUNÇÕES DO MENU SIMPLIFICADO
+ * 📌 API DE PONTO - Recebe dados via POST
  **********************************************/
 
-/**********************************************
- * 📌 API DE PONTO (unificado)
- **********************************************/
+/**
+ * Recebe dados de ponto via POST do sistema externo (Python).
+ * Também processa requisições de ausências e reposições.
+ */
 function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents);
     
-    // Verificar se é uma requisição de ausência ou reposição (aceita "tipo" em qualquer capitalização)
+    // Verificar se é uma requisição de ausência ou reposição
     var tipoRaw = data.tipo || data.Tipo || data.TIPO || '';
     var tipo = String(tipoRaw).toLowerCase();
     if (tipo === 'ausencia' || tipo === 'reposicao') {
-      // Redirecionar para o handler de ausências/reposições
       return doPostAusenciasReposicoes(e);
     }
     
@@ -1150,8 +888,6 @@ function doPost(e) {
     var email = data.EmailHC || "";
     var escala = data.Escala || "";
     var simularTerca = data.SimularTerça || false;
-    // Novo: flag enviado pelo SistemaPonto.py indicando se é dia de teoria
-    // (terça, quinta ou dia especial configurado)
     var isDiaTeoria = data.IsDiaTeoria || false;
 
     var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -1164,64 +900,98 @@ function doPost(e) {
     var dataStr = Utilities.formatDate(agora, "America/Sao_Paulo", "dd/MM/yyyy");
     var horaStr = Utilities.formatDate(agora, "America/Sao_Paulo", "HH:mm:ss");
     var diaSemana = agora.getDay();
-    if (simularTerca) diaSemana = 2; // simulação para testes
+    if (simularTerca) diaSemana = 2;
 
-    // Determina se é dia de teoria:
-    // 1. Se o Python enviou IsDiaTeoria=true (inclui dias especiais)
-    // 2. OU se é terça (2) ou quinta (4) pelo dia da semana
     var ehDiaTeoria = isDiaTeoria || diaSemana === 2 || diaSemana === 4;
 
     // === 1. Verifica se há linha aberta na TEORIA ===
     var dadosTeoria = abaTeoria.getDataRange().getValues();
+    if (dadosTeoria.length < 2) {
+      // Só tem cabeçalho ou está vazia - usa headers padrão
+      dadosTeoria = [HEADERS_PONTO_PADRAO];
+    }
+    
     var linhaTeoriaAberta = null;
     var linhaTeoriaCompleta = false;
 
-    for (var i = 1; i < dadosTeoria.length; i++) {
-      var linhaId = dadosTeoria[i][0];
-      var linhaData = formatarData(dadosTeoria[i][3]);
-      var entrada = dadosTeoria[i][4];
-      var saida = dadosTeoria[i][5];
+    // Mapeia cabeçalhos da teoria com validação
+    var headerTeoria = dadosTeoria[0] || [];
+    var colIdxTeoria = {
+      id: headerTeoria.indexOf('SerialNumber'),
+      data: headerTeoria.indexOf('Data'),
+      entrada: headerTeoria.indexOf('HoraEntrada'),
+      saida: headerTeoria.indexOf('HoraSaida')
+    };
+    
+    // Valida se encontrou as colunas essenciais
+    if (colIdxTeoria.id < 0 || colIdxTeoria.data < 0) {
+      return resposta("Erro: Colunas essenciais não encontradas na aba PontoTeoria");
+    }
 
-      if (linhaId == id && linhaData == dataStr) {
+    for (var i = 1; i < dadosTeoria.length; i++) {
+      var linhaId = dadosTeoria[i][colIdxTeoria.id];
+      var linhaData = formatarData(dadosTeoria[i][colIdxTeoria.data]);
+      var entrada = colIdxTeoria.entrada >= 0 ? dadosTeoria[i][colIdxTeoria.entrada] : null;
+      var saida = colIdxTeoria.saida >= 0 ? dadosTeoria[i][colIdxTeoria.saida] : null;
+
+      if (String(linhaId) === String(id) && String(linhaData) === String(dataStr)) {
         if (!saida) linhaTeoriaAberta = i + 1;
         else linhaTeoriaCompleta = true;
       }
     }
 
-    // Se já existe teoria completa → ignora
     if (linhaTeoriaCompleta) {
       return resposta("Sem ação: aluno já completou a teoria hoje.");
     }
 
-  // Se existe teoria aberta → registrar saída e parar
-  if (linhaTeoriaAberta) {
-    abaTeoria.getRange(linhaTeoriaAberta, 6).setValue(horaStr);
-    return resposta("Saída teórica registrada: " + horaStr);
-  }
+    if (linhaTeoriaAberta) {
+      if (colIdxTeoria.saida >= 0) {
+        abaTeoria.getRange(linhaTeoriaAberta, colIdxTeoria.saida + 1).setValue(horaStr);
+      }
+      return resposta("Saída teórica registrada: " + horaStr);
+    }
 
     // === 2. Verifica se há linha aberta na PRÁTICA ===
     var dadosPratica = abaPratica.getDataRange().getValues();
+    if (dadosPratica.length < 2) {
+      // Só tem cabeçalho ou está vazia - usa headers padrão
+      dadosPratica = [HEADERS_PONTO_PADRAO];
+    }
+    
     var linhaPraticaAberta = null;
     var linhaPraticaCompleta = false;
 
-    for (var i = 1; i < dadosPratica.length; i++) {
-      var linhaId = dadosPratica[i][0];
-      var linhaData = formatarData(dadosPratica[i][3]);
-      var entrada = dadosPratica[i][4];
-      var saida = dadosPratica[i][5];
+    // Mapeia cabeçalhos da prática com validação
+    var headerPratica = dadosPratica[0] || [];
+    var colIdxPratica = {
+      id: headerPratica.indexOf('SerialNumber'),
+      data: headerPratica.indexOf('Data'),
+      entrada: headerPratica.indexOf('HoraEntrada'),
+      saida: headerPratica.indexOf('HoraSaida')
+    };
+    
+    // Valida se encontrou as colunas essenciais
+    if (colIdxPratica.id < 0 || colIdxPratica.data < 0) {
+      return resposta("Erro: Colunas essenciais não encontradas na aba PontoPratica");
+    }
 
-      if (linhaId == id && linhaData == dataStr) {
+    for (var i = 1; i < dadosPratica.length; i++) {
+      var linhaId = dadosPratica[i][colIdxPratica.id];
+      var linhaData = formatarData(dadosPratica[i][colIdxPratica.data]);
+      var entrada = colIdxPratica.entrada >= 0 ? dadosPratica[i][colIdxPratica.entrada] : null;
+      var saida = colIdxPratica.saida >= 0 ? dadosPratica[i][colIdxPratica.saida] : null;
+
+      if (String(linhaId) === String(id) && String(linhaData) === String(dataStr)) {
         if (!saida) linhaPraticaAberta = i + 1;
         else linhaPraticaCompleta = true;
       }
     }
 
-    // Se já existe prática completa e não é dia de teoria → ignora
     if (linhaPraticaCompleta && !ehDiaTeoria) {
       return resposta("Sem ação: aluno já completou a prática hoje.");
     }
 
-    // === 3. Caso não exista prática aberta → cria nova entrada prática ou teórica ===
+    // === 3. Caso não exista prática aberta → cria nova entrada ===
     if (!linhaPraticaAberta && !linhaPraticaCompleta) {
       if (ehDiaTeoria) {
         abaTeoria.appendRow([id, email, nome, dataStr, horaStr, "", escala, "Teoria"]);
@@ -1235,18 +1005,19 @@ function doPost(e) {
 
     // === 4. Caso exista prática aberta → registra saída ===
     if (linhaPraticaAberta) {
-      abaPratica.getRange(linhaPraticaAberta, 6).setValue(horaStr);
+      if (colIdxPratica.saida >= 0) {
+        abaPratica.getRange(linhaPraticaAberta, colIdxPratica.saida + 1).setValue(horaStr);
+      }
 
-      // Se é dia de teoria (terça, quinta ou dia especial), cria entrada teórica automaticamente
-      // Nota: A teoria só é registrada após o aluno ter entrada E saída na prática
       if (ehDiaTeoria) {
-        // Verifica se já há teoria hoje
-        var existeTeoriaHoje = dadosTeoria.some(function (r) {
-          return r[0] == id && formatarData(r[3]) == dataStr;
+        var existeTeoriaHoje = dadosTeoria.some(function (r, idx) {
+          if (idx === 0) return false; // Pula cabeçalho
+          var rId = colIdxTeoria.id >= 0 ? r[colIdxTeoria.id] : null;
+          var rData = colIdxTeoria.data >= 0 ? formatarData(r[colIdxTeoria.data]) : null;
+          return String(rId) === String(id) && String(rData) === String(dataStr);
         });
         if (!existeTeoriaHoje) {
           abaTeoria.appendRow([id, email, nome, dataStr, horaStr, "", escala, "Teoria"]);
-          // Sincroniza automaticamente para FrequenciaTeorica
           var novaLinha = abaTeoria.getLastRow();
           syncToFrequenciaTeoricaFromPonto_(ss, abaTeoria, novaLinha, escala);
           return resposta("Saída prática e entrada teórica registradas: " + horaStr);
@@ -1256,7 +1027,6 @@ function doPost(e) {
       return resposta("Saída prática registrada: " + horaStr);
     }
 
-    // === 5. Caso final: não há nada a fazer ===
     return resposta("Sem ação necessária para o ID " + id + ".");
 
   } catch (err) {
@@ -1264,212 +1034,65 @@ function doPost(e) {
   }
 }
 
-// === Funções auxiliares ===
+/**
+ * Formata data (Date object ou número para DD/MM/YYYY).
+ * Trata Date objects, números (timestamps) e strings.
+ */
 function formatarData(valor) {
-  if (valor instanceof Date) {
+  // Retorna apenas se for null ou undefined (não 0 ou false)
+  if (valor === null || valor === undefined) return valor;
+  
+  // Se é um Date object válido
+  if (valor instanceof Date && !isNaN(valor)) {
     return Utilities.formatDate(valor, "America/Sao_Paulo", "dd/MM/yyyy");
   }
+  
+  // Se é um número (timestamp ou serial do Excel)
+  if (typeof valor === 'number' && valor !== 0) {
+    // Lógica de detecção:
+    // 1-50000: Serial do Excel (dias desde 30/12/1899)
+    // 946684800-9999999999: Unix timestamp em SEGUNDOS (desde 01/01/2000)
+    // >= 10000000000: Unix timestamp em MILISSEGUNDOS
+    
+    if (valor > 0 && valor <= EXCEL_SERIAL_THRESHOLD) {
+      // Serial do Excel: converte para Date
+      // Usa EXCEL_EPOCH_OFFSET (25569) para ajustar entre epoch Excel e Unix
+      var date = new Date((valor - EXCEL_EPOCH_OFFSET) * 86400 * 1000);
+      if (!isNaN(date)) {
+        return Utilities.formatDate(date, "America/Sao_Paulo", "dd/MM/yyyy");
+      }
+    } else if (valor >= UNIX_TIMESTAMP_SECONDS_THRESHOLD && valor < 10000000000) {
+      // Unix timestamp em SEGUNDOS: multiplica por 1000
+      var date = new Date(valor * 1000);
+      if (!isNaN(date)) {
+        return Utilities.formatDate(date, "America/Sao_Paulo", "dd/MM/yyyy");
+      }
+    } else if (valor >= 10000000000) {
+      // Unix timestamp em MILISSEGUNDOS
+      var date = new Date(valor);
+      if (!isNaN(date)) {
+        return Utilities.formatDate(date, "America/Sao_Paulo", "dd/MM/yyyy");
+      }
+    }
+  }
+  
+  // Retorna o valor como está (pode ser string já formatada)
   return valor;
 }
 
+/**
+ * Retorna resposta em texto simples.
+ */
 function resposta(msg) {
   return ContentService.createTextOutput(msg).setMimeType(ContentService.MimeType.TEXT);
 }
 
-/**
- * Sincroniza uma linha da aba PontoTeoria para a aba FrequenciaTeorica correspondente.
- * Chamada automaticamente quando uma nova entrada teórica é criada via doPost.
- * @param {Spreadsheet} spreadsheet - A planilha ativa
- * @param {Sheet} pontoTeoriaSheet - A aba PontoTeoria
- * @param {number} rowNumber - O número da linha a ser copiada
- * @param {string} escalaNumber - O número da escala (1-12)
- */
-function syncToFrequenciaTeoricaFromPonto_(spreadsheet, pontoTeoriaSheet, rowNumber, escalaNumber) {
-  // Valida se o número da escala está no intervalo 1-12
-  var escalaNum = parseInt(escalaNumber, 10);
-  if (isNaN(escalaNum) || escalaNum < 1 || escalaNum > 12) {
-    console.warn('Número de escala inválido para FrequenciaTeorica: ' + escalaNumber);
-    return;
-  }
-
-  var freqSheetName = 'FrequenciaTeorica' + escalaNum;
-  var freqSheet = spreadsheet.getSheetByName(freqSheetName);
-  if (!freqSheet) {
-    console.warn('Aba ' + freqSheetName + ' não encontrada.');
-    return;
-  }
-
-  // Obtém os dados da linha inteira de PontoTeoria
-  var lastCol = pontoTeoriaSheet.getLastColumn();
-  var rowData = pontoTeoriaSheet.getRange(rowNumber, 1, 1, lastCol).getValues()[0];
-
-  // Obtém os cabeçalhos de PontoTeoria e FrequenciaTeorica
-  var headersOrigem = pontoTeoriaSheet.getRange(1, 1, 1, lastCol).getValues()[0];
-  var headersDestino = freqSheet.getRange(1, 1, 1, freqSheet.getLastColumn()).getValues()[0];
-
-  // Usa SerialNumber + Data + HoraEntrada + HoraSaida como identificador único para evitar duplicatas
-  var serialColOrigem = headersOrigem.indexOf('SerialNumber');
-  var dataColOrigem = headersOrigem.indexOf('Data');
-  var horaEntColOrigem = headersOrigem.indexOf('HoraEntrada');
-  var horaSaiColOrigem = headersOrigem.indexOf('HoraSaida');
-
-  // Se não encontrar SerialNumber, usa a primeira coluna (índice 0)
-  if (serialColOrigem < 0) serialColOrigem = 0;
-
-  if (dataColOrigem < 0 || horaEntColOrigem < 0 || horaSaiColOrigem < 0) {
-    console.warn('Colunas Data, HoraEntrada ou HoraSaida não encontradas em PontoTeoria');
-    return;
-  }
-
-  var serialValue = rowData[serialColOrigem];
-  var dataValue = rowData[dataColOrigem];
-  var horaEntValue = rowData[horaEntColOrigem];
-  var horaSaiValue = rowData[horaSaiColOrigem];
-
-  if (!serialValue) {
-    console.warn('SerialNumber vazio na linha ' + rowNumber);
-    return;
-  }
-
-  // Procura colunas correspondentes em FrequenciaTeorica
-  var serialColDestino = headersDestino.indexOf('SerialNumber');
-  var dataColDestino = headersDestino.indexOf('Data');
-  var horaEntColDestino = headersDestino.indexOf('HoraEntrada');
-  var horaSaiColDestino = headersDestino.indexOf('HoraSaida');
-
-  // Se não encontrar SerialNumber, usa a primeira coluna
-  if (serialColDestino < 0) serialColDestino = 0;
-
-  // Verifica se já existe a mesma linha em FrequenciaTeorica (evita duplicatas)
-  var lastRowFreq = freqSheet.getLastRow();
-  if (lastRowFreq >= 2 && dataColDestino >= 0 && horaEntColDestino >= 0 && horaSaiColDestino >= 0) {
-    var existingData = freqSheet.getRange(2, 1, lastRowFreq - 1, freqSheet.getLastColumn()).getValues();
-    var dataFormatada = formatarDataParaComparacao_(dataValue);
-    var horaEntFormatada = formatarHoraParaComparacao_(horaEntValue);
-    var horaSaiFormatada = formatarHoraParaComparacao_(horaSaiValue);
-
-    for (var i = 0; i < existingData.length; i++) {
-      var existingSerial = String(existingData[i][serialColDestino] || '').trim();
-      var existingDataRow = formatarDataParaComparacao_(existingData[i][dataColDestino]);
-      var existingHoraEnt = formatarHoraParaComparacao_(existingData[i][horaEntColDestino]);
-      var existingHoraSai = formatarHoraParaComparacao_(existingData[i][horaSaiColDestino]);
-
-      if (existingSerial === String(serialValue).trim() &&
-          existingDataRow === dataFormatada &&
-          existingHoraEnt === horaEntFormatada &&
-          existingHoraSai === horaSaiFormatada) {
-        console.log('Linha já existe em ' + freqSheetName + '. Ignorando duplicata.');
-        return;
-      }
-    }
-  }
-
-  // Adiciona a linha inteira na aba FrequenciaTeorica
-  freqSheet.appendRow(rowData);
-  console.log('Linha sincronizada automaticamente para ' + freqSheetName + ': SerialNumber ' + serialValue);
-}
-
-/**
- * Formata uma data para comparação (dd/MM/yyyy)
- * @param {Date|string} value - O valor da data
- * @returns {string} A data formatada como string
- */
-function formatarDataParaComparacao_(value) {
-  if (!value) return '';
-  if (value instanceof Date) {
-    return Utilities.formatDate(value, "America/Sao_Paulo", "dd/MM/yyyy");
-  }
-  return String(value).trim();
-}
-
-/**
- * Formata uma hora para comparação (HH:mm:ss)
- * @param {Date|string} value - O valor da hora
- * @returns {string} A hora formatada como string
- */
-function formatarHoraParaComparacao_(value) {
-  if (!value) return '';
-  if (value instanceof Date) {
-    return Utilities.formatDate(value, "America/Sao_Paulo", "HH:mm:ss");
-  }
-  return String(value).trim();
-}
-
-
-/**********************************************
- * 📌 AUSÊNCIAS (unificado)
- * 
- * Sistema moderno de registro de ausências:
- * - Ausências são registradas via website (index.html)
- * - Dados enviados via POST para doPost()
- * - Armazenados nas abas "Ausencias" e "Reposicoes"
- * - Sistema antigo de processamento via menu foi removido
- **********************************************/
-
 /**********************************************
  * 🎯 SISTEMA DE AUSÊNCIAS E REPOSIÇÕES
- * Integrado do AusenciasReposicoes.gs
  **********************************************/
 
 /**
- * Cria as abas "Ausencias" e "Reposicoes" se não existirem.
- * Configura os cabeçalhos corretos para cada aba.
- */
-function criarAbasAusenciasReposicoes() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  
-  // Criar aba Ausencias
-  var abaAusencias = ss.getSheetByName(ABA_AUSENCIAS);
-  if (!abaAusencias) {
-    abaAusencias = ss.insertSheet(ABA_AUSENCIAS);
-    // Posicionar após a aba Frequência/Ponto se existir
-    var abaPonto = ss.getSheetByName('Ponto') || ss.getSheetByName('PontoPratica');
-    if (abaPonto) {
-      ss.setActiveSheet(abaAusencias);
-      ss.moveActiveSheet(abaPonto.getIndex() + 1);
-    }
-    
-    // Configurar cabeçalhos
-    var cabecalhosAusencias = ['NomeCompleto', 'EmailHC', 'Curso', 'Escala', 'DataAusencia', 'Unidade', 'Horario', 'Motivo'];
-    abaAusencias.getRange(1, 1, 1, cabecalhosAusencias.length).setValues([cabecalhosAusencias]);
-    abaAusencias.getRange(1, 1, 1, cabecalhosAusencias.length).setFontWeight('bold');
-    abaAusencias.setFrozenRows(1);
-    
-    Logger.log('✅ Aba "Ausencias" criada com sucesso!');
-  } else {
-    Logger.log('ℹ️ Aba "Ausencias" já existe.');
-  }
-  
-  // Criar aba Reposicoes
-  var abaReposicoes = ss.getSheetByName(ABA_REPOSICOES);
-  if (!abaReposicoes) {
-    abaReposicoes = ss.insertSheet(ABA_REPOSICOES);
-    // Posicionar após a aba Ausencias
-    ss.setActiveSheet(abaReposicoes);
-    ss.moveActiveSheet(abaAusencias.getIndex() + 1);
-    
-    // Configurar cabeçalhos
-    var cabecalhosReposicoes = ['NomeCompleto', 'EmailHC', 'Curso', 'Escala', 'Horario', 'Unidade', 'Motivo', 'DataReposicao', 'DataAusencia'];
-    abaReposicoes.getRange(1, 1, 1, cabecalhosReposicoes.length).setValues([cabecalhosReposicoes]);
-    abaReposicoes.getRange(1, 1, 1, cabecalhosReposicoes.length).setFontWeight('bold');
-    abaReposicoes.setFrozenRows(1);
-    
-    Logger.log('✅ Aba "Reposicoes" criada com sucesso!');
-  } else {
-    Logger.log('ℹ️ Aba "Reposicoes" já existe.');
-  }
-  
-  SpreadsheetApp.getActiveSpreadsheet().toast(
-    'Abas "Ausencias" e "Reposicoes" configuradas com sucesso! ✅',
-    'Sistema de Ausências',
-    5
-  );
-}
-
-/**
- * Valida os dados de uma ausência antes de inserir.
- * @param {Object} data - Dados da ausência
- * @returns {Object} { valid: boolean, message: string }
+ * Valida os dados de uma ausência.
  */
 function validarDadosAusencia(data) {
   if (!data.NomeCompleto || data.NomeCompleto.trim() === '') {
@@ -1484,7 +1107,6 @@ function validarDadosAusencia(data) {
     return { valid: false, message: 'Data da ausência é obrigatória' };
   }
   
-  // Validar formato de email
   if (!EMAIL_REGEX.test(data.EmailHC)) {
     return { valid: false, message: 'Email inválido' };
   }
@@ -1493,9 +1115,7 @@ function validarDadosAusencia(data) {
 }
 
 /**
- * Valida os dados de uma reposição antes de inserir.
- * @param {Object} data - Dados da reposição
- * @returns {Object} { valid: boolean, message: string }
+ * Valida os dados de uma reposição.
  */
 function validarDadosReposicao(data) {
   if (!data.NomeCompleto || data.NomeCompleto.trim() === '') {
@@ -1510,12 +1130,16 @@ function validarDadosReposicao(data) {
     return { valid: false, message: 'Data da reposição é obrigatória' };
   }
   
-  // DataAusencia é opcional, mas se existir deve ter formato plausível
+  // Valida formato da DataReposicao (campo correto para reposição)
+  if (data.DataReposicao && typeof data.DataReposicao !== 'string') {
+    return { valid: false, message: 'Data da reposição deve ser texto (YYYY-MM-DD)' };
+  }
+  
+  // DataAusencia é opcional em reposições
   if (data.DataAusencia && typeof data.DataAusencia !== 'string') {
     return { valid: false, message: 'Data da ausência deve ser texto (YYYY-MM-DD)' };
   }
   
-  // Validar formato de email
   if (!EMAIL_REGEX.test(data.EmailHC)) {
     return { valid: false, message: 'Email inválido' };
   }
@@ -1525,24 +1149,20 @@ function validarDadosReposicao(data) {
 
 /**
  * Registra uma ausência na planilha.
- * @param {Object} data - Dados da ausência
- * @returns {Object} { success: boolean, message: string }
  */
 function registrarAusencia(data) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var aba = ss.getSheetByName(ABA_AUSENCIAS);
   
   if (!aba) {
-    return { success: false, message: 'Aba "' + ABA_AUSENCIAS + '" não encontrada. Execute criarAbasAusenciasReposicoes() primeiro.' };
+    return { success: false, message: 'Aba "' + ABA_AUSENCIAS + '" não encontrada.' };
   }
   
-  // Validar dados
   var validacao = validarDadosAusencia(data);
   if (!validacao.valid) {
     return { success: false, message: validacao.message };
   }
   
-  // Preparar dados para inserção respeitando a ordem atual dos cabeçalhos
   var cabecalhos = aba.getRange(1, 1, 1, aba.getLastColumn()).getValues()[0];
   var registro = cabecalhos.map(function(col) {
     switch (col) {
@@ -1558,7 +1178,6 @@ function registrarAusencia(data) {
     }
   });
   
-  // Adicionar à planilha
   aba.appendRow(registro);
   
   Logger.log('✅ Ausência registrada: ' + data.NomeCompleto + ' - ' + data.DataAusencia);
@@ -1575,24 +1194,20 @@ function registrarAusencia(data) {
 
 /**
  * Registra uma reposição na planilha.
- * @param {Object} data - Dados da reposição
- * @returns {Object} { success: boolean, message: string }
  */
 function registrarReposicao(data) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var aba = ss.getSheetByName(ABA_REPOSICOES);
   
   if (!aba) {
-    return { success: false, message: 'Aba "' + ABA_REPOSICOES + '" não encontrada. Execute criarAbasAusenciasReposicoes() primeiro.' };
+    return { success: false, message: 'Aba "' + ABA_REPOSICOES + '" não encontrada.' };
   }
   
-  // Validar dados
   var validacao = validarDadosReposicao(data);
   if (!validacao.valid) {
     return { success: false, message: validacao.message };
   }
   
-  // Preparar dados para inserção respeitando a ordem atual dos cabeçalhos
   var cabecalhos = aba.getRange(1, 1, 1, aba.getLastColumn()).getValues()[0];
   var registro = cabecalhos.map(function(col) {
     switch (col) {
@@ -1609,7 +1224,6 @@ function registrarReposicao(data) {
     }
   });
   
-  // Adicionar à planilha
   aba.appendRow(registro);
   
   Logger.log('✅ Reposição registrada: ' + data.NomeCompleto + ' - ' + data.DataReposicao);
@@ -1625,25 +1239,10 @@ function registrarReposicao(data) {
 }
 
 /**
- * Endpoint POST para receber dados de ausências e reposições do site externo.
- * 
- * Formato esperado:
- * {
- *   "tipo": "ausencia" ou "reposicao",
- *   "NomeCompleto": "João Silva",
- *   "EmailHC": "joao.silva@hc.fm.usp.br",
- *   "Curso": "Fisioterapia",
- *   "Escala": "1",
- *   "DataAusencia": "2024-01-15" (para ausências),
- *   "DataReposicao": "2024-01-20" (para reposições),
- *   "Unidade": "UTI",
- *   "Horario": "08:00-12:00",
- *   "Motivo": "Doença"
- * }
+ * Endpoint POST para receber dados de ausências e reposições.
  */
 function doPostAusenciasReposicoes(e) {
   try {
-    // Parse dos dados recebidos
     var data = JSON.parse(e.postData.contents);
     var tipo = (data.tipo || '').toLowerCase();
     
@@ -1665,7 +1264,6 @@ function doPostAusenciasReposicoes(e) {
     
     Logger.log('📤 Resultado: ' + JSON.stringify(resultado));
     
-    // Retornar resposta JSON
     return ContentService
       .createTextOutput(JSON.stringify(resultado))
       .setMimeType(ContentService.MimeType.JSON);
@@ -1680,80 +1278,4 @@ function doPostAusenciasReposicoes(e) {
       }))
       .setMimeType(ContentService.MimeType.JSON);
   }
-}
-
-/**
- * Busca ausências de um aluno específico.
- * @param {string} emailHC - Email do aluno
- * @returns {Array} Lista de ausências
- */
-function buscarAusenciasAluno(emailHC) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var aba = ss.getSheetByName(ABA_AUSENCIAS);
-  
-  if (!aba) {
-    return [];
-  }
-  
-  var dados = aba.getDataRange().getValues();
-  var cabecalhos = dados[0];
-  var ausencias = [];
-  
-  // Encontrar índice da coluna EmailHC
-  var emailIndex = cabecalhos.indexOf('EmailHC');
-  
-  if (emailIndex === -1) {
-    return [];
-  }
-  
-  // Filtrar ausências do aluno
-  for (var i = 1; i < dados.length; i++) {
-    if (dados[i][emailIndex] === emailHC) {
-      var ausencia = {};
-      for (var j = 0; j < cabecalhos.length; j++) {
-        ausencia[cabecalhos[j]] = dados[i][j];
-      }
-      ausencias.push(ausencia);
-    }
-  }
-  
-  return ausencias;
-}
-
-/**
- * Busca reposições de um aluno específico.
- * @param {string} emailHC - Email do aluno
- * @returns {Array} Lista de reposições
- */
-function buscarReposicoesAluno(emailHC) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var aba = ss.getSheetByName(ABA_REPOSICOES);
-  
-  if (!aba) {
-    return [];
-  }
-  
-  var dados = aba.getDataRange().getValues();
-  var cabecalhos = dados[0];
-  var reposicoes = [];
-  
-  // Encontrar índice da coluna EmailHC
-  var emailIndex = cabecalhos.indexOf('EmailHC');
-  
-  if (emailIndex === -1) {
-    return [];
-  }
-  
-  // Filtrar reposições do aluno
-  for (var i = 1; i < dados.length; i++) {
-    if (dados[i][emailIndex] === emailHC) {
-      var reposicao = {};
-      for (var j = 0; j < cabecalhos.length; j++) {
-        reposicao[cabecalhos[j]] = dados[i][j];
-      }
-      reposicoes.push(reposicao);
-    }
-  }
-  
-  return reposicoes;
 }
