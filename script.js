@@ -244,6 +244,51 @@
                         
                         console.log(`[fetchDataFromURL] ✅ Escalas carregadas: ${Object.keys(escalasData).length} escalas`);
                     }
+                    
+                    // Process NotasPraticas (practice grade sheets)
+                    const notasPraticasData = {};
+                    let practiceSheetCount = 0;
+                    
+                    // Iterate through all cache keys looking for practice sheets
+                    allKeys.forEach(key => {
+                        const normName = normalizeSheetName(key);
+                        
+                        // Check if this is a practice sheet using isPracticeSheetName
+                        if (isPracticeSheetName(normName)) {
+                            const sheetData = data.cache[key];
+                            
+                            if (sheetData && sheetData.registros) {
+                                const registros = sheetData.registros;
+                                
+                                // Normalize each registro
+                                const normalized = registros.map(row => 
+                                    row && typeof row === 'object' ? deepNormalizeObject(row) : row
+                                );
+                                
+                                // Determine the practice name from the data or use sheet name
+                                const sample = normalized[0] || {};
+                                const nome = sample.nomePratica || sample.NomePratica || 
+                                           sample.pratica || sample.Prática || sample.Pratica || 
+                                           sample.Modulo || sample.NomeModulo || key;
+                                
+                                notasPraticasData[nome] = {
+                                    nomePratica: nome,
+                                    registros: normalized
+                                };
+                                
+                                practiceSheetCount++;
+                                console.log(`[fetchDataFromURL] ✅ NotasPraticas "${key}" carregada: ${normalized.length} registros`);
+                            }
+                        }
+                    });
+                    
+                    if (Object.keys(notasPraticasData).length > 0) {
+                        appState.notasPraticas = notasPraticasData;
+                        appState.dataLoadingState.notasPraticas = true;
+                        console.log(`[fetchDataFromURL] ✅ NotasPraticas carregadas: ${practiceSheetCount} planilhas, ${Object.keys(notasPraticasData).length} módulos`);
+                    } else {
+                        console.log('[fetchDataFromURL] ℹ️ Nenhuma planilha de NotasPraticas encontrada no cache');
+                    }
                 }
                 
                 // Trigger UI updates for loaded data
@@ -251,7 +296,7 @@
                 
                 // Update dashboard with all loaded data
                 // Use forEach with try-catch to ensure all data types are processed even if one fails
-                const dataTypes = ['alunos', 'ausenciasReposicoes', 'notasTeoricas', 'escalas', 'pontoStaticRows'];
+                const dataTypes = ['alunos', 'ausenciasReposicoes', 'notasTeoricas', 'notasPraticas', 'escalas', 'pontoStaticRows'];
                 const updateResults = { success: [], failed: [] };
                 
                 dataTypes.forEach(key => {
