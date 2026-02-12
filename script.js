@@ -6161,12 +6161,82 @@ function extractTimeFromISO(isoString) {
         }
 
         function getRosterForDate(dateIso) {
-            // ATUALIZADO: Por requisito do usuário, NÃO pré-popular roster de templates de escala
-            // Mostrar APENAS dados reais de presença (via pontoState.byDate)
-            // O roster deve conter apenas alunos que têm registros reais de presença
-            // Isso previne duplicação e garante que mostramos apenas os dados reais
-            console.log('[getRosterForDate] Retornando roster vazio - apenas dados de ponto reais serão exibidos');
-            return [];
+            // Load students from EscalaTeoria1-12 and EscalaPratica1-12 sheets
+            const iso = normalizeDateInput(dateIso);
+            if (!iso) {
+                console.log('[getRosterForDate] dateIso inválido');
+                return [];
+            }
+            
+            const dayMonth = isoToDayMonth(iso);
+            if (!dayMonth) {
+                console.log('[getRosterForDate] Não foi possível converter ISO para DD/MM');
+                return [];
+            }
+            
+            const normalizedDayMonth = normalizeHeaderDay(dayMonth);
+            const roster = [];
+            
+            // Check if escalas data is loaded
+            if (!appState.escalas || Object.keys(appState.escalas).length === 0) {
+                console.log('[getRosterForDate] Dados de escalas não carregados');
+                return [];
+            }
+            
+            console.log(`[getRosterForDate] Procurando alunos escalados para ${dayMonth} (ISO: ${iso})`);
+            
+            // Iterate through all escala sheets (EscalaTeoria1-12 and EscalaPratica1-12)
+            Object.entries(appState.escalas).forEach(([escalaKey, escala]) => {
+                // Only process EscalaTeoria and EscalaPratica sheets (not plain Escala)
+                const normName = normalizeSheetName(escalaKey);
+                if (!/^escala(teoria|pratica)\d+$/.test(normName)) {
+                    return; // Skip non-teoria/pratica escalas
+                }
+                
+                const alunos = escala.alunos || [];
+                const headersDay = escala.headersDay || [];
+                
+                // Check if this escala has data for the requested date
+                const hasDate = headersDay.some(header => normalizeHeaderDay(header) === normalizedDayMonth);
+                
+                if (!hasDate) {
+                    return; // This escala doesn't have data for this date
+                }
+                
+                // Get all students scheduled for this date
+                alunos.forEach(aluno => {
+                    if (!aluno) return;
+                    
+                    // Get the value for this date from the aluno record
+                    // The date might be stored with or without year (DD/MM or DD/MM/YY)
+                    let dateValue = null;
+                    for (const header of headersDay) {
+                        if (normalizeHeaderDay(header) === normalizedDayMonth) {
+                            dateValue = aluno[header];
+                            break;
+                        }
+                    }
+                    
+                    // Skip if no value for this date or if it's a rest day marker
+                    if (!dateValue || isRestDayValue(dateValue)) {
+                        return;
+                    }
+                    
+                    // Add student to roster with escala info and date value
+                    roster.push({
+                        NomeCompleto: aluno.NomeCompleto || aluno.Nome || '',
+                        EmailHC: aluno.EmailHC || aluno.Email || '',
+                        SerialNumber: aluno.SerialNumber || aluno.Serial || aluno.ID || '',
+                        Escala: escala.nomeEscala || escalaKey,
+                        __escalaNome: escala.nomeEscala || escalaKey,
+                        __dateValue: dateValue, // Store the value (e.g., "08h às 13h")
+                        'Pratica/Teorica': /escalateoria/i.test(normName) ? 'Teoria' : 'Prática'
+                    });
+                });
+            });
+            
+            console.log(`[getRosterForDate] ${roster.length} alunos encontrados escalados para ${dayMonth}`);
+            return roster;
         }
 
         function getScaleForDate(dateIso) {
