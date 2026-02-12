@@ -10627,19 +10627,21 @@ function renderTabEscala(escalas) {
 
         /**
          * Deduplicates field entries by normalizing field names
-         * Keeps only the first variant of each field (prioritizing readable formats)
+         * Keeps only the best variant of each field (prioritizing readable formats like PascalCase)
          * @param {Object} obj - The object with potentially duplicate field keys
          * @returns {Array<[string, any]>} - Array of [key, value] tuples with duplicates removed
          */
         function deduplicateFields(obj) {
-            const seen = new Map(); // normalized key -> original key
+            // Maps normalized key -> { originalKey, resultIndex }
+            const normalizedToKeyMap = new Map();
             const result = [];
             
             // Helper to normalize a field name for comparison
+            // Only removes case and underscores, preserving the structure enough to identify true duplicates
             function normalizeFieldForComparison(fieldName) {
                 return String(fieldName)
                     .toLowerCase()
-                    .replace(/[^a-z0-9]/g, ''); // Remove all non-alphanumeric chars
+                    .replace(/_/g, ''); // Only remove underscores, keeping other structure
             }
             
             // Helper to score field name quality (higher is better)
@@ -10659,26 +10661,23 @@ function renderTabEscala(escalas) {
             Object.entries(obj).forEach(([key, value]) => {
                 const normalized = normalizeFieldForComparison(key);
                 
-                if (seen.has(normalized)) {
+                if (normalizedToKeyMap.has(normalized)) {
                     // We've seen this field before - compare quality
-                    const existingKey = seen.get(normalized);
-                    const existingScore = scoreFieldName(existingKey);
+                    const existing = normalizedToKeyMap.get(normalized);
+                    const existingScore = scoreFieldName(existing.originalKey);
                     const currentScore = scoreFieldName(key);
                     
                     // Replace with better quality field name
                     if (currentScore > existingScore) {
-                        // Find and replace the existing entry
-                        const index = result.findIndex(([k]) => k === existingKey);
-                        if (index !== -1) {
-                            result[index] = [key, value];
-                            seen.set(normalized, key);
-                        }
+                        result[existing.resultIndex] = [key, value];
+                        normalizedToKeyMap.set(normalized, { originalKey: key, resultIndex: existing.resultIndex });
                     }
                     // Otherwise skip this duplicate
                 } else {
                     // First time seeing this field
-                    seen.set(normalized, key);
+                    const resultIndex = result.length;
                     result.push([key, value]);
+                    normalizedToKeyMap.set(normalized, { originalKey: key, resultIndex });
                 }
             });
             
