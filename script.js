@@ -10626,6 +10626,66 @@ function renderTabEscala(escalas) {
 
 
         /**
+         * Deduplicates field entries by normalizing field names
+         * Keeps only the first variant of each field (prioritizing readable formats)
+         * @param {Object} obj - The object with potentially duplicate field keys
+         * @returns {Array<[string, any]>} - Array of [key, value] tuples with duplicates removed
+         */
+        function deduplicateFields(obj) {
+            const seen = new Map(); // normalized key -> original key
+            const result = [];
+            
+            // Helper to normalize a field name for comparison
+            function normalizeFieldForComparison(fieldName) {
+                return String(fieldName)
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]/g, ''); // Remove all non-alphanumeric chars
+            }
+            
+            // Helper to score field name quality (higher is better)
+            function scoreFieldName(fieldName) {
+                let score = 0;
+                // Prefer names that start with uppercase letter (PascalCase)
+                if (/^[A-Z]/.test(fieldName)) score += 10;
+                // Prefer names without underscores
+                if (!fieldName.includes('_')) score += 5;
+                // Prefer names without all caps
+                if (fieldName !== fieldName.toUpperCase()) score += 3;
+                // Penalize names starting with underscore
+                if (fieldName.startsWith('_')) score -= 20;
+                return score;
+            }
+            
+            Object.entries(obj).forEach(([key, value]) => {
+                const normalized = normalizeFieldForComparison(key);
+                
+                if (seen.has(normalized)) {
+                    // We've seen this field before - compare quality
+                    const existingKey = seen.get(normalized);
+                    const existingScore = scoreFieldName(existingKey);
+                    const currentScore = scoreFieldName(key);
+                    
+                    // Replace with better quality field name
+                    if (currentScore > existingScore) {
+                        // Find and replace the existing entry
+                        const index = result.findIndex(([k]) => k === existingKey);
+                        if (index !== -1) {
+                            result[index] = [key, value];
+                            seen.set(normalized, key);
+                        }
+                    }
+                    // Otherwise skip this duplicate
+                } else {
+                    // First time seeing this field
+                    seen.set(normalized, key);
+                    result.push([key, value]);
+                }
+            });
+            
+            return result;
+        }
+
+        /**
          * [MASTERPIECE v35] Renderiza a aba de Notas Práticas com design profissional InCor
          * Versão v35 - Professional InCor Edition - Matching Notas Teóricas Design
          */
@@ -10916,7 +10976,10 @@ function renderTabEscala(escalas) {
                 let numericalScores = [];
                 let checklistScores = [];
                 
-                Object.entries(n).forEach(([key, value]) => {
+                // Deduplicate fields before processing to avoid showing the same field multiple times
+                const deduplicatedEntries = deduplicateFields(n);
+                
+                deduplicatedEntries.forEach(([key, value]) => {
                     const isIgnored = /DATA\/HORA|DATAHORA|EMAILHC|NOMECOMPLETO|CURSO|SUPERVISOR|UNIDADE|PERIODO|TURNO|MÉDIA\s*\(NOTA FINAL\)|MÉDIA.*NOTA.*FINAL|MEDIA.*NOTA.*FINAL|MÉDIA.*FINAL|MEDIA.*FINAL|NOTA.*FINAL|MEDIANOTAFINAL|MediaNotaFinal|medianotafinal|COMENTÁRIOS\s*DO\(A\)\s*SUPERVISOR\(A\)|O SUPERVISOR ESTÁ CIENTE|NOMEPRATICA|_uniqueId|_sheetName|_validatedAt/i.test(key.toUpperCase().trim());
                     if (!isIgnored && value) {
                         let cleanKey = key;
