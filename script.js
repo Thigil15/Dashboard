@@ -1271,6 +1271,22 @@ const MIN_LONG_FIELD_LENGTH_LOWERCASE = 50;  // Lowercase concatenated field nam
 // Regex for numeric-only values (e.g., "2,0" or "10,0") which are typically scores, not names
 const NUMERIC_VALUE_PATTERN = /^\d+[,.]?\d*$/;
 
+// Regex patterns for detecting long concatenated field names
+// These are compiled once and reused for performance
+const LONG_CAPS_PATTERN = new RegExp(`^[A-Z]{${MIN_LONG_FIELD_LENGTH_CAPS},}$`);
+const LONG_UNDERSCORE_PATTERN = new RegExp(`^_[a-z_]{${MIN_LONG_FIELD_LENGTH_UNDERSCORE},}$`);
+const LONG_LOWERCASE_PATTERN = new RegExp(`^[a-z_]{${MIN_LONG_FIELD_LENGTH_LOWERCASE},}$`);
+
+// Portuguese keywords commonly found in field descriptions (not student data)
+// Maintenance note: Update this list if new field naming patterns emerge in Google Sheets
+const FIELD_DESCRIPTION_KEYWORDS = [
+    /iniciativa/i,      // "Iniciativa" - common competency name
+    /capacidade/i,      // "Capacidade" - ability/capacity
+    /habilidade/i,      // "Habilidade" - skill
+    /comportamento/i,   // "Comportamento" - behavior
+    /responsabilidade/i // "Responsabilidade" - responsibility
+];
+
 /**
  * Validates if a row from NotasPraticas is a valid student record
  * Filters out header rows, metadata rows, and invalid data
@@ -1306,15 +1322,11 @@ function isValidStudentRecord(row) {
             /^email$/i,
             /^emailhc$/i,
             // Long concatenated field names (clearly not an email)
-            new RegExp(`^[A-Z]{${MIN_LONG_FIELD_LENGTH_CAPS},}$`),
-            new RegExp(`^_[a-z_]{${MIN_LONG_FIELD_LENGTH_UNDERSCORE},}$`),
-            new RegExp(`^[a-z_]{${MIN_LONG_FIELD_LENGTH_LOWERCASE},}$`),
+            LONG_CAPS_PATTERN,
+            LONG_UNDERSCORE_PATTERN,
+            LONG_LOWERCASE_PATTERN,
             // Field descriptions with spaces
-            /iniciativa/i,
-            /capacidade/i,
-            /habilidade/i,
-            /comportamento/i,
-            /responsabilidade/i
+            ...FIELD_DESCRIPTION_KEYWORDS
         ];
         
         const isEmailSuspicious = suspiciousEmailPatterns.some(pattern => pattern.test(emailStr));
@@ -1348,9 +1360,9 @@ function isValidStudentRecord(row) {
             /^completo$/i,
             NUMERIC_VALUE_PATTERN,  // Just a number like "2,0" or "10,0"
             // Long concatenated field names
-            new RegExp(`^[A-Z]{${MIN_LONG_FIELD_LENGTH_CAPS},}$`),
-            new RegExp(`^_[a-z_]{${MIN_LONG_FIELD_LENGTH_UNDERSCORE},}$`),
-            new RegExp(`^[a-z_]{${MIN_LONG_FIELD_LENGTH_LOWERCASE},}$`)
+            LONG_CAPS_PATTERN,
+            LONG_UNDERSCORE_PATTERN,
+            LONG_LOWERCASE_PATTERN
         ];
         
         const isNameSuspicious = suspiciousNamePatterns.some(pattern => pattern.test(nameStr));
