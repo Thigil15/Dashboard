@@ -4947,8 +4947,9 @@ function extractTimeFromISO(isoString) {
          * Split concatenated field names into readable labels
          * Transforms: "AspiracaoNasotraquealQuantoARealizacao..." → "Aspiracao Nasotraqueal Quanto a Realizacao..."
          * Used for NotasPraticas fields that come from Google Sheets with sanitized column names
+         * Removes repeated phrases to avoid redundancy (e.g., "Aspiracao...DaAspiracao..." → "Aspiracao...De Forma...")
          * @param {string} fieldName - The concatenated field name
-         * @returns {string} Formatted field name with proper spacing
+         * @returns {string} Formatted field name with proper spacing and no repetition
          */
         function splitConcatenatedFieldName(fieldName) {
             if (!fieldName || typeof fieldName !== 'string') return fieldName;
@@ -4985,9 +4986,42 @@ function extractTimeFromISO(isoString) {
                 .replace(/\bPara\b/g, 'para')
                 .replace(/\bQue\b/g, 'que');
             
-            // Limit length for display (show first part + ellipsis if too long)
-            if (result.length > 80) {
-                result = result.substring(0, 77) + '...';
+            // Remove repeated phrases to avoid redundancy
+            // Pattern: Often the field name repeats itself like "AspiracaoNasotraqueal...DaAspiracaoNasotraqueal"
+            // Strategy: Find repeated sequences of 2+ words and keep only the first occurrence
+            const words = result.split(/\s+/);
+            
+            // Look for repeated sequences of 2-6 words
+            for (let phraseLen = 6; phraseLen >= 2; phraseLen--) {
+                for (let i = 0; i <= words.length - phraseLen * 2; i++) {
+                    const phrase1 = words.slice(i, i + phraseLen).join(' ').toLowerCase();
+                    
+                    // Look for this phrase later in the text
+                    for (let j = i + phraseLen; j <= words.length - phraseLen; j++) {
+                        const phrase2 = words.slice(j, j + phraseLen).join(' ').toLowerCase();
+                        
+                        if (phrase1 === phrase2) {
+                            // Found a repetition! Remove the second occurrence
+                            words.splice(j, phraseLen);
+                            // Continue checking from the same position
+                            j--;
+                        }
+                    }
+                }
+            }
+            
+            result = words.join(' ');
+            
+            // Limit length for display with better truncation at word boundaries
+            if (result.length > 100) {
+                // Try to break at a word boundary
+                const truncated = result.substring(0, 97);
+                const lastSpace = truncated.lastIndexOf(' ');
+                if (lastSpace > 70) {
+                    result = truncated.substring(0, lastSpace) + '...';
+                } else {
+                    result = truncated + '...';
+                }
             }
             
             return result.trim();
