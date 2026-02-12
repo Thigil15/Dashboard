@@ -1269,68 +1269,95 @@ const NAME_FIELD_VARIANTS = ['NomeCompleto', 'nomeCompleto', 'nomecompleto', 'NO
 function isValidStudentRecord(row) {
     if (!row || typeof row !== 'object') return false;
     
-    // Must have at least one identifier field (email or name)
-    const hasEmail = EMAIL_FIELD_VARIANTS.some(field => {
-        const value = row[field];
-        return value && typeof value === 'string' && value.trim() !== '' && 
-               // Check if it's an actual email, not a field name
-               (value.includes('@') || value.length < 100);
-    });
+    // Get email and name values for validation
+    const emailValue = getFieldValue(row, EMAIL_FIELD_VARIANTS);
+    const nameValue = getFieldValue(row, NAME_FIELD_VARIANTS);
     
-    const hasName = NAME_FIELD_VARIANTS.some(field => {
-        const value = row[field];
-        return value && typeof value === 'string' && value.trim() !== '' &&
-               // Check if it's an actual name, not a field name (names are typically short)
-               value.length < 100 && value.length > 2;
-    });
-    
-    if (!hasEmail && !hasName) {
-        return false; // No valid identifier
+    // Must have at least one identifier field
+    if (!emailValue && !nameValue) {
+        return false; // No identifier at all
     }
     
-    // Check for suspicious patterns that indicate this is a header/metadata row
-    // Field names often appear as: "Row Index", "Rowindex", "_rowIndex", etc.
-    const suspiciousPatterns = [
-        /^_?row\s*index$/i,
-        /^rowindex$/i,
-        /^_rowindex$/i,
-        /^index$/i,
-        /^row$/i,
-        // Long concatenated field names that are clearly not student data
-        /^[A-Z]{50,}$/,  // All caps, very long (e.g., INICIATIVACAPACIDADE...)
-        /^_[a-z_]{30,}$/  // Underscore-separated, very long
-    ];
-    
-    // Check all field VALUES for suspicious patterns
-    const values = Object.values(row);
-    const hasOnlySuspiciousValues = values.every(val => {
-        if (!val) return true; // Empty is okay
-        const strVal = String(val).trim();
-        if (strVal === '') return true;
+    // Validate email field if present
+    if (emailValue) {
+        const emailStr = String(emailValue).trim();
         
-        // Check if this value matches a suspicious pattern
-        return suspiciousPatterns.some(pattern => pattern.test(strVal));
-    });
-    
-    if (hasOnlySuspiciousValues) {
-        return false; // This row only has metadata/field names
+        // Email must contain @ to be valid
+        const hasValidEmail = emailStr.includes('@');
+        
+        // Check for suspicious email patterns (field names, not actual emails)
+        const suspiciousEmailPatterns = [
+            /^_?row\s*index$/i,
+            /^rowindex$/i,
+            /^_rowindex$/i,
+            /^index$/i,
+            /^row$/i,
+            /^email$/i,
+            /^emailhc$/i,
+            // Long concatenated field names (clearly not an email)
+            /^[A-Z]{50,}$/,  // All caps, very long
+            /^_[a-z_]{30,}$/,  // Underscore-separated, very long
+            /^[a-z_]{50,}$/,  // Lowercase underscore-separated, very long
+            // Field descriptions with spaces
+            /iniciativa/i,
+            /capacidade/i,
+            /habilidade/i,
+            /comportamento/i,
+            /responsabilidade/i
+        ];
+        
+        const isEmailSuspicious = suspiciousEmailPatterns.some(pattern => pattern.test(emailStr));
+        
+        if (!hasValidEmail || isEmailSuspicious) {
+            // If email is invalid/suspicious, name must be valid for this to pass
+            if (!nameValue) {
+                return false;
+            }
+        }
     }
     
-    // Additional check: if the email/name field contains common field name keywords
-    // instead of actual data, it's likely a header row
-    const emailValue = getFieldValue(row, EMAIL_FIELD_VARIANTS) || '';
-    const nameValue = getFieldValue(row, NAME_FIELD_VARIANTS) || '';
+    // Validate name field if present
+    if (nameValue) {
+        const nameStr = String(nameValue).trim();
+        
+        // Name validation
+        if (nameStr.length < 3 || nameStr.length > 80) {
+            return false; // Too short or too long to be a real name
+        }
+        
+        // Check for suspicious name patterns (field names, not actual names)
+        const suspiciousNamePatterns = [
+            /^_?row\s*index$/i,
+            /^rowindex$/i,
+            /^_rowindex$/i,
+            /^index$/i,
+            /^row$/i,
+            /^nome$/i,
+            /^nomecompleto$/i,
+            /^completo$/i,
+            /^\d+[,.]?\d*$/,  // Just a number like "2,0" or "10,0"
+            // Long concatenated field names
+            /^[A-Z]{50,}$/,  // All caps, very long
+            /^_[a-z_]{30,}$/,  // Underscore-separated, very long
+            /^[a-z_]{50,}$/   // Lowercase underscore-separated, very long
+        ];
+        
+        const isNameSuspicious = suspiciousNamePatterns.some(pattern => pattern.test(nameStr));
+        
+        if (isNameSuspicious) {
+            return false;
+        }
+    }
     
-    const fieldNameKeywords = ['email', 'nome', 'completo', 'index', 'row', 'capacidade', 'habilidade', 'iniciativa'];
-    const emailHasKeywords = fieldNameKeywords.some(keyword => 
-        String(emailValue).toLowerCase().includes(keyword) && !String(emailValue).includes('@')
-    );
-    const nameHasKeywords = fieldNameKeywords.some(keyword => 
-        String(nameValue).toLowerCase() === keyword || String(nameValue).length > 80
-    );
-    
-    if (emailHasKeywords && nameHasKeywords) {
-        return false; // Both fields look like field names, not data
+    // Both fields must not be suspicious if both are present
+    if (emailValue && nameValue) {
+        const emailStr = String(emailValue).trim();
+        const nameStr = String(nameValue).trim();
+        
+        // If email doesn't have @ and name is just a number, it's a header row
+        if (!emailStr.includes('@') && /^\d+[,.]?\d*$/.test(nameStr)) {
+            return false;
+        }
     }
     
     return true; // Passed all validation checks
