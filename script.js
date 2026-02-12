@@ -4991,26 +4991,36 @@ function extractTimeFromISO(isoString) {
             // Strategy: Find repeated sequences of 2+ words and keep only the first occurrence
             const words = result.split(/\s+/);
             
-            // Look for repeated sequences of 2-6 words
-            for (let phraseLen = 6; phraseLen >= 2; phraseLen--) {
-                for (let i = 0; i <= words.length - phraseLen * 2; i++) {
-                    const phrase1 = words.slice(i, i + phraseLen).join(' ').toLowerCase();
-                    
-                    // Look for this phrase later in the text
-                    for (let j = i + phraseLen; j <= words.length - phraseLen; j++) {
-                        const phrase2 = words.slice(j, j + phraseLen).join(' ').toLowerCase();
+            // Early exit if too few words for repetition
+            if (words.length < 4) {
+                result = words.join(' ');
+            } else {
+                // Pre-compute lowercase words once for efficiency
+                const lowerWords = words.map(w => w.toLowerCase());
+                
+                // Look for repeated sequences of 2-6 words (longest first for better matching)
+                for (let phraseLen = 6; phraseLen >= 2; phraseLen--) {
+                    for (let i = 0; i <= words.length - phraseLen * 2; i++) {
+                        // Create phrase key from lowercase words
+                        const phrase1 = lowerWords.slice(i, i + phraseLen).join(' ');
                         
-                        if (phrase1 === phrase2) {
-                            // Found a repetition! Remove the second occurrence
-                            words.splice(j, phraseLen);
-                            // Continue checking from the same position
-                            j--;
+                        // Look for this phrase later in the text
+                        for (let j = i + phraseLen; j <= words.length - phraseLen; j++) {
+                            const phrase2 = lowerWords.slice(j, j + phraseLen).join(' ');
+                            
+                            if (phrase1 === phrase2) {
+                                // Found a repetition! Remove the second occurrence from both arrays
+                                // Note: splice modifies the array, so we decrement j to check the same position again
+                                words.splice(j, phraseLen);
+                                lowerWords.splice(j, phraseLen);
+                                j--; // Re-check this position after removal
+                            }
                         }
                     }
                 }
+                
+                result = words.join(' ');
             }
-            
-            result = words.join(' ');
             
             // Limit length for display with better truncation at word boundaries
             if (result.length > 100) {

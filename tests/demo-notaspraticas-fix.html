@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demonstração: Correção NotasPraticas</title>
+    <link rel="stylesheet" href="../style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .header h1 {
+            margin: 0 0 10px 0;
+            color: #0033A0;
+            font-size: 2.5rem;
+            font-family: 'Poppins', sans-serif;
+        }
+        .header p {
+            margin: 0;
+            color: #64748b;
+            font-size: 1.1rem;
+        }
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        @media (max-width: 968px) {
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #e2e8f0;
+        }
+        .card-header-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        .card-header-icon.old { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .card-header-icon.new { background: linear-gradient(135deg, #10b981, #059669); }
+        .card-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-family: 'Poppins', sans-serif;
+        }
+        .card-header h2 small {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 400;
+            color: #64748b;
+            margin-top: 5px;
+        }
+        .field-demo {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid;
+        }
+        .field-demo.old { border-left-color: #ef4444; }
+        .field-demo.new { border-left-color: #10b981; }
+        .field-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #64748b;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+        .field-input {
+            font-size: 0.8rem;
+            color: #475569;
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+            border: 1px solid #e2e8f0;
+        }
+        .field-output {
+            font-size: 1rem;
+            color: #1e293b;
+            font-weight: 600;
+            padding: 12px;
+            background: white;
+            border-radius: 6px;
+            line-height: 1.6;
+        }
+        .field-output.old { 
+            border: 2px solid #fecaca;
+            background: #fef2f2;
+        }
+        .field-output.new { 
+            border: 2px solid #bbf7d0;
+            background: #f0fdf4;
+        }
+        .stats-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        .stats-badge.old { 
+            background: #fef2f2;
+            color: #dc2626;
+        }
+        .stats-badge.new { 
+            background: #f0fdf4;
+            color: #059669;
+        }
+        .issue-requirements {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+        .issue-requirements h3 {
+            color: #0033A0;
+            font-family: 'Poppins', sans-serif;
+            margin-top: 0;
+        }
+        .requirement-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px;
+            margin: 8px 0;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+        .requirement-item.fixed {
+            background: #f0fdf4;
+            border-left: 4px solid #10b981;
+        }
+        .checkmark {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        .checkmark.done {
+            background: #10b981;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✅ Correção: NotasPraticas - Remoção de Repetição</h1>
+            <p>Demonstração visual da correção aplicada ao sistema de exibição de campos NotasPraticas</p>
+        </div>
+
+        <div class="issue-requirements">
+            <h3>📋 Requisitos do Issue</h3>
+            <div class="requirement-item fixed">
+                <div class="checkmark done">✓</div>
+                <div>
+                    <strong>Separar letras maiúsculas para formar frases</strong><br>
+                    <small>Sistema agora divide corretamente os nomes concatenados em CamelCase</small>
+                </div>
+            </div>
+            <div class="requirement-item fixed">
+                <div class="checkmark done">✓</div>
+                <div>
+                    <strong>NÃO REPETIR frases (PRINCIPAL CORREÇÃO)</strong><br>
+                    <small>Detecta e remove frases repetidas de 2-6 palavras automaticamente</small>
+                </div>
+            </div>
+            <div class="requirement-item fixed">
+                <div class="checkmark done">✓</div>
+                <div>
+                    <strong>Mostrar a nota correta</strong><br>
+                    <small>As notas continuam sendo exibidas corretamente com a formatação melhorada</small>
+                </div>
+            </div>
+            <div class="requirement-item fixed">
+                <div class="checkmark done">✓</div>
+                <div>
+                    <strong>Truncar com inteligência</strong><br>
+                    <small>Limite aumentado de 80 para 100 caracteres, com quebra em limites de palavra</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="comparison-grid" id="comparison-container"></div>
+    </div>
+
+    <script>
+        // Old implementation (before fix)
+        function splitConcatenatedFieldNameOld(fieldName) {
+            if (!fieldName || typeof fieldName !== 'string') return fieldName;
+            if (fieldName.length < 20 || fieldName.includes(' ')) {
+                return fieldName;
+            }
+            let result = fieldName.replace(/([a-z])([A-Z])/g, '$1 $2');
+            result = result.replace(/([A-Z])([A-Z][a-z])/g, '$1 $2');
+            result = result
+                .replace(/\bDa\b/g, 'da')
+                .replace(/\bDe\b/g, 'de')
+                .replace(/\bDo\b/g, 'do')
+                .replace(/\bE\b/g, 'e')
+                .replace(/\bA\b/g, 'a')
+                .replace(/\bO\b/g, 'o')
+                .replace(/\bCom\b/g, 'com')
+                .replace(/\bPara\b/g, 'para')
+                .replace(/\bQue\b/g, 'que');
+            if (result.length > 80) {
+                result = result.substring(0, 77) + '...';
+            }
+            return result.trim();
+        }
+
+        // New implementation (with repetition removal)
+        function splitConcatenatedFieldNameNew(fieldName) {
+            if (!fieldName || typeof fieldName !== 'string') return fieldName;
+            if (fieldName.length < 20 || fieldName.includes(' ')) {
+                return fieldName;
+            }
+            let result = fieldName.replace(/([a-z])([A-Z])/g, '$1 $2');
+            result = result.replace(/([A-Z])([A-Z][a-z])/g, '$1 $2');
+            result = result
+                .replace(/\bDa\b/g, 'da')
+                .replace(/\bDe\b/g, 'de')
+                .replace(/\bDo\b/g, 'do')
+                .replace(/\bDos\b/g, 'dos')
+                .replace(/\bDas\b/g, 'das')
+                .replace(/\bE\b/g, 'e')
+                .replace(/\bA\b/g, 'a')
+                .replace(/\bO\b/g, 'o')
+                .replace(/\bNa\b/g, 'na')
+                .replace(/\bNo\b/g, 'no')
+                .replace(/\bEm\b/g, 'em')
+                .replace(/\bPor\b/g, 'por')
+                .replace(/\bCom\b/g, 'com')
+                .replace(/\bPara\b/g, 'para')
+                .replace(/\bQue\b/g, 'que');
+            
+            const words = result.split(/\s+/);
+            for (let phraseLen = 6; phraseLen >= 2; phraseLen--) {
+                for (let i = 0; i <= words.length - phraseLen * 2; i++) {
+                    const phrase1 = words.slice(i, i + phraseLen).join(' ').toLowerCase();
+                    for (let j = i + phraseLen; j <= words.length - phraseLen; j++) {
+                        const phrase2 = words.slice(j, j + phraseLen).join(' ').toLowerCase();
+                        if (phrase1 === phrase2) {
+                            words.splice(j, phraseLen);
+                            j--;
+                        }
+                    }
+                }
+            }
+            result = words.join(' ');
+            
+            if (result.length > 100) {
+                const truncated = result.substring(0, 97);
+                const lastSpace = truncated.lastIndexOf(' ');
+                if (lastSpace > 70) {
+                    result = truncated.substring(0, lastSpace) + '...';
+                } else {
+                    result = truncated + '...';
+                }
+            }
+            return result.trim();
+        }
+
+        // Test cases from the actual issue
+        const testCases = [
+            {
+                name: "Aspiração Nasotraqueal",
+                input: "AspiracaoNasotraquealQuantoARealizacaoDaAspiracaoNasotraquealDeFormaSeguraEEficazOAlunoRealizaOProcedimentoComQueNivelDeAuxilio"
+            },
+            {
+                name: "Aspiração Endotraqueal",
+                input: "AspiracaoEndotraquealQuantoARealizacaoDaAspiracaoEndotraquealDeFormaSeguraEEficazOAlunoRealizaOProcedimentoComQueNivelDeAuxilio"
+            },
+            {
+                name: "Técnicas Fisioterapêuticas",
+                input: "TecnicasFisioterapeuticasRespiratoriasOAlunoPrecisouDeQueNivelDeAuxilioParaRealizarEfetivamenteAsTecnicasFisioterapeuticas"
+            },
+            {
+                name: "Comunicação Interprofissional",
+                input: "ComunicacaoInterprofissionalOAlunoManteveUmaComunicacaoEficazComOutrosProfissionaisDeSaude"
+            },
+            {
+                name: "Avaliação Fisioterapêutica",
+                input: "AvaliacaoFisioterapeuticaOAlunoFoiCapazDeRealizarAAvaliacaoCompletaDosPacientes"
+            }
+        ];
+
+        const container = document.getElementById('comparison-container');
+        
+        testCases.forEach((test, index) => {
+            const oldResult = splitConcatenatedFieldNameOld(test.input);
+            const newResult = splitConcatenatedFieldNameNew(test.input);
+            
+            // Count repetitions
+            const oldWords = oldResult.toLowerCase().split(/\s+/);
+            const newWords = newResult.toLowerCase().split(/\s+/);
+            
+            // Old card
+            const oldCard = document.createElement('div');
+            oldCard.className = 'card';
+            oldCard.innerHTML = `
+                <div class="card-header">
+                    <div class="card-header-icon old">❌</div>
+                    <h2>ANTES<small>Com repetição e truncamento ruim</small></h2>
+                </div>
+                <div class="field-demo old">
+                    <div class="field-label">Campo ${index + 1}: ${test.name}</div>
+                    <div class="field-input">${test.input}</div>
+                    <div class="field-output old">${oldResult}</div>
+                    <div class="stats-badge old">
+                        📏 ${oldResult.length} caracteres (limite: 80)
+                    </div>
+                </div>
+            `;
+            
+            // New card
+            const newCard = document.createElement('div');
+            newCard.className = 'card';
+            newCard.innerHTML = `
+                <div class="card-header">
+                    <div class="card-header-icon new">✅</div>
+                    <h2>DEPOIS<small>Sem repetição, mais completo</small></h2>
+                </div>
+                <div class="field-demo new">
+                    <div class="field-label">Campo ${index + 1}: ${test.name}</div>
+                    <div class="field-input">${test.input}</div>
+                    <div class="field-output new">${newResult}</div>
+                    <div class="stats-badge new">
+                        ✅ ${newResult.length} caracteres (limite: 100)
+                    </div>
+                </div>
+            `;
+            
+            container.appendChild(oldCard);
+            container.appendChild(newCard);
+        });
+    </script>
+</body>
+</html>
