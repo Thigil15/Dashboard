@@ -1260,6 +1260,17 @@
 const EMAIL_FIELD_VARIANTS = ['EmailHC', 'emailHC', 'emailhc', 'EMAILHC', 'Email', 'email'];
 const NAME_FIELD_VARIANTS = ['NomeCompleto', 'nomeCompleto', 'nomecompleto', 'NOMECOMPLETO', 'Nome', 'nome'];
 
+// Validation constants for student record filtering
+// These thresholds are based on observed patterns in Google Sheets data
+const MIN_NAME_LENGTH = 3;  // Minimum realistic name length (e.g., "Ana")
+const MAX_NAME_LENGTH = 80; // Maximum realistic name length (longer values are likely field descriptions)
+const MIN_LONG_FIELD_LENGTH_CAPS = 50;  // All-caps concatenated field names (e.g., "INICIATIVACAPACIDADE...")
+const MIN_LONG_FIELD_LENGTH_UNDERSCORE = 30;  // Underscore-separated field names (e.g., "_iniciativa_capacidade...")
+const MIN_LONG_FIELD_LENGTH_LOWERCASE = 50;  // Lowercase concatenated field names
+
+// Regex for numeric-only values (e.g., "2,0" or "10,0") which are typically scores, not names
+const NUMERIC_VALUE_PATTERN = /^\d+[,.]?\d*$/;
+
 /**
  * Validates if a row from NotasPraticas is a valid student record
  * Filters out header rows, metadata rows, and invalid data
@@ -1295,9 +1306,9 @@ function isValidStudentRecord(row) {
             /^email$/i,
             /^emailhc$/i,
             // Long concatenated field names (clearly not an email)
-            /^[A-Z]{50,}$/,  // All caps, very long
-            /^_[a-z_]{30,}$/,  // Underscore-separated, very long
-            /^[a-z_]{50,}$/,  // Lowercase underscore-separated, very long
+            new RegExp(`^[A-Z]{${MIN_LONG_FIELD_LENGTH_CAPS},}$`),
+            new RegExp(`^_[a-z_]{${MIN_LONG_FIELD_LENGTH_UNDERSCORE},}$`),
+            new RegExp(`^[a-z_]{${MIN_LONG_FIELD_LENGTH_LOWERCASE},}$`),
             // Field descriptions with spaces
             /iniciativa/i,
             /capacidade/i,
@@ -1320,8 +1331,8 @@ function isValidStudentRecord(row) {
     if (nameValue) {
         const nameStr = String(nameValue).trim();
         
-        // Name validation
-        if (nameStr.length < 3 || nameStr.length > 80) {
+        // Name validation using constants
+        if (nameStr.length < MIN_NAME_LENGTH || nameStr.length > MAX_NAME_LENGTH) {
             return false; // Too short or too long to be a real name
         }
         
@@ -1335,11 +1346,11 @@ function isValidStudentRecord(row) {
             /^nome$/i,
             /^nomecompleto$/i,
             /^completo$/i,
-            /^\d+[,.]?\d*$/,  // Just a number like "2,0" or "10,0"
+            NUMERIC_VALUE_PATTERN,  // Just a number like "2,0" or "10,0"
             // Long concatenated field names
-            /^[A-Z]{50,}$/,  // All caps, very long
-            /^_[a-z_]{30,}$/,  // Underscore-separated, very long
-            /^[a-z_]{50,}$/   // Lowercase underscore-separated, very long
+            new RegExp(`^[A-Z]{${MIN_LONG_FIELD_LENGTH_CAPS},}$`),
+            new RegExp(`^_[a-z_]{${MIN_LONG_FIELD_LENGTH_UNDERSCORE},}$`),
+            new RegExp(`^[a-z_]{${MIN_LONG_FIELD_LENGTH_LOWERCASE},}$`)
         ];
         
         const isNameSuspicious = suspiciousNamePatterns.some(pattern => pattern.test(nameStr));
@@ -1355,7 +1366,7 @@ function isValidStudentRecord(row) {
         const nameStr = String(nameValue).trim();
         
         // If email doesn't have @ and name is just a number, it's a header row
-        if (!emailStr.includes('@') && /^\d+[,.]?\d*$/.test(nameStr)) {
+        if (!emailStr.includes('@') && NUMERIC_VALUE_PATTERN.test(nameStr)) {
             return false;
         }
     }
