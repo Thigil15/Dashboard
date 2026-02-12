@@ -1272,10 +1272,10 @@ const MIN_LONG_FIELD_LENGTH_LOWERCASE = 50;  // Lowercase concatenated field nam
 const NUMERIC_VALUE_PATTERN = /^\d+[,.]?\d*$/;
 
 // Regex patterns for detecting long concatenated field names
-// These are compiled once and reused for performance
-const LONG_CAPS_PATTERN = new RegExp(`^[A-Z]{${MIN_LONG_FIELD_LENGTH_CAPS},}$`);
-const LONG_UNDERSCORE_PATTERN = new RegExp(`^_[a-z_]{${MIN_LONG_FIELD_LENGTH_UNDERSCORE},}$`);
-const LONG_LOWERCASE_PATTERN = new RegExp(`^[a-z_]{${MIN_LONG_FIELD_LENGTH_LOWERCASE},}$`);
+// Using static regex literals for best performance
+const LONG_CAPS_PATTERN = /^[A-Z]{50,}$/;  // Min 50 all-caps chars
+const LONG_UNDERSCORE_PATTERN = /^_[a-z_]{30,}$/;  // Min 30 underscore-separated chars
+const LONG_LOWERCASE_PATTERN = /^[a-z_]{50,}$/;  // Min 50 lowercase chars
 
 // Portuguese keywords commonly found in field descriptions (not student data)
 // Maintenance note: Update this list if new field naming patterns emerge in Google Sheets
@@ -1285,6 +1285,37 @@ const FIELD_DESCRIPTION_KEYWORDS = [
     /habilidade/i,      // "Habilidade" - skill
     /comportamento/i,   // "Comportamento" - behavior
     /responsabilidade/i // "Responsabilidade" - responsibility
+];
+
+// Suspicious patterns for email validation - compiled once for performance
+const SUSPICIOUS_EMAIL_PATTERNS = [
+    /^_?row\s*index$/i,
+    /^rowindex$/i,
+    /^_rowindex$/i,
+    /^index$/i,
+    /^row$/i,
+    /^email$/i,
+    /^emailhc$/i,
+    LONG_CAPS_PATTERN,
+    LONG_UNDERSCORE_PATTERN,
+    LONG_LOWERCASE_PATTERN,
+    ...FIELD_DESCRIPTION_KEYWORDS
+];
+
+// Suspicious patterns for name validation - compiled once for performance
+const SUSPICIOUS_NAME_PATTERNS = [
+    /^_?row\s*index$/i,
+    /^rowindex$/i,
+    /^_rowindex$/i,
+    /^index$/i,
+    /^row$/i,
+    /^nome$/i,
+    /^nomecompleto$/i,
+    /^completo$/i,
+    NUMERIC_VALUE_PATTERN,  // Just a number like "2,0" or "10,0"
+    LONG_CAPS_PATTERN,
+    LONG_UNDERSCORE_PATTERN,
+    LONG_LOWERCASE_PATTERN
 ];
 
 /**
@@ -1312,24 +1343,8 @@ function isValidStudentRecord(row) {
         // Email must contain @ to be valid
         const hasValidEmail = emailStr.includes('@');
         
-        // Check for suspicious email patterns (field names, not actual emails)
-        const suspiciousEmailPatterns = [
-            /^_?row\s*index$/i,
-            /^rowindex$/i,
-            /^_rowindex$/i,
-            /^index$/i,
-            /^row$/i,
-            /^email$/i,
-            /^emailhc$/i,
-            // Long concatenated field names (clearly not an email)
-            LONG_CAPS_PATTERN,
-            LONG_UNDERSCORE_PATTERN,
-            LONG_LOWERCASE_PATTERN,
-            // Field descriptions with spaces
-            ...FIELD_DESCRIPTION_KEYWORDS
-        ];
-        
-        const isEmailSuspicious = suspiciousEmailPatterns.some(pattern => pattern.test(emailStr));
+        // Check for suspicious email patterns (using pre-compiled patterns)
+        const isEmailSuspicious = SUSPICIOUS_EMAIL_PATTERNS.some(pattern => pattern.test(emailStr));
         
         if (!hasValidEmail || isEmailSuspicious) {
             // If email is invalid/suspicious, name must be valid for this to pass
@@ -1348,24 +1363,8 @@ function isValidStudentRecord(row) {
             return false; // Too short or too long to be a real name
         }
         
-        // Check for suspicious name patterns (field names, not actual names)
-        const suspiciousNamePatterns = [
-            /^_?row\s*index$/i,
-            /^rowindex$/i,
-            /^_rowindex$/i,
-            /^index$/i,
-            /^row$/i,
-            /^nome$/i,
-            /^nomecompleto$/i,
-            /^completo$/i,
-            NUMERIC_VALUE_PATTERN,  // Just a number like "2,0" or "10,0"
-            // Long concatenated field names
-            LONG_CAPS_PATTERN,
-            LONG_UNDERSCORE_PATTERN,
-            LONG_LOWERCASE_PATTERN
-        ];
-        
-        const isNameSuspicious = suspiciousNamePatterns.some(pattern => pattern.test(nameStr));
+        // Check for suspicious name patterns (using pre-compiled patterns)
+        const isNameSuspicious = SUSPICIOUS_NAME_PATTERNS.some(pattern => pattern.test(nameStr));
         
         if (isNameSuspicious) {
             return false;
