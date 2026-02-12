@@ -265,19 +265,37 @@
                                     row && typeof row === 'object' ? deepNormalizeObject(row) : row
                                 );
                                 
-                                // Determine the practice name from the data or use sheet name
-                                const sample = normalized[0] || {};
-                                const nome = sample.nomePratica || sample.NomePratica || 
-                                           sample.pratica || sample.Prática || sample.Pratica || 
-                                           sample.Modulo || sample.NomeModulo || key;
+                                // Filter out invalid rows (headers, metadata, field names)
+                                const validRecords = normalized.filter(row => {
+                                    const isValid = isValidStudentRecord(row);
+                                    if (!isValid && row) {
+                                        // Log filtered rows for debugging
+                                        const emailVal = getFieldValue(row, EMAIL_FIELD_VARIANTS);
+                                        const nameVal = getFieldValue(row, NAME_FIELD_VARIANTS);
+                                        console.log(`[fetchDataFromURL] ⚠️ Filtrado registro inválido: Email="${emailVal}", Nome="${nameVal}"`);
+                                    }
+                                    return isValid;
+                                });
                                 
-                                notasPraticasData[nome] = {
-                                    nomePratica: nome,
-                                    registros: normalized
-                                };
-                                
-                                practiceSheetCount++;
-                                console.log(`[fetchDataFromURL] ✅ NotasPraticas "${key}" carregada: ${normalized.length} registros`);
+                                // Only add if we have valid records
+                                if (validRecords.length > 0) {
+                                    // Determine the practice name from the data or use sheet name
+                                    const sample = validRecords[0] || {};
+                                    const nome = sample.nomePratica || sample.NomePratica || 
+                                               sample.pratica || sample.Prática || sample.Pratica || 
+                                               sample.Modulo || sample.NomeModulo || key;
+                                    
+                                    notasPraticasData[nome] = {
+                                        nomePratica: nome,
+                                        registros: validRecords
+                                    };
+                                    
+                                    practiceSheetCount++;
+                                    const filteredCount = normalized.length - validRecords.length;
+                                    console.log(`[fetchDataFromURL] ✅ NotasPraticas "${key}" carregada: ${validRecords.length} registros válidos${filteredCount > 0 ? ` (${filteredCount} filtrados)` : ''}`);
+                                } else {
+                                    console.log(`[fetchDataFromURL] ⚠️ NotasPraticas "${key}" ignorada: nenhum registro válido encontrado`);
+                                }
                             }
                         }
                     });
@@ -1157,9 +1175,33 @@
                 if (!isPracticeSheetName(normName)) return;
                 const rows = coerceSheetRows(sheetValue);
                 if (!rows.length) return;
-                const sample = rows[0] || {};
+                
+                // Filter out invalid rows (headers, metadata, field names)
+                const validRows = rows.filter(row => {
+                    const isValid = isValidStudentRecord(row);
+                    if (!isValid && row && typeof row === 'object') {
+                        // Log filtered rows for debugging
+                        const emailVal = getFieldValue(row, EMAIL_FIELD_VARIANTS);
+                        const nameVal = getFieldValue(row, NAME_FIELD_VARIANTS);
+                        console.log(`[buildNotasPraticasMap] ⚠️ Filtrado registro inválido de "${sheetName}": Email="${emailVal}", Nome="${nameVal}"`);
+                    }
+                    return isValid;
+                });
+                
+                if (validRows.length === 0) {
+                    console.log(`[buildNotasPraticasMap] ⚠️ Sheet "${sheetName}" ignorada: nenhum registro válido`);
+                    return;
+                }
+                
+                const sample = validRows[0] || {};
                 const nome = sample.nomePratica || sample.NomePratica || sample.pratica || sample.Prática || sample.Pratica || sample.Modulo || sample.NomeModulo || sheetName;
-                const registros = rows.map(row => row && typeof row === 'object' ? row : { Valor: row });
+                const registros = validRows.map(row => row && typeof row === 'object' ? row : { Valor: row });
+                
+                const filteredCount = rows.length - validRows.length;
+                if (filteredCount > 0) {
+                    console.log(`[buildNotasPraticasMap] ✅ Sheet "${sheetName}": ${validRows.length} registros válidos (${filteredCount} filtrados)`);
+                }
+                
                 result[nome] = { nomePratica: nome, registros };
             });
             return result;
@@ -1217,6 +1259,82 @@
 // These arrays are used for VALUE EXTRACTION - finding and reading field values from records
 const EMAIL_FIELD_VARIANTS = ['EmailHC', 'emailHC', 'emailhc', 'EMAILHC', 'Email', 'email'];
 const NAME_FIELD_VARIANTS = ['NomeCompleto', 'nomeCompleto', 'nomecompleto', 'NOMECOMPLETO', 'Nome', 'nome'];
+
+/**
+ * Validates if a row from NotasPraticas is a valid student record
+ * Filters out header rows, metadata rows, and invalid data
+ * @param {Object} row - Row object to validate
+ * @returns {boolean} - True if row is a valid student record
+ */
+function isValidStudentRecord(row) {
+    if (!row || typeof row !== 'object') return false;
+    
+    // Must have at least one identifier field (email or name)
+    const hasEmail = EMAIL_FIELD_VARIANTS.some(field => {
+        const value = row[field];
+        return value && typeof value === 'string' && value.trim() !== '' && 
+               // Check if it's an actual email, not a field name
+               (value.includes('@') || value.length < 100);
+    });
+    
+    const hasName = NAME_FIELD_VARIANTS.some(field => {
+        const value = row[field];
+        return value && typeof value === 'string' && value.trim() !== '' &&
+               // Check if it's an actual name, not a field name (names are typically short)
+               value.length < 100 && value.length > 2;
+    });
+    
+    if (!hasEmail && !hasName) {
+        return false; // No valid identifier
+    }
+    
+    // Check for suspicious patterns that indicate this is a header/metadata row
+    // Field names often appear as: "Row Index", "Rowindex", "_rowIndex", etc.
+    const suspiciousPatterns = [
+        /^_?row\s*index$/i,
+        /^rowindex$/i,
+        /^_rowindex$/i,
+        /^index$/i,
+        /^row$/i,
+        // Long concatenated field names that are clearly not student data
+        /^[A-Z]{50,}$/,  // All caps, very long (e.g., INICIATIVACAPACIDADE...)
+        /^_[a-z_]{30,}$/  // Underscore-separated, very long
+    ];
+    
+    // Check all field VALUES for suspicious patterns
+    const values = Object.values(row);
+    const hasOnlySuspiciousValues = values.every(val => {
+        if (!val) return true; // Empty is okay
+        const strVal = String(val).trim();
+        if (strVal === '') return true;
+        
+        // Check if this value matches a suspicious pattern
+        return suspiciousPatterns.some(pattern => pattern.test(strVal));
+    });
+    
+    if (hasOnlySuspiciousValues) {
+        return false; // This row only has metadata/field names
+    }
+    
+    // Additional check: if the email/name field contains common field name keywords
+    // instead of actual data, it's likely a header row
+    const emailValue = getFieldValue(row, EMAIL_FIELD_VARIANTS) || '';
+    const nameValue = getFieldValue(row, NAME_FIELD_VARIANTS) || '';
+    
+    const fieldNameKeywords = ['email', 'nome', 'completo', 'index', 'row', 'capacidade', 'habilidade', 'iniciativa'];
+    const emailHasKeywords = fieldNameKeywords.some(keyword => 
+        String(emailValue).toLowerCase().includes(keyword) && !String(emailValue).includes('@')
+    );
+    const nameHasKeywords = fieldNameKeywords.some(keyword => 
+        String(nameValue).toLowerCase() === keyword || String(nameValue).length > 80
+    );
+    
+    if (emailHasKeywords && nameHasKeywords) {
+        return false; // Both fields look like field names, not data
+    }
+    
+    return true; // Passed all validation checks
+}
 
 // Metadata/non-grade fields to exclude from GRADE CALCULATIONS (uppercase for O(1) lookup)
 // Note: Some fields overlap with the variants above because they serve different purposes:
