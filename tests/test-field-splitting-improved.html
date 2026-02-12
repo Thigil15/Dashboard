@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste - splitConcatenatedFieldName Melhorado</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1400px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #0033A0;
+            border-bottom: 3px solid #0033A0;
+            padding-bottom: 10px;
+        }
+        .test-case {
+            background: white;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .input {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            word-break: break-all;
+        }
+        .output {
+            background: #e8f5e9;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-weight: bold;
+            color: #2e7d32;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .pass { background: #4caf50; color: white; }
+        .fail { background: #f44336; color: white; }
+        .stats {
+            background: #0033A0;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        .requirement {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .requirement h3 {
+            margin-top: 0;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Teste: splitConcatenatedFieldName - Remoção de Repetição</h1>
+    
+    <div class="requirement">
+        <h3>📋 Requisitos do Issue</h3>
+        <p>O sistema deve:</p>
+        <ul>
+            <li>✅ Separar letras maiúsculas para montar frases</li>
+            <li>✅ <strong>Não repetir frases</strong> (principal correção)</li>
+            <li>✅ Mostrar a nota correta</li>
+            <li>✅ Truncar com inteligência em limites de palavra</li>
+        </ul>
+    </div>
+    
+    <div class="stats" id="stats"></div>
+    <div id="results"></div>
+
+    <script>
+        // Copy of the improved splitConcatenatedFieldName function
+        function splitConcatenatedFieldName(fieldName) {
+            if (!fieldName || typeof fieldName !== 'string') return fieldName;
+            
+            // Skip if it's a short field or already has spaces
+            if (fieldName.length < 20 || fieldName.includes(' ')) {
+                return fieldName;
+            }
+            
+            // First pass: Insert space before uppercase letters that follow lowercase letters
+            let result = fieldName.replace(/([a-z])([A-Z])/g, '$1 $2');
+            
+            // Second pass: Handle consecutive uppercase letters
+            // EEquipe -> E Equipe, ARealizacao -> A Realizacao
+            result = result.replace(/([A-Z])([A-Z][a-z])/g, '$1 $2');
+            
+            // Clean up common Portuguese articles and prepositions to lowercase
+            result = result
+                .replace(/\bDa\b/g, 'da')
+                .replace(/\bDe\b/g, 'de')
+                .replace(/\bDo\b/g, 'do')
+                .replace(/\bDos\b/g, 'dos')
+                .replace(/\bDas\b/g, 'das')
+                .replace(/\bE\b/g, 'e')
+                .replace(/\bA\b/g, 'a')
+                .replace(/\bO\b/g, 'o')
+                .replace(/\bNa\b/g, 'na')
+                .replace(/\bNo\b/g, 'no')
+                .replace(/\bNos\b/g, 'nos')
+                .replace(/\bNas\b/g, 'nas')
+                .replace(/\bEm\b/g, 'em')
+                .replace(/\bPor\b/g, 'por')
+                .replace(/\bCom\b/g, 'com')
+                .replace(/\bPara\b/g, 'para')
+                .replace(/\bQue\b/g, 'que');
+            
+            // Remove repeated phrases to avoid redundancy
+            // Pattern: Often the field name repeats itself like "AspiracaoNasotraqueal...DaAspiracaoNasotraqueal"
+            // Strategy: Find repeated sequences of 2+ words and keep only the first occurrence
+            const words = result.split(/\s+/);
+            
+            // Look for repeated sequences of 2-6 words
+            for (let phraseLen = 6; phraseLen >= 2; phraseLen--) {
+                for (let i = 0; i <= words.length - phraseLen * 2; i++) {
+                    const phrase1 = words.slice(i, i + phraseLen).join(' ').toLowerCase();
+                    
+                    // Look for this phrase later in the text
+                    for (let j = i + phraseLen; j <= words.length - phraseLen; j++) {
+                        const phrase2 = words.slice(j, j + phraseLen).join(' ').toLowerCase();
+                        
+                        if (phrase1 === phrase2) {
+                            // Found a repetition! Remove the second occurrence
+                            words.splice(j, phraseLen);
+                            // Continue checking from the same position
+                            j--;
+                        }
+                    }
+                }
+            }
+            
+            result = words.join(' ');
+            
+            // Limit length for display with better truncation at word boundaries
+            if (result.length > 100) {
+                // Try to break at a word boundary
+                const truncated = result.substring(0, 97);
+                const lastSpace = truncated.lastIndexOf(' ');
+                if (lastSpace > 70) {
+                    result = truncated.substring(0, lastSpace) + '...';
+                } else {
+                    result = truncated + '...';
+                }
+            }
+            
+            return result.trim();
+        }
+
+        // Test cases with actual column names from the issue
+        const testCases = [
+            {
+                name: "Aspiração Nasotraqueal (com repetição)",
+                input: "AspiracaoNasotraquealQuantoARealizacaoDaAspiracaoNasotraquealDeFormaSeguraEEficazOAlunoRealizaOProcedimentoComQueNivelDeAuxilio",
+                shouldNotContain: ["Aspiracao Nasotraqueal.*Aspiracao Nasotraqueal"], // Regex pattern
+                shouldContain: ["Aspiracao Nasotraqueal"],
+                maxLength: 100
+            },
+            {
+                name: "Aspiração Endotraqueal (com repetição)",
+                input: "AspiracaoEndotraquealQuantoARealizacaoDaAspiracaoEndotraquealDeFormaSeguraEEficazOAlunoRealizaOProcedimentoComQueNivelDeAuxilio",
+                shouldNotContain: ["Aspiracao Endotraqueal.*Aspiracao Endotraqueal"],
+                shouldContain: ["Aspiracao Endotraqueal"],
+                maxLength: 100
+            },
+            {
+                name: "Instalação de Oxigênio",
+                input: "InstalacaoDeOxigenioAssinaleOOsItensQueOAlunoFoiCapazDeIndicarEInstalarDeFormaSeguraEEficaz",
+                shouldContain: ["Instalacao de Oxigenio"],
+                maxLength: 100
+            },
+            {
+                name: "Técnicas Fisioterapêuticas (com repetição)",
+                input: "TecnicasFisioterapeuticasRespiratoriasOAlunoPrecisouDeQueNivelDeAuxilioParaRealizarEfetivamenteAsTecnicasFisioterapeuticas",
+                shouldNotContain: ["Tecnicas Fisioterapeuticas.*Tecnicas Fisioterapeuticas"],
+                shouldContain: ["Tecnicas Fisioterapeuticas"],
+                maxLength: 100
+            },
+            {
+                name: "Mobilização e Posicionamento (com repetição)",
+                input: "MobilizacaoEPosicionamentoOAlunoPrecisouDeQueNivelDeAuxilioParaAplicarAsTecnicasApropriadasDeMobilizacaoDosPacientes",
+                shouldNotContain: ["Mobilizacao.*Mobilizacao"],
+                shouldContain: ["Mobilizacao"],
+                maxLength: 100
+            },
+            {
+                name: "Avaliação Fisioterapêutica (com repetição)",
+                input: "AvaliacaoFisioterapeuticaOAlunoFoiCapazDeRealizarAAvaliacaoCompletaDosPacientes",
+                shouldNotContain: ["Avaliacao.*Avaliacao.*Avaliacao"],
+                shouldContain: ["Avaliacao"],
+                maxLength: 100
+            },
+            {
+                name: "Comunicação Interprofissional (com repetição)",
+                input: "ComunicacaoInterprofissionalOAlunoManteveUmaComunicacaoEficazComOutrosProfissionaisDeSaude",
+                shouldNotContain: ["Comunicacao.*Comunicacao.*Comunicacao"],
+                shouldContain: ["Comunicacao Interprofissional"],
+                maxLength: 100
+            },
+            {
+                name: "Segurança e Protocolos (com repetição)",
+                input: "SegurancaEProtocolosOAlunoSeguiuOsProtocolosDeSegurancaDuranteAsAtividades",
+                shouldNotContain: ["Seguranca.*Protocolos.*Seguranca.*Protocolos"],
+                shouldContain: ["Seguranca"],
+                maxLength: 100
+            },
+            {
+                name: "Campos curtos devem permanecer inalterados",
+                input: "MediaNotaFinal",
+                shouldContain: ["MediaNotaFinal"],
+                exactMatch: "MediaNotaFinal"
+            },
+            {
+                name: "Campos com espaços já existentes",
+                input: "Comentarios do Supervisor",
+                shouldContain: ["Comentarios do Supervisor"],
+                exactMatch: "Comentarios do Supervisor"
+            }
+        ];
+
+        let passed = 0;
+        let failed = 0;
+        const resultsDiv = document.getElementById('results');
+
+        testCases.forEach((test, index) => {
+            const result = splitConcatenatedFieldName(test.input);
+            let testPassed = true;
+            const errors = [];
+
+            // Check max length
+            if (test.maxLength && result.length > test.maxLength) {
+                testPassed = false;
+                errors.push(`Length ${result.length} exceeds max ${test.maxLength}`);
+            }
+
+            // Check exact match
+            if (test.exactMatch && result !== test.exactMatch) {
+                testPassed = false;
+                errors.push(`Expected "${test.exactMatch}", got "${result}"`);
+            }
+
+            // Check should contain
+            if (test.shouldContain) {
+                test.shouldContain.forEach(phrase => {
+                    if (!result.toLowerCase().includes(phrase.toLowerCase())) {
+                        testPassed = false;
+                        errors.push(`Missing required phrase: "${phrase}"`);
+                    }
+                });
+            }
+
+            // Check should not contain (using regex)
+            if (test.shouldNotContain) {
+                test.shouldNotContain.forEach(pattern => {
+                    const regex = new RegExp(pattern, 'i');
+                    if (regex.test(result)) {
+                        testPassed = false;
+                        errors.push(`Contains forbidden pattern: "${pattern}"`);
+                    }
+                });
+            }
+
+            if (testPassed) {
+                passed++;
+            } else {
+                failed++;
+            }
+
+            const testDiv = document.createElement('div');
+            testDiv.className = 'test-case';
+            testDiv.innerHTML = `
+                <h3>Teste ${index + 1}: ${test.name}</h3>
+                <div><strong>Input (${test.input.length} chars):</strong></div>
+                <div class="input">${test.input}</div>
+                <div><strong>Output (${result.length} chars):</strong></div>
+                <div class="output">${result}</div>
+                ${errors.length > 0 ? `<div style="color: #d32f2f; margin-top: 10px;"><strong>Erros:</strong><ul>${errors.map(e => `<li>${e}</li>`).join('')}</ul></div>` : ''}
+                <span class="status ${testPassed ? 'pass' : 'fail'}">${testPassed ? '✅ PASSOU' : '❌ FALHOU'}</span>
+            `;
+            resultsDiv.appendChild(testDiv);
+        });
+
+        // Update stats
+        const total = testCases.length;
+        const percentage = Math.round((passed / total) * 100);
+        document.getElementById('stats').innerHTML = `
+            <h2>Resultados dos Testes</h2>
+            <p>Total: ${total} | Passou: ${passed} | Falhou: ${failed} | Taxa de Sucesso: ${percentage}%</p>
+            ${failed === 0 ? '<p style="font-size: 1.2em;">🎉 Todos os testes passaram! A função agora remove repetições corretamente.</p>' : ''}
+        `;
+    </script>
+</body>
+</html>
