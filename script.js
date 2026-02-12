@@ -10626,6 +10626,65 @@ function renderTabEscala(escalas) {
 
 
         /**
+         * Deduplicates field entries by normalizing field names
+         * Keeps only the best variant of each field (prioritizing readable formats like PascalCase)
+         * @param {Object} obj - The object with potentially duplicate field keys
+         * @returns {Array<[string, any]>} - Array of [key, value] tuples with duplicates removed
+         */
+        function deduplicateFields(obj) {
+            // Maps normalized key -> { originalKey, resultIndex }
+            const normalizedToKeyMap = new Map();
+            const result = [];
+            
+            // Helper to normalize a field name for comparison
+            // Only removes case and underscores, preserving the structure enough to identify true duplicates
+            function normalizeFieldForComparison(fieldName) {
+                return String(fieldName)
+                    .toLowerCase()
+                    .replace(/_/g, ''); // Only remove underscores, keeping other structure
+            }
+            
+            // Helper to score field name quality (higher is better)
+            function scoreFieldName(fieldName) {
+                let score = 0;
+                // Prefer names that start with uppercase letter (PascalCase)
+                if (/^[A-Z]/.test(fieldName)) score += 10;
+                // Prefer names without underscores
+                if (!fieldName.includes('_')) score += 5;
+                // Prefer names without all caps
+                if (fieldName !== fieldName.toUpperCase()) score += 3;
+                // Penalize names starting with underscore
+                if (fieldName.startsWith('_')) score -= 20;
+                return score;
+            }
+            
+            Object.entries(obj).forEach(([key, value]) => {
+                const normalized = normalizeFieldForComparison(key);
+                
+                if (normalizedToKeyMap.has(normalized)) {
+                    // We've seen this field before - compare quality
+                    const existing = normalizedToKeyMap.get(normalized);
+                    const existingScore = scoreFieldName(existing.originalKey);
+                    const currentScore = scoreFieldName(key);
+                    
+                    // Replace with better quality field name
+                    if (currentScore > existingScore) {
+                        result[existing.resultIndex] = [key, value];
+                        normalizedToKeyMap.set(normalized, { originalKey: key, resultIndex: existing.resultIndex });
+                    }
+                    // Otherwise skip this duplicate
+                } else {
+                    // First time seeing this field
+                    const resultIndex = result.length;
+                    result.push([key, value]);
+                    normalizedToKeyMap.set(normalized, { originalKey: key, resultIndex });
+                }
+            });
+            
+            return result;
+        }
+
+        /**
          * [MASTERPIECE v35] Renderiza a aba de Notas Práticas com design profissional InCor
          * Versão v35 - Professional InCor Edition - Matching Notas Teóricas Design
          */
@@ -10916,7 +10975,10 @@ function renderTabEscala(escalas) {
                 let numericalScores = [];
                 let checklistScores = [];
                 
-                Object.entries(n).forEach(([key, value]) => {
+                // Deduplicate fields before processing to avoid showing the same field multiple times
+                const deduplicatedEntries = deduplicateFields(n);
+                
+                deduplicatedEntries.forEach(([key, value]) => {
                     const isIgnored = /DATA\/HORA|DATAHORA|EMAILHC|NOMECOMPLETO|CURSO|SUPERVISOR|UNIDADE|PERIODO|TURNO|MÉDIA\s*\(NOTA FINAL\)|MÉDIA.*NOTA.*FINAL|MEDIA.*NOTA.*FINAL|MÉDIA.*FINAL|MEDIA.*FINAL|NOTA.*FINAL|MEDIANOTAFINAL|MediaNotaFinal|medianotafinal|COMENTÁRIOS\s*DO\(A\)\s*SUPERVISOR\(A\)|O SUPERVISOR ESTÁ CIENTE|NOMEPRATICA|_uniqueId|_sheetName|_validatedAt/i.test(key.toUpperCase().trim());
                     if (!isIgnored && value) {
                         let cleanKey = key;
