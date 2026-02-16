@@ -209,6 +209,7 @@ function sanitizeKey(texto) {
 
 /**
  * Função simples onEdit (gatilho simples) - funciona apenas com planilha aberta.
+ * Complementa os gatilhos instaláveis para sincronização em tempo real.
  */
 function onEdit(e){
   try {
@@ -722,11 +723,12 @@ function formatarHoraParaComparacao_(value) { return formatTimeForComparison_(va
 
 /**
  * Menu personalizado ao abrir a planilha.
- * A sincronização automática está sempre ativa via gatilhos instaláveis.
+ * Mantido como placeholder - a sincronização automática está sempre ativa via gatilhos instaláveis.
+ * Os gatilhos devem ser configurados uma vez através do Google Apps Script Editor.
  */
 function onOpen() {
-  // A sincronização é feita automaticamente via gatilhos instaláveis do AppScript
-  // Não há necessidade de menu para ativar/desativar manualmente
+  // Sincronização automática via gatilhos instaláveis (onEditPontoInstalavel, onChangePontoInstalavel)
+  // Não requer interação manual do usuário
 }
 
 
