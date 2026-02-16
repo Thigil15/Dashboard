@@ -20,11 +20,6 @@ const EXCEL_SERIAL_THRESHOLD = 50000;
 const UNIX_TIMESTAMP_SECONDS_THRESHOLD = 946684800; // 01/01/2000 em segundos
 const EXCEL_EPOCH_OFFSET = 25569; // Dias entre 31/12/1899 (Excel) e 01/01/1970 (Unix)
 
-// Nomes das funções de gatilhos instaláveis
-const TRIGGER_FUNCTIONS = [
-  'onEditPontoInstalavel', 'onChangePontoInstalavel',
-];
-
 /**********************************************
  * 📡 API - Servir dados via URL (doGet)
  **********************************************/
@@ -209,12 +204,12 @@ function sanitizeKey(texto) {
 }
 
 /**********************************************
- * 📌 PONTO E ESCALA - Sistema de Sincronização
+ * 📌 PONTO E ESCALA - Sistema de Sincronização Automática
  **********************************************/
 
 /**
  * Função simples onEdit (gatilho simples) - funciona apenas com planilha aberta.
- * Para funcionar com planilha fechada, use o gatilho instalável (Menu > Ativar Sincronização).
+ * Complementa os gatilhos instaláveis para sincronização em tempo real.
  */
 function onEdit(e){
   try {
@@ -728,141 +723,21 @@ function formatarHoraParaComparacao_(value) { return formatTimeForComparison_(va
 
 /**
  * Menu personalizado ao abrir a planilha.
+ * Mantido como placeholder - a sincronização automática está sempre ativa via gatilhos instaláveis.
+ * Os gatilhos devem ser configurados uma vez através do Google Apps Script Editor.
  */
 function onOpen() {
-  const ui = SpreadsheetApp.getUi();
-  ui.createMenu('📋 Gestão de Pontos')
-    .addItem('📊 Ver Status dos Gatilhos', 'verificarStatusGatilhos')
-    .addSeparator()
-    .addItem('✅ Ativar Sincronização Automática', 'ativarTodosGatilhosAutomaticos')
-    .addItem('⏸️ Desativar Sincronização Automática', 'desativarTodosGatilhosAutomaticos')
-    .addSeparator()
-    .addItem('❓ Ajuda', 'mostrarAjuda')
-    .addToUi();
+  // Sincronização automática via gatilhos instaláveis (onEditPontoInstalavel, onChangePontoInstalavel)
+  // Não requer interação manual do usuário
 }
 
-/**
- * Verifica o status dos gatilhos automáticos.
- */
-function verificarStatusGatilhos() {
-  const gatilhos = ScriptApp.getProjectTriggers();
-  let onEditAtivo = false;
-  let onChangeAtivo = false;
-  
-  for (const t of gatilhos) {
-    const funcao = t.getHandlerFunction();
-    if (funcao === 'onEditPontoInstalavel') onEditAtivo = true;
-    if (funcao === 'onChangePontoInstalavel') onChangeAtivo = true;
-  }
-  
-  Logger.log("📊 STATUS DOS GATILHOS:");
-  Logger.log("  • onEdit (auto sync): " + (onEditAtivo ? "✅ ATIVO" : "❌ INATIVO"));
-  Logger.log("  • onChange (auto sync): " + (onChangeAtivo ? "✅ ATIVO" : "❌ INATIVO"));
-  
-  const mensagem = 
-    "📊 STATUS DOS GATILHOS\n\n" +
-    "• Sincronização automática (onEdit): " + (onEditAtivo ? "✅ ATIVO" : "❌ INATIVO") + "\n" +
-    "• Sincronização automática (onChange): " + (onChangeAtivo ? "✅ ATIVO" : "❌ INATIVO") + "\n\n" +
-    "💡 Os gatilhos sincronizam automaticamente os pontos para as escalas\n" +
-    "quando você edita ou adiciona dados na planilha.";
-  
-  SpreadsheetApp.getUi().alert("⚙️ Status dos Gatilhos", mensagem, SpreadsheetApp.getUi().ButtonSet.OK);
-  
-  return {
-    onEdit: onEditAtivo,
-    onChange: onChangeAtivo
-  };
-}
 
-/**
- * Mostra a ajuda sobre como usar o menu.
- */
-function mostrarAjuda() {
-  var ui = SpreadsheetApp.getUi();
-  
-  var mensagem = 
-    '📋 GUIA DE SINCRONIZAÇÃO DE PONTOS\n\n' +
-    '═══════════════════════════════════════\n\n' +
-    '🔄 SINCRONIZAÇÃO AUTOMÁTICA:\n' +
-    '• Sincroniza pontos de PontoPratica e PontoTeoria para Escalas\n' +
-    '• Evita duplicatas automaticamente\n' +
-    '• Funciona mesmo com a planilha FECHADA!\n\n' +
-    '═══════════════════════════════════════\n\n' +
-    '⚙️ COMO USAR O MENU:\n' +
-    '• Ver Status: Verifica se gatilhos estão ativos\n' +
-    '• Ativar: Liga a sincronização automática\n' +
-    '• Desativar: Desliga a sincronização automática\n\n' +
-    '═══════════════════════════════════════\n\n' +
-    '💡 RECOMENDAÇÃO:\n' +
-    'Ative a sincronização automática uma vez e deixe o sistema\n' +
-    'trabalhar sozinho! Dados são sincronizados imediatamente\n' +
-    'a cada alteração, sem duplicatas.';
-  
-  ui.alert('❓ Ajuda - Menu de Gestão de Pontos', mensagem, ui.ButtonSet.OK);
-}
 
-/**
- * Ativa TODOS os gatilhos automáticos.
- */
-function ativarTodosGatilhosAutomaticos() {
-  var ss = SpreadsheetApp.getActive();
-  
-  // Remove todos os gatilhos antigos usando a constante TRIGGER_FUNCTIONS
-  var gatilhos = ScriptApp.getProjectTriggers();
-  
-  for (var i = 0; i < gatilhos.length; i++) {
-    var funcao = gatilhos[i].getHandlerFunction();
-    if (TRIGGER_FUNCTIONS.indexOf(funcao) !== -1) {
-      ScriptApp.deleteTrigger(gatilhos[i]);
-    }
-  }
-  
-  // Cria gatilhos para sincronização de Pontos
-  ScriptApp.newTrigger('onEditPontoInstalavel')
-    .forSpreadsheet(ss)
-    .onEdit()
-    .create();
-  
-  ScriptApp.newTrigger('onChangePontoInstalavel')
-    .forSpreadsheet(ss)
-    .onChange()
-    .create();
-  
-  SpreadsheetApp.getActiveSpreadsheet().toast(
-    '✅ Sincronização COMPLETA ativada!\n\n' +
-    '• Pontos → Escalas: Automático\n\n' +
-    'Funciona mesmo com a planilha fechada!',
-    'Sincronização Automática',
-    10
-  );
-  
-  console.log('✅ Todos os gatilhos automáticos criados!');
-}
 
-/**
- * Desativa TODOS os gatilhos automáticos.
- */
-function desativarTodosGatilhosAutomaticos() {
-  var gatilhos = ScriptApp.getProjectTriggers();
-  var removidos = 0;
-  
-  for (var i = 0; i < gatilhos.length; i++) {
-    var funcao = gatilhos[i].getHandlerFunction();
-    if (TRIGGER_FUNCTIONS.indexOf(funcao) !== -1) {
-      ScriptApp.deleteTrigger(gatilhos[i]);
-      removidos++;
-    }
-  }
-  
-  SpreadsheetApp.getActiveSpreadsheet().toast(
-    '⏸️ Sincronização automática DESATIVADA.\n' +
-    removidos + ' gatilho(s) removido(s).',
-    'Sincronização Automática',
-    5
-  );
-  
-  console.log('⏸️ ' + removidos + ' gatilhos removidos.');
-}
+
+
+
+
 
 /**********************************************
  * 📌 API DE PONTO - Recebe dados via POST
