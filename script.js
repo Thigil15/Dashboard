@@ -10352,7 +10352,7 @@ function renderTabEscala(escalas) {
                             <div class="nt-ring-container">
                                 <div class="nt-progress-ring" style="--nt-progress-percent: ${progressPercent}%;">
                                     <div class="nt-ring-value">${formatarNota(overallAvg)}</div>
-                                    <div class="nt-ring-subtitle">de 12,0</div>
+                                    <div class="nt-ring-subtitle">de 10,0</div>
                                 </div>
                             </div>
                             <div class="nt-progress-text">
@@ -10855,7 +10855,7 @@ function renderTabEscala(escalas) {
                             <div class="np-ring-container-pro">
                                 <div class="np-progress-ring-pro" style="--np-progress-percent: ${progressPercent}%;">
                                     <div class="np-ring-value-pro">${formatarNota(summary.overallAvg)}</div>
-                                    <div class="np-ring-subtitle-pro">de 12,0</div>
+                                    <div class="np-ring-subtitle-pro">de 10,0</div>
                                 </div>
                             </div>
                             <div class="np-progress-text-pro">
@@ -11049,7 +11049,7 @@ function renderTabEscala(escalas) {
                 const deduplicatedEntries = deduplicateFields(n);
                 
                 deduplicatedEntries.forEach(([key, value]) => {
-                    const isIgnored = /DATA\/HORA|DATAHORA|EMAILHC|NOMECOMPLETO|CURSO|SUPERVISOR|UNIDADE|PERIODO|TURNO|MÉDIA\s*\(NOTA FINAL\)|MÉDIA.*NOTA.*FINAL|MEDIA.*NOTA.*FINAL|MÉDIA.*FINAL|MEDIA.*FINAL|NOTA.*FINAL|MEDIANOTAFINAL|MediaNotaFinal|medianotafinal|COMENTÁRIOS\s*DO\(A\)\s*SUPERVISOR\(A\)|O SUPERVISOR ESTÁ CIENTE|NOMEPRATICA|_uniqueId|_sheetName|_validatedAt/i.test(key.toUpperCase().trim());
+                    const isIgnored = /DATA\/HORA|DATAHORA|EMAILHC|NOMECOMPLETO|CURSO|SUPERVISOR|UNIDADE|PERIODO|TURNO|MÉDIA\s*\(NOTA FINAL\)|MÉDIA.*NOTA.*FINAL|MEDIA.*NOTA.*FINAL|MÉDIA.*FINAL|MEDIA.*FINAL|NOTA.*FINAL|MEDIANOTAFINAL|MediaNotaFinal|medianotafinal|COMENTÁRIOS\s*DO\(A\)\s*SUPERVISOR\(A\)|O SUPERVISOR ESTÁ CIENTE|NOMEPRATICA|_uniqueId|_sheetName|_validatedAt|ROW\s*INDEX|ROWINDEX|_ROWINDEX/i.test(key.toUpperCase().trim());
                     if (!isIgnored && value) {
                         let cleanKey = key;
                         const numericPrefixMatch = key.match(/^(\d+[\.,]?\d*)\s+(.+)$/);
