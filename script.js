@@ -9908,7 +9908,6 @@ function renderTabEscala(escalas) {
                     /^_ROWINDEX$/,
                     /^_INDEX$/,  // Only match if prefixed with underscore
                     /^_ID$/,      // Only match if prefixed with underscore
-                    
                     // Removed disciplines - fields that no longer exist
                     /^AVALIACAO$/,  // "Avaliação" field removed as it doesn't exist
                     /^SUBAVALIACAO$/,  // Also filter the SUB variant
