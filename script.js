@@ -9881,7 +9881,7 @@ function renderTabEscala(escalas) {
                     /^DATAHORA$/,
                     
                     // Personal identifiers (exact match to avoid false positives)
-                    /^EMAIL(HC)?$/,  // Matches both EMAIL and EMAILHC
+                    /^EMAIL(HC)?$/,  // Matches EMAIL and EMAILHC (HC is optional)
                     /^NOMECOMPLETO$/,
                     /^NOME$/,
                     
@@ -9903,7 +9903,7 @@ function renderTabEscala(escalas) {
                     /^_VALIDATEDAT$/,
                     
                     // Row index variants (anchored to start to avoid false positives)
-                    /^ROW\s*INDEX/,  // Matches ROW INDEX, ROWINDEX at start
+                    /^ROW\s*INDEX/,  // Matches strings starting with ROW INDEX or ROWINDEX (e.g., "ROW INDEX 5")
                     /^ROWINDEX$/,
                     /^_ROWINDEX$/,
                     /^_INDEX$/,  // Only match if prefixed with underscore
