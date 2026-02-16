@@ -9881,8 +9881,7 @@ function renderTabEscala(escalas) {
                     /^DATAHORA$/,
                     
                     // Personal identifiers (exact match to avoid false positives)
-                    /^EMAILHC$/,
-                    /^EMAIL$/,
+                    /^EMAIL(HC)?$/,  // Matches both EMAIL and EMAILHC
                     /^NOMECOMPLETO$/,
                     /^NOME$/,
                     
@@ -9902,12 +9901,12 @@ function renderTabEscala(escalas) {
                     /^_SHEETNAME$/,
                     /^_VALIDATEDAT$/,
                     
-                    // Row index variants
+                    // Row index variants (prefixed with _ or specific patterns to avoid false positives)
                     /ROW\s*INDEX/,
                     /^ROWINDEX$/,
                     /^_ROWINDEX$/,
-                    /^INDEX$/,
-                    /^ID$/
+                    /^_INDEX$/,  // Only match if prefixed with underscore
+                    /^_ID$/      // Only match if prefixed with underscore
                 ];
                 
                 return ignoredPatterns.some(pattern => pattern.test(keyUpper));
