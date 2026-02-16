@@ -9868,6 +9868,16 @@ function renderTabEscala(escalas) {
             // Comparisons are done case-insensitively
             const SUB_PREFIXES = ['Sub/', 'Sub-', 'SUB/', 'SUB-', 'Sub_', 'SUB_', 'sub/', 'sub-', 'sub_', 'Sub', 'SUB', 'sub'];
             
+            // Helper function to check if a field should be ignored (technical/metadata fields)
+            // These fields are not actual grades and should not be displayed or included in calculations
+            const isIgnoredField = (key) => {
+                if (!key || typeof key !== 'string') return true;
+                const keyUpper = key.toUpperCase().trim();
+                // Filter out technical and metadata fields that are not grades
+                const ignoredPattern = /DATA\/HORA|DATAHORA|EMAILHC|EMAIL|NOMECOMPLETO|NOME|CURSO|SUPERVISOR|UNIDADE|PERIODO|TURNO|COMENTÁRIOS|COMENTARIO|CIENTE|_uniqueId|_sheetName|_validatedAt|ROW\s*INDEX|ROWINDEX|_ROWINDEX|^INDEX$|^ID$/i;
+                return ignoredPattern.test(keyUpper);
+            };
+            
             if (notas && typeof notas === 'object') {
                 console.log('[renderTabNotasTeoricas v37] Keys in notas:', Object.keys(notas));
                 console.log('[renderTabNotasTeoricas v37] Number of keys:', Object.keys(notas).length);
@@ -9949,7 +9959,10 @@ function renderTabEscala(escalas) {
             };
             
             // Debug: Log all available keys to help diagnose SUB discipline issues
-            console.log('[renderTabNotasTeoricas v37] All available keys in notas:', Object.keys(notas || {}));
+            const allKeys = Object.keys(notas || {});
+            const gradeKeys = allKeys.filter(k => !isIgnoredField(k));
+            console.log('[renderTabNotasTeoricas v37] All available keys in notas:', allKeys);
+            console.log('[renderTabNotasTeoricas v37] Grade keys (after filtering technical fields):', gradeKeys);
             
             const tabContainer = document.getElementById('notas-t-content-wrapper');
             if (!tabContainer) {
@@ -9992,6 +10005,12 @@ function renderTabEscala(escalas) {
                 console.log('[findSubDisciplinesFromData] Analyzing all keys in notas:', Object.keys(notas));
                 
                 Object.keys(notas).forEach(key => {
+                    // Skip technical/metadata fields
+                    if (isIgnoredField(key)) {
+                        console.log(`[findSubDisciplinesFromData] ⏭️ Skipped technical field: "${key}"`);
+                        return;
+                    }
+                    
                     // Check if key starts with any SUB prefix (case-insensitive)
                     for (const prefix of SUB_PREFIXES) {
                         if (key.toLowerCase().startsWith(prefix.toLowerCase())) {
@@ -10260,6 +10279,10 @@ function renderTabEscala(escalas) {
 
             // Processa todas as médias (chaves que contêm "MÉDIA" ou "MEDIA")
             const mediaKeys = Object.keys(notas).filter(k => {
+                // Skip technical/metadata fields
+                if (isIgnoredField(k)) {
+                    return false;
+                }
                 const keyUpper = k.toUpperCase();
                 const keyNormalized = k.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
                 return keyUpper.includes('MÉDIA') || keyNormalized.includes('MEDIA');
