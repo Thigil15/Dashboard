@@ -9893,6 +9893,7 @@ function renderTabEscala(escalas) {
                     /^TURNO$/,
                     
                     // Comments and notes (no accents to avoid encoding issues)
+                    // Matches fields containing COMENTARIO anywhere (e.g., COMENTARIOS, COMENTARIO_SUPERVISOR)
                     /COMENTARIO/,
                     /CIENTE$/,
                     
@@ -9901,8 +9902,8 @@ function renderTabEscala(escalas) {
                     /^_SHEETNAME$/,
                     /^_VALIDATEDAT$/,
                     
-                    // Row index variants (prefixed with _ or specific patterns to avoid false positives)
-                    /ROW\s*INDEX/,
+                    // Row index variants (anchored to start to avoid false positives)
+                    /^ROW\s*INDEX/,  // Matches ROW INDEX, ROWINDEX at start
                     /^ROWINDEX$/,
                     /^_ROWINDEX$/,
                     /^_INDEX$/,  // Only match if prefixed with underscore
