@@ -9907,7 +9907,10 @@ function renderTabEscala(escalas) {
                     /^ROWINDEX$/,
                     /^_ROWINDEX$/,
                     /^_INDEX$/,  // Only match if prefixed with underscore
-                    /^_ID$/      // Only match if prefixed with underscore
+                    /^_ID$/,      // Only match if prefixed with underscore
+                    // Removed disciplines - fields that no longer exist
+                    /^AVALIACAO$/,  // "Avaliação" field removed as it doesn't exist
+                    /^SUBAVALIACAO$/,  // Also filter the SUB variant
                 ];
                 
                 return ignoredPatterns.some(pattern => pattern.test(keyUpper));
@@ -10090,7 +10093,7 @@ function renderTabEscala(escalas) {
             // === DEFINIÇÃO DOS GRUPOS DE MÓDULOS - INCOR === //
             // ATUALIZADO conforme requisitos do usuário:
             // - Disciplinas individuais: não fazem média em conjunto
-            // - Média Fisio1: Avaliacao + VM
+            // - Média Fisio1: VM only (Avaliação removed as it doesn't exist)
             // - Média Fisio2: TecnicasRecursos + DiagnosticoImagem
             // - Média Fisio3: FisioAplicada + UTI
             // - Média Fisio4: Pediatria + Mobilizacao + ReabilitacaoPulmonar
@@ -10110,7 +10113,6 @@ function renderTabEscala(escalas) {
                 'Farmacoterapia': { key: 'Farmacoterapia', subKey: 'SubFarmacoterapia', displayName: 'Farmacoterapia' },
                 'Bioetica': { key: 'Bioetica', subKey: 'SubBioetica', displayName: 'Bioética' },
                 // Fisio1 disciplines
-                'Avaliacao': { key: 'Avaliacao', subKey: 'SubAvaliacao', displayName: 'Avaliação' },
                 'VM': { key: 'VM', subKey: 'SubVM', displayName: 'Ventilação Mecânica' },
                 // Fisio2 disciplines
                 'TecnicasRecursos': { key: 'TecnicasRecursos', subKey: 'SubTecnicasRecursos', displayName: 'Técnicas e Recursos' },
@@ -10212,9 +10214,8 @@ function renderTabEscala(escalas) {
             // Grouped disciplines that form averages (Média Fisio 1-4)
             const mediaGroups = {
                 'Média Fisio 1': {
-                    // Avaliação + VM
+                    // VM only (Avaliação removed as it doesn't exist)
                     materias: [
-                        { nome: FIELD_MAPPINGS['Avaliacao'].displayName, key: FIELD_MAPPINGS['Avaliacao'].key, subKey: FIELD_MAPPINGS['Avaliacao'].subKey },
                         { nome: FIELD_MAPPINGS['VM'].displayName, key: FIELD_MAPPINGS['VM'].key, subKey: FIELD_MAPPINGS['VM'].subKey }
                     ],
                     icon: 'M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25',
@@ -11107,7 +11108,7 @@ function renderTabEscala(escalas) {
                 const deduplicatedEntries = deduplicateFields(n);
                 
                 deduplicatedEntries.forEach(([key, value]) => {
-                    const isIgnored = /DATA\/HORA|DATAHORA|EMAILHC|NOMECOMPLETO|CURSO|SUPERVISOR|UNIDADE|PERIODO|TURNO|MÉDIA\s*\(NOTA FINAL\)|MÉDIA.*NOTA.*FINAL|MEDIA.*NOTA.*FINAL|MÉDIA.*FINAL|MEDIA.*FINAL|NOTA.*FINAL|MEDIANOTAFINAL|MediaNotaFinal|medianotafinal|COMENTÁRIOS\s*DO\(A\)\s*SUPERVISOR\(A\)|O SUPERVISOR ESTÁ CIENTE|NOMEPRATICA|_uniqueId|_sheetName|_validatedAt|ROW\s*INDEX|ROWINDEX|_ROWINDEX/i.test(key.toUpperCase().trim());
+                    const isIgnored = /DATA\/HORA|DATAHORA|EMAILHC|NOMECOMPLETO|CURSO|SUPERVISOR|UNIDADE|PERIODO|TURNO|MÉDIA\s*\(NOTA FINAL\)|MÉDIA.*NOTA.*FINAL|MEDIA.*NOTA.*FINAL|MÉDIA.*FINAL|MEDIA.*FINAL|NOTA.*FINAL|MEDIANOTAFINAL|MediaNotaFinal|medianotafinal|COMENTÁRIOS\s*DO\(A\)\s*SUPERVISOR\(A\)|O SUPERVISOR ESTÁ CIENTE|NOMEPRATICA|_uniqueId|_sheetName|_validatedAt|ROW\s*INDEX|ROWINDEX|_ROWINDEX|AVALIACAO|SUBAVALIACAO/i.test(key.toUpperCase().trim());
                     if (!isIgnored && value) {
                         let cleanKey = key;
                         const numericPrefixMatch = key.match(/^(\d+[\.,]?\d*)\s+(.+)$/);
