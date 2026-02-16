@@ -9911,7 +9911,7 @@ function renderTabEscala(escalas) {
                     
                     // Removed disciplines - fields that no longer exist
                     /^AVALIACAO$/,  // "Avaliação" field removed as it doesn't exist
-                    /^SUBAVALIACAO$/  // Also filter the SUB variant
+                    /^SUBAVALIACAO$/,  // Also filter the SUB variant
                 ];
                 
                 return ignoredPatterns.some(pattern => pattern.test(keyUpper));
