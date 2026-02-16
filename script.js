@@ -9880,7 +9880,7 @@ function renderTabEscala(escalas) {
                     /^DATA\s*\/?\s*HORA$/,
                     /^DATAHORA$/,
                     
-                    // Personal identifiers (exact match)
+                    // Personal identifiers (exact match to avoid false positives)
                     /^EMAILHC$/,
                     /^EMAIL$/,
                     /^NOMECOMPLETO$/,
@@ -9893,14 +9893,14 @@ function renderTabEscala(escalas) {
                     /^PERIODO$/,
                     /^TURNO$/,
                     
-                    // Comments and notes
-                    /COMENTARIO/,  // Matches COMENTÁRIOS without accent issues
+                    // Comments and notes (no accents to avoid encoding issues)
+                    /COMENTARIO/,
                     /CIENTE$/,
                     
-                    // System metadata
-                    /^_uniqueId$/i,
-                    /^_sheetName$/i,
-                    /^_validatedAt$/i,
+                    // System metadata (matches uppercase since keyUpper is already uppercase)
+                    /^_UNIQUEID$/,
+                    /^_SHEETNAME$/,
+                    /^_VALIDATEDAT$/,
                     
                     // Row index variants
                     /ROW\s*INDEX/,
