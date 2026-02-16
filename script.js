@@ -9873,9 +9873,44 @@ function renderTabEscala(escalas) {
             const isIgnoredField = (key) => {
                 if (!key || typeof key !== 'string') return true;
                 const keyUpper = key.toUpperCase().trim();
-                // Filter out technical and metadata fields that are not grades
-                const ignoredPattern = /DATA\/HORA|DATAHORA|EMAILHC|EMAIL|NOMECOMPLETO|NOME|CURSO|SUPERVISOR|UNIDADE|PERIODO|TURNO|COMENTÁRIOS|COMENTARIO|CIENTE|_uniqueId|_sheetName|_validatedAt|ROW\s*INDEX|ROWINDEX|_ROWINDEX|^INDEX$|^ID$/i;
-                return ignoredPattern.test(keyUpper);
+                
+                // Categorized patterns for better maintainability
+                const ignoredPatterns = [
+                    // Timestamps
+                    /^DATA\s*\/?\s*HORA$/,
+                    /^DATAHORA$/,
+                    
+                    // Personal identifiers (exact match)
+                    /^EMAILHC$/,
+                    /^EMAIL$/,
+                    /^NOMECOMPLETO$/,
+                    /^NOME$/,
+                    
+                    // Course/program metadata
+                    /^CURSO$/,
+                    /^SUPERVISOR$/,
+                    /^UNIDADE$/,
+                    /^PERIODO$/,
+                    /^TURNO$/,
+                    
+                    // Comments and notes
+                    /COMENTARIO/,  // Matches COMENTÁRIOS without accent issues
+                    /CIENTE$/,
+                    
+                    // System metadata
+                    /^_uniqueId$/i,
+                    /^_sheetName$/i,
+                    /^_validatedAt$/i,
+                    
+                    // Row index variants
+                    /ROW\s*INDEX/,
+                    /^ROWINDEX$/,
+                    /^_ROWINDEX$/,
+                    /^INDEX$/,
+                    /^ID$/
+                ];
+                
+                return ignoredPatterns.some(pattern => pattern.test(keyUpper));
             };
             
             if (notas && typeof notas === 'object') {
