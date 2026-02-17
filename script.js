@@ -1907,8 +1907,28 @@ function extractTimeFromISO(isoString) {
          * @param {Array} allRecords - All absence/makeup records
          * @returns {boolean} - True if there's a makeup with the same DataAusencia
          */
+        function getRecordEmail(record) {
+            if (!record || typeof record !== 'object') return '';
+            return String(record.EmailHC || record.emailHC || record.Email || record.email || '').trim();
+        }
+
+        function findStudentByEmail(email) {
+            if (!email || !appState.alunosMap || appState.alunosMap.size === 0) return null;
+            const normalizedTarget = normalizeString(email);
+            const direct = appState.alunosMap.get(email);
+            if (direct) return direct;
+            for (const [mapEmail, student] of appState.alunosMap.entries()) {
+                if (normalizeString(mapEmail) === normalizedTarget) {
+                    return student;
+                }
+            }
+            return null;
+        }
+
         function hasMatchingMakeup(absence, allRecords) {
             if (!absence || !absence.DataAusenciaISO) return false;
+            const absenceEmail = normalizeString(getRecordEmail(absence));
+            if (!absenceEmail) return false;
             
             // Check if any record has a makeup date (DataReposicaoISO) AND matches the same absence date
             return allRecords.some(record => {
@@ -1916,7 +1936,7 @@ function extractTimeFromISO(isoString) {
                 if (!record.DataReposicaoISO) return false;
                 
                 // Must match the same student
-                const sameStudent = record.EmailHC === absence.EmailHC;
+                const sameStudent = normalizeString(getRecordEmail(record)) === absenceEmail;
                 if (!sameStudent) return false;
                 
                 // Must reference the same absence date
@@ -1934,12 +1954,12 @@ function extractTimeFromISO(isoString) {
             if (!records || records.length === 0) return [];
             
             // Get all unique absences (records with DataAusenciaISO)
-            const absences = records.filter(r => r.DataAusenciaISO);
+            const absences = records.filter(r => r.DataAusenciaISO && getRecordEmail(r));
             
             // Deduplicate by email + absence date (in case of duplicate records)
             const uniqueAbsences = Array.from(
                 new Map(
-                    absences.map(a => [`${a.EmailHC}|${a.DataAusenciaISO}`, a])
+                    absences.map(a => [`${normalizeString(getRecordEmail(a))}|${a.DataAusenciaISO}`, a])
                 ).values()
             );
             
@@ -2005,7 +2025,7 @@ function extractTimeFromISO(isoString) {
             if (combined) {
                 const byEmail = new Map();
                 combined.forEach(item => {
-                    const email = item?.EmailHC;
+                    const email = getRecordEmail(item);
                     if (!email) return;
                     if (!byEmail.has(email)) byEmail.set(email, []);
                     byEmail.get(email).push(item);
@@ -2020,23 +2040,24 @@ function extractTimeFromISO(isoString) {
                     .map(([email]) => email);
             } else {
                 // Fallback using separate sheets
-                const ausencias = (appState.ausencias || []).filter(a => a.EmailHC && a.DataAusenciaISO);
-                const reposicoes = (appState.reposicoes || []).filter(r => r.EmailHC && r.DataReposicaoISO && r.DataAusenciaISO);
+                const ausencias = (appState.ausencias || []).filter(a => getRecordEmail(a) && a.DataAusenciaISO);
+                const reposicoes = (appState.reposicoes || []).filter(r => getRecordEmail(r) && r.DataReposicaoISO && r.DataAusenciaISO);
                 
                 // Build a map of absences by email
                 const ausenciasByEmail = new Map();
                 ausencias.forEach(a => {
-                    if (!ausenciasByEmail.has(a.EmailHC)) {
-                        ausenciasByEmail.set(a.EmailHC, []);
+                    const email = getRecordEmail(a);
+                    if (!ausenciasByEmail.has(email)) {
+                        ausenciasByEmail.set(email, []);
                     }
-                    ausenciasByEmail.get(a.EmailHC).push(a);
+                    ausenciasByEmail.get(email).push(a);
                 });
                 
                 // Build a set of covered absences (absence dates that have makeups)
                 const coveredAbsences = new Set();
                 reposicoes.forEach(r => {
                     // Key: email + absence date
-                    const key = `${r.EmailHC}|${r.DataAusenciaISO}`;
+                    const key = `${normalizeString(getRecordEmail(r))}|${r.DataAusenciaISO}`;
                     coveredAbsences.add(key);
                 });
                 
@@ -2045,7 +2066,7 @@ function extractTimeFromISO(isoString) {
                     .filter(([email, studentAbsences]) => {
                         // Check if any absence is not covered by a makeup
                         return studentAbsences.some(a => {
-                            const key = `${email}|${a.DataAusenciaISO}`;
+                            const key = `${normalizeString(email)}|${a.DataAusenciaISO}`;
                             return !coveredAbsences.has(key);
                         });
                     })
@@ -2054,7 +2075,7 @@ function extractTimeFromISO(isoString) {
             
             // Get student details from alunosMap
             const studentsWithPendingReposicoes = studentsPendingEmails
-                .map(email => appState.alunosMap.get(email))
+                .map(email => findStudentByEmail(email))
                 .filter(s => s && s.Status === 'Ativo')
                 .sort((a, b) => (a.NomeCompleto || '').localeCompare(b.NomeCompleto || ''));
             
@@ -2099,7 +2120,7 @@ function extractTimeFromISO(isoString) {
             if (combined) {
                 const byEmail = new Map();
                 combined.forEach(item => {
-                    const email = item?.EmailHC;
+                    const email = getRecordEmail(item);
                     if (!email) return;
                     if (!byEmail.has(email)) byEmail.set(email, []);
                     byEmail.get(email).push(item);
@@ -2109,12 +2130,12 @@ function extractTimeFromISO(isoString) {
                     .filter(([, items]) => items.some(i => i.DataReposicaoISO || i.DataReposicao))
                     .map(([email]) => email);
             } else {
-                const reposicoes = (appState.reposicoes || []).filter(r => r.EmailHC);
-                scheduledEmails = Array.from(new Set(reposicoes.map(r => r.EmailHC)));
+                const reposicoes = (appState.reposicoes || []).filter(r => getRecordEmail(r));
+                scheduledEmails = Array.from(new Set(reposicoes.map(r => getRecordEmail(r))));
             }
             
             const studentsWithScheduledReposicoes = scheduledEmails
-                .map(email => appState.alunosMap.get(email))
+                .map(email => findStudentByEmail(email))
                 .filter(s => s && s.Status === 'Ativo')
                 .sort((a, b) => (a.NomeCompleto || '').localeCompare(b.NomeCompleto || ''));
             
