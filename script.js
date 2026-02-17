@@ -1392,11 +1392,11 @@ function isValidStudentRecord(row) {
 // - Field variants are for READING values (e.g., find email to match student)
 // - Excluded fields are for FILTERING (e.g., don't calculate average of email field)
 const EXCLUDED_FIELDS_SET = new Set(['SERIALNUMBER', 'NOMECOMPLETO', 'EMAILHC', 'CURSO', 'EMAIL', 'NOME']);
-const EXCLUDED_FIELDS_REGEX = /^(_?ROW\s*INDEX(?:\s*\d+)?)$|^(AVALIACAO|AVALIAÇÃO|SUBAVALIACAO|SUBAVALIAÇÃO)$/i;
+const EXCLUDED_FIELDS_REGEX = /^(_?ROW\s*INDEX(?:\s*\d+)?)$/i;
 
 /**
  * Checks whether a field key should be excluded from grade calculations.
- * Filters technical metadata (e.g. Row Index) and non-disciplinary keys (e.g. Avaliacao/SubAvaliacao).
+ * Filters technical metadata (e.g. Row Index). Does NOT filter Avaliacao/SubAvaliacao - they are valid disciplines.
  * Empty keys are treated as excluded to avoid accidental grade parsing.
  * @param {string} key
  * @returns {boolean}
@@ -9943,9 +9943,7 @@ function renderTabEscala(escalas) {
                     /^_ROWINDEX$/,
                     /^_INDEX$/,  // Only match if prefixed with underscore
                     /^_ID$/,      // Only match if prefixed with underscore
-                    // Removed disciplines - fields that no longer exist
-                    /^AVALIACAO$/,  // "Avaliação" field removed as it doesn't exist
-                    /^SUBAVALIACAO$/,  // Also filter the SUB variant
+
                 ];
                 
                 return ignoredPatterns.some(pattern => pattern.test(keyUpper));
@@ -10128,13 +10126,14 @@ function renderTabEscala(escalas) {
             // === DEFINIÇÃO DOS GRUPOS DE MÓDULOS - INCOR === //
             // ATUALIZADO conforme requisitos do usuário:
             // - Disciplinas individuais: não fazem média em conjunto
-            // - Média Fisio1: VM only (Avaliação removed as it doesn't exist)
+            // - Média Fisio1: VM only
             // - Média Fisio2: TecnicasRecursos + DiagnosticoImagem
             // - Média Fisio3: FisioAplicada + UTI
             // - Média Fisio4: Pediatria + Mobilizacao + ReabilitacaoPulmonar
             
             // Field mappings for disciplines
             // Using normalized keys: Anatomopatologia, SubAnatomopatologia, etc.
+            // Note: Keys match Firebase field names (no accents), displayName has proper Portuguese formatting
             const FIELD_MAPPINGS = {
                 // Individual disciplines
                 'Anatomopatologia': { key: 'Anatomopatologia', subKey: 'SubAnatomopatologia', displayName: 'Anatomopatologia' },
@@ -10142,6 +10141,7 @@ function renderTabEscala(escalas) {
                 'DoencasPulmonares': { key: 'DoencasPulmonares', subKey: 'SubDoencasPulmonares', displayName: 'Doenças Pulmonares' },
                 'DoencasCardiacas': { key: 'DoencasCardiacas', subKey: 'SubDoencasCardiacas', displayName: 'Doenças Cardíacas' },
                 'TerapeuticaCirurgica': { key: 'TerapeuticaCirurgica', subKey: 'SubTerapeuticaCirurgica', displayName: 'Terapêutica Cirúrgica' },
+                'Avaliacao': { key: 'Avaliacao', subKey: 'SubAvaliacao', displayName: 'Avaliação' },
                 'MCientifica': { key: 'MCientifica', subKey: 'SubMCientifica', displayName: 'Metodologia Científica' },
                 'SaudePoliticas': { key: 'SaudePoliticas', subKey: 'SubSaudePoliticas', displayName: 'Saúde e Políticas' },
                 'EducacaoEmSaude': { key: 'EducacaoEmSaude', subKey: null, displayName: 'Educação em Saúde' },
@@ -10168,6 +10168,7 @@ function renderTabEscala(escalas) {
                 { ...FIELD_MAPPINGS['DoencasPulmonares'], icon: 'M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25', color: '#059669' },
                 { ...FIELD_MAPPINGS['DoencasCardiacas'], icon: 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z', color: '#E21E26' },
                 { ...FIELD_MAPPINGS['TerapeuticaCirurgica'], icon: 'M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z', color: '#7C3AED' },
+                { ...FIELD_MAPPINGS['Avaliacao'], icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', color: '#6366F1' },
                 { ...FIELD_MAPPINGS['MCientifica'], icon: 'M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z', color: '#6366F1' },
                 { ...FIELD_MAPPINGS['SaudePoliticas'], icon: 'M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z', color: '#0891B2' },
                 { ...FIELD_MAPPINGS['EducacaoEmSaude'], icon: 'M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5', color: '#059669' },
@@ -10249,7 +10250,7 @@ function renderTabEscala(escalas) {
             // Grouped disciplines that form averages (Média Fisio 1-4)
             const mediaGroups = {
                 'Média Fisio 1': {
-                    // VM only (Avaliação removed as it doesn't exist)
+                    // VM only
                     materias: [
                         { nome: FIELD_MAPPINGS['VM'].displayName, key: FIELD_MAPPINGS['VM'].key, subKey: FIELD_MAPPINGS['VM'].subKey }
                     ],
@@ -11143,7 +11144,7 @@ function renderTabEscala(escalas) {
                 const deduplicatedEntries = deduplicateFields(n);
                 
                 deduplicatedEntries.forEach(([key, value]) => {
-                    const isIgnored = /DATA\/HORA|DATAHORA|EMAILHC|NOMECOMPLETO|CURSO|SUPERVISOR|UNIDADE|PERIODO|TURNO|MÉDIA\s*\(NOTA FINAL\)|MÉDIA.*NOTA.*FINAL|MEDIA.*NOTA.*FINAL|MÉDIA.*FINAL|MEDIA.*FINAL|NOTA.*FINAL|MEDIANOTAFINAL|MediaNotaFinal|medianotafinal|COMENTÁRIOS\s*DO\(A\)\s*SUPERVISOR\(A\)|O SUPERVISOR ESTÁ CIENTE|NOMEPRATICA|_uniqueId|_sheetName|_validatedAt|ROW\s*INDEX|ROWINDEX|_ROWINDEX|AVALIACAO|SUBAVALIACAO/i.test(key.toUpperCase().trim());
+                    const isIgnored = /DATA\/HORA|DATAHORA|EMAILHC|NOMECOMPLETO|CURSO|SUPERVISOR|UNIDADE|PERIODO|TURNO|MÉDIA\s*\(NOTA FINAL\)|MÉDIA.*NOTA.*FINAL|MEDIA.*NOTA.*FINAL|MÉDIA.*FINAL|MEDIA.*FINAL|NOTA.*FINAL|MEDIANOTAFINAL|MediaNotaFinal|medianotafinal|COMENTÁRIOS\s*DO\(A\)\s*SUPERVISOR\(A\)|O SUPERVISOR ESTÁ CIENTE|NOMEPRATICA|_uniqueId|_sheetName|_validatedAt|ROW\s*INDEX|ROWINDEX|_ROWINDEX/i.test(key.toUpperCase().trim());
                     if (!isIgnored && value) {
                         let cleanKey = key;
                         const numericPrefixMatch = key.match(/^(\d+[\.,]?\d*)\s+(.+)$/);
