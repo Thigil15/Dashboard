@@ -178,11 +178,8 @@
                         const scaleMatch = key.match(/^Escala(Teoria|Pratica)?(\d+)$/i);
                         const escalaTipo = scaleMatch && scaleMatch[1] ? scaleMatch[1].toLowerCase() : null;
                         const escalaNumero = scaleMatch ? parseInt(scaleMatch[2], 10) : null;
-                        if (scaleMatch) {
-                            const scaleNumber = parseInt(scaleMatch[2], 10);
-                            if (scaleNumber > maxScaleNumber) {
-                                maxScaleNumber = scaleNumber;
-                            }
+                        if (escalaNumero && escalaNumero > maxScaleNumber) {
+                            maxScaleNumber = escalaNumero;
                         }
                         
                         if (escalaData && escalaData.registros) {
@@ -224,7 +221,7 @@
                             }
                             
                             escalasData[key] = {
-                                nomeEscala: key.replace(/\s+/g, ''),
+                                nomeEscala: key,
                                 tipo: escalaTipo,
                                 numero: escalaNumero,
                                 alunos: alunos,
@@ -9055,10 +9052,20 @@ function renderTabEscala(escalas) {
     // Separate scales into practical and theoretical
     const escalasPraticas = [];
     const escalasTeoricas = [];
+    const defaultScaleType = 'pratica';
     
     escalas.forEach((escala) => {
-        const nomeEscala = String(escala?.nomeEscala || '');
-        const tipo = escala.tipo || (/teoria/i.test(nomeEscala) ? 'teoria' : /pratica/i.test(nomeEscala) ? 'pratica' : 'pratica');
+        const nomeEscala = escala?.nomeEscala || '';
+        let tipo = escala.tipo;
+        if (!tipo) {
+            if (/teoria/i.test(nomeEscala)) {
+                tipo = 'teoria';
+            } else if (/pratica/i.test(nomeEscala)) {
+                tipo = 'pratica';
+            } else {
+                tipo = defaultScaleType;
+            }
+        }
         if (tipo === 'teoria') {
             escalasTeoricas.push(escala);
         } else {
