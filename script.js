@@ -1390,6 +1390,20 @@ function isValidStudentRecord(row) {
 // - Field variants are for READING values (e.g., find email to match student)
 // - Excluded fields are for FILTERING (e.g., don't calculate average of email field)
 const EXCLUDED_FIELDS_SET = new Set(['SERIALNUMBER', 'NOMECOMPLETO', 'EMAILHC', 'CURSO', 'EMAIL', 'NOME']);
+const EXCLUDED_FIELDS_REGEX = /^(_?ROW\s*INDEX(?:\s*\d+)?)$|^(AVALIACAO|AVALIAÇÃO|SUBAVALIACAO|SUBAVALIAÇÃO)$/i;
+
+/**
+ * Checks whether a field key should be excluded from grade calculations.
+ * Filters technical metadata (e.g. Row Index) and non-disciplinary keys (e.g. Avaliacao/SubAvaliacao).
+ * Empty keys are treated as excluded to avoid accidental grade parsing.
+ * @param {string} key
+ * @returns {boolean}
+ */
+function isExcludedGradeField(key) {
+    const normalizedKey = String(key ?? '').trim();
+    if (!normalizedKey) return true;
+    return EXCLUDED_FIELDS_SET.has(normalizedKey.toUpperCase()) || EXCLUDED_FIELDS_REGEX.test(normalizedKey);
+}
 
 // Time format regex patterns for schedule parsing
 // Supports formats like: "18:00:00 às 21:00:00", "18:00 às 21:00", "7h às 12h"
@@ -5252,8 +5266,7 @@ function extractTimeFromISO(isoString) {
                         
                         Object.keys(r).forEach(k => {
                             // Exclude known non-grade fields (case-insensitive) using module-level Set
-                            const kUpper = k.toUpperCase();
-                            if(!EXCLUDED_FIELDS_SET.has(kUpper) && k.trim() !== ''){
+                            if(!isExcludedGradeField(k)){
                                 const n = parseNota(r[k]);
                                 if(n > 0){
                                     // Normalize key to detect variants
@@ -5732,8 +5745,7 @@ function extractTimeFromISO(isoString) {
                     const processedKeysForRecord = new Set();
                     
                     Object.keys(r).forEach(k => {
-                        const kUpper = k.toUpperCase();
-                        if (!EXCLUDED_FIELDS_SET.has(kUpper) && k.trim() !== '') {
+                        if (!isExcludedGradeField(k)) {
                             const n = parseNota(r[k]);
                             if (n > 0) {
                                 // Normalize key to match canonical key
