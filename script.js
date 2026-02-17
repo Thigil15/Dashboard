@@ -176,6 +176,8 @@
                     escalaKeys.forEach(key => {
                         const escalaData = data.cache[key];
                         const scaleMatch = key.match(/^Escala(Teoria|Pratica)?(\d+)$/i);
+                        const escalaTipo = scaleMatch && scaleMatch[1] ? scaleMatch[1].toLowerCase() : null;
+                        const escalaNumero = scaleMatch ? parseInt(scaleMatch[2], 10) : null;
                         if (scaleMatch) {
                             const scaleNumber = parseInt(scaleMatch[2], 10);
                             if (scaleNumber > maxScaleNumber) {
@@ -222,6 +224,9 @@
                             }
                             
                             escalasData[key] = {
+                                nomeEscala: key.replace(/\s+/g, ''),
+                                tipo: escalaTipo,
+                                numero: escalaNumero,
                                 alunos: alunos,
                                 headersDay: headersDay
                             };
@@ -9052,7 +9057,8 @@ function renderTabEscala(escalas) {
     const escalasTeoricas = [];
     
     escalas.forEach((escala) => {
-        const tipo = escala.tipo || 'pratica';
+        const nomeEscala = String(escala?.nomeEscala || '');
+        const tipo = escala.tipo || (/teoria/i.test(nomeEscala) ? 'teoria' : /pratica/i.test(nomeEscala) ? 'pratica' : 'pratica');
         if (tipo === 'teoria') {
             escalasTeoricas.push(escala);
         } else {
