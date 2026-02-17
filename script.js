@@ -176,11 +176,10 @@
                     escalaKeys.forEach(key => {
                         const escalaData = data.cache[key];
                         const scaleMatch = key.match(/^Escala(Teoria|Pratica)?(\d+)$/i);
-                        if (scaleMatch) {
-                            const scaleNumber = parseInt(scaleMatch[2], 10);
-                            if (scaleNumber > maxScaleNumber) {
-                                maxScaleNumber = scaleNumber;
-                            }
+                        const escalaTipo = scaleMatch && scaleMatch[1] ? scaleMatch[1].toLowerCase() : null;
+                        const escalaNumero = scaleMatch ? parseInt(scaleMatch[2], 10) : null;
+                        if (escalaNumero && escalaNumero > maxScaleNumber) {
+                            maxScaleNumber = escalaNumero;
                         }
                         
                         if (escalaData && escalaData.registros) {
@@ -222,6 +221,9 @@
                             }
                             
                             escalasData[key] = {
+                                nomeEscala: key,
+                                tipo: escalaTipo,
+                                numero: escalaNumero,
                                 alunos: alunos,
                                 headersDay: headersDay
                             };
@@ -1390,6 +1392,20 @@ function isValidStudentRecord(row) {
 // - Field variants are for READING values (e.g., find email to match student)
 // - Excluded fields are for FILTERING (e.g., don't calculate average of email field)
 const EXCLUDED_FIELDS_SET = new Set(['SERIALNUMBER', 'NOMECOMPLETO', 'EMAILHC', 'CURSO', 'EMAIL', 'NOME']);
+const EXCLUDED_FIELDS_REGEX = /^(_?ROW\s*INDEX(?:\s*\d+)?)$|^(AVALIACAO|AVALIAÇÃO|SUBAVALIACAO|SUBAVALIAÇÃO)$/i;
+
+/**
+ * Checks whether a field key should be excluded from grade calculations.
+ * Filters technical metadata (e.g. Row Index) and non-disciplinary keys (e.g. Avaliacao/SubAvaliacao).
+ * Empty keys are treated as excluded to avoid accidental grade parsing.
+ * @param {string} key
+ * @returns {boolean}
+ */
+function isExcludedGradeField(key) {
+    const normalizedKey = String(key ?? '').trim();
+    if (!normalizedKey) return true;
+    return EXCLUDED_FIELDS_SET.has(normalizedKey.toUpperCase()) || EXCLUDED_FIELDS_REGEX.test(normalizedKey);
+}
 
 // Time format regex patterns for schedule parsing
 // Supports formats like: "18:00:00 às 21:00:00", "18:00 às 21:00", "7h às 12h"
@@ -5252,8 +5268,7 @@ function extractTimeFromISO(isoString) {
                         
                         Object.keys(r).forEach(k => {
                             // Exclude known non-grade fields (case-insensitive) using module-level Set
-                            const kUpper = k.toUpperCase();
-                            if(!EXCLUDED_FIELDS_SET.has(kUpper) && k.trim() !== ''){
+                            if(!isExcludedGradeField(k)){
                                 const n = parseNota(r[k]);
                                 if(n > 0){
                                     // Normalize key to detect variants
@@ -5732,8 +5747,7 @@ function extractTimeFromISO(isoString) {
                     const processedKeysForRecord = new Set();
                     
                     Object.keys(r).forEach(k => {
-                        const kUpper = k.toUpperCase();
-                        if (!EXCLUDED_FIELDS_SET.has(kUpper) && k.trim() !== '') {
+                        if (!isExcludedGradeField(k)) {
                             const n = parseNota(r[k]);
                             if (n > 0) {
                                 // Normalize key to match canonical key
@@ -6237,6 +6251,15 @@ function extractTimeFromISO(isoString) {
             
             console.log(`[getRosterForDate] ${roster.length} alunos encontrados escalados para ${dayMonth}`);
             return roster;
+        }
+
+        /**
+         * Returns the number of students scheduled for a given date based on EscalaPratica/EscalaTeoria.
+         * @param {string} dateIso
+         * @returns {number}
+         */
+        function calculateEscaladosForDate(dateIso) {
+            return getRosterForDate(dateIso).length;
         }
 
         function getScaleForDate(dateIso) {
@@ -7139,7 +7162,8 @@ function extractTimeFromISO(isoString) {
 
         function refreshPontoView() {
             // Cache pontoView element to avoid redundant DOM lookups
-            const pontoView = document.getElementById('ponto-view');
+            // Support both current (content-ponto) and legacy (ponto-view) container IDs.
+            const pontoView = document.getElementById('content-ponto') || document.getElementById('ponto-view');
             
             try {
                 // Early return if ponto panel is not visible (prevents unnecessary errors)
@@ -7767,7 +7791,7 @@ function extractTimeFromISO(isoString) {
             
             // Data not available yet - might still be loading
             // Return a success response with available dates
-            const availableDate = pontoState.dates.length > 0 ? pontoState.dates[0] : isoDate;
+            const availableDate = pontoState.dates.find(d => pontoState.byDate.has(d)) || isoDate;
             console.log(`[ensurePontoData] Data para ${isoDate} não disponível. Usando data disponível: ${availableDate}`);
             return { success: true, selectedDate: availableDate, selectedScale: scaleLabel };
         }
@@ -9038,9 +9062,20 @@ function renderTabEscala(escalas) {
     // Separate scales into practical and theoretical
     const escalasPraticas = [];
     const escalasTeoricas = [];
+    const defaultScaleType = 'pratica';
     
     escalas.forEach((escala) => {
-        const tipo = escala.tipo || 'pratica';
+        const nomeEscala = escala?.nomeEscala || '';
+        let tipo = escala.tipo;
+        if (!tipo) {
+            if (/teoria/i.test(nomeEscala)) {
+                tipo = 'teoria';
+            } else if (/pratica/i.test(nomeEscala)) {
+                tipo = 'pratica';
+            } else {
+                tipo = defaultScaleType;
+            }
+        }
         if (tipo === 'teoria') {
             escalasTeoricas.push(escala);
         } else {
