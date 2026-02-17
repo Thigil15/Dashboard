@@ -135,6 +135,13 @@
         
         <div id="test3-result"></div>
     </div>
+    
+    <div class="test-section">
+        <h2 class="test-title">📊 Test Case 4: Email Variants (Case/Whitespace)</h2>
+        <p><strong>Scenario:</strong> Absences use email variants but should still match the same student</p>
+        
+        <div id="test4-result"></div>
+    </div>
 
     <script>
         // Mock data structures
@@ -291,11 +298,43 @@
                 </div>
             `;
         }
+        
+        // Test Case 4: Email variants
+        function testCase4() {
+            const records = [
+                { emailHC: ' aluno@hc.fm.usp.br ', DataAusenciaISO: '2026-01-10' },
+                { EmailHC: 'ALUNO@HC.FM.USP.BR', DataAusenciaISO: '2026-01-10', DataReposicaoISO: '2026-01-12' },
+                { Email: 'aluno@hc.fm.usp.br', DataAusenciaISO: '2026-01-20' }
+            ];
+            const normalize = v => String(v || '').trim().toLowerCase();
+            const getEmail = r => r.EmailHC || r.emailHC || r.Email || r.email || '';
+            const uniqueAbsences = Array.from(new Map(
+                records
+                    .filter(r => r.DataAusenciaISO && getEmail(r))
+                    .map(r => [`${normalize(getEmail(r))}|${r.DataAusenciaISO}`, r])
+            ).values());
+            const pending = uniqueAbsences.filter(abs =>
+                !records.some(r =>
+                    r.DataReposicaoISO &&
+                    normalize(getEmail(r)) === normalize(getEmail(abs)) &&
+                    r.DataAusenciaISO === abs.DataAusenciaISO
+                )
+            );
+            
+            return `
+                <div class="test-result ${pending.length === 1 ? 'pass' : 'fail'}">
+                    <strong>${pending.length === 1 ? '✅' : '❌'} Test 4 ${pending.length === 1 ? 'PASSED' : 'FAILED'}</strong><br>
+                    Pendências detectadas: ${pending.length} (esperado: 1)<br>
+                    <strong>Verification:</strong> variações de email com maiúsculas/espaços são tratadas no mesmo aluno.
+                </div>
+            `;
+        }
 
         // Run tests
         document.getElementById('test1-result').innerHTML = testCase1();
         document.getElementById('test2-result').innerHTML = testCase2();
         document.getElementById('test3-result').innerHTML = testCase3();
+        document.getElementById('test4-result').innerHTML = testCase4();
 
         console.log('✅ All tests completed successfully!');
         console.log('Test 1: New format (separate arrays) - ', testData1);
