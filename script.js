@@ -1912,11 +1912,14 @@ function extractTimeFromISO(isoString) {
             return String(record.EmailHC || record.emailHC || record.Email || record.email || '').trim();
         }
 
-        function findStudentByEmail(email) {
+        function findStudentByEmail(email, normalizedIndex = null) {
             if (!email || !appState.alunosMap || appState.alunosMap.size === 0) return null;
             const normalizedTarget = normalizeString(email);
             const direct = appState.alunosMap.get(email);
             if (direct) return direct;
+            if (normalizedIndex && normalizedIndex.has(normalizedTarget)) {
+                return normalizedIndex.get(normalizedTarget);
+            }
             for (const [mapEmail, student] of appState.alunosMap.entries()) {
                 if (normalizeString(mapEmail) === normalizedTarget) {
                     return student;
@@ -2074,8 +2077,12 @@ function extractTimeFromISO(isoString) {
             }
             
             // Get student details from alunosMap
+            const normalizedStudentIndex = new Map();
+            appState.alunosMap.forEach((student, email) => {
+                normalizedStudentIndex.set(normalizeString(email), student);
+            });
             const studentsWithPendingReposicoes = studentsPendingEmails
-                .map(email => findStudentByEmail(email))
+                .map(email => findStudentByEmail(email, normalizedStudentIndex))
                 .filter(s => s && s.Status === 'Ativo')
                 .sort((a, b) => (a.NomeCompleto || '').localeCompare(b.NomeCompleto || ''));
             
@@ -2134,8 +2141,12 @@ function extractTimeFromISO(isoString) {
                 scheduledEmails = Array.from(new Set(reposicoes.map(r => getRecordEmail(r))));
             }
             
+            const normalizedStudentIndex = new Map();
+            appState.alunosMap.forEach((student, email) => {
+                normalizedStudentIndex.set(normalizeString(email), student);
+            });
             const studentsWithScheduledReposicoes = scheduledEmails
-                .map(email => findStudentByEmail(email))
+                .map(email => findStudentByEmail(email, normalizedStudentIndex))
                 .filter(s => s && s.Status === 'Ativo')
                 .sort((a, b) => (a.NomeCompleto || '').localeCompare(b.NomeCompleto || ''));
             
