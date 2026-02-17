@@ -10133,6 +10133,7 @@ function renderTabEscala(escalas) {
             
             // Field mappings for disciplines
             // Using normalized keys: Anatomopatologia, SubAnatomopatologia, etc.
+            // Note: Keys match Firebase field names (no accents), displayName has proper Portuguese formatting
             const FIELD_MAPPINGS = {
                 // Individual disciplines
                 'Anatomopatologia': { key: 'Anatomopatologia', subKey: 'SubAnatomopatologia', displayName: 'Anatomopatologia' },
