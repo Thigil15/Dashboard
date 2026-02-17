@@ -6253,6 +6253,15 @@ function extractTimeFromISO(isoString) {
             return roster;
         }
 
+        /**
+         * Returns the number of students scheduled for a given date based on EscalaPratica/EscalaTeoria.
+         * @param {string} dateIso
+         * @returns {number}
+         */
+        function calculateEscaladosForDate(dateIso) {
+            return getRosterForDate(dateIso).length;
+        }
+
         function getScaleForDate(dateIso) {
             const iso = normalizeDateInput(dateIso);
             if (!iso) return null;
@@ -7153,7 +7162,8 @@ function extractTimeFromISO(isoString) {
 
         function refreshPontoView() {
             // Cache pontoView element to avoid redundant DOM lookups
-            const pontoView = document.getElementById('ponto-view');
+            // Support both current (content-ponto) and legacy (ponto-view) container IDs.
+            const pontoView = document.getElementById('content-ponto') || document.getElementById('ponto-view');
             
             try {
                 // Early return if ponto panel is not visible (prevents unnecessary errors)
@@ -7781,7 +7791,7 @@ function extractTimeFromISO(isoString) {
             
             // Data not available yet - might still be loading
             // Return a success response with available dates
-            const availableDate = pontoState.dates.length > 0 ? pontoState.dates[0] : isoDate;
+            const availableDate = pontoState.dates.find(d => pontoState.byDate.has(d)) || isoDate;
             console.log(`[ensurePontoData] Data para ${isoDate} não disponível. Usando data disponível: ${availableDate}`);
             return { success: true, selectedDate: availableDate, selectedScale: scaleLabel };
         }
