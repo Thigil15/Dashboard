@@ -126,14 +126,18 @@
                     
                     if (data.cache.Ausencias) {
                         const ausData = data.cache.Ausencias.registros || [];
-                        appState.ausencias = ausData.map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
+                        appState.ausencias = normalizeAusenciasReposicoes(
+                            ausData.map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row)
+                        );
                         appState.dataLoadingState.ausencias = true;
                         console.log(`[fetchDataFromURL] ✅ Ausências carregadas: ${ausData.length} registros`);
                     }
                     
                     if (data.cache.Reposicoes) {
                         const repData = data.cache.Reposicoes.registros || [];
-                        appState.reposicoes = repData.map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row);
+                        appState.reposicoes = normalizeAusenciasReposicoes(
+                            repData.map(row => row && typeof row === 'object' ? deepNormalizeObject(row) : row)
+                        );
                         appState.dataLoadingState.reposicoes = true;
                         console.log(`[fetchDataFromURL] ✅ Reposições carregadas: ${repData.length} registros`);
                     }
