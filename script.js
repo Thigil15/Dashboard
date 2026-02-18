@@ -7992,6 +7992,12 @@ function extractTimeFromISO(isoString) {
             return normalizeString((student && (student.EmailHC || student.NomeCompleto)) || '');
         }
 
+        function formatPendenciaDate(dateIso) {
+            const value = String(dateIso || '').trim();
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return 'Data não informada';
+            return new Date(`${value}T00:00:00`).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+        }
+
         let alunosPendenciasData = [];
 
         function buildAlunosPendenciasData() {
@@ -8152,9 +8158,9 @@ function extractTimeFromISO(isoString) {
                 const student = item.student || {};
                 const studentEmail = (student.EmailHC || '').trim();
                 const hasStudentEmail = Boolean(studentEmail);
-                const fallbackPhotoUrl = `https://placehold.co/120x120/0054B4/ffffff?text=${encodeURIComponent((student.NomeCompleto || 'A').charAt(0))}`;
+                const fallbackPhotoUrl = `https://placehold.co/48x48/0054B4/ffffff?text=${encodeURIComponent((student.NomeCompleto || 'A').charAt(0))}`;
                 const photoUrl = student.FotoID
-                    ? `https://lh3.googleusercontent.com/d/${student.FotoID}=s120-c`
+                    ? `https://lh3.googleusercontent.com/d/${student.FotoID}=s48-c`
                     : fallbackPhotoUrl;
                 const tags = [];
                 item.gradeAlerts.forEach(alert => {
@@ -8164,12 +8170,12 @@ function extractTimeFromISO(isoString) {
                     tags.push(`<span class="alunos-pendencia-tag alunos-pendencia-tag--absence">${item.pendingAbsences} ausência(s) sem reposição</span>`);
                 }
                 const absenceDetails = item.pendingAbsenceDates.length > 0
-                    ? `<ul class="alunos-pendencia-dates">${item.pendingAbsenceDates.slice(0, 3).map(dateIso => `<li>${new Date(`${dateIso}T00:00:00`).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</li>`).join('')}</ul>`
+                    ? `<ul class="alunos-pendencia-dates">${item.pendingAbsenceDates.slice(0, 3).map(dateIso => `<li>${escapeHtml(formatPendenciaDate(dateIso))}</li>`).join('')}</ul>`
                     : '';
             return `
                     <article class="alunos-pendencia-card">
                         <div class="alunos-pendencia-header">
-                            <img src="${photoUrl}" alt="Foto de ${escapeHtml(student.NomeCompleto || 'Aluno')}" loading="lazy" onerror="this.src='${fallbackPhotoUrl}'">
+                            <img src="${escapeHtml(photoUrl)}" alt="Foto de ${escapeHtml(student.NomeCompleto || 'Aluno')}" loading="lazy">
                             <div>
                                 <h3>${escapeHtml(student.NomeCompleto || 'Aluno sem nome')}</h3>
                                 <p class="alunos-pendencia-meta">${escapeHtml(student.Curso || 'Curso não informado')}</p>
@@ -8625,8 +8631,8 @@ function extractTimeFromISO(isoString) {
                  ...praticasPendencias.map(text => `<span class="alunos-pendencia-tag alunos-pendencia-tag--grade">${escapeHtml(text)}</span>`),
                  ...pendingAbsences.map(item => {
                      const dateIso = item?.DataAusenciaISO || item?.DataAusencia || '';
-                     const formattedDate = dateIso ? new Date(`${dateIso}T00:00:00`).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 'Data não informada';
-                     return `<span class="alunos-pendencia-tag alunos-pendencia-tag--absence">Ausência pendente em ${formattedDate}</span>`;
+                     const formattedDate = formatPendenciaDate(dateIso);
+                     return `<span class="alunos-pendencia-tag alunos-pendencia-tag--absence">Ausência pendente em ${escapeHtml(formattedDate)}</span>`;
                  })
              ];
 
