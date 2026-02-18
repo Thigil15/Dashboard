@@ -8167,6 +8167,7 @@ function extractTimeFromISO(isoString) {
                 const pendenciaTitulos = [];
                 if (item.gradeAlerts.length > 0) pendenciaTitulos.push('Médias em vermelho');
                 if (item.pendingAbsences > 0) pendenciaTitulos.push('Ausências sem reposição');
+                const drawerId = `alunos-pendencia-drawer-${index}`;
                 const pendenciaItensHtml = pendenciaTitulos
                     .map(title => `<li class="alunos-pendencia-drawer-item">${escapeHtml(title)}</li>`)
                     .join('');
@@ -8177,11 +8178,11 @@ function extractTimeFromISO(isoString) {
                             <p class="student-name">${escapeHtml(getShortName(student.NomeCompleto || 'Aluno sem nome'))}</p>
                             <p class="student-course">${escapeHtml(student.Curso || 'Curso não informado')}</p>
                         </button>
-                        <button type="button" class="alunos-pendencia-drawer-toggle" data-pending-drawer-index="${index}" aria-expanded="false">
+                        <button type="button" class="alunos-pendencia-drawer-toggle" data-pending-drawer-index="${index}" aria-expanded="false" aria-controls="${drawerId}" aria-label="Ver pendências de ${escapeHtml(student.NomeCompleto || 'Aluno')}">
                             Ver pendências
                         </button>
-                        <ul class="alunos-pendencia-drawer" data-pending-drawer-content="${index}" hidden>
-                            ${pendenciaItensHtml || '<li class="alunos-pendencia-drawer-item">Pendência</li>'}
+                        <ul class="alunos-pendencia-drawer" id="${drawerId}" data-pending-drawer-content="${index}" hidden>
+                            ${pendenciaItensHtml}
                         </ul>
                     </article>
                 `;
