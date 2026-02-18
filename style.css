@@ -2159,6 +2159,19 @@
             min-height: 100%;
         }
 
+        .alunos-pendencia-student-link {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            gap: 0.625rem;
+            border: none;
+            background: transparent;
+            padding: 0;
+            cursor: pointer;
+            text-align: center;
+        }
+
         .alunos-pendencia-card .student-name,
         .alunos-pendencia-card .student-course,
         .alunos-pendencia-card .alunos-pendencia-title {
@@ -2172,6 +2185,38 @@
             opacity: 0.7;
             cursor: default;
             pointer-events: none;
+        }
+
+        .alunos-pendencia-drawer-toggle {
+            width: 100%;
+            border: 1px solid rgba(0, 84, 180, 0.18);
+            border-radius: var(--radius-full);
+            padding: 0.35rem 0.75rem;
+            background: rgba(0, 84, 180, 0.08);
+            color: var(--incor-blue-700);
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .alunos-pendencia-drawer {
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .alunos-pendencia-drawer-item {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--content-text-secondary);
+            border: 1px solid rgba(0, 84, 180, 0.12);
+            border-radius: var(--radius-md);
+            background: rgba(0, 84, 180, 0.04);
+            padding: 0.4rem 0.6rem;
         }
 
         .alunos-pendencia-title {

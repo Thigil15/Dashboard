@@ -7999,6 +7999,7 @@ function extractTimeFromISO(isoString) {
         }
 
         let alunosPendenciasData = [];
+        let alunoPendenciaDrawerAbertoIndex = null;
 
         function buildAlunosPendenciasData() {
             const activeStudents = (appState.alunos || []).filter(s => s && s.Status === 'Ativo');
@@ -8154,6 +8155,7 @@ function extractTimeFromISO(isoString) {
             }
 
             alunosPendenciasData = pendencias;
+            alunoPendenciaDrawerAbertoIndex = null;
             listContainer.innerHTML = pendencias.map((item, index) => {
                 const student = item.student || {};
                 const studentEmail = (student.EmailHC || '').trim();
@@ -8165,22 +8167,50 @@ function extractTimeFromISO(isoString) {
                 const pendenciaTitulos = [];
                 if (item.gradeAlerts.length > 0) pendenciaTitulos.push('Médias em vermelho');
                 if (item.pendingAbsences > 0) pendenciaTitulos.push('Ausências sem reposição');
-                const pendenciaTitulo = pendenciaTitulos.join(' • ');
-            return `
+                const pendenciaItensHtml = pendenciaTitulos
+                    .map(title => `<li class="alunos-pendencia-drawer-item">${escapeHtml(title)}</li>`)
+                    .join('');
+                return `
                     <article class="student-card alunos-pendencia-card${hasStudentEmail ? '' : ' alunos-pendencia-card--disabled'}"${hasStudentEmail ? ` data-pending-index="${index}"` : ''}>
-                        <img src="${escapeHtml(photoUrl)}" alt="Foto de ${escapeHtml(student.NomeCompleto || 'Aluno')}" loading="lazy">
-                        <p class="student-name">${escapeHtml(getShortName(student.NomeCompleto || 'Aluno sem nome'))}</p>
-                        <p class="student-course">${escapeHtml(student.Curso || 'Curso não informado')}</p>
-                        <p class="alunos-pendencia-title">${escapeHtml(pendenciaTitulo || 'Pendência')}</p>
+                        <button type="button" class="alunos-pendencia-student-link"${hasStudentEmail ? ` data-pending-index="${index}"` : ' disabled'} aria-label="Abrir ficha de ${escapeHtml(student.NomeCompleto || 'Aluno')}">
+                            <img src="${escapeHtml(photoUrl)}" alt="Foto de ${escapeHtml(student.NomeCompleto || 'Aluno')}" loading="lazy">
+                            <p class="student-name">${escapeHtml(getShortName(student.NomeCompleto || 'Aluno sem nome'))}</p>
+                            <p class="student-course">${escapeHtml(student.Curso || 'Curso não informado')}</p>
+                        </button>
+                        <button type="button" class="alunos-pendencia-drawer-toggle" data-pending-drawer-index="${index}" aria-expanded="false">
+                            Ver pendências
+                        </button>
+                        <ul class="alunos-pendencia-drawer" data-pending-drawer-content="${index}" hidden>
+                            ${pendenciaItensHtml || '<li class="alunos-pendencia-drawer-item">Pendência</li>'}
+                        </ul>
                     </article>
                 `;
             }).join('');
         }
 
         function handleAlunosPendenciasClick(event) {
-            const button = event.target.closest('[data-pending-index]');
-            if (!button) return;
-            const index = Number(button.getAttribute('data-pending-index'));
+            const drawerToggle = event.target.closest('[data-pending-drawer-index]');
+            if (drawerToggle) {
+                const drawerIndex = Number(drawerToggle.getAttribute('data-pending-drawer-index'));
+                if (!Number.isInteger(drawerIndex) || drawerIndex < 0) return;
+                alunoPendenciaDrawerAbertoIndex = alunoPendenciaDrawerAbertoIndex === drawerIndex ? null : drawerIndex;
+                const list = event.currentTarget;
+                list.querySelectorAll('[data-pending-drawer-index]').forEach(toggle => {
+                    const currentIndex = Number(toggle.getAttribute('data-pending-drawer-index'));
+                    const isOpen = currentIndex === alunoPendenciaDrawerAbertoIndex;
+                    toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                    toggle.textContent = isOpen ? 'Ocultar pendências' : 'Ver pendências';
+                });
+                list.querySelectorAll('[data-pending-drawer-content]').forEach(drawer => {
+                    const currentIndex = Number(drawer.getAttribute('data-pending-drawer-content'));
+                    drawer.hidden = currentIndex !== alunoPendenciaDrawerAbertoIndex;
+                });
+                return;
+            }
+
+            const studentLink = event.target.closest('[data-pending-index]');
+            if (!studentLink) return;
+            const index = Number(studentLink.getAttribute('data-pending-index'));
             if (!Number.isInteger(index) || index < 0) return;
             const target = alunosPendenciasData[index];
             const email = (target?.student?.EmailHC || '').trim();
