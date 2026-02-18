@@ -1085,11 +1085,11 @@ function registrarReposicao(data) {
   
   var cabecalhos = aba.getRange(1, 1, 1, aba.getLastColumn()).getValues()[0];
   var registro = cabecalhos.map(function(col) {
-    switch (col) {
+    switch (String(col || '').trim()) {
       case 'NomeCompleto': return data.NomeCompleto || '';
       case 'EmailHC': return data.EmailHC || '';
       case 'Curso': return data.Curso || '';
-      case 'Escala': return data.Escala || '';
+      case 'Escala': return data.Escala || data.escala || '';
       case 'Horario': return data.Horario || '';
       case 'Unidade': return data.Unidade || '';
       case 'Motivo': return data.Motivo || '';
