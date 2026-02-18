@@ -3163,6 +3163,7 @@ function extractTimeFromISO(isoString) {
             document.getElementById('search-student').addEventListener('input', filterStudentList);
             document.getElementById('open-alunos-pendencias')?.addEventListener('click', () => window.openAlunosPendenciasPage && window.openAlunosPendenciasPage());
             document.getElementById('close-alunos-pendencias')?.addEventListener('click', () => window.closeAlunosPendenciasPage && window.closeAlunosPendenciasPage());
+            document.getElementById('alunos-pendencias-list')?.addEventListener('click', handleAlunosPendenciasClick);
             setupStudentTabNavigation();
 
             // [ORION] Event Delegation para os cards de aluno
@@ -7994,6 +7995,8 @@ function extractTimeFromISO(isoString) {
             return normalizeString((student && (student.EmailHC || student.NomeCompleto)) || '');
         }
 
+        let alunosPendenciasData = [];
+
         function buildAlunosPendenciasData() {
             const activeStudents = (appState.alunos || []).filter(s => s && s.Status === 'Ativo');
             const studentLookup = new Map();
@@ -8135,8 +8138,11 @@ function extractTimeFromISO(isoString) {
                 return;
             }
 
-            listContainer.innerHTML = pendencias.map(item => {
+            alunosPendenciasData = pendencias;
+            listContainer.innerHTML = pendencias.map((item, index) => {
                 const student = item.student || {};
+                const studentEmail = (student.EmailHC || '').trim();
+                const hasStudentEmail = Boolean(studentEmail);
                 const tags = [];
                 item.gradeAlerts.forEach(alert => {
                     tags.push(`<span class="alunos-pendencia-tag alunos-pendencia-tag--grade">${escapeHtml(alert)}</span>`);
@@ -8144,25 +8150,28 @@ function extractTimeFromISO(isoString) {
                 if (item.pendingAbsences > 0) {
                     tags.push(`<span class="alunos-pendencia-tag alunos-pendencia-tag--absence">${item.pendingAbsences} ausência(s) sem reposição</span>`);
                 }
-                return `
+            return `
                     <article class="alunos-pendencia-card">
                         <h3>${escapeHtml(student.NomeCompleto || 'Aluno sem nome')}</h3>
                         <p class="alunos-pendencia-meta">${escapeHtml(student.Curso || 'Curso não informado')}</p>
                         <div class="alunos-pendencia-tags">${tags.join('')}</div>
-                        <button type="button" class="alunos-pendencia-action" data-open-student="${escapeHtml(student.EmailHC || '')}">
+                        <button type="button" class="alunos-pendencia-action"${hasStudentEmail ? ` data-pending-index="${index}"` : ' disabled'}>
                             Abrir ficha do aluno
                         </button>
                     </article>
                 `;
             }).join('');
+        }
 
-            listContainer.querySelectorAll('[data-open-student]').forEach(button => {
-                button.addEventListener('click', () => {
-                    const email = button.getAttribute('data-open-student');
-                    if (!email) return;
-                    showStudentDetail(email);
-                });
-            });
+        function handleAlunosPendenciasClick(event) {
+            const button = event.target.closest('[data-pending-index]');
+            if (!button) return;
+            const index = Number(button.getAttribute('data-pending-index'));
+            if (!Number.isInteger(index) || index < 0) return;
+            const target = alunosPendenciasData[index];
+            const email = (target?.student?.EmailHC || '').trim();
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
+            showStudentDetail(email);
         }
 
         window.openAlunosPendenciasPage = function() {

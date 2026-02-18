@@ -2182,6 +2182,11 @@
             cursor: pointer;
         }
 
+        .alunos-pendencia-action:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+        }
+
         .alunos-pendencias-empty {
             text-align: center;
             color: var(--content-text-muted);
