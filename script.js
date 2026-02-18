@@ -8158,40 +8158,20 @@ function extractTimeFromISO(isoString) {
                 const student = item.student || {};
                 const studentEmail = (student.EmailHC || '').trim();
                 const hasStudentEmail = Boolean(studentEmail);
-                const gradeCount = item.gradeAlerts.length;
-                const absenceCount = item.pendingAbsences;
                 const fallbackPhotoUrl = `https://placehold.co/48x48/0054B4/ffffff?text=${encodeURIComponent((student.NomeCompleto || 'A').charAt(0))}`;
                 const photoUrl = student.FotoID
                     ? `https://lh3.googleusercontent.com/d/${student.FotoID}=s48-c`
                     : fallbackPhotoUrl;
-                const tags = [];
-                item.gradeAlerts.forEach(alert => {
-                    tags.push(`<span class="alunos-pendencia-tag alunos-pendencia-tag--grade">${escapeHtml(alert)}</span>`);
-                });
-                if (item.pendingAbsences > 0) {
-                    tags.push(`<span class="alunos-pendencia-tag alunos-pendencia-tag--absence">${item.pendingAbsences} ausência(s) sem reposição</span>`);
-                }
-                const absenceDetails = item.pendingAbsenceDates.length > 0
-                    ? `<ul class="alunos-pendencia-dates">${item.pendingAbsenceDates.slice(0, 3).map(dateIso => `<li>${escapeHtml(formatPendenciaDate(dateIso))}</li>`).join('')}</ul>`
-                    : '';
+                const pendenciaTitulos = [];
+                if (item.gradeAlerts.length > 0) pendenciaTitulos.push('Médias em vermelho');
+                if (item.pendingAbsences > 0) pendenciaTitulos.push('Ausências sem reposição');
+                const pendenciaTitulo = pendenciaTitulos.join(' • ');
             return `
-                    <article class="alunos-pendencia-card">
-                        <div class="alunos-pendencia-header">
-                            <img src="${escapeHtml(photoUrl)}" alt="Foto de ${escapeHtml(student.NomeCompleto || 'Aluno')}" loading="lazy">
-                            <div class="alunos-pendencia-header-content">
-                                <h3>${escapeHtml(student.NomeCompleto || 'Aluno sem nome')}</h3>
-                                <p class="alunos-pendencia-meta">${escapeHtml(student.Curso || 'Curso não informado')}</p>
-                            </div>
-                        </div>
-                        <div class="alunos-pendencia-overview">
-                            ${gradeCount ? `<span class="alunos-pendencia-overview-item">${gradeCount} média(s) em vermelho</span>` : ''}
-                            ${absenceCount ? `<span class="alunos-pendencia-overview-item">${absenceCount} ausência(s) pendente(s)</span>` : ''}
-                        </div>
-                        <div class="alunos-pendencia-tags">${tags.join('')}</div>
-                        ${absenceDetails}
-                        <button type="button" class="alunos-pendencia-action"${hasStudentEmail ? ` data-pending-index="${index}"` : ' disabled'}>
-                            Abrir ficha do aluno
-                        </button>
+                    <article class="student-card alunos-pendencia-card${hasStudentEmail ? '' : ' alunos-pendencia-card--disabled'}"${hasStudentEmail ? ` data-pending-index="${index}"` : ''}>
+                        <img src="${escapeHtml(photoUrl)}" alt="Foto de ${escapeHtml(student.NomeCompleto || 'Aluno')}" loading="lazy">
+                        <p class="student-name">${escapeHtml(getShortName(student.NomeCompleto || 'Aluno sem nome'))}</p>
+                        <p class="student-course">${escapeHtml(student.Curso || 'Curso não informado')}</p>
+                        <p class="alunos-pendencia-title">${escapeHtml(pendenciaTitulo || 'Pendência')}</p>
                     </article>
                 `;
             }).join('');
