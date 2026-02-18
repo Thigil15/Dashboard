@@ -1987,6 +1987,25 @@
             width: 100%;
             max-width: 320px;
         }
+
+        .alunos-pendencias-trigger {
+            border: none;
+            border-radius: var(--radius-lg);
+            background: linear-gradient(135deg, var(--incor-red-600), var(--incor-red-500));
+            color: #fff;
+            font-family: var(--font-display);
+            font-size: 0.8125rem;
+            font-weight: 600;
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            box-shadow: 0 8px 16px rgba(201, 29, 42, 0.2);
+            transition: var(--transition-fast);
+        }
+
+        .alunos-pendencias-trigger:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 20px rgba(201, 29, 42, 0.25);
+        }
         
         .alunos-search-icon {
             position: absolute;
@@ -2034,6 +2053,147 @@
         /* === STUDENT LIST PANEL === */
         .alunos-list-panel {
             /* No fixed height or overflow - let page scroll naturally */
+        }
+
+        .alunos-pendencias-view {
+            background: white;
+            border-radius: var(--radius-xl);
+            border: 1px solid rgba(229, 233, 239, 0.8);
+            box-shadow: var(--card-shadow);
+            padding: var(--spacing-lg);
+        }
+
+        .alunos-pendencias-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .alunos-pendencias-title {
+            margin: 0;
+            font-size: 1.125rem;
+            color: var(--incor-blue-800);
+        }
+
+        .alunos-pendencias-back {
+            border: 1px solid rgba(0, 84, 180, 0.2);
+            border-radius: var(--radius-md);
+            background: var(--incor-blue-50);
+            color: var(--incor-blue-700);
+            font-weight: 600;
+            font-size: 0.75rem;
+            padding: 0.5rem 0.875rem;
+            cursor: pointer;
+        }
+
+        .alunos-pendencias-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .alunos-pendencias-summary-card {
+            border: 1px solid rgba(229, 233, 239, 0.8);
+            border-radius: var(--radius-lg);
+            padding: 0.75rem;
+            background: var(--surface-light);
+        }
+
+        .alunos-pendencias-summary-label {
+            font-size: 0.6875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--content-text-muted);
+            font-weight: 700;
+        }
+
+        .alunos-pendencias-summary-value {
+            margin-top: 0.25rem;
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--incor-blue-800);
+        }
+
+        .alunos-pendencias-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .alunos-pendencia-card {
+            border: 1px solid rgba(229, 233, 239, 0.8);
+            border-radius: var(--radius-lg);
+            padding: 0.875rem;
+            background: #fff;
+        }
+
+        .alunos-pendencia-card h3 {
+            margin: 0 0 0.5rem 0;
+            font-size: 0.9375rem;
+            color: var(--content-text-primary);
+        }
+
+        .alunos-pendencia-meta {
+            margin: 0;
+            font-size: 0.75rem;
+            color: var(--content-text-secondary);
+        }
+
+        .alunos-pendencia-tags {
+            margin-top: 0.625rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+
+        .alunos-pendencia-tag {
+            font-size: 0.6875rem;
+            font-weight: 600;
+            border-radius: var(--radius-full);
+            padding: 0.25rem 0.55rem;
+            border: 1px solid transparent;
+        }
+
+        .alunos-pendencia-tag--grade {
+            background: rgba(226, 30, 38, 0.1);
+            color: var(--incor-red-700);
+            border-color: rgba(226, 30, 38, 0.25);
+        }
+
+        .alunos-pendencia-tag--absence {
+            background: rgba(217, 119, 6, 0.12);
+            color: #92400E;
+            border-color: rgba(217, 119, 6, 0.25);
+        }
+
+        .alunos-pendencia-action {
+            margin-top: 0.75rem;
+            border: none;
+            border-radius: var(--radius-md);
+            padding: 0.5rem 0.75rem;
+            background: var(--incor-blue-600);
+            color: #fff;
+            font-weight: 600;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+
+        .alunos-pendencia-action:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+        }
+
+        .alunos-pendencias-empty {
+            text-align: center;
+            color: var(--content-text-muted);
+            padding: 2rem 1rem;
+            border: 2px dashed rgba(0, 84, 180, 0.12);
+            border-radius: var(--radius-lg);
+            background: var(--surface-light);
         }
         
         /* === STUDENT GROUP HEADERS - INCOR STYLE === */
@@ -2289,6 +2449,15 @@
             
             .alunos-search-wrapper {
                 max-width: 100%;
+            }
+
+            .alunos-pendencias-trigger {
+                width: 100%;
+            }
+
+            .alunos-pendencias-topbar {
+                flex-direction: column;
+                align-items: flex-start;
             }
             
             .alunos-header-icon {

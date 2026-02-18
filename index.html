@@ -548,11 +548,24 @@
                                 </svg>
                                 <input type="text" id="search-student" placeholder="Buscar aluno pelo nome..." class="alunos-search-input">
                             </div>
+                            <button id="open-alunos-pendencias" class="alunos-pendencias-trigger" type="button">
+                                Ver pendências
+                            </button>
                         </div>
                     </header>
                     
                     <!-- Student List Panel - Natural page scroll -->
                     <div id="student-list-panel" class="alunos-list-panel"></div>
+
+                    <!-- Pending Students Page -->
+                    <div id="alunos-pendencias-view" class="alunos-pendencias-view" style="display: none;">
+                        <div class="alunos-pendencias-topbar">
+                            <h2 class="alunos-pendencias-title">Alunos com Pendências</h2>
+                            <button id="close-alunos-pendencias" class="alunos-pendencias-back" type="button">Voltar para lista</button>
+                        </div>
+                        <div id="alunos-pendencias-summary" class="alunos-pendencias-summary"></div>
+                        <div id="alunos-pendencias-list" class="alunos-pendencias-list"></div>
+                    </div>
                 </div>
 
                 <!-- View: Ponto - Modern InCor Design -->
