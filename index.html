@@ -556,16 +556,6 @@
                     
                     <!-- Student List Panel - Natural page scroll -->
                     <div id="student-list-panel" class="alunos-list-panel"></div>
-
-                    <!-- Pending Students Page -->
-                    <div id="alunos-pendencias-view" class="alunos-pendencias-view" style="display: none;">
-                        <div class="alunos-pendencias-topbar">
-                            <h2 class="alunos-pendencias-title">Alunos com Pendências</h2>
-                            <button id="close-alunos-pendencias" class="alunos-pendencias-back" type="button">Voltar para lista</button>
-                        </div>
-                        <div id="alunos-pendencias-summary" class="alunos-pendencias-summary"></div>
-                        <div id="alunos-pendencias-list" class="alunos-pendencias-list"></div>
-                    </div>
                 </div>
 
                 <!-- View: Ponto - Modern InCor Design -->
@@ -892,6 +882,28 @@
         </footer>
     </div>
 
+    <!-- View: Pendências de Alunos -->
+    <div id="alunos-pendencias-view" class="view-container alunos-pendencias-page" style="display: none;">
+        <header class="alunos-header">
+            <div class="alunos-header-content">
+                <div class="alunos-header-left">
+                    <div class="alunos-header-icon">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="alunos-pendencias-title">Alunos com Pendências</h2>
+                        <p class="alunos-header-subtitle">Visão detalhada das pendências acadêmicas e de reposição</p>
+                    </div>
+                </div>
+                <button id="close-alunos-pendencias" class="alunos-pendencias-back" type="button">Voltar para lista</button>
+            </div>
+        </header>
+        <div id="alunos-pendencias-summary" class="alunos-pendencias-summary"></div>
+        <div id="alunos-pendencias-list" class="alunos-pendencias-list"></div>
+    </div>
+
     <!-- View: Detalhe do Aluno - REVOLUTIONARY INCOR DESIGN v2.0 -->
     <!-- CRITICAL FIX: Start hidden to prevent showing non-existent student on page load -->
     <div id="student-detail-view" class="view-container student-profile-view" style="display: none;">
@@ -1068,11 +1080,11 @@
                             </svg>
                             <span>Escala</span>
                         </button>
-                        <button data-tab="ausencias-reposicoes" class="student-tab-button">
+                        <button data-tab="pendencias" class="student-tab-button">
                             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                             </svg>
-                            <span>Ausências/Reposições</span>
+                            <span>Pendências</span>
                         </button>
                         <button data-tab="notas-t" class="student-tab-button">
                             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -1336,10 +1348,14 @@
                         </div>
                     </div>
                     
-                    <!-- Faltas -->
-                    <div id="tab-ausencias-reposicoes" class="tab-content student-tab-panel">
+                    <!-- Pendências -->
+                    <div id="tab-pendencias" class="tab-content student-tab-panel">
                         <div class="student-faltas-wrapper-simple">
-                            <div id="faltas-content" class="student-faltas-content-simple"></div>
+                            <div id="student-pendencias-summary" class="student-pendencias-summary"></div>
+                            <div class="student-pendencias-section">
+                                <h4 class="student-pendencias-section-title">Ausências/Reposições</h4>
+                                <div id="faltas-content" class="student-faltas-content-simple"></div>
+                            </div>
                         </div>
                     </div>
                     
