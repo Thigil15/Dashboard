@@ -884,24 +884,51 @@
 
     <!-- View: Pendências de Alunos -->
     <div id="alunos-pendencias-view" class="view-container alunos-pendencias-page" style="display: none;">
-        <header class="alunos-header">
-            <div class="alunos-header-content">
-                <div class="alunos-header-left">
-                    <div class="alunos-header-icon">
-                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <header class="header-professional alunos-pendencias-header">
+            <div class="header-top-bar">
+                <div class="header-brand">
+                    <div class="header-logo-icon">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
                     </div>
-                    <div>
-                        <h2 class="alunos-pendencias-title">Alunos com Pendências</h2>
-                        <p class="alunos-header-subtitle">Visão detalhada das pendências acadêmicas e de reposição</p>
+                    <div class="header-brand-text">
+                        <h2 class="header-title">Alunos com Pendências</h2>
+                        <p class="header-subtitle">Visão detalhada das pendências acadêmicas e de reposição</p>
                     </div>
                 </div>
                 <button id="close-alunos-pendencias" class="alunos-pendencias-back" type="button">Voltar para lista</button>
             </div>
         </header>
-        <div id="alunos-pendencias-summary" class="alunos-pendencias-summary"></div>
-        <div id="alunos-pendencias-list" class="alunos-pendencias-list"></div>
+        <main class="alunos-pendencias-content">
+            <div id="alunos-pendencias-summary" class="alunos-pendencias-summary"></div>
+            <div id="alunos-pendencias-list" class="alunos-pendencias-list"></div>
+        </main>
+        <footer class="student-profile-footer alunos-pendencias-footer">
+            <div class="student-footer-content">
+                <div class="student-footer-info">
+                    <div class="student-footer-brand">
+                        <div class="student-footer-logo">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                            </svg>
+                        </div>
+                        <div class="student-footer-text">
+                            <strong>Portal de Ensino InCor</strong>
+                            <span>Fisioterapia • HC FMUSP</span>
+                        </div>
+                    </div>
+                    <div class="student-footer-contact">
+                        <a href="mailto:ensinofisioincor@hc.fm.usp.br">ensinofisioincor@hc.fm.usp.br</a>
+                        <span class="separator">•</span>
+                        <a href="tel:+551126615319">(11) 2661-5319</a>
+                    </div>
+                </div>
+                <div class="student-footer-copyright">
+                    © <span class="current-year">2025</span> InCor - Instituto do Coração • HC FMUSP
+                </div>
+            </div>
+        </footer>
     </div>
 
     <!-- View: Detalhe do Aluno - REVOLUTIONARY INCOR DESIGN v2.0 -->

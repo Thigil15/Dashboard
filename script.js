@@ -8158,6 +8158,8 @@ function extractTimeFromISO(isoString) {
                 const student = item.student || {};
                 const studentEmail = (student.EmailHC || '').trim();
                 const hasStudentEmail = Boolean(studentEmail);
+                const gradeCount = item.gradeAlerts.length;
+                const absenceCount = item.pendingAbsences;
                 const fallbackPhotoUrl = `https://placehold.co/48x48/0054B4/ffffff?text=${encodeURIComponent((student.NomeCompleto || 'A').charAt(0))}`;
                 const photoUrl = student.FotoID
                     ? `https://lh3.googleusercontent.com/d/${student.FotoID}=s48-c`
@@ -8176,10 +8178,14 @@ function extractTimeFromISO(isoString) {
                     <article class="alunos-pendencia-card">
                         <div class="alunos-pendencia-header">
                             <img src="${escapeHtml(photoUrl)}" alt="Foto de ${escapeHtml(student.NomeCompleto || 'Aluno')}" loading="lazy">
-                            <div>
+                            <div class="alunos-pendencia-header-content">
                                 <h3>${escapeHtml(student.NomeCompleto || 'Aluno sem nome')}</h3>
                                 <p class="alunos-pendencia-meta">${escapeHtml(student.Curso || 'Curso não informado')}</p>
                             </div>
+                        </div>
+                        <div class="alunos-pendencia-overview">
+                            ${gradeCount ? `<span class="alunos-pendencia-overview-item">${gradeCount} média(s) em vermelho</span>` : ''}
+                            ${absenceCount ? `<span class="alunos-pendencia-overview-item">${absenceCount} ausência(s) pendente(s)</span>` : ''}
                         </div>
                         <div class="alunos-pendencia-tags">${tags.join('')}</div>
                         ${absenceDetails}

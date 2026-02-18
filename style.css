@@ -2067,9 +2067,27 @@
         .alunos-pendencias-page {
             display: flex;
             flex-direction: column;
-            padding: var(--spacing-xl);
-            gap: var(--spacing-md);
+            min-height: 100vh;
             background: linear-gradient(180deg, #f8fbff 0%, #f4f8fc 100%);
+        }
+
+        .alunos-pendencias-content {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+            padding: var(--spacing-xl);
+        }
+
+        .alunos-pendencias-header .header-top-bar {
+            padding: 0.75rem 1.5rem;
+        }
+
+        .alunos-pendencias-header .header-title {
+            font-size: 1.125rem;
+        }
+
+        .alunos-pendencias-header .header-subtitle {
+            font-size: 0.75rem;
         }
 
         .alunos-pendencias-topbar {
@@ -2092,7 +2110,7 @@
             background: var(--incor-blue-50);
             color: var(--incor-blue-700);
             font-weight: 600;
-            font-size: 0.75rem;
+            font-size: 0.8125rem;
             padding: 0.5rem 0.875rem;
             cursor: pointer;
         }
@@ -2137,15 +2155,22 @@
         .alunos-pendencia-card {
             border: 1px solid rgba(229, 233, 239, 0.8);
             border-radius: var(--radius-lg);
-            padding: 0.875rem;
-            background: #fff;
+            padding: 1rem;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
             box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
         }
 
         .alunos-pendencia-header {
             display: flex;
             align-items: center;
             gap: 0.75rem;
+        }
+
+        .alunos-pendencia-header-content {
+            flex: 1;
         }
 
         .alunos-pendencia-header img {
@@ -2158,19 +2183,34 @@
         }
 
         .alunos-pendencia-card h3 {
-            margin: 0 0 0.5rem 0;
+            margin: 0;
             font-size: 0.9375rem;
             color: var(--content-text-primary);
         }
 
         .alunos-pendencia-meta {
-            margin: 0;
+            margin: 0.25rem 0 0;
             font-size: 0.75rem;
             color: var(--content-text-secondary);
         }
 
+        .alunos-pendencia-overview {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+
+        .alunos-pendencia-overview-item {
+            font-size: 0.6875rem;
+            font-weight: 700;
+            border-radius: var(--radius-full);
+            padding: 0.25rem 0.55rem;
+            border: 1px solid rgba(0, 84, 180, 0.18);
+            background: rgba(0, 84, 180, 0.08);
+            color: var(--incor-blue-700);
+        }
+
         .alunos-pendencia-tags {
-            margin-top: 0.625rem;
             display: flex;
             flex-wrap: wrap;
             gap: 0.4rem;
@@ -2204,7 +2244,6 @@
         }
 
         .alunos-pendencia-action {
-            margin-top: 0.75rem;
             border: none;
             border-radius: var(--radius-md);
             padding: 0.5rem 0.75rem;
@@ -2218,6 +2257,10 @@
         .alunos-pendencia-action:disabled {
             background: #cbd5e1;
             cursor: not-allowed;
+        }
+
+        .alunos-pendencias-footer {
+            margin-top: auto;
         }
 
         .alunos-pendencias-empty {
