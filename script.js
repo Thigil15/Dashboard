@@ -1739,7 +1739,7 @@ function extractTimeFromISO(isoString) {
         // --- Gerenciador de Views Centralizado ---
         function showView(viewIdToShow) {
             console.log(`[showView] Tentando mostrar view: ${viewIdToShow}`);
-            const allViewIds = ['login-view', 'dashboard-view', 'student-detail-view'];
+            const allViewIds = ['login-view', 'dashboard-view', 'alunos-pendencias-view', 'student-detail-view'];
             let found = false;
             
             allViewIds.forEach(id => {
@@ -1751,6 +1751,7 @@ function extractTimeFromISO(isoString) {
                         const needsFlex = (id === 'dashboard-view' || id === 'login-view' || 
                                           view.classList.contains('incor-dash') ||
                                           view.classList.contains('alunos-view') ||
+                                          view.classList.contains('alunos-pendencias-page') ||
                                           view.classList.contains('student-profile-view'));
                         displayStyle = needsFlex ? 'flex' : 'block';
                         
@@ -4258,10 +4259,6 @@ function extractTimeFromISO(isoString) {
                 }
             });
 
-            if (tabName === 'alunos' && typeof closeAlunosPendenciasPage === 'function') {
-                closeAlunosPendenciasPage();
-            }
-            
             // Initialize dashboard panel when switching to dashboard tab
             if (tabName === 'dashboard') {
                 console.log('[switchMainTab] Renderizando dashboard...');
@@ -5729,7 +5726,7 @@ function extractTimeFromISO(isoString) {
                 showStudentDetail(studentEmail);
                 // Switch to ausências/reposição tab after render
                 setTimeout(() => {
-                    switchStudentTab('ausencias-reposicoes');
+                    switchStudentTab('pendencias');
                 }, 100);
             } else {
                 showError(`Aluno não encontrado: ${nome || email}`);
@@ -6166,7 +6163,7 @@ function extractTimeFromISO(isoString) {
                         if (action === 'view' && email) {
                             if (appState.alunosMap.has(email)) {
                                 showStudentDetail(email);
-                                setTimeout(() => switchStudentTab('ausencias-reposicoes'), 100);
+                                setTimeout(() => switchStudentTab('pendencias'), 100);
                             }
                         } else if (action === 'approve') {
                              console.log('[incor-action] Aprovar ação para:', email);
@@ -7995,6 +7992,12 @@ function extractTimeFromISO(isoString) {
             return normalizeString((student && (student.EmailHC || student.NomeCompleto)) || '');
         }
 
+        function formatPendenciaDate(dateIso) {
+            const value = String(dateIso || '').trim();
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return 'Data não informada';
+            return new Date(`${value}T00:00:00`).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+        }
+
         let alunosPendenciasData = [];
 
         function buildAlunosPendenciasData() {
@@ -8006,6 +8009,7 @@ function extractTimeFromISO(isoString) {
             });
 
             const pendingAbsencesByStudent = new Map();
+            const pendingAbsenceDatesByStudent = new Map();
             const combinedRecords = Array.isArray(appState.ausenciasReposicoes) && appState.ausenciasReposicoes.length > 0
                 ? appState.ausenciasReposicoes
                 : [...(appState.ausencias || []), ...(appState.reposicoes || [])];
@@ -8017,10 +8021,19 @@ function extractTimeFromISO(isoString) {
                 recordsByEmail.get(email).push(record);
             });
             recordsByEmail.forEach((records, email) => {
-                const pendingCount = getPendingAbsences(records).length;
+                const pendingRecords = getPendingAbsences(records);
+                const pendingCount = pendingRecords.length;
                 const student = studentLookup.get(email);
                 if (!student || pendingCount <= 0) return;
-                pendingAbsencesByStudent.set(getStudentPendingKey(student), pendingCount);
+                const studentKey = getStudentPendingKey(student);
+                pendingAbsencesByStudent.set(studentKey, pendingCount);
+                pendingAbsenceDatesByStudent.set(
+                    studentKey,
+                    pendingRecords
+                        .map(record => record?.DataAusenciaISO || '')
+                        .filter(Boolean)
+                        .sort((a, b) => b.localeCompare(a))
+                );
             });
 
             const redGradesByStudent = new Map();
@@ -8094,10 +8107,12 @@ function extractTimeFromISO(isoString) {
                     const key = getStudentPendingKey(student);
                     const gradeAlerts = redGradesByStudent.get(key) || [];
                     const pendingAbsences = pendingAbsencesByStudent.get(key) || 0;
+                    const pendingAbsenceDates = pendingAbsenceDatesByStudent.get(key) || [];
                     return {
                         student,
                         gradeAlerts,
-                        pendingAbsences
+                        pendingAbsences,
+                        pendingAbsenceDates
                     };
                 })
                 .filter(item => item.gradeAlerts.length > 0 || item.pendingAbsences > 0)
@@ -8143,6 +8158,10 @@ function extractTimeFromISO(isoString) {
                 const student = item.student || {};
                 const studentEmail = (student.EmailHC || '').trim();
                 const hasStudentEmail = Boolean(studentEmail);
+                const fallbackPhotoUrl = `https://placehold.co/48x48/0054B4/ffffff?text=${encodeURIComponent((student.NomeCompleto || 'A').charAt(0))}`;
+                const photoUrl = student.FotoID
+                    ? `https://lh3.googleusercontent.com/d/${student.FotoID}=s48-c`
+                    : fallbackPhotoUrl;
                 const tags = [];
                 item.gradeAlerts.forEach(alert => {
                     tags.push(`<span class="alunos-pendencia-tag alunos-pendencia-tag--grade">${escapeHtml(alert)}</span>`);
@@ -8150,11 +8169,20 @@ function extractTimeFromISO(isoString) {
                 if (item.pendingAbsences > 0) {
                     tags.push(`<span class="alunos-pendencia-tag alunos-pendencia-tag--absence">${item.pendingAbsences} ausência(s) sem reposição</span>`);
                 }
+                const absenceDetails = item.pendingAbsenceDates.length > 0
+                    ? `<ul class="alunos-pendencia-dates">${item.pendingAbsenceDates.slice(0, 3).map(dateIso => `<li>${escapeHtml(formatPendenciaDate(dateIso))}</li>`).join('')}</ul>`
+                    : '';
             return `
                     <article class="alunos-pendencia-card">
-                        <h3>${escapeHtml(student.NomeCompleto || 'Aluno sem nome')}</h3>
-                        <p class="alunos-pendencia-meta">${escapeHtml(student.Curso || 'Curso não informado')}</p>
+                        <div class="alunos-pendencia-header">
+                            <img src="${escapeHtml(photoUrl)}" alt="Foto de ${escapeHtml(student.NomeCompleto || 'Aluno')}" loading="lazy">
+                            <div>
+                                <h3>${escapeHtml(student.NomeCompleto || 'Aluno sem nome')}</h3>
+                                <p class="alunos-pendencia-meta">${escapeHtml(student.Curso || 'Curso não informado')}</p>
+                            </div>
+                        </div>
                         <div class="alunos-pendencia-tags">${tags.join('')}</div>
+                        ${absenceDetails}
                         <button type="button" class="alunos-pendencia-action"${hasStudentEmail ? ` data-pending-index="${index}"` : ' disabled'}>
                             Abrir ficha do aluno
                         </button>
@@ -8172,23 +8200,19 @@ function extractTimeFromISO(isoString) {
             const email = (target?.student?.EmailHC || '').trim();
             if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
             showStudentDetail(email);
+            setTimeout(() => switchStudentTab('pendencias'), 100);
         }
 
         window.openAlunosPendenciasPage = function() {
-            const listPanel = document.getElementById('student-list-panel');
-            const pendingView = document.getElementById('alunos-pendencias-view');
-            if (!listPanel || !pendingView) return;
             renderAlunosPendenciasView();
-            listPanel.style.display = 'none';
-            pendingView.style.display = 'block';
+            showView('alunos-pendencias-view');
+            window.scrollTo(0, 0);
         };
 
         window.closeAlunosPendenciasPage = function() {
-            const listPanel = document.getElementById('student-list-panel');
-            const pendingView = document.getElementById('alunos-pendencias-view');
-            if (!listPanel || !pendingView) return;
-            pendingView.style.display = 'none';
-            listPanel.style.display = '';
+            showView('dashboard-view');
+            switchMainTab('alunos');
+            window.scrollTo(0, 0);
         };
 
 
@@ -8268,6 +8292,9 @@ function extractTimeFromISO(isoString) {
         }
         
         function switchStudentTab(tabName) {
+            if (tabName === 'ausencias-reposicoes') {
+                tabName = 'pendencias';
+            }
             console.log(`Trocando para aba de detalhe: ${tabName}`);
             // Support both old (.tab-button) and new (.student-tab-button) button classes
             document.querySelectorAll('#student-tabs-nav .tab-button, #student-tabs-nav .student-tab-button').forEach(btn => {
@@ -8352,6 +8379,7 @@ function extractTimeFromISO(isoString) {
                 renderStudentDetailKPIs(faltas, notasP);
                 renderTabInfo(info);
                 renderTabEscala(escalas);
+                renderTabPendencias(faltas, notasT, notasP);
                 renderTabAusenciasReposicoes(faltas);
                 renderTabNotasTeoricas(notasT, info); 
                 renderTabNotasPraticas(notasP); 
@@ -8541,6 +8569,76 @@ function extractTimeFromISO(isoString) {
                 </div>
                 ` : ''}
              `;
+        }
+
+        function renderTabPendencias(faltas, notasT, notasP) {
+             const container = document.getElementById('student-pendencias-summary');
+             if (!container) return;
+
+             const disciplineGrades = new Map();
+             Object.keys(notasT || {}).forEach(field => {
+                 if (isExcludedGradeField(field)) return;
+                 const grade = parseNota(notasT[field]);
+                 if (grade <= 0) return;
+                 const targetName = isSubDiscipline(field) ? getParentDisciplineName(field) : field;
+                 const targetNormalized = normalizeKeyForDeduplication(targetName);
+                 if (!disciplineGrades.has(targetNormalized)) {
+                     disciplineGrades.set(targetNormalized, { original: 0, sub: 0, label: targetName });
+                 }
+                 const entry = disciplineGrades.get(targetNormalized);
+                 if (isSubDiscipline(field)) entry.sub = Math.max(entry.sub, grade);
+                 else entry.original = Math.max(entry.original, grade);
+             });
+
+             const gradePendencias = [];
+             disciplineGrades.forEach(entry => {
+                 const effective = Math.max(entry.original, entry.sub);
+                 if (effective > 0 && effective < RED_GRADE_THRESHOLD) {
+                     gradePendencias.push(`${entry.label}: ${effective.toFixed(1)}`);
+                 }
+             });
+
+             const praticasPendencias = [];
+             (notasP || []).forEach(record => {
+                 const mediaKey = Object.keys(record || {}).find(k =>
+                     /MÉDIA.*NOTA.*FINAL/i.test(k) ||
+                     /MEDIA.*NOTA.*FINAL/i.test(k) ||
+                     /MÉDIA.*FINAL/i.test(k) ||
+                     /MEDIA.*FINAL/i.test(k) ||
+                     /NOTA.*FINAL/i.test(k)
+                 );
+                 if (!mediaKey) return;
+                 const average = parseNota(record[mediaKey]);
+                 if (average > 0 && average < RED_GRADE_THRESHOLD) {
+                     praticasPendencias.push(`${record?.nomePratica || 'Prática'}: ${average.toFixed(1)}`);
+                 }
+             });
+
+             const absences = Array.isArray(faltas?.ausencias) ? faltas.ausencias : (Array.isArray(faltas) ? faltas : []);
+             const reposicoes = Array.isArray(faltas?.reposicoes) ? faltas.reposicoes : [];
+             const reposicoesDates = new Set(
+                 reposicoes
+                     .map(item => item?.DataAusenciaISO || item?.DataAusencia || '')
+                     .filter(Boolean)
+             );
+             const pendingAbsences = absences.filter(item => {
+                 const absenceDate = item?.DataAusenciaISO || item?.DataAusencia || '';
+                 return absenceDate && !reposicoesDates.has(absenceDate);
+             });
+
+             const tags = [
+                 ...gradePendencias.map(text => `<span class="alunos-pendencia-tag alunos-pendencia-tag--grade">${escapeHtml(text)}</span>`),
+                 ...praticasPendencias.map(text => `<span class="alunos-pendencia-tag alunos-pendencia-tag--grade">${escapeHtml(text)}</span>`),
+                 ...pendingAbsences.map(item => {
+                     const dateIso = item?.DataAusenciaISO || item?.DataAusencia || '';
+                     const formattedDate = formatPendenciaDate(dateIso);
+                     return `<span class="alunos-pendencia-tag alunos-pendencia-tag--absence">Ausência pendente em ${escapeHtml(formattedDate)}</span>`;
+                 })
+             ];
+
+             container.innerHTML = tags.length
+                 ? `<div class="alunos-pendencia-tags">${tags.join('')}</div>`
+                 : '<div class="alunos-pendencias-empty">Nenhuma pendência ativa para este aluno.</div>';
         }
         
 /* =======================================================================
