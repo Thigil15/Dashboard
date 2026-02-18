@@ -2150,12 +2150,22 @@
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             gap: 1.25rem;
+            align-items: stretch;
         }
 
         .alunos-pendencia-card {
             gap: 0.625rem;
-            justify-content: center;
+            justify-content: flex-start;
             min-height: 100%;
+        }
+
+        .alunos-pendencia-card .student-name,
+        .alunos-pendencia-card .student-course,
+        .alunos-pendencia-card .alunos-pendencia-title {
+            width: 100%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .alunos-pendencia-card--disabled {
