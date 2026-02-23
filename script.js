@@ -8611,7 +8611,7 @@ function extractTimeFromISO(isoString) {
              disciplineGrades.forEach(entry => {
                  const effective = Math.max(entry.original, entry.sub);
                  if (effective > 0 && effective < RED_GRADE_THRESHOLD) {
-                     gradePendencias.push(`${entry.label}: ${effective.toFixed(1)}`);
+                     gradePendencias.push({ label: entry.label, grade: effective, type: 'teorica' });
                  }
              });
 
@@ -8627,7 +8627,7 @@ function extractTimeFromISO(isoString) {
                  if (!mediaKey) return;
                  const average = parseNota(record[mediaKey]);
                  if (average > 0 && average < RED_GRADE_THRESHOLD) {
-                     praticasPendencias.push(`${record?.nomePratica || 'Prática'}: ${average.toFixed(1)}`);
+                     praticasPendencias.push({ label: record?.nomePratica || 'Prática', grade: average, type: 'pratica' });
                  }
              });
 
@@ -8643,9 +8643,10 @@ function extractTimeFromISO(isoString) {
                  return absenceDate && !reposicoesDates.has(absenceDate);
              });
 
+             // Summary tags at the top (quick overview)
+             const allGradePend = [...gradePendencias, ...praticasPendencias];
              const tags = [
-                 ...gradePendencias.map(text => `<span class="alunos-pendencia-tag alunos-pendencia-tag--grade">${escapeHtml(text)}</span>`),
-                 ...praticasPendencias.map(text => `<span class="alunos-pendencia-tag alunos-pendencia-tag--grade">${escapeHtml(text)}</span>`),
+                 ...allGradePend.map(p => `<span class="alunos-pendencia-tag alunos-pendencia-tag--grade">${escapeHtml(p.label + ': ' + p.grade.toFixed(1))}</span>`),
                  ...pendingAbsences.map(item => {
                      const dateIso = item?.DataAusenciaISO || item?.DataAusencia || '';
                      const formattedDate = formatPendenciaDate(dateIso);
@@ -8656,7 +8657,44 @@ function extractTimeFromISO(isoString) {
              container.innerHTML = tags.length
                  ? `<div class="alunos-pendencia-tags">${tags.join('')}</div>`
                  : '<div class="alunos-pendencias-empty">Nenhuma pendência ativa para este aluno.</div>';
+
+             // Populate the Notas Pendentes drawer
+             const notasContainer = document.getElementById('pendencias-notas-content');
+             if (notasContainer) {
+                 if (allGradePend.length === 0) {
+                     notasContainer.innerHTML = `
+                         <div class="pend-notas-empty">
+                             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                             </svg>
+                             <span>Nenhuma nota pendente para este aluno.</span>
+                         </div>`;
+                 } else {
+                     const rows = allGradePend.map(p => {
+                         const typeLabel = p.type === 'teorica' ? 'Teórica' : 'Prática';
+                         const typeClass = p.type === 'teorica' ? 'pend-nota-badge--teorica' : 'pend-nota-badge--pratica';
+                         return `
+                         <div class="pend-nota-row">
+                             <span class="pend-nota-name">${escapeHtml(p.label)}</span>
+                             <span class="pend-nota-badge ${typeClass}">${escapeHtml(typeLabel)}</span>
+                             <span class="pend-nota-grade">${p.grade.toFixed(1)}</span>
+                         </div>`;
+                     });
+                     notasContainer.innerHTML = `<div class="pend-notas-list">${rows.join('')}</div>`;
+                 }
+             }
         }
+
+        window.togglePendenciasDrawer = function(bodyId, btn) {
+            const body = document.getElementById(bodyId);
+            if (!body) return;
+            const isOpen = body.classList.contains("pend-drawer-body--open");
+            body.classList.toggle("pend-drawer-body--open", !isOpen);
+            if (btn) {
+                btn.classList.toggle("pend-drawer-btn--open", !isOpen);
+                btn.setAttribute("aria-expanded", String(!isOpen));
+            }
+        };
         
 /* =======================================================================
  * ORION: (Substituição) LÓGICA DA ABA DE ESCALA (v32.7 - Grid Simples)

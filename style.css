@@ -2353,6 +2353,152 @@
             font-size: 1rem;
             font-weight: 700;
         }
+
+        /* === PENDÊNCIAS DRAWERS (accordion) === */
+        .pend-drawer {
+            border: 1px solid rgba(0, 84, 180, 0.15);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 0.75rem;
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(0, 51, 160, 0.05);
+        }
+
+        .pend-drawer-btn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 1.25rem;
+            background: var(--incor-blue-50);
+            border: none;
+            cursor: pointer;
+            font-family: var(--font-display);
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: var(--incor-blue-800);
+            text-align: left;
+            transition: background 0.2s;
+        }
+
+        .pend-drawer-btn:hover {
+            background: var(--incor-blue-100);
+        }
+
+        .pend-drawer-btn--open {
+            border-bottom: 1px solid rgba(0, 84, 180, 0.12);
+        }
+
+        .pend-drawer-btn-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: var(--incor-blue-700);
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .pend-drawer-btn-icon svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .pend-drawer-btn-label {
+            flex: 1;
+        }
+
+        .pend-drawer-chevron {
+            display: flex;
+            align-items: center;
+            color: var(--incor-blue-500);
+            transition: transform 0.25s ease;
+        }
+
+        .pend-drawer-chevron svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .pend-drawer-btn--open .pend-drawer-chevron {
+            transform: rotate(180deg);
+        }
+
+        .pend-drawer-body {
+            display: none;
+        }
+
+        .pend-drawer-body--open {
+            display: block;
+        }
+
+        /* Notas Pendentes list inside drawer */
+        .pend-notas-list {
+            padding: 1rem 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .pend-nota-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.625rem 0.875rem;
+            border-radius: 8px;
+            background: rgba(226, 30, 38, 0.04);
+            border: 1px solid rgba(226, 30, 38, 0.15);
+        }
+
+        .pend-nota-name {
+            flex: 1;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--incor-blue-800);
+        }
+
+        .pend-nota-badge {
+            font-size: 0.6875rem;
+            font-weight: 600;
+            border-radius: 999px;
+            padding: 0.2rem 0.55rem;
+        }
+
+        .pend-nota-badge--teorica {
+            background: rgba(0, 84, 180, 0.1);
+            color: var(--incor-blue-700);
+        }
+
+        .pend-nota-badge--pratica {
+            background: rgba(217, 119, 6, 0.12);
+            color: #92400E;
+        }
+
+        .pend-nota-grade {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--incor-red-600);
+            min-width: 2.5rem;
+            text-align: right;
+        }
+
+        .pend-notas-empty {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1.5rem 1.25rem;
+            color: var(--content-text-muted, #64748b);
+            font-size: 0.875rem;
+        }
+
+        .pend-notas-empty svg {
+            width: 20px;
+            height: 20px;
+            color: #22c55e;
+            flex-shrink: 0;
+        }
         
         /* === STUDENT GROUP HEADERS - INCOR STYLE === */
         .student-group-header { 
