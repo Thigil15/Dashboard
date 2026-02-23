@@ -8643,20 +8643,9 @@ function extractTimeFromISO(isoString) {
                  return absenceDate && !reposicoesDates.has(absenceDate);
              });
 
-             // Summary tags at the top (quick overview)
              const allGradePend = [...gradePendencias, ...praticasPendencias];
-             const tags = [
-                 ...allGradePend.map(p => `<span class="alunos-pendencia-tag alunos-pendencia-tag--grade">${escapeHtml(p.label + ': ' + p.grade.toFixed(1))}</span>`),
-                 ...pendingAbsences.map(item => {
-                     const dateIso = item?.DataAusenciaISO || item?.DataAusencia || '';
-                     const formattedDate = formatPendenciaDate(dateIso);
-                     return `<span class="alunos-pendencia-tag alunos-pendencia-tag--absence">Ausência pendente em ${escapeHtml(formattedDate)}</span>`;
-                 })
-             ];
 
-             container.innerHTML = tags.length
-                 ? `<div class="alunos-pendencia-tags">${tags.join('')}</div>`
-                 : '<div class="alunos-pendencias-empty">Nenhuma pendência ativa para este aluno.</div>';
+             container.innerHTML = '';
 
              // Populate the Notas Pendentes drawer
              const notasContainer = document.getElementById('pendencias-notas-content');
