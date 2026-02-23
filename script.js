@@ -1048,87 +1048,90 @@
             
             // Normalize the escala name to find it in appState.escalas
             // The escala name might be "EscalaPratica1", "Escala Pratica 1", "1", etc.
-            let targetEscala = null;
-            const normalizedEscalaName = normalizeString(escalaName);
+            const normalizedEscalaName = normalizeString(String(escalaName));
+            
+            // Build list of candidate escalas to try, in priority order
+            const candidateEscalas = [];
             
             // First try exact match
             if (appState.escalas[escalaName]) {
-                targetEscala = appState.escalas[escalaName];
-            } else {
-                // Try to find by normalized name
+                candidateEscalas.push(appState.escalas[escalaName]);
+            }
+            
+            if (candidateEscalas.length === 0) {
+                const escalaNumMatch = String(escalaName).match(/\d+/);
                 for (const [key, escala] of Object.entries(appState.escalas)) {
                     if (normalizeString(key) === normalizedEscalaName) {
-                        targetEscala = escala;
+                        candidateEscalas.push(escala);
                         break;
                     }
-                    // Also try matching just the number
-                    const escalaNumMatch = escalaName.match(/\d+/);
-                    const keyNumMatch = key.match(/\d+/);
-                    if (escalaNumMatch && keyNumMatch && escalaNumMatch[0] === keyNumMatch[0]) {
-                        // Check if it's a practice scale (EscalaPratica)
-                        if (escala.tipo === 'pratica' || key.toLowerCase().includes('pratica')) {
-                            targetEscala = escala;
-                            break;
+                    // Try matching by number - collect ALL escalas with that number
+                    if (escalaNumMatch) {
+                        const keyNumMatch = key.match(/\d+/);
+                        if (keyNumMatch && keyNumMatch[0] === escalaNumMatch[0]) {
+                            candidateEscalas.push(escala);
                         }
                     }
                 }
+                // Sort candidates: prefer practice escalas first
+                candidateEscalas.sort((a, b) => {
+                    const aPratica = a.tipo === 'pratica' || (a.nomeEscala || '').toLowerCase().includes('pratica') ? 0 : 1;
+                    const bPratica = b.tipo === 'pratica' || (b.nomeEscala || '').toLowerCase().includes('pratica') ? 0 : 1;
+                    return aPratica - bPratica;
+                });
             }
             
-            if (!targetEscala) {
+            if (candidateEscalas.length === 0) {
                 console.log(`[checkAbsenceAgainstEscala] Escala "${escalaName}" não encontrada`);
                 return result;
             }
-            
-            result.escalaInfo = targetEscala;
-            result.scheduleDates = targetEscala.headersDay || [];
             
             // Find the student in the escala
             const normalizedEmail = studentEmail ? normalizeString(studentEmail) : '';
             const normalizedName = studentName ? normalizeString(studentName) : '';
             
-            const studentInEscala = (targetEscala.alunos || []).find(a => {
-                if (!a) return false;
-                const aEmail = a.EmailHC ? normalizeString(a.EmailHC) : '';
-                const aName = a.NomeCompleto ? normalizeString(a.NomeCompleto) : '';
-                return (normalizedEmail && aEmail === normalizedEmail) || 
-                       (normalizedName && aName === normalizedName);
-            });
-            
-            if (studentInEscala) {
-                // Get the student's specific schedule dates from the escala
-                // The student row in EscalaPratica has date keys like "06/08" with values (schedule info)
+            // Helper to get student dates from a given escala and student record
+            const getStudentDates = (escala, studentRecord) => {
                 const studentDates = [];
-                
-                // Pre-normalize headersDay keys for efficient lookup
                 const normalizedHeadersMap = new Map();
-                (targetEscala.headersDay || []).forEach(dateKey => {
+                (escala.headersDay || []).forEach(dateKey => {
                     normalizedHeadersMap.set(dateKey, normalizeDDMM(dateKey));
                 });
-                
-                // Check each date in headersDay to see if the student has that date
                 normalizedHeadersMap.forEach((normalizedDateKey, dateKey) => {
-                    // Check if student has this date with a non-empty value
-                    const dateValue = studentInEscala[dateKey] || studentInEscala[normalizedDateKey];
+                    const dateValue = studentRecord[dateKey] || studentRecord[normalizedDateKey];
                     if (dateValue && String(dateValue).trim() !== '' && String(dateValue).trim() !== '-') {
-                        // Parse the date value - it might contain multiple dates like "06/08; 07/08; 09/08"
                         const parsedDates = parseSemicolonDates(String(dateValue));
                         if (parsedDates.length > 0) {
                             studentDates.push(...parsedDates);
-                        } else {
-                            // If no parsed dates, just use the key date if there's a schedule value
-                            if (normalizedDateKey) {
-                                studentDates.push(normalizedDateKey);
-                            }
+                        } else if (normalizedDateKey) {
+                            studentDates.push(normalizedDateKey);
                         }
                     }
                 });
+                return [...new Set(studentDates)];
+            };
+            
+            // Try each candidate escala; prefer the one where the student has scheduled dates
+            for (const targetEscala of candidateEscalas) {
+                const studentInEscala = (targetEscala.alunos || []).find(a => {
+                    if (!a) return false;
+                    const aEmail = a.EmailHC ? normalizeString(a.EmailHC) : '';
+                    const aName = a.NomeCompleto ? normalizeString(a.NomeCompleto) : '';
+                    return (normalizedEmail && aEmail === normalizedEmail) || 
+                           (normalizedName && aName === normalizedName);
+                });
                 
-                // Remove duplicates - dates are already normalized from parseSemicolonDates
-                result.studentEscalaDates = [...new Set(studentDates)];
+                if (!studentInEscala) continue;
                 
-                // Check if the absence date is in the student's schedule
-                // Use flexible comparison to handle dates with/without year suffix
-                result.isInSchedule = dateInArrayFlexible(absenceDDMM, result.studentEscalaDates);
+                const studentDates = getStudentDates(targetEscala, studentInEscala);
+                
+                result.escalaInfo = targetEscala;
+                result.scheduleDates = targetEscala.headersDay || [];
+                result.studentEscalaDates = studentDates;
+                result.isInSchedule = dateInArrayFlexible(absenceDDMM, studentDates);
+                
+                // If the student has scheduled dates in this escala, use it
+                if (studentDates.length > 0) break;
             }
             
             return result;
@@ -10011,9 +10014,6 @@ function renderTabEscala(escalas) {
                     <button class="faltas-tab-button" data-tab="ausencias" onclick="switchFaltasTab('ausencias')">
                         Ausências (${totalFaltas})
                     </button>
-                    <button class="faltas-tab-button ${faltasPendentes > 0 ? 'faltas-tab-button--alert' : ''}" data-tab="pending" onclick="switchFaltasTab('pending')">
-                        Pendentes (${faltasPendentes})
-                    </button>
                     <button class="faltas-tab-button" data-tab="reposicoes" onclick="switchFaltasTab('reposicoes')">
                         Reposições (${totalReposicoes})
                     </button>
@@ -10252,10 +10252,6 @@ function renderTabEscala(escalas) {
                 // Show only ausencias (both combined formats)
                 const isAusencia = recordType === 'ausencia' || recordType.startsWith('combined');
                 card.style.display = isAusencia ? '' : 'none';
-            } else if (tab === 'pending') {
-                // Show only pending ausencias
-                const isPending = card.classList.contains('faltas-card--pending');
-                card.style.display = isPending ? '' : 'none';
             } else if (tab === 'reposicoes') {
                 // Show only reposicoes
                 const isReposicao = recordType === 'reposicao';
