@@ -1,5 +1,11 @@
 {
   "type": "module",
+  "scripts": {
+    "firebase:install": "npm install -g firebase-tools",
+    "firebase:login": "npx firebase-tools login",
+    "firebase:init": "npx firebase-tools init",
+    "firebase:deploy": "npx firebase-tools deploy"
+  },
   "dependencies": {
     "firebase": "^12.5.0"
   }
