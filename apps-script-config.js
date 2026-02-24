@@ -24,8 +24,3 @@ const appsScriptConfig = {
 // Export configuration for ES6 module import
 export default appsScriptConfig;
 export { appsScriptConfig };
-
-
-// Export configuration for ES6 module import
-export default appsScriptConfig;
-export { appsScriptConfig };
