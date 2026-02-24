@@ -12,6 +12,15 @@ O site está **completamente configurado** para ler dados do Google Sheets atrav
 
 ## 🚀 Como Usar
 
+### Comandos NPM para Firebase CLI
+
+```bash
+npm run firebase:install
+npm run firebase:login
+npm run firebase:init
+npm run firebase:deploy
+```
+
 ### Início Rápido (2 minutos)
 
 1. **Configure a URL do Apps Script** (se ainda não configurou)
