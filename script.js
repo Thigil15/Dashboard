@@ -4,6 +4,7 @@
         // Firebase Authentication + Apps Script data loading
         let fbApp = null;
         let fbAuth = null;
+        let fbGoogleProvider = null;
         
         function initializeFirebase() {
             if (!window.firebase) {
@@ -11,6 +12,7 @@
             }
             fbApp = window.firebase.initializeApp(window.firebase.firebaseConfig);
             fbAuth = window.firebase.getAuth(fbApp);
+            fbGoogleProvider = new window.firebase.GoogleAuthProvider();
             console.log('[initializeFirebase] Firebase Auth inicializado com sucesso');
         }
         
@@ -3166,6 +3168,10 @@ function extractTimeFromISO(isoString) {
             console.log('[setupEventHandlers] Configurando listeners...');
             // Login form event listener - registered only once to prevent duplicate submissions
             document.getElementById('login-form').addEventListener('submit', handleLogin);
+            const googleLoginButton = document.getElementById('login-google-button');
+            if (googleLoginButton) {
+                googleLoginButton.addEventListener('click', handleGoogleLogin);
+            }
             setupHeaderNavigation();
             
             // Sidebar toggle - only if element exists (legacy support)
@@ -3642,6 +3648,38 @@ function extractTimeFromISO(isoString) {
             }
         }
 
+        async function handleGoogleLogin() {
+            console.log("[handleGoogleLogin] Google login initiated");
+            const googleLoginButton = document.getElementById("login-google-button");
+            const loginButton = document.getElementById("login-button");
+            const errorBox = document.getElementById("login-error");
+
+            if (!googleLoginButton) return;
+
+            googleLoginButton.classList.add('loading');
+            googleLoginButton.disabled = true;
+            if (loginButton) loginButton.disabled = true;
+            if (errorBox) errorBox.style.display = "none";
+
+            try {
+                await window.firebase.signInWithPopup(fbAuth, fbGoogleProvider);
+                console.log("[handleGoogleLogin] Login Google realizado com sucesso");
+            } catch (error) {
+                const authErrorMap = {
+                    'auth/popup-closed-by-user': 'Login com Google cancelado.',
+                    'auth/popup-blocked': 'Popup bloqueado pelo navegador. Permita popups e tente novamente.',
+                    'auth/unauthorized-domain': 'Domínio não autorizado no Firebase Authentication.',
+                    'auth/account-exists-with-different-credential': 'Esta conta já existe com outro método de login.'
+                };
+                showError(authErrorMap[error.code] || 'Erro ao fazer login com Google. Tente novamente.', true);
+                console.error('[handleGoogleLogin] Erro no login Google:', error);
+            } finally {
+                googleLoginButton.classList.remove('loading');
+                googleLoginButton.disabled = false;
+                if (loginButton) loginButton.disabled = false;
+            }
+        }
+
         async function handleLogout() {
             console.log("[handleLogout] Logout initiated - going back to login screen");
             
@@ -3700,6 +3738,11 @@ function extractTimeFromISO(isoString) {
             if (loginButton) {
                 loginButton.classList.remove('loading');
                 loginButton.disabled = false;
+            }
+            const googleLoginButton = document.getElementById('login-google-button');
+            if (googleLoginButton) {
+                googleLoginButton.classList.remove('loading');
+                googleLoginButton.disabled = false;
             }
             
             // Clean up: hide login error messages
@@ -11733,6 +11776,10 @@ function renderTabEscala(escalas) {
             if (loginButton) {
                 loginButton.disabled = true;
             }
+            const googleLoginButton = document.getElementById('login-google-button');
+            if (googleLoginButton) {
+                googleLoginButton.disabled = true;
+            }
             
             // Update footer years dynamically
             const currentYear = new Date().getFullYear();
@@ -11748,6 +11795,9 @@ function renderTabEscala(escalas) {
                 
                 if (loginButton) {
                     loginButton.disabled = false;
+                }
+                if (googleLoginButton) {
+                    googleLoginButton.disabled = false;
                 }
 
                 window.firebase.onAuthStateChanged(fbAuth, async (user) => {
