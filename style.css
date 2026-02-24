@@ -703,6 +703,264 @@
             }
         }
 
+        /* === TURMA SELECTION VIEW === */
+        #turma-select-view {
+            position: relative;
+            overflow-x: hidden;
+            overflow-y: auto;
+            background: var(--body-bg);
+            background-color: var(--body-bg-color);
+        }
+
+        #turma-select-view::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 30% 20%, rgba(30, 111, 217, 0.18), transparent 45%),
+                radial-gradient(ellipse at 70% 80%, rgba(226, 30, 38, 0.15), transparent 45%);
+            pointer-events: none;
+            animation: gradientShift 20s ease infinite;
+        }
+
+        #turma-select-card {
+            position: relative;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow:
+                0 0 0 1px rgba(255, 255, 255, 0.1),
+                0 20px 60px rgba(0, 0, 0, 0.4),
+                0 40px 100px rgba(0, 0, 0, 0.2);
+            padding: clamp(2rem, 3vw, 2.5rem);
+            width: 100%;
+            max-width: 520px;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            animation: fadeInUp 0.6s ease-out both;
+        }
+
+        .turma-select-head {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1.75rem;
+            text-align: center;
+        }
+
+        .turma-select-title {
+            font-family: var(--font-display);
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--content-text-primary);
+            letter-spacing: -0.02em;
+            margin: 0.5rem 0 0;
+        }
+
+        .turma-select-subtitle {
+            font-size: 0.825rem;
+            color: var(--content-text-secondary);
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .turma-select-user {
+            font-size: 0.8rem;
+            color: var(--incor-blue-600);
+            font-weight: 500;
+            margin: 0.25rem 0 0;
+            padding: 0.35rem 0.9rem;
+            background: var(--incor-blue-50);
+            border-radius: var(--radius-full);
+            border: 1px solid var(--incor-blue-100);
+        }
+
+        .turma-cards-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .turma-card {
+            position: relative;
+            background: rgba(248, 250, 252, 0.8);
+            border: 1.5px solid rgba(226, 232, 240, 0.8);
+            border-radius: 16px;
+            padding: 1.5rem 1.25rem 1.25rem;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.3rem;
+            text-align: left;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .turma-card:hover {
+            border-color: var(--incor-blue-400);
+            background: #ffffff;
+            transform: translateY(-4px);
+            box-shadow:
+                0 12px 32px rgba(0, 84, 180, 0.14),
+                0 4px 12px rgba(0, 84, 180, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        }
+
+        .turma-card:active {
+            transform: translateY(-1px) scale(0.98);
+        }
+
+        .turma-card--new {
+            border-color: rgba(0, 84, 180, 0.2);
+            background: linear-gradient(135deg, rgba(240, 247, 255, 0.9), rgba(248, 250, 252, 0.9));
+        }
+
+        .turma-card--new:hover {
+            border-color: var(--incor-blue-500);
+            background: linear-gradient(135deg, rgba(230, 240, 255, 1), #ffffff);
+            box-shadow:
+                0 12px 32px rgba(0, 84, 180, 0.2),
+                0 4px 12px rgba(0, 84, 180, 0.12),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        }
+
+        .turma-card-badge {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            background: linear-gradient(135deg, var(--incor-blue-600), var(--incor-blue-500));
+            color: #ffffff;
+            font-family: var(--font-display);
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            padding: 0.2rem 0.55rem;
+            border-radius: var(--radius-full);
+            box-shadow: 0 2px 8px rgba(0, 84, 180, 0.3);
+        }
+
+        .turma-card-year {
+            font-family: var(--font-display);
+            font-size: 2.25rem;
+            font-weight: 800;
+            color: var(--incor-blue-800);
+            line-height: 1;
+            letter-spacing: -0.03em;
+        }
+
+        .turma-card--new .turma-card-year {
+            background: linear-gradient(135deg, var(--incor-blue-700), var(--incor-blue-500));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .turma-card-label {
+            font-family: var(--font-main);
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--content-text-muted);
+        }
+
+        .turma-card-desc {
+            font-size: 0.8rem;
+            color: var(--content-text-secondary);
+            line-height: 1.45;
+            margin-top: 0.2rem;
+        }
+
+        .turma-card-arrow {
+            margin-top: 0.75rem;
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-md);
+            background: rgba(0, 84, 180, 0.07);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .turma-card-arrow svg {
+            width: 16px;
+            height: 16px;
+            color: var(--incor-blue-600);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .turma-card:hover .turma-card-arrow {
+            background: rgba(0, 84, 180, 0.12);
+        }
+
+        .turma-card:hover .turma-card-arrow svg {
+            transform: translateX(3px);
+        }
+
+        .turma-select-footer {
+            padding-top: 1rem;
+            border-top: 1px solid rgba(226, 232, 240, 0.6);
+            display: flex;
+            justify-content: center;
+        }
+
+        .turma-select-logout {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.45rem 1rem;
+            background: none;
+            border: 1.5px solid rgba(226, 232, 240, 0.8);
+            border-radius: var(--radius-full);
+            font-family: var(--font-main);
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--content-text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .turma-select-logout svg {
+            width: 14px;
+            height: 14px;
+            color: var(--content-text-muted);
+            transition: color 0.2s ease;
+        }
+
+        .turma-select-logout:hover {
+            border-color: var(--incor-red-400);
+            color: var(--incor-red-600);
+            background: var(--incor-red-100);
+        }
+
+        .turma-select-logout:hover svg {
+            color: var(--incor-red-500);
+        }
+
+        @media (max-width: 480px) {
+            #turma-select-card {
+                padding: 1.75rem 1.25rem;
+                max-width: 100%;
+            }
+
+            .turma-cards-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .turma-card-year {
+                font-size: 1.9rem;
+            }
+        }
+
         /* === DASHBOARD LAYOUT === */
         .dashboard-layout {
             display: flex;
