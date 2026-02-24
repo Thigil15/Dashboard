@@ -2,9 +2,9 @@
   "type": "module",
   "scripts": {
     "firebase:install": "npm install --save-dev firebase-tools",
-    "firebase:login": "firebase login",
-    "firebase:init": "firebase init",
-    "firebase:deploy": "firebase deploy"
+    "firebase:login": "npx firebase-tools login",
+    "firebase:init": "npx firebase-tools init",
+    "firebase:deploy": "npx firebase-tools deploy"
   },
   "dependencies": {
     "firebase": "^12.5.0"
