@@ -112,8 +112,8 @@ A única configuração necessária está em `firebase-config.js`:
 ```javascript
 // Firebase (apenas Auth)
 const firebaseConfig = {
-  apiKey: "AIzaSyCR3gZuiUUC-IMHduSGSuWWnFyn2sNYOEQ",
-  authDomain: "dashboardalunos.firebaseapp.com",
+  apiKey: "AIzaSyCIo8xgqdatUr9o7ZwBks0zv2spG5C7zwY",
+  authDomain: "portalensinoincor.firebaseapp.com",
   // ... outros campos
 };
 
