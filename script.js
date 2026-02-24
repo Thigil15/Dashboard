@@ -1884,6 +1884,12 @@ function extractTimeFromISO(isoString) {
                 console.error('[selectTurma] URL não encontrada para turma:', turma);
                 return;
             }
+            // If the same turma is already loaded successfully, reuse cached data instead of reloading
+            if (window.appsScriptConfig.dataURL === url && appState.dataLoadingState.alunos && appState.alunos.length > 0) {
+                console.log(`[selectTurma] Turma ${turma} já carregada, reutilizando dados em cache.`);
+                showView('dashboard-view');
+                return;
+            }
             // Override the data URL with the selected turma's URL
             window.appsScriptConfig.dataURL = url;
             showView('dashboard-view');
