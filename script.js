@@ -3665,9 +3665,13 @@ function extractTimeFromISO(isoString) {
                 await window.firebase.signInWithPopup(fbAuth, fbGoogleProvider);
                 console.log("[handleGoogleLogin] Login Google realizado com sucesso");
             } catch (error) {
+                if (error.code === 'auth/popup-blocked') {
+                    console.warn('[handleGoogleLogin] Popup bloqueado; tentando fluxo de redirect');
+                    await window.firebase.signInWithRedirect(fbAuth, fbGoogleProvider);
+                    return;
+                }
                 const authErrorMap = {
                     'auth/popup-closed-by-user': 'Login com Google cancelado.',
-                    'auth/popup-blocked': 'Popup bloqueado pelo navegador. Permita popups e tente novamente.',
                     'auth/unauthorized-domain': 'Domínio não autorizado no Firebase Authentication.',
                     'auth/account-exists-with-different-credential': 'Esta conta já existe com outro método de login.'
                 };
@@ -11792,6 +11796,12 @@ function renderTabEscala(escalas) {
             
             try {
                 initializeFirebase();
+                try {
+                    await window.firebase.getRedirectResult(fbAuth);
+                } catch (redirectError) {
+                    console.error('[Init] Erro ao concluir redirect do Google login:', redirectError);
+                    showError('Erro ao concluir login com Google. Tente novamente.', true);
+                }
                 
                 if (loginButton) {
                     loginButton.disabled = false;
