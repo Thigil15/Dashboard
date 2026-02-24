@@ -11773,7 +11773,7 @@ function renderTabEscala(escalas) {
         }
 
         // --- Inicia ---
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             console.log("DOM Carregado. Inicializando autenticação Firebase.");
 
             const loginButton = document.getElementById('login-button');
