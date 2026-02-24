@@ -81,17 +81,19 @@
 <body>
     <div class="test-container">
         <h1>🔥 Teste de Conexão Firebase</h1>
-        <p>Este teste verifica se o site consegue se conectar ao Firebase Realtime Database.</p>
+        <p>Este teste verifica se o site consegue se conectar ao Firebase Realtime Database e Auth.</p>
         
         <div id="test-results"></div>
         
-        <button id="runTest" onclick="runTests()">▶️ Executar Testes</button>
+        <button id="runTest" onclick="runTests()">▶️ Executar Testes de Conexão</button>
+        <button id="runAuthTest" onclick="runAuthTests()" style="margin-left:10px;background:#34a853;">🔑 Testar Auth / Google Login</button>
     </div>
 
     <!-- Firebase SDK -->
     <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getDatabase, ref, get, onValue } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js';
+        import { getDatabase, ref, get, onValue } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js';
+        import { getAuth, GoogleAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js';
         
         // Import config
         import firebaseConfigModule from '../firebase-config.js';
@@ -101,6 +103,9 @@
         window.firebaseTest = {
             initializeApp,
             getDatabase,
+            getAuth,
+            GoogleAuthProvider,
+            signInWithPopup,
             ref,
             get,
             onValue,
@@ -224,11 +229,79 @@
             }
         }
         
+        async function runAuthTests() {
+            const button = document.getElementById('runAuthTest');
+            button.disabled = true;
+            button.textContent = '🔄 Testando Auth...';
+            testResults = [];
+
+            try {
+                // Auth Test 1: SDK loaded
+                addTestResult('Auth 1. Firebase SDK carregado', 'pending');
+                await new Promise(resolve => {
+                    if (window.firebaseTest) resolve();
+                    else window.addEventListener('firebaseTestReady', resolve, { once: true });
+                });
+                addTestResult('Auth 1. Firebase SDK carregado', 'success', 'Firebase SDK disponível');
+
+                // Auth Test 2: Config validation
+                addTestResult('Auth 2. Validação da configuração', 'pending');
+                const cfg = window.firebaseTest.firebaseConfig;
+                const missingKeys = ['apiKey','authDomain','projectId'].filter(k => !cfg[k]);
+                if (missingKeys.length) throw new Error(`Campos ausentes em firebaseConfig: ${missingKeys.join(', ')}`);
+                if (!cfg.apiKey || cfg.apiKey.startsWith('SUA_') || cfg.apiKey === 'YOUR_API_KEY') {
+                    throw new Error('apiKey é um placeholder. Copie a config real do Firebase Console.');
+                }
+                addTestResult('Auth 2. Validação da configuração', 'success',
+                    `projectId: ${cfg.projectId} | authDomain: ${cfg.authDomain} | apiKey presente: ✅`);
+
+                // Auth Test 3: Initialize Auth
+                addTestResult('Auth 3. Inicializar Firebase Auth', 'pending');
+                const app = window.firebaseTest.initializeApp(cfg, 'auth-diag-' + Date.now());
+                const auth = window.firebaseTest.getAuth(app);
+                addTestResult('Auth 3. Inicializar Firebase Auth', 'success', 'Auth inicializado com sucesso');
+
+                // Auth Test 4: Google Provider
+                addTestResult('Auth 4. Google Provider criado', 'pending');
+                const provider = new window.firebaseTest.GoogleAuthProvider();
+                addTestResult('Auth 4. Google Provider criado', 'success', 'GoogleAuthProvider instanciado');
+
+                // Auth Test 5: Popup test (user-triggered)
+                addTestResult('Auth 5. Testar popup Google', 'pending', '⏳ Abrindo popup de login Google... (pode levar alguns segundos)');
+                try {
+                    await window.firebaseTest.signInWithPopup(auth, provider);
+                    addTestResult('Auth 5. Testar popup Google', 'success', '✅ Popup abriu e login concluído com sucesso!');
+                } catch (popupError) {
+                    const friendlyMap = {
+                        'auth/popup-closed-by-user': 'Popup fechado pelo usuário (comportamento esperado para teste)',
+                        'auth/popup-blocked': 'Popup bloqueado pelo navegador — habilite popups para este domínio',
+                        'auth/unauthorized-domain': `Domínio não autorizado: ${location.hostname} — adicione em Firebase Console → Authentication → Authorized domains`,
+                        'auth/operation-not-allowed': 'Provedor Google não habilitado — ative em Firebase Console → Authentication → Sign-in method',
+                        'auth/api-key-not-valid.-please-pass-a-valid-api-key.': 'API Key inválida — copie a config correta do Firebase Console para firebase-config.js',
+                        'auth/invalid-api-key': 'API Key inválida — copie a config correta do Firebase Console para firebase-config.js',
+                    };
+                    const isExpected = ['auth/popup-closed-by-user'].includes(popupError.code);
+                    addTestResult('Auth 5. Testar popup Google',
+                        isExpected ? 'success' : 'error',
+                        friendlyMap[popupError.code] || `Erro (${popupError.code}): ${popupError.message}`);
+                }
+
+                addTestResult('✨ Diagnóstico de Auth Completo', 'success', 'Verifique os resultados acima e o console do navegador.');
+
+            } catch (error) {
+                addTestResult('❌ Erro no Diagnóstico de Auth', 'error',
+                    `Erro: ${error.message}`, { stack: error.stack });
+            } finally {
+                button.disabled = false;
+                button.textContent = '🔑 Testar Auth / Google Login';
+            }
+        }
+        
         // Auto-run on load
         window.addEventListener('load', () => {
             setTimeout(() => {
                 addTestResult('Pronto para testar', 'pending', 
-                    'Clique no botão para executar os testes de conexão');
+                    'Clique nos botões abaixo para executar os testes de conexão ou de autenticação');
             }, 100);
         });
     </script>

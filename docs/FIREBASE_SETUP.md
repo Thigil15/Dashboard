@@ -32,12 +32,31 @@ const firebaseConfig = {
 };
 ```
 
-## Passo 3: Configurar Firebase Authentication
+## Passo 3.5: Configurar Login com Google
 
-1. No Firebase Console, vá para "Authentication"
-2. Clique em "Get Started" (se for a primeira vez)
-3. Na aba "Sign-in method", ative o provedor "Email/Password"
-4. Clique em "Save"
+Para habilitar o botão "Entrar com Google":
+
+1. No Firebase Console, vá para **Authentication → Sign-in method**
+2. Clique em **Google** na lista de provedores
+3. Ative o toggle **Enable**
+4. Preencha o **Project support email** (email do suporte do projeto)
+5. Clique em **Save**
+
+### Checklist de Domínios Autorizados
+
+O Firebase bloqueia chamadas de autenticação vindas de domínios não cadastrados.
+
+1. No Firebase Console, vá para **Authentication → Settings → Authorized domains**
+2. Confirme que os domínios abaixo estão na lista:
+   - `localhost` (para desenvolvimento local)
+   - `127.0.0.1` (para desenvolvimento local via IP)
+   - Seu domínio de produção (ex.: `thigil15.github.io` ou domínio customizado)
+3. Para adicionar um domínio: clique em **Add domain**, digite o domínio e confirme
+
+> ⚠️ **Atenção**: Nunca abra o `index.html` diretamente pelo sistema de arquivos (`file://`). O Firebase Auth
+> não funciona com o protocolo `file://`. Use sempre um servidor HTTP (ex.: `python -m http.server` ou Live Server).
+
+
 
 ## Passo 4: Criar Usuários
 
@@ -123,6 +142,37 @@ A estrutura esperada é:
 7. **Logout**: `signOut()` encerra a sessão e limpa os listeners
 
 ## Solução de Problemas
+
+### Erro: `auth/api-key-not-valid` (API Key inválida)
+
+Este é o erro mais comum após clonar o repositório. Significa que a `apiKey` em `firebase-config.js`
+não corresponde a nenhum projeto Firebase ativo ou foi revogada.
+
+**Checklist de resolução:**
+
+- [ ] Acesse [Firebase Console](https://console.firebase.google.com/) → seu projeto
+- [ ] Vá em **Configurações do projeto** (ícone ⚙️) → aba **Geral** → seção **Seus apps**
+- [ ] Copie o objeto `firebaseConfig` completo e substitua em `firebase-config.js`
+- [ ] Confirme que `apiKey`, `authDomain` e `projectId` são do **mesmo** projeto
+- [ ] Verifique que a API Key não foi revogada em **Google Cloud Console → APIs & Services → Credentials**
+- [ ] Confirme que a API **Identity Toolkit API** está habilitada no projeto Google Cloud
+
+### Erro: `auth/unauthorized-domain` (Domínio não autorizado)
+
+- Siga o checklist de **Domínios Autorizados** no Passo 3.5 acima
+- Lembre-se: `file://` nunca funciona — use um servidor HTTP
+
+### Erro: `auth/operation-not-allowed` (Provedor não habilitado)
+
+- O provedor **Google** (ou **Email/Password**) não está ativado
+- Siga o Passo 3.5 para habilitar o Login com Google
+- Siga o Passo 3 para habilitar Email/Password
+
+### Popup não abre ao clicar em "Entrar com Google"
+
+- O navegador pode ter bloqueado o popup — verifique a barra de endereços para o ícone de popup bloqueado
+- O código já implementa fallback para `signInWithRedirect` quando o popup é bloqueado
+- Em alguns ambientes corporativos (proxies, firewalls) popups são bloqueados por padrão
 
 ### Erro: "Firebase não inicializado"
 - Verifique se o arquivo `firebase-config.js` está configurado corretamente

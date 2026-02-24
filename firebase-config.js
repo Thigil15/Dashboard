@@ -12,6 +12,11 @@ const firebaseConfig = {
   appId: "1:897767302445:web:61dc5f0c3419ac680adfa4"
 };
 
+// Diagnostic: confirm config is loaded (only logs projectId/authDomain and presence of apiKey — never the key value)
+console.log('[firebase-config] Módulo carregado — projectId:', firebaseConfig.projectId,
+  '| authDomain:', firebaseConfig.authDomain,
+  '| apiKey presente:', Boolean(firebaseConfig.apiKey));
+
 export default {
   initializeApp,
   getAuth,
