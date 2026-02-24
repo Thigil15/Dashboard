@@ -815,7 +815,7 @@
 
                 if (!rows.length) return;
 
-                const dayKeyRegex = /^(\d{1,2})_(\d{2})$/;
+                const dayKeyRegex = /^(\d{1,2})_(\d{2})(?:_(\d{2}))?$/;
                 const dayKeyMap = new Map();
                 const firstRowKeys = Object.keys(rows[0]);
 
@@ -824,7 +824,7 @@
                     if (!match) return;
                     const day = match[1].padStart(2, '0');
                     const month = match[2].padStart(2, '0');
-                    const pretty = `${day}/${month}`;
+                    const pretty = match[3] ? `${day}/${month}/${match[3]}` : `${day}/${month}`;
                     if (!dayKeyMap.has(key)) {
                         dayKeyMap.set(key, pretty);
                     }
@@ -8830,21 +8830,27 @@ function extractTimeFromISO(isoString) {
  * [HELPER] (v32.5) Converte "dd/mm" para um objeto Date, com lógica de ano corrigida.
  */
 function _esc_parseDMInferYear(dm, refDate = new Date()) {
-    if (!dm || !/^\d{1,2}\/\d{1,2}$/.test(dm)) return null;
-    const [dStr, mStr] = dm.split('/');
-    const d = parseInt(dStr, 10);
-    const m_idx = parseInt(mStr, 10) - 1; // 0-11
-    
-    const nowY = refDate.getFullYear();
-    const nowM_idx = refDate.getMonth();
+    if (!dm) return null;
+    const parts = String(dm).split('/');
+    if (parts.length < 2 || parts.length > 3) return null;
+    if (!/^\d{1,2}$/.test(parts[0]) || !/^\d{1,2}$/.test(parts[1])) return null;
 
-    let year = nowY; 
-    if (nowM_idx <= 1 && m_idx >= 10) {
-        year = nowY - 1;
+    const d = parseInt(parts[0], 10);
+    const m_idx = parseInt(parts[1], 10) - 1; // 0-11
+
+    let year;
+    if (parts.length === 3 && /^\d{2,4}$/.test(parts[2])) {
+        // Use the provided year (2-digit: 25 → 2025)
+        const rawYear = parseInt(parts[2], 10);
+        year = rawYear < 100 ? 2000 + rawYear : rawYear;
+    } else {
+        const nowY = refDate.getFullYear();
+        const nowM_idx = refDate.getMonth();
+        year = nowY;
+        if (nowM_idx <= 1 && m_idx >= 10) year = nowY - 1;
+        else if (nowM_idx >= 10 && m_idx <= 1) year = nowY + 1;
     }
-    else if (nowM_idx >= 10 && m_idx <= 1) {
-        year = nowY + 1;
-    }
+
     const date = new Date(year, m_idx, d);
     if (isNaN(date.getTime()) || date.getDate() !== d) return null;
     return date;
@@ -9746,7 +9752,10 @@ function renderTabEscala(escalas) {
 
         const diasMap = new Map();
         diasBrutos.forEach(ddmm => {
-            const ddmmCorrigido = ddmm.includes('/') ? ddmm.split('/')[0] + '/' + ddmm.split('/')[1].padStart(2, '0') : ddmm;
+            const ddmmParts = ddmm.split('/');
+            const ddmmCorrigido = ddmmParts.length >= 2
+                ? ddmmParts[0] + '/' + ddmmParts[1].padStart(2, '0') + (ddmmParts[2] ? '/' + ddmmParts[2] : '')
+                : ddmm;
             const dateObj = _esc_parseDMInferYear(ddmmCorrigido);
             
             if (dateObj) {
