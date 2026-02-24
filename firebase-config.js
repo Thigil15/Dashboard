@@ -3,13 +3,13 @@ import { getAuth, signInWithEmailAndPassword, signInWithPopup, signInWithRedirec
 import appsScriptConfig from './apps-script-config.js';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCR3gZuiUUC-IMHduSGSuWWnFyn2sNYOEQ",
-  authDomain: "dashboardalunos.firebaseapp.com",
-  databaseURL: "https://dashboardalunos-default-rtdb.firebaseio.com",
-  projectId: "dashboardalunos",
-  storageBucket: "dashboardalunos.firebasestorage.app",
-  messagingSenderId: "897767302445",
-  appId: "1:897767302445:web:61dc5f0c3419ac680adfa4"
+  apiKey: "AIzaSyCIo8xgqdatUr9o7ZwBks0zv2spG5C7zwY",
+  authDomain: "portalensinoincor.firebaseapp.com",
+  projectId: "portalensinoincor",
+  storageBucket: "portalensinoincor.firebasestorage.app",
+  messagingSenderId: "532264210404",
+  appId: "1:532264210404:web:cdca69f1c330fdcf0281f1",
+  measurementId: "G-TPG4BKVTZM"
 };
 
 // Diagnostic: confirm config is loaded (only logs projectId/authDomain and presence of apiKey — never the key value)
