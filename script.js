@@ -2097,7 +2097,7 @@ function extractTimeFromISO(isoString) {
             } else {
                 // Fallback using separate sheets
                 const ausencias = (appState.ausencias || []).filter(a => getRecordEmail(a) && a.DataAusenciaISO);
-                const reposicoes = (appState.reposicoes || []).filter(r => getRecordEmail(r) && r.DataReposicaoISO && r.DataAusenciaISO);
+                const reposicoes = (appState.reposicoes || []).filter(r => getRecordEmail(r) && r.DataAusenciaISO);
                 
                 // Build a map of absences by email
                 const ausenciasByEmail = new Map();
@@ -2649,9 +2649,26 @@ function extractTimeFromISO(isoString) {
             list.style.flexDirection = 'column';
             list.style.gap = '0.75rem';
             
-            const ausenciasAluno = getAusenciasSource()
-                .filter(a => normalizeString(a.EmailHC || a.Email) === normalizeString(student.EmailHC))
-                .sort((a, b) => (a.DataAusenciaISO || a.DataAusencia || '').localeCompare(b.DataAusenciaISO || b.DataAusencia || ''));
+            const studentEmailNorm = normalizeString(student.EmailHC || '');
+            let ausenciasAluno;
+            if (appState.ausenciasReposicoes && appState.ausenciasReposicoes.length > 0) {
+                // Combined sheet: use getPendingAbsences to exclude already-covered absences
+                const studentRecords = appState.ausenciasReposicoes.filter(
+                    r => normalizeString(getRecordEmail(r)) === studentEmailNorm
+                );
+                ausenciasAluno = getPendingAbsences(studentRecords);
+            } else {
+                // Separate sheets: filter ausencias against reposicoes
+                const coveredDates = new Set(
+                    (appState.reposicoes || [])
+                        .filter(r => normalizeString(getRecordEmail(r)) === studentEmailNorm && r.DataAusenciaISO)
+                        .map(r => r.DataAusenciaISO)
+                );
+                ausenciasAluno = (appState.ausencias || [])
+                    .filter(a => normalizeString(getRecordEmail(a)) === studentEmailNorm &&
+                        a.DataAusenciaISO && !coveredDates.has(a.DataAusenciaISO));
+            }
+            ausenciasAluno.sort((a, b) => (a.DataAusenciaISO || a.DataAusencia || '').localeCompare(b.DataAusenciaISO || b.DataAusencia || ''));
             
             if (ausenciasAluno.length === 0) {
                 list.innerHTML = `
