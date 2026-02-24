@@ -10,9 +10,21 @@
 // 2. Adding rate limiting to prevent abuse
 // 3. Restricting deployment access to specific domains if possible
 // 4. Monitoring access logs for suspicious activity
+//
+// NOTE: The active dataURL is overridden at runtime based on turma selection.
+//       turmaURLs maps each class year to its corresponding Apps Script deployment URL.
 const appsScriptConfig = {
-  dataURL: "https://script.google.com/macros/s/AKfycbx6x-I0PCc1Ym8vx7VYyXmwvx3mY-9i3P16z6-5sJB2v728SlzENKnwy-4uAIHIiDLxGg/exec"
+  dataURL: "https://script.google.com/macros/s/AKfycbx6x-I0PCc1Ym8vx7VYyXmwvx3mY-9i3P16z6-5sJB2v728SlzENKnwy-4uAIHIiDLxGg/exec",
+  turmaURLs: {
+    "2025": "https://script.google.com/macros/s/AKfycbx6x-I0PCc1Ym8vx7VYyXmwvx3mY-9i3P16z6-5sJB2v728SlzENKnwy-4uAIHIiDLxGg/exec",
+    "2026": "https://script.google.com/macros/s/AKfycbxF39enADoiGglxeCOzQbjlrc8CWoWn7eHP2OzyuNiqaD4wiAhnkE57NEGhnl81tC3h/exec"
+  }
 };
+
+// Export configuration for ES6 module import
+export default appsScriptConfig;
+export { appsScriptConfig };
+
 
 // Export configuration for ES6 module import
 export default appsScriptConfig;

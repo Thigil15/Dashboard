@@ -1763,7 +1763,7 @@ function extractTimeFromISO(isoString) {
         // --- Gerenciador de Views Centralizado ---
         function showView(viewIdToShow) {
             console.log(`[showView] Tentando mostrar view: ${viewIdToShow}`);
-            const allViewIds = ['login-view', 'dashboard-view', 'alunos-pendencias-view', 'student-detail-view'];
+            const allViewIds = ['login-view', 'turma-select-view', 'dashboard-view', 'alunos-pendencias-view', 'student-detail-view'];
             let found = false;
             
             allViewIds.forEach(id => {
@@ -1872,6 +1872,24 @@ function extractTimeFromISO(isoString) {
             }
         }
         
+        // ====================================================================
+        // TURMA SELECTION
+        // ====================================================================
+
+        window.selectTurma = async function(turma) {
+            console.log(`[selectTurma] Turma selecionada: ${turma}`);
+            const urls = window.appsScriptConfig?.turmaURLs || {};
+            const url = urls[turma];
+            if (!url) {
+                console.error('[selectTurma] URL não encontrada para turma:', turma);
+                return;
+            }
+            // Override the data URL with the selected turma's URL
+            window.appsScriptConfig.dataURL = url;
+            showView('dashboard-view');
+            await initDashboard();
+        };
+
         // ====================================================================
         // AUSÊNCIAS VIEW - Display absences from the Ausencias sheet
         // ====================================================================
@@ -3335,6 +3353,22 @@ function extractTimeFromISO(isoString) {
             // Setup form handlers for Ausências and Reposições
             setupAusenciaFormHandler();
             setupReposicaoFormHandler();
+
+            // Turma select cards
+            const turmaCard2025 = document.getElementById('turma-card-2025');
+            if (turmaCard2025) {
+                turmaCard2025.addEventListener('click', () => window.selectTurma('2025'));
+            }
+            const turmaCard2026 = document.getElementById('turma-card-2026');
+            if (turmaCard2026) {
+                turmaCard2026.addEventListener('click', () => window.selectTurma('2026'));
+            }
+
+            // Turma select logout button
+            const turmaLogoutBtn = document.getElementById('turma-select-logout-btn');
+            if (turmaLogoutBtn) {
+                turmaLogoutBtn.addEventListener('click', handleLogout);
+            }
 
             console.log('[setupEventHandlers] Listeners configurados.');
         }
@@ -11834,8 +11868,12 @@ function renderTabEscala(escalas) {
                 window.firebase.onAuthStateChanged(fbAuth, async (user) => {
                     if (user) {
                         updateUserMenuInfo(user);
-                        showView('dashboard-view');
-                        await initDashboard();
+                        // Show turma selection before loading dashboard data
+                        const userLabel = document.getElementById('turma-select-user');
+                        if (userLabel) {
+                            userLabel.textContent = user.displayName || user.email || '';
+                        }
+                        showView('turma-select-view');
                     } else {
                         showView('login-view');
                     }
