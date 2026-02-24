@@ -1677,16 +1677,18 @@
     </div>
     
     <!-- CLIENT-SIDE SCRIPT -->
-    <!-- Apps Script Configuration -->
+    <!-- Firebase + Apps Script Configuration -->
     <script type="module">
-        // Import Apps Script configuration
-        import configModule from './apps-script-config.js';
-        const appsScriptConfig = configModule.appsScriptConfig || configModule;
+        // Import Firebase and Apps Script configuration
+        import firebaseModule from './firebase-config.js';
+        const firebase = firebaseModule.default || firebaseModule;
+        const appsScriptConfig = firebase.appsScriptConfig;
 
-        // Make Apps Script configuration globally available
+        // Make configuration globally available
+        window.firebase = firebase;
         window.appsScriptConfig = appsScriptConfig;
         
-        console.log('[Apps Script Config] Loaded successfully');
+        console.log('[Firebase Config] Loaded successfully');
         console.log('[Apps Script Config] Data URL configured:', appsScriptConfig.dataURL);
     </script>
     <script type="module" src="script.js"></script>

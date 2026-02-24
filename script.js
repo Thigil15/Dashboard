@@ -1,8 +1,18 @@
         // ====================================================================
         // APPS SCRIPT DATA FETCHING
         // ====================================================================
-        // NOTE: Authentication has been disabled. System now works with Apps Script only.
-        // All Firebase authentication code has been removed.
+        // Firebase Authentication + Apps Script data loading
+        let fbApp = null;
+        let fbAuth = null;
+        
+        function initializeFirebase() {
+            if (!window.firebase) {
+                throw new Error('Firebase não carregado. Verifique firebase-config.js.');
+            }
+            fbApp = window.firebase.initializeApp(window.firebase.firebaseConfig);
+            fbAuth = window.firebase.getAuth(fbApp);
+            console.log('[initializeFirebase] Firebase Auth inicializado com sucesso');
+        }
         
         /**
          * Fetch all data from Apps Script URL
@@ -3597,34 +3607,42 @@ function extractTimeFromISO(isoString) {
             });
         }
 
-        // Login handler - NO AUTHENTICATION SYSTEM
-        // Simply bypasses directly to dashboard without any credential validation
         async function handleLogin(event) {
             event.preventDefault();
-            console.log("[handleLogin] Login initiated - bypassing authentication (no auth system)");
+            console.log("[handleLogin] Login initiated - Firebase Auth");
 
             const loginButton = document.getElementById("login-button");
             const errorBox = document.getElementById("login-error");
+            const emailInput = document.getElementById("login-email");
+            const passwordInput = document.getElementById("login-password");
+            const email = emailInput ? emailInput.value.trim() : '';
+            const password = passwordInput ? passwordInput.value : '';
 
             // Add loading state to button
             loginButton.classList.add('loading');
             loginButton.disabled = true;
             errorBox.style.display = "none";
 
-            // Bypass authentication and go directly to dashboard
-            console.log("[handleLogin] Bypassing authentication - loading dashboard");
-            showView('dashboard-view');
-            initDashboard();
-            
-            // Remove loading state after dashboard is shown
-            setTimeout(() => {
+            try {
+                await window.firebase.signInWithEmailAndPassword(fbAuth, email, password);
+                console.log("[handleLogin] Login Firebase realizado com sucesso");
+            } catch (error) {
+                const authErrorMap = {
+                    'auth/invalid-credential': 'Email ou senha inválidos.',
+                    'auth/user-not-found': 'Usuário não encontrado.',
+                    'auth/wrong-password': 'Senha incorreta.',
+                    'auth/invalid-email': 'Email inválido.',
+                    'auth/too-many-requests': 'Muitas tentativas. Tente novamente em alguns minutos.'
+                };
+                showError(authErrorMap[error.code] || 'Erro ao fazer login. Tente novamente.', true);
+                console.error('[handleLogin] Erro no login Firebase:', error);
+            } finally {
                 loginButton.classList.remove('loading');
                 loginButton.disabled = false;
-            }, 100);
+            }
         }
 
-        // Logout function - Authentication DISABLED
-        function handleLogout() {
+        async function handleLogout() {
             console.log("[handleLogout] Logout initiated - going back to login screen");
             
             // Close user menu before logout
@@ -3633,6 +3651,14 @@ function extractTimeFromISO(isoString) {
                 userMenu.classList.remove('open');
             }
             
+            try {
+                if (fbAuth && window.firebase?.signOut) {
+                    await window.firebase.signOut(fbAuth);
+                }
+            } catch (error) {
+                console.error('[handleLogout] Erro ao fazer logout no Firebase:', error);
+            }
+
             // Clear saved navigation state on logout
             clearNavigationState();
             
@@ -11701,13 +11727,11 @@ function renderTabEscala(escalas) {
 
         // --- Inicia ---
         document.addEventListener('DOMContentLoaded', () => {
-            console.log("DOM Carregado. Apps Script mode - no authentication required.");
+            console.log("DOM Carregado. Inicializando autenticação Firebase.");
 
-            // Enable login button immediately (no Firebase to wait for)
             const loginButton = document.getElementById('login-button');
             if (loginButton) {
-                loginButton.disabled = false;
-                console.log('[Init] Login button enabled - no authentication required');
+                loginButton.disabled = true;
             }
             
             // Update footer years dynamically
@@ -11719,8 +11743,27 @@ function renderTabEscala(escalas) {
             // Setup event handlers
             setupEventHandlers();
             
-            // Show login view (which will bypass to dashboard on button click)
-            showView('login-view');
-            
-            console.log('[Init] Application ready - Apps Script only mode');
+            try {
+                initializeFirebase();
+                
+                if (loginButton) {
+                    loginButton.disabled = false;
+                }
+
+                window.firebase.onAuthStateChanged(fbAuth, async (user) => {
+                    if (user) {
+                        updateUserMenuInfo(user);
+                        showView('dashboard-view');
+                        await initDashboard();
+                    } else {
+                        showView('login-view');
+                    }
+                });
+            } catch (error) {
+                console.error('[Init] Erro ao inicializar Firebase:', error);
+                showError('Falha ao inicializar autenticação Firebase. Verifique firebase-config.js.', true);
+                showView('login-view');
+            }
+
+            console.log('[Init] Application ready');
         });
