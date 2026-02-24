@@ -7,13 +7,22 @@
         let fbGoogleProvider = null;
         
         function initializeFirebase() {
+            if (fbApp) {
+                console.log('[initializeFirebase] Firebase já inicializado, reutilizando instância existente');
+                return;
+            }
             if (!window.firebase) {
                 throw new Error('Firebase não carregado. Verifique firebase-config.js.');
             }
-            fbApp = window.firebase.initializeApp(window.firebase.firebaseConfig);
+            const cfg = window.firebase.firebaseConfig;
+            if (!cfg?.apiKey || cfg.apiKey.startsWith('SUA_') || cfg.apiKey === 'YOUR_API_KEY') {
+                throw new Error('Firebase config inválida: apiKey ausente ou placeholder. Configure firebase-config.js com os dados do Firebase Console.');
+            }
+            console.log('[initializeFirebase] Config carregada — projectId:', cfg.projectId, '| authDomain:', cfg.authDomain);
+            fbApp = window.firebase.initializeApp(cfg);
             fbAuth = window.firebase.getAuth(fbApp);
             fbGoogleProvider = new window.firebase.GoogleAuthProvider();
-            console.log('[initializeFirebase] Firebase Auth inicializado com sucesso');
+            console.log('[initializeFirebase] Firebase App e Auth inicializados; provider Google criado (método preferido: popup → redirect)');
         }
         
         /**
@@ -3672,10 +3681,15 @@ function extractTimeFromISO(isoString) {
                 }
                 const authErrorMap = {
                     'auth/popup-closed-by-user': 'Login com Google cancelado.',
-                    'auth/unauthorized-domain': 'Domínio não autorizado no Firebase Authentication.',
-                    'auth/account-exists-with-different-credential': 'Esta conta já existe com outro método de login.'
+                    'auth/unauthorized-domain': 'Domínio não autorizado no Firebase. Adicione este domínio em Authentication → Settings → Authorized domains no Firebase Console.',
+                    'auth/account-exists-with-different-credential': 'Esta conta já existe com outro método de login.',
+                    'auth/api-key-not-valid.-please-pass-a-valid-api-key.': 'API Key do Firebase inválida. Copie a configuração correta do Firebase Console e atualize firebase-config.js.',
+                    'auth/invalid-api-key': 'API Key do Firebase inválida. Copie a configuração correta do Firebase Console e atualize firebase-config.js.',
+                    'auth/app-not-authorized': 'Aplicação não autorizada. Verifique as Authorized domains e o provedor Google em Firebase Console → Authentication.',
+                    'auth/configuration-not-found': 'Configuração do Firebase não encontrada. Verifique se o projectId e apiKey em firebase-config.js estão corretos.',
+                    'auth/operation-not-allowed': 'Login com Google não está habilitado. Ative o provedor Google em Firebase Console → Authentication → Sign-in method.'
                 };
-                showError(authErrorMap[error.code] || 'Erro ao fazer login com Google. Tente novamente.', true);
+                showError(authErrorMap[error.code] || `Erro ao fazer login com Google (${error.code || 'desconhecido'}). Verifique firebase-config.js.`, true);
                 console.error('[handleGoogleLogin] Erro no login Google:', error);
             } finally {
                 googleLoginButton.classList.remove('loading');
@@ -11799,8 +11813,15 @@ function renderTabEscala(escalas) {
                 try {
                     await window.firebase.getRedirectResult(fbAuth);
                 } catch (redirectError) {
+                    const redirectErrMap = {
+                        'auth/api-key-not-valid.-please-pass-a-valid-api-key.': 'API Key do Firebase inválida. Atualize firebase-config.js com a configuração correta do Firebase Console.',
+                        'auth/invalid-api-key': 'API Key do Firebase inválida. Atualize firebase-config.js com a configuração correta do Firebase Console.',
+                        'auth/unauthorized-domain': 'Domínio não autorizado. Adicione este domínio em Firebase Console → Authentication → Authorized domains.',
+                        'auth/operation-not-allowed': 'Login com Google não está habilitado. Ative o provedor Google em Firebase Console → Authentication → Sign-in method.'
+                    };
+                    const msg = redirectErrMap[redirectError.code] || `Erro ao concluir login com Google (${redirectError.code || 'desconhecido'}). Tente novamente.`;
                     console.error('[Init] Erro ao concluir redirect do Google login:', redirectError);
-                    showError('Erro ao concluir login com Google. Tente novamente.', true);
+                    showError(msg, true);
                 }
                 
                 if (loginButton) {
