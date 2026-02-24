@@ -1772,7 +1772,7 @@ function extractTimeFromISO(isoString) {
                     let displayStyle = 'none';
                     if (view.id === viewIdToShow) {
                         // Use flex for views that have flexbox layout
-                        const needsFlex = (id === 'dashboard-view' || id === 'login-view' || 
+                        const needsFlex = (id === 'dashboard-view' || id === 'login-view' || id === 'turma-select-view' ||
                                           view.classList.contains('incor-dash') ||
                                           view.classList.contains('alunos-view') ||
                                           view.classList.contains('alunos-pendencias-page') ||
@@ -3368,6 +3368,12 @@ function extractTimeFromISO(isoString) {
             const turmaLogoutBtn = document.getElementById('turma-select-logout-btn');
             if (turmaLogoutBtn) {
                 turmaLogoutBtn.addEventListener('click', handleLogout);
+            }
+
+            // Back to turma selection button
+            const btnBackTurma = document.getElementById('btn-back-turma');
+            if (btnBackTurma) {
+                btnBackTurma.addEventListener('click', () => showView('turma-select-view'));
             }
 
             console.log('[setupEventHandlers] Listeners configurados.');
