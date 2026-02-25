@@ -9057,13 +9057,19 @@ function _bh_calcularHorasDoValor(valor) {
         }
         
         const diferencaMinutos = minutosSaida - minutosEntrada;
-        const horas = Number.parseFloat((diferencaMinutos / 60).toFixed(1));
+        let horas = Number.parseFloat((diferencaMinutos / 60).toFixed(1));
         
         // Validar resultado - deve estar entre limites razoáveis
         if (horas < HORAS_MIN_VALIDAS || horas > HORAS_MAX_VALIDAS) {
             console.warn(`[_bh_calcularHorasDoValor] Duração fora dos limites (${horas}h) para: ${valor}`);
             return { horas: HORAS_PADRAO, tipo: 'horario_invalido', compareceu: true };
         }
+        
+        // Ajuste de horas conforme turnos padrão do estágio:
+        // Turno tarde (6h calculadas, ex: 12h-18h, 13h-19h): 1h de intervalo → 5h efetivas
+        // Plantão diurno (11h calculadas, ex: 08h-19h): contabilizado como 12h
+        if (horas === 6) horas = 5;
+        else if (horas === 11) horas = 12;
         
         return { horas: horas, tipo: 'horario', compareceu: true };
     }
@@ -9091,6 +9097,12 @@ function _bh_calcularHorasDoValor(valor) {
             console.warn(`[_bh_calcularHorasDoValor] Duração fora dos limites (${horas}h) para: ${valor}`);
             return { horas: HORAS_PADRAO, tipo: 'horario_invalido', compareceu: true };
         }
+        
+        // Ajuste de horas conforme turnos padrão do estágio:
+        // Turno tarde (6h calculadas, ex: 12h-18h, 13h-19h): 1h de intervalo → 5h efetivas
+        // Plantão diurno (11h calculadas, ex: 08h-19h): contabilizado como 12h
+        if (horas === 6) horas = 5;
+        else if (horas === 11) horas = 12;
         
         return { horas: horas, tipo: 'horario', compareceu: true };
     }
