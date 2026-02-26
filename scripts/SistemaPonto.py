@@ -46,7 +46,19 @@ else:
     msvcrt = None
 
 # ========== CONFIG ==========
-ENDPOINT = "https://script.google.com/macros/s/AKfycbwNNwndI5_oh7klQI9zgeW5eiKhdkhHPlVbOeOuxFPF6XrEsFDtQrwqqD0J2q1CdLXy/exec"
+# URLs por turma - espelham apps-script-config.js
+TURMA_URLS = {
+    "2025": "https://script.google.com/macros/s/AKfycbx6x-I0PCc1Ym8vx7VYyXmwvx3mY-9i3P16z6-5sJB2v728SlzENKnwy-4uAIHIiDLxGg/exec",
+    "2026": "https://script.google.com/macros/s/AKfycbxF39enADoiGglxeCOzQbjlrc8CWoWn7eHP2OzyuNiqaD4wiAhnkE57NEGhnl81tC3h/exec",
+}
+
+def _get_default_turma():
+    """Retorna a turma padrão: ano atual se disponível, senão a mais recente."""
+    ano_atual = str(datetime.now().year)
+    return ano_atual if ano_atual in TURMA_URLS else sorted(TURMA_URLS.keys())[-1]
+
+# URL padrão: usa a turma do ano atual se existir, senão a mais recente
+ENDPOINT = TURMA_URLS[_get_default_turma()]
 DEBOUNCE_SECONDS = 1.2
 CONFIG_FILE = "config_ponto.json"
 
@@ -66,8 +78,11 @@ _last_time = 0.0
 # Configuração padrão - usada em load_config() e save_default_config()
 def get_default_config():
     """Retorna a configuração padrão."""
+    turma_padrao = _get_default_turma()
     return {
-        "endpoint": ENDPOINT,
+        "endpoint": TURMA_URLS[turma_padrao],
+        "turma_urls": TURMA_URLS.copy(),
+        "turma_atual": turma_padrao,
         "debounce_seconds": DEBOUNCE_SECONDS,
         "nomes": NOMES.copy(),
         "alunos": {},  # Novo campo para cadastro de alunos
@@ -352,6 +367,62 @@ def set_escala_atual(escala_str, config_path=None):
         print(f"Erro ao salvar configuração: {e}")
         return False
 
+def get_endpoint_for_turma(config):
+    """Retorna a URL correta com base na turma configurada."""
+    turma = config.get("turma_atual", "")
+    turma_urls = config.get("turma_urls", TURMA_URLS)
+    # Turma configurada tem prioridade
+    if turma and turma in turma_urls:
+        return turma_urls[turma]
+    # Fallback: campo endpoint legado
+    endpoint = config.get("endpoint", "")
+    if endpoint:
+        return endpoint
+    # Último recurso: padrão do módulo
+    return ENDPOINT
+
+def set_turma_atual(turma_str, config_path=None):
+    """Define a turma atual para registro de ponto."""
+    if config_path is None:
+        config_path = Path(CONFIG_FILE)
+
+    turma_str = turma_str.strip()
+    turma_urls = TURMA_URLS
+    if turma_str not in turma_urls:
+        turmas_validas = ", ".join(sorted(turma_urls.keys()))
+        print(f"Erro: Turma inválida '{turma_str}'. Opções: {turmas_validas}")
+        return False
+
+    # Carrega a configuração existente ou cria uma nova
+    config = {}
+    if config_path.exists():
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+        except json.JSONDecodeError as e:
+            print(f"Aviso: Erro de sintaxe no arquivo de configuração: {e}")
+            print("Criando nova configuração...")
+        except IOError as e:
+            print(f"Aviso: Erro ao ler arquivo de configuração: {e}")
+
+    config["turma_atual"] = turma_str
+    config["turma_urls"] = turma_urls
+    config["endpoint"] = turma_urls[turma_str]
+
+    try:
+        with open(config_path, 'w', encoding='utf-8') as f:
+            json.dump(config, f, indent=2, ensure_ascii=False)
+        print(f"\n=== Turma Atualizada ===")
+        print(f"\n  Turma atual definida: {turma_str}")
+        print(f"  URL: {turma_urls[turma_str]}")
+        print(f"\n  Todos os próximos registros de ponto serão enviados para esta turma.")
+        print("")
+        return True
+    except IOError as e:
+        print(f"Erro ao salvar configuração: {e}")
+        return False
+
+
 def install_windows_startup():
     """Instala o script para iniciar com o Windows."""
     if platform.system() != "Windows":
@@ -580,9 +651,10 @@ def main_interativo(config):
     print("│              ⏰ SISTEMA DE PONTO NFC                    │")
     print("└─────────────────────────────────────────────────────────┘")
     
-    endpoint = config.get("endpoint", ENDPOINT)
+    endpoint = get_endpoint_for_turma(config)
     debounce = config.get("debounce_seconds", DEBOUNCE_SECONDS)
     escala_atual = config.get("escala_atual", "9")
+    turma_atual = config.get("turma_atual", "")
     
     # Verifica se hoje é dia de teoria
     is_teoria = is_dia_teoria(config)
@@ -592,6 +664,10 @@ def main_interativo(config):
         print("   ✅ Hoje é dia de TEORIA (aulas teóricas permitidas)")
     else:
         print("   📚 Hoje NÃO é dia de teoria (apenas prática)")
+    
+    # Mostra a turma atual
+    if turma_atual:
+        print(f"\n   🎓 Turma: {turma_atual}")
     
     # Mostra a escala atual
     print(f"\n   📊 Escala Atual: {escala_atual}")
@@ -727,12 +803,13 @@ def main(config):
     """Loop principal do programa."""
     global _last_time
     
-    endpoint = config.get("endpoint", ENDPOINT)
+    endpoint = get_endpoint_for_turma(config)
     debounce = config.get("debounce_seconds", DEBOUNCE_SECONDS)
     nomes = config.get("nomes", NOMES)
     escala_atual = config.get("escala_atual", "9")
     
     logging.info("=== Sistema de Ponto NFC ===")
+    logging.info(f"Turma: {config.get('turma_atual', 'não configurada')}")
     logging.info(f"Escala Atual: {escala_atual}")
     logging.info("Aguardando leitura de crachás... (Ctrl+C para sair)")
     
@@ -815,6 +892,8 @@ Exemplos de uso:
   python SistemaPonto.py --list-alunos            # Listar alunos cadastrados
   python SistemaPonto.py --set-escala 9           # Definir escala atual como 9
   python SistemaPonto.py --show-escala            # Mostrar escala atual
+  python SistemaPonto.py --set-turma 2026         # Definir turma atual (2025 ou 2026)
+  python SistemaPonto.py --show-turma             # Mostrar turma atual configurada
   python SistemaPonto.py --install-startup        # Instalar para iniciar com Windows
   python SistemaPonto.py --create-config          # Criar arquivo de configuração padrão
 
@@ -841,6 +920,10 @@ Funcionamento:
                         help="Definir a escala atual (1-12)")
     parser.add_argument("--show-escala", action="store_true",
                         help="Mostrar a escala atual configurada")
+    parser.add_argument("--set-turma", metavar="ANO",
+                        help="Definir a turma atual para registro de ponto (ex: 2025, 2026)")
+    parser.add_argument("--show-turma", action="store_true",
+                        help="Mostrar a turma atual configurada")
     parser.add_argument("--install-startup", action="store_true",
                         help="Instalar para iniciar com o Windows")
     parser.add_argument("--uninstall-startup", action="store_true",
@@ -889,6 +972,22 @@ Funcionamento:
     
     if args.set_escala:
         set_escala_atual(args.set_escala)
+        sys.exit(0)
+    
+    if args.show_turma:
+        config = load_config()
+        turma = config.get("turma_atual", "não configurada")
+        endpoint = get_endpoint_for_turma(config)
+        turmas_disponiveis = ", ".join(sorted(TURMA_URLS.keys()))
+        print(f"\n=== Turma Atual ===\n")
+        print(f"  Turma configurada: {turma}")
+        print(f"  URL: {endpoint}")
+        print(f"  Turmas disponíveis: {turmas_disponiveis}")
+        print("")
+        sys.exit(0)
+    
+    if args.set_turma:
+        set_turma_atual(args.set_turma)
         sys.exit(0)
     
     if args.install_startup:
