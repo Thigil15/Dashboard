@@ -41,6 +41,14 @@ if errorlevel 1 (
         echo.
         echo   Instalando dependencia 'requests'...
         pip install requests
+        if errorlevel 1 (
+            echo.
+            echo   [ERRO] Falha ao instalar 'requests'.
+            echo   Verifique sua conexao com a internet e tente novamente.
+            echo.
+            pause
+            exit /b 1
+        )
         echo.
     ) else (
         echo.
