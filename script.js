@@ -1806,7 +1806,34 @@ function extractTimeFromISO(isoString) {
                 Object.keys(appState.dataLoadingState).forEach(key => {
                     appState.dataLoadingState[key] = false;
                 });
-                
+
+                // Reset appState data so stale turma data is not carried over
+                appState.alunos = [];
+                appState.alunosMap.clear();
+                appState.escalas = {};
+                appState.ausenciasReposicoes = [];
+                appState.ausencias = [];
+                appState.reposicoes = [];
+                appState.notasTeoricas = {};
+                appState.notasPraticas = {};
+                appState.pontoStaticRows = [];
+
+                // Reset pontoState so frequência tab does not show data from the previous turma
+                pontoState.rawRows = [];
+                pontoState.byDate.clear();
+                pontoState.cache.clear();
+                pontoState.scalesByDate.clear();
+                pontoState.autoScaleByDate.clear();
+                pontoState.dates = [];
+                pontoState.selectedDate = '';
+                pontoState.selectedScale = 'all';
+                pontoState.selectedType = 'pratica';
+                pontoState.filter = 'all';
+                pontoState.search = '';
+                pontoState.searchRaw = '';
+                pontoState.lastLoadedAt = null;
+                pontoState.isLoading = false;
+
                 // Fetch data from Apps Script URL
                 const dataLoaded = await fetchDataFromURL();
                 
