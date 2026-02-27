@@ -183,11 +183,12 @@ def beep(kind="short"):
     except Exception:
         pass
 
-def send_to_endpoint(serial, nome, endpoint, is_teoria_day=False, escala=""):
+def send_to_endpoint(serial, nome, endpoint, is_teoria_day=False, escala="", email=""):
     """Envia POST JSON para o Apps Script."""
     payload = {
         "SerialNumber": serial,
         "NomeCompleto": nome,
+        "EmailHC": email,
         "IsDiaTeoria": is_teoria_day,
         "Escala": escala
     }
@@ -482,6 +483,31 @@ def get_nome_aluno(uid, config):
     nomes = config.get("nomes", NOMES)
     return nomes.get(uid, "Desconhecido")
 
+def get_email_aluno(uid, config):
+    """Obtém o e-mail do aluno pelo UID."""
+    alunos = config.get("alunos", {})
+    if uid in alunos:
+        aluno = alunos[uid]
+        if isinstance(aluno, dict):
+            return aluno.get("email", "")
+    return ""
+
+def validar_email(email):
+    """Valida o formato básico de um e-mail (usuario@dominio.tld)."""
+    if not email or '@' not in email:
+        return False
+    partes = email.split('@')
+    if len(partes) != 2:
+        return False
+    usuario, dominio = partes
+    if not usuario:
+        return False
+    partes_dominio = dominio.split('.')
+    # Precisa de pelo menos 'dominio.tld' com caracteres em cada parte
+    if len(partes_dominio) < 2 or any(p == '' for p in partes_dominio):
+        return False
+    return True
+
 def salvar_config(config, config_path=None):
     """Salva a configuração no arquivo JSON."""
     if config_path is None:
@@ -508,7 +534,7 @@ def salvar_config(config, config_path=None):
 def cadastrar_aluno_inline(uid, config):
     """
     Cadastra um novo aluno diretamente quando o UID não é encontrado.
-    Retorna o nome do aluno cadastrado ou None se cancelado.
+    Retorna (nome, email) do aluno cadastrado ou (None, None) se cancelado.
     """
     print("\n   " + "═" * 50)
     print("   📝 NOVO CRACHÁ DETECTADO - CADASTRO NECESSÁRIO")
@@ -522,7 +548,24 @@ def cadastrar_aluno_inline(uid, config):
     
     if not nome:
         print("\n   ⚠️  Cadastro pulado. Ponto será registrado como 'Desconhecido'.")
-        return None
+        return None, None
+    
+    print("\n   Digite o e-mail do aluno:")
+    print("   (ou deixe em branco para preencher depois)")
+    MAX_TENTATIVAS = 3
+    email = ""
+    for tentativa in range(MAX_TENTATIVAS):
+        entrada = input("   E-mail: ").strip().lower()
+        if not entrada:
+            break
+        if validar_email(entrada):
+            email = entrada
+            break
+        restantes = MAX_TENTATIVAS - tentativa - 1
+        if restantes > 0:
+            print(f"   ⚠️  E-mail inválido. Tente novamente ({restantes} tentativa(s) restante(s)) ou deixe em branco para pular.")
+        else:
+            print("   ⚠️  E-mail inválido. Continuando sem e-mail.")
     
     # Salvar no config
     if "alunos" not in config:
@@ -530,7 +573,7 @@ def cadastrar_aluno_inline(uid, config):
     
     config["alunos"][uid] = {
         "nome": nome,
-        "email": "",  # Preenchido manualmente depois
+        "email": email,
         "data_cadastro": datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     }
     
@@ -546,12 +589,12 @@ def cadastrar_aluno_inline(uid, config):
         print("   " + "═" * 50)
         print(f"   📛 Nome: {nome}")
         print(f"   🔢 UID: {uid}")
-        print(f"   📧 Email: (preencher manualmente no config_ponto.json)")
+        print(f"   📧 Email: {email if email else '(não informado)'}")
         print("   " + "═" * 50)
-        return nome
+        return nome, email
     else:
         print("\n   ❌ Erro ao salvar cadastro.")
-        return None
+        return None, None
 
 def listar_alunos_cadastrados(config):
     """Lista todos os alunos cadastrados de forma compacta."""
@@ -659,6 +702,7 @@ def main_interativo(config):
             if aluno_existe(serial, config):
                 # ALUNO EXISTE - Bater ponto normalmente
                 nome = get_nome_aluno(serial, config)
+                email = get_email_aluno(serial, config)
                 
                 print("\n   " + "─" * 50)
                 print("   ✅ CRACHÁ RECONHECIDO!")
@@ -673,7 +717,7 @@ def main_interativo(config):
                 
                 print("   📤 Enviando para o servidor...")
                 
-                code, text = send_to_endpoint(serial, nome, endpoint, is_teoria, escala_atual)
+                code, text = send_to_endpoint(serial, nome, endpoint, is_teoria, escala_atual, email)
                 
                 if code is None:
                     print(f"   ❌ ERRO DE ENVIO: {text}")
@@ -690,13 +734,13 @@ def main_interativo(config):
             
             else:
                 # ALUNO NÃO EXISTE - Solicitar cadastro
-                nome = cadastrar_aluno_inline(serial, config)
+                nome, email = cadastrar_aluno_inline(serial, config)
                 
                 if nome:
                     # Aluno foi cadastrado, registrar ponto
                     print(f"\n   📤 Registrando ponto para {nome}...")
                     
-                    code, text = send_to_endpoint(serial, nome, endpoint, is_teoria, escala_atual)
+                    code, text = send_to_endpoint(serial, nome, endpoint, is_teoria, escala_atual, email)
                     
                     if code is None:
                         print(f"   ❌ ERRO DE ENVIO: {text}")
@@ -788,13 +832,14 @@ def main(config):
                 logging.info(f"Novo dia detectado. Dia de teoria: {is_teoria}")
 
             nome = get_nome_aluno(serial, config)
+            email = get_email_aluno(serial, config)
             hora = datetime.now().strftime("%H:%M:%S")
             data = datetime.now().strftime("%d/%m/%Y")
             
             logging.info(f"Lido: {serial} ({nome}) - {data} {hora}")
             logging.info(f"Enviando para endpoint... (Dia Teoria: {is_teoria}, Escala: {escala_atual})")
 
-            code, text = send_to_endpoint(serial, nome, endpoint, is_teoria, escala_atual)
+            code, text = send_to_endpoint(serial, nome, endpoint, is_teoria, escala_atual, email)
             if code is None:
                 logging.error(f"Erro de envio: {text}")
                 beep("long")
