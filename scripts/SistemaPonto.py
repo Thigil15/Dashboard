@@ -358,12 +358,12 @@ def beep(kind="short"):
     except Exception:
         pass
 
-def send_to_endpoint(serial, nome, endpoint, is_teoria_day=False, escala="",
-                     modalidade=None, tipo_registro=None):
+def send_to_endpoint(serial, nome, endpoint, is_teoria_day=False, escala="", email=""):
     """Envia POST JSON para o Apps Script."""
     payload = {
         "SerialNumber": serial,
         "NomeCompleto": nome,
+        "EmailHC": email,
         "IsDiaTeoria": is_teoria_day,
         "Escala": escala
     }
@@ -750,6 +750,31 @@ def get_nome_aluno(uid, config):
     nomes = config.get("nomes", NOMES)
     return nomes.get(uid, "Desconhecido")
 
+def get_email_aluno(uid, config):
+    """Obtém o e-mail do aluno pelo UID."""
+    alunos = config.get("alunos", {})
+    if uid in alunos:
+        aluno = alunos[uid]
+        if isinstance(aluno, dict):
+            return aluno.get("email", "")
+    return ""
+
+def validar_email(email):
+    """Valida o formato básico de um e-mail (usuario@dominio.tld)."""
+    if not email or '@' not in email:
+        return False
+    partes = email.split('@')
+    if len(partes) != 2:
+        return False
+    usuario, dominio = partes
+    if not usuario:
+        return False
+    partes_dominio = dominio.split('.')
+    # Precisa de pelo menos 'dominio.tld' com caracteres em cada parte
+    if len(partes_dominio) < 2 or any(p == '' for p in partes_dominio):
+        return False
+    return True
+
 def salvar_config(config, config_path=None):
     """Salva a configuração no arquivo JSON."""
     if config_path is None:
@@ -776,7 +801,7 @@ def salvar_config(config, config_path=None):
 def cadastrar_aluno_inline(uid, config):
     """
     Cadastra um novo aluno diretamente quando o UID não é encontrado.
-    Retorna o nome do aluno cadastrado ou None se cancelado.
+    Retorna (nome, email) do aluno cadastrado ou (None, None) se cancelado.
     """
     print("\n   " + "═" * 50)
     print("   📝 NOVO CRACHÁ DETECTADO - CADASTRO NECESSÁRIO")
@@ -790,7 +815,24 @@ def cadastrar_aluno_inline(uid, config):
     
     if not nome:
         print("\n   ⚠️  Cadastro pulado. Ponto será registrado como 'Desconhecido'.")
-        return None
+        return None, None
+    
+    print("\n   Digite o e-mail do aluno:")
+    print("   (ou deixe em branco para preencher depois)")
+    MAX_TENTATIVAS = 3
+    email = ""
+    for tentativa in range(MAX_TENTATIVAS):
+        entrada = input("   E-mail: ").strip().lower()
+        if not entrada:
+            break
+        if validar_email(entrada):
+            email = entrada
+            break
+        restantes = MAX_TENTATIVAS - tentativa - 1
+        if restantes > 0:
+            print(f"   ⚠️  E-mail inválido. Tente novamente ({restantes} tentativa(s) restante(s)) ou deixe em branco para pular.")
+        else:
+            print("   ⚠️  E-mail inválido. Continuando sem e-mail.")
     
     # Salvar no config
     if "alunos" not in config:
@@ -798,7 +840,7 @@ def cadastrar_aluno_inline(uid, config):
     
     config["alunos"][uid] = {
         "nome": nome,
-        "email": "",  # Preenchido manualmente depois
+        "email": email,
         "data_cadastro": datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     }
     
@@ -814,12 +856,12 @@ def cadastrar_aluno_inline(uid, config):
         print("   " + "═" * 50)
         print(f"   📛 Nome: {nome}")
         print(f"   🔢 UID: {uid}")
-        print(f"   📧 Email: (preencher manualmente no config_ponto.json)")
+        print(f"   📧 Email: {email if email else '(não informado)'}")
         print("   " + "═" * 50)
-        return nome
+        return nome, email
     else:
         print("\n   ❌ Erro ao salvar cadastro.")
-        return None
+        return None, None
 
 def listar_alunos_cadastrados(config):
     """Lista todos os alunos cadastrados de forma compacta."""
@@ -937,81 +979,23 @@ def main_interativo(config):
             # Resolve o nome do aluno (cadastrando se necessário)
             if aluno_existe(serial, config):
                 nome = get_nome_aluno(serial, config)
-            else:
-                nome = cadastrar_aluno_inline(serial, config)
-                if nome is None:
-                    nome = "Desconhecido"
-
-            print("\n   " + "═" * 54)
-            print("   ✅ CRACHÁ RECONHECIDO!")
-            print("   " + "═" * 54)
-            print(f"   📛 Nome:       {nome}")
-            print(f"   🔢 UID:        {serial}")
-            print(f"   📅 Data:       {data_br}")
-            print(f"   ⏰ Hora:       {hora}")
-            print(f"   📊 Escala:     {escala_atual}")
-
-            if em_transicao:
-                # ── DUPLO PONTO: Saída Prática + Entrada Teoria ──────────
-                print(f"   🔄 Modo:       TRANSIÇÃO  (Saída Prática + Entrada Teoria)")
-                print("   " + "─" * 54)
-
-                # Verifica se Teoria já tem pontos demais (bloqueio)
-                bloqueado_teoria, cnt_teoria, _ = verificar_ponto_duplicado(
-                    serial, data_iso, "Teoria", endpoint, config
-                )
-                if bloqueado_teoria:
-                    print(f"\n   🚫 Teoria já foi completamente registrada hoje ({cnt_teoria} registros).")
-                    beep("long")
-                    print("   " + "═" * 54)
-                    continue
-
-                print("   📤 Registrando duplo ponto de transição...")
-                ok_p, ok_t, msg_p, msg_t = registrar_transicao_ponto(
-                    serial, nome, endpoint, escala_atual, config
-                )
-                print(f"   {msg_p}")
-                print(f"   {msg_t}")
-
-                if ok_p and ok_t:
-                    beep("short")
-                else:
-                    beep("long")
-
-            else:
-                # ── PONTO SIMPLES (Prática ou Teoria saída) ───────────────
-                print(f"   🎓 Modalidade: {modalidade}")
-                print("   " + "─" * 54)
-
-                # Verificação de duplicata
-                print("   🔍 Verificando pontos existentes no servidor...")
-                bloqueado, contagem, msg_dup = verificar_ponto_duplicado(
-                    serial, data_iso, modalidade, endpoint, config
-                )
-
-                if bloqueado:
-                    print(f"\n   {msg_dup}")
-                    hora_atual_t = _parse_hhmm(datetime.now().strftime("%H:%M"))
-                    hora_transicao_t = _parse_hhmm(hora_transicao)
-                    if (modalidade == 'Prática' and is_teoria
-                            and hora_atual_t and hora_transicao_t
-                            and hora_atual_t < hora_transicao_t):
-                        print(f"\n   ℹ️  Hoje há aula de TEORIA a partir das {hora_inicio}.")
-                        print(f"      O duplo ponto (Saída Prática + Entrada Teoria)")
-                        print(f"      será registrado automaticamente após as {hora_transicao}.")
-                    beep("long")
-                    print("   " + "═" * 54)
-                    continue
-                else:
-                    print(f"   ✔️  {msg_dup}")
-
+                email = get_email_aluno(serial, config)
+                
+                print("\n   " + "─" * 50)
+                print("   ✅ CRACHÁ RECONHECIDO!")
+                print("   " + "─" * 50)
+                print(f"   📛 Nome: {nome}")
+                print(f"   🔢 UID: {serial}")
+                print(f"   📅 Data: {data}")
+                print(f"   ⏰ Hora: {hora}")
+                print(f"   📚 Tipo: {'Teoria' if is_teoria else 'Prática'}")
+                print(f"   📊 Escala: {escala_atual}")
+                print("   " + "─" * 50)
+                
                 print("   📤 Enviando para o servidor...")
-                is_teoria_flag = (modalidade == 'Teoria')
-                code, text = send_to_endpoint(
-                    serial, nome, endpoint, is_teoria_flag, escala_atual,
-                    modalidade=modalidade
-                )
-
+                
+                code, text = send_to_endpoint(serial, nome, endpoint, is_teoria, escala_atual, email)
+                
                 if code is None:
                     print(f"   ❌ ERRO DE ENVIO: {text}")
                     beep("long")
@@ -1019,12 +1003,54 @@ def main_interativo(config):
                     print("   ✅ PONTO REGISTRADO COM SUCESSO!")
                     beep("short")
                 else:
-                    print(f"   ⚠️  Resposta do servidor: {code}")
-                    print(f"      {text}")
-                    beep("long")
-
-            print("   " + "═" * 54)
-
+                    if code == 200:
+                        print("   ✅ PONTO REGISTRADO COM SUCESSO!")
+                        beep("short")
+                    else:
+                        print(f"   ⚠️  Resposta do servidor: {code}")
+                        beep("long")
+                
+                print("   " + "─" * 50)
+            
+            else:
+                # ALUNO NÃO EXISTE - Solicitar cadastro
+                nome, email = cadastrar_aluno_inline(serial, config)
+                
+                if nome:
+                    # Aluno foi cadastrado, registrar ponto
+                    print(f"\n   📤 Registrando ponto para {nome}...")
+                    
+                    code, text = send_to_endpoint(serial, nome, endpoint, is_teoria, escala_atual, email)
+                    
+                    if code is None:
+                        print(f"   ❌ ERRO DE ENVIO: {text}")
+                        beep("long")
+                    else:
+                        if code == 200:
+                            print("   ✅ PONTO REGISTRADO COM SUCESSO!")
+                            beep("short")
+                        else:
+                            print(f"   ⚠️  Resposta do servidor: {code}")
+                            beep("long")
+                else:
+                    # Usuário pulou o cadastro, registrar como desconhecido
+                    print(f"\n   📤 Registrando ponto como 'Desconhecido'...")
+                    
+                    code, text = send_to_endpoint(serial, "Desconhecido", endpoint, is_teoria, escala_atual)
+                    
+                    if code is None:
+                        print(f"   ❌ ERRO DE ENVIO: {text}")
+                        beep("long")
+                    else:
+                        if code == 200:
+                            print("   ✅ PONTO REGISTRADO (como Desconhecido)")
+                            beep("short")
+                        else:
+                            print(f"   ⚠️  Resposta do servidor: {code}")
+                            beep("long")
+                
+                print("   " + "─" * 50)
+    
     except KeyboardInterrupt:
         print("\n\n   👋 Sistema encerrado pelo usuário.")
         print("   Até logo!\n")
@@ -1087,13 +1113,14 @@ def main(config):
                 logging.info(f"Novo dia detectado. Dia de teoria: {is_teoria}")
 
             nome = get_nome_aluno(serial, config)
+            email = get_email_aluno(serial, config)
             hora = datetime.now().strftime("%H:%M:%S")
             data = datetime.now().strftime("%d/%m/%Y")
             
             logging.info(f"Lido: {serial} ({nome}) - {data} {hora}")
             logging.info(f"Enviando para endpoint... (Dia Teoria: {is_teoria}, Escala: {escala_atual})")
 
-            code, text = send_to_endpoint(serial, nome, endpoint, is_teoria, escala_atual)
+            code, text = send_to_endpoint(serial, nome, endpoint, is_teoria, escala_atual, email)
             if code is None:
                 logging.error(f"Erro de envio: {text}")
                 beep("long")
