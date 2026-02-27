@@ -25,7 +25,8 @@ import json
 import logging
 import argparse
 import platform
-from datetime import datetime, date
+import unicodedata
+from datetime import datetime, date, time as dtime
 from pathlib import Path
 
 # Tenta importar requests, se não existir, mostra instrução
@@ -60,6 +61,16 @@ NOMES = {
 # Dias padrão para aulas de teoria (0=Segunda, 1=Terça, ..., 6=Domingo)
 # Por padrão: Terça (1) e Quinta (3) - note que weekday() usa 0=Segunda
 DIAS_TEORIA_PADRAO = [1, 3]  # Terça e Quinta
+
+# Horário em que os alunos começam a descer para a teoria (HH:MM)
+# A partir deste horário, em dias de teoria, o ponto é registrado como Teoria
+HORA_TRANSICAO_TEORIA_PADRAO = "17:30"
+
+# Horário de início da aula de teoria
+HORA_INICIO_TEORIA_PADRAO = "18:00"
+
+# Número máximo de pontos por modalidade por dia (entrada + saída = 2)
+MAX_PONTOS_POR_MODALIDADE = 2
 # ===========================
 
 _last_time = 0.0
@@ -75,7 +86,10 @@ def get_default_config():
         "dias_teoria": DIAS_TEORIA_PADRAO.copy(),
         "dias_especiais_teoria": [],
         "escala_atual": "9",  # Escala atual para registro de ponto (1-12)
-        "log_file": None
+        "log_file": None,
+        "hora_inicio_teoria": HORA_INICIO_TEORIA_PADRAO,
+        "hora_transicao_teoria": HORA_TRANSICAO_TEORIA_PADRAO,
+        "max_pontos_por_modalidade": MAX_PONTOS_POR_MODALIDADE
     }
 
 # Configurar logging
@@ -162,6 +176,107 @@ def is_dia_teoria(config):
         return True
     
     return False
+
+def _parse_hhmm(hhmm_str):
+    """Converte string 'HH:MM' para objeto datetime.time. Retorna None se inválido."""
+    try:
+        h, m = hhmm_str.split(":")
+        return dtime(int(h), int(m))
+    except (ValueError, AttributeError):
+        return None
+
+def _normalizar_texto(texto):
+    """Remove acentos e converte para minúsculas para comparação resiliente."""
+    return unicodedata.normalize("NFD", texto).encode("ascii", "ignore").decode("ascii").lower()
+
+def determinar_modalidade(config):
+    """
+    Determina a modalidade do ponto atual: 'Teoria' ou 'Prática'.
+
+    Regras:
+    - Se hoje NÃO é dia de teoria → sempre 'Prática'
+    - Se hoje É dia de teoria E hora atual >= hora_transicao_teoria → 'Teoria'
+    - Caso contrário → 'Prática'
+    """
+    if not is_dia_teoria(config):
+        return 'Prática'
+
+    hora_transicao_str = config.get("hora_transicao_teoria", HORA_TRANSICAO_TEORIA_PADRAO)
+    hora_transicao = _parse_hhmm(hora_transicao_str)
+    hora_atual = _parse_hhmm(datetime.now().strftime("%H:%M"))
+
+    if hora_transicao is None or hora_atual is None:
+        return 'Prática'
+
+    return 'Teoria' if hora_atual >= hora_transicao else 'Prática'
+
+def consultar_pontos_do_dia(serial, data_iso, endpoint):
+    """
+    Consulta o endpoint via GET para verificar pontos já registrados
+    para o aluno no dia informado.
+
+    Retorna lista de registros ou None em caso de erro / sem suporte.
+    Formato esperado da resposta: {"pontos": [...]} ou lista direta [...].
+    """
+    try:
+        params = {
+            "action": "getPontos",
+            "serial": serial,
+            "data": data_iso,
+        }
+        r = requests.get(endpoint, params=params, timeout=5)
+        if r.status_code == 200:
+            try:
+                data = r.json()
+                if isinstance(data, list):
+                    return data
+                if isinstance(data, dict):
+                    for key in ("pontos", "registros", "data", "records"):
+                        if key in data and isinstance(data[key], list):
+                            return data[key]
+            except ValueError:
+                pass
+    except Exception as e:
+        logging.debug(f"Erro ao consultar pontos do dia: {e}")
+    return None
+
+def verificar_ponto_duplicado(serial, data_iso, modalidade, endpoint, config):
+    """
+    Verifica se o aluno já atingiu o limite de pontos para a modalidade no dia.
+
+    Retorna tupla (bloqueado: bool, contagem: int, mensagem: str).
+    - bloqueado=True  → não deve registrar ponto
+    - bloqueado=False → pode registrar (ou não foi possível verificar)
+    """
+    max_pontos = config.get("max_pontos_por_modalidade", MAX_PONTOS_POR_MODALIDADE)
+    pontos = consultar_pontos_do_dia(serial, data_iso, endpoint)
+
+    if pontos is None:
+        return False, 0, "⚠️  Não foi possível verificar duplicatas (servidor sem suporte a consulta)."
+
+    # Filtra registros da modalidade atual (aceita variações de campo e normaliza acentos)
+    modalidade_norm = _normalizar_texto(modalidade)
+
+    def _modalidade_match(p):
+        for key in ("modalidade", "Pratica_Teorica", "Pratica/Teorica", "tipo"):
+            val = p.get(key, "")
+            if val and _normalizar_texto(val) == modalidade_norm:
+                return True
+        return False
+
+    pontos_modalidade = [p for p in pontos if _modalidade_match(p)]
+    contagem = len(pontos_modalidade)
+
+    if contagem >= max_pontos:
+        msg = (
+            f"🚫 PONTO JÁ REGISTRADO!\n"
+            f"   O aluno já possui {contagem} registro(s) de {modalidade} hoje\n"
+            f"   (máximo: {max_pontos} por modalidade por dia)."
+        )
+        return True, contagem, msg
+
+    return False, contagem, f"Pontos de {modalidade} hoje: {contagem}/{max_pontos}"
+
 
 def beep(kind="short"):
     """Feedback sonoro simples (works on Windows via winsound, else fallback to terminal bell)."""
@@ -576,72 +691,69 @@ def listar_alunos_cadastrados(config):
     return todos_alunos
 
 def main_interativo(config):
-    """Loop principal interativo com detecção automática de cadastro."""
+    """Loop principal interativo com detecção automática de cadastro e anti-duplicata."""
     global _last_time
-    
+
     clear_screen()
     print_header()
-    
-    print("┌─────────────────────────────────────────────────────────┐")
-    print("│              ⏰ SISTEMA DE PONTO NFC                    │")
-    print("└─────────────────────────────────────────────────────────┘")
-    
+
     endpoint = get_endpoint_for_config(config)
     debounce = config.get("debounce_seconds", DEBOUNCE_SECONDS)
     escala_atual = config.get("escala_atual", "9")
-    
-    # Verifica se hoje é dia de teoria
+
+    # Verifica status do dia
     is_teoria = is_dia_teoria(config)
-    
-    print("\n   📅 Status do dia:")
+    modalidade = determinar_modalidade(config)
+    hora_transicao = config.get("hora_transicao_teoria", HORA_TRANSICAO_TEORIA_PADRAO)
+    hora_inicio_teoria = config.get("hora_inicio_teoria", HORA_INICIO_TEORIA_PADRAO)
+
+    # Cabeçalho informativo do dia
+    print("┌─────────────────────────────────────────────────────────┐")
     if is_teoria:
-        print("   ✅ Hoje é dia de TEORIA (aulas teóricas permitidas)")
+        print("│         📅 HOJE É DIA DE TEORIA + PRÁTICA               │")
+        print(f"│  Prática → antes das {hora_transicao}  |  Teoria → a partir das {hora_transicao}  │")
     else:
-        print("   📚 Hoje NÃO é dia de teoria (apenas prática)")
-    
-    # Mostra a escala atual
-    print(f"\n   📊 Escala Atual: {escala_atual}")
-    
-    # Mostra alunos cadastrados
+        print("│         📅 HOJE É DIA DE PRÁTICA                        │")
+    print("└─────────────────────────────────────────────────────────┘")
+    print(f"\n   🕐 Modalidade atual: {modalidade}")
+    print(f"   📊 Escala Atual:    {escala_atual}")
+
     alunos = listar_alunos_cadastrados(config)
-    print(f"\n   👥 Alunos cadastrados: {len(alunos)}")
-    
+    print(f"   👥 Alunos cadastrados: {len(alunos)}")
+
     print("\n" + "═" * 60)
     print("   👆 APROXIME O CRACHÁ DO LEITOR PARA BATER PONTO")
     print("      • Aluno cadastrado → Ponto registrado automaticamente")
-    print("      • Aluno novo → Cadastro será solicitado")
+    print("      • Aluno novo       → Cadastro será solicitado")
     print("   (Ctrl+C para sair)")
     print("═" * 60)
-    
+
     # Controle de data para recarregar config apenas uma vez por dia
     last_config_date = date.today()
-    
+
     try:
         while True:
             print("\n   ⏳ Aguardando leitura do crachá...")
-            
-            # Lê linha do stdin
+
             line = sys.stdin.readline()
             if not line:
                 break
-            
+
             serial = line.strip()
-            
             if not serial:
                 continue
-            
+
             # Validação: espera 8+ dígitos numéricos
             if not (serial.isdigit() and len(serial) >= 8):
                 if serial:
                     print(f"   ⚠️  Leitura não reconhecida: '{serial}'")
                 continue
-            
+
             now = time.time()
             if now - _last_time < debounce:
-                # debounce para evitar duplicados
                 continue
             _last_time = now
-            
+
             # Recarrega configuração se mudou o dia
             current_date = date.today()
             if current_date != last_config_date:
@@ -649,87 +761,114 @@ def main_interativo(config):
                 is_teoria = is_dia_teoria(config)
                 escala_atual = config.get("escala_atual", "9")
                 endpoint = get_endpoint_for_config(config)
+                hora_transicao = config.get("hora_transicao_teoria", HORA_TRANSICAO_TEORIA_PADRAO)
                 last_config_date = current_date
                 print(f"\n   🔄 Novo dia detectado. Dia de teoria: {is_teoria}")
-            
+
             hora = datetime.now().strftime("%H:%M:%S")
-            data = datetime.now().strftime("%d/%m/%Y")
-            
+            data_br = datetime.now().strftime("%d/%m/%Y")
+            data_iso = datetime.now().strftime("%Y-%m-%d")
+
+            # Determina modalidade baseada na hora atual
+            modalidade = determinar_modalidade(config)
+
             # Verifica se o aluno já está cadastrado
             if aluno_existe(serial, config):
-                # ALUNO EXISTE - Bater ponto normalmente
                 nome = get_nome_aluno(serial, config)
-                
-                print("\n   " + "─" * 50)
+
+                print("\n   " + "═" * 54)
                 print("   ✅ CRACHÁ RECONHECIDO!")
-                print("   " + "─" * 50)
-                print(f"   📛 Nome: {nome}")
-                print(f"   🔢 UID: {serial}")
-                print(f"   📅 Data: {data}")
-                print(f"   ⏰ Hora: {hora}")
-                print(f"   📚 Tipo: {'Teoria' if is_teoria else 'Prática'}")
-                print(f"   📊 Escala: {escala_atual}")
-                print("   " + "─" * 50)
-                
+                print("   " + "═" * 54)
+                print(f"   📛 Nome:      {nome}")
+                print(f"   🔢 UID:       {serial}")
+                print(f"   📅 Data:      {data_br}")
+                print(f"   ⏰ Hora:      {hora}")
+                print(f"   🎓 Modalidade: {modalidade}")
+                print(f"   📊 Escala:    {escala_atual}")
+                print("   " + "─" * 54)
+
+                # ── Verificação de duplicata ──────────────────────────
+                print("   🔍 Verificando pontos existentes no servidor...")
+                bloqueado, contagem, msg_dup = verificar_ponto_duplicado(
+                    serial, data_iso, modalidade, endpoint, config
+                )
+
+                if bloqueado:
+                    print(f"\n   {msg_dup}")
+                    # Se está em horário de pratica mas já bateu pratica,
+                    # sugere aguardar a transição para teoria (se for dia de teoria)
+                    hora_atual_t = _parse_hhmm(datetime.now().strftime("%H:%M"))
+                    hora_transicao_t = _parse_hhmm(hora_transicao)
+                    if (modalidade == 'Prática' and is_teoria
+                            and hora_atual_t and hora_transicao_t
+                            and hora_atual_t < hora_transicao_t):
+                        print(f"\n   ℹ️  Hoje há aula de TEORIA a partir das {hora_inicio_teoria}.")
+                        print(f"      O ponto de teoria poderá ser batido após as {hora_transicao}.")
+                    beep("long")
+                    print("   " + "═" * 54)
+                    continue
+                else:
+                    print(f"   ✔️  {msg_dup}")
+
+                # ── Envio para o servidor ─────────────────────────────
                 print("   📤 Enviando para o servidor...")
-                
-                code, text = send_to_endpoint(serial, nome, endpoint, is_teoria, escala_atual)
-                
+                is_teoria_flag = (modalidade == 'Teoria')
+                code, text = send_to_endpoint(serial, nome, endpoint, is_teoria_flag, escala_atual)
+
                 if code is None:
                     print(f"   ❌ ERRO DE ENVIO: {text}")
                     beep("long")
+                elif code == 200:
+                    print("   ✅ PONTO REGISTRADO COM SUCESSO!")
+                    beep("short")
                 else:
-                    if code == 200:
+                    print(f"   ⚠️  Resposta do servidor: {code}")
+                    print(f"      {text}")
+                    beep("long")
+
+                print("   " + "═" * 54)
+
+            else:
+                # ALUNO NÃO EXISTE - Solicitar cadastro
+                nome = cadastrar_aluno_inline(serial, config)
+
+                if nome:
+                    modalidade = determinar_modalidade(config)
+                    print(f"\n   📤 Registrando ponto ({modalidade}) para {nome}...")
+                    is_teoria_flag = (modalidade == 'Teoria')
+                    code, text = send_to_endpoint(serial, nome, endpoint, is_teoria_flag, escala_atual)
+
+                    if code is None:
+                        print(f"   ❌ ERRO DE ENVIO: {text}")
+                        beep("long")
+                    elif code == 200:
                         print("   ✅ PONTO REGISTRADO COM SUCESSO!")
                         beep("short")
                     else:
                         print(f"   ⚠️  Resposta do servidor: {code}")
                         beep("long")
-                
-                print("   " + "─" * 50)
-            
-            else:
-                # ALUNO NÃO EXISTE - Solicitar cadastro
-                nome = cadastrar_aluno_inline(serial, config)
-                
-                if nome:
-                    # Aluno foi cadastrado, registrar ponto
-                    print(f"\n   📤 Registrando ponto para {nome}...")
-                    
-                    code, text = send_to_endpoint(serial, nome, endpoint, is_teoria, escala_atual)
-                    
-                    if code is None:
-                        print(f"   ❌ ERRO DE ENVIO: {text}")
-                        beep("long")
-                    else:
-                        if code == 200:
-                            print("   ✅ PONTO REGISTRADO COM SUCESSO!")
-                            beep("short")
-                        else:
-                            print(f"   ⚠️  Resposta do servidor: {code}")
-                            beep("long")
                 else:
-                    # Usuário pulou o cadastro, registrar como desconhecido
+                    # Usuário pulou o cadastro
                     print(f"\n   📤 Registrando ponto como 'Desconhecido'...")
-                    
-                    code, text = send_to_endpoint(serial, "Desconhecido", endpoint, is_teoria, escala_atual)
-                    
+                    is_teoria_flag = (modalidade == 'Teoria')
+                    code, text = send_to_endpoint(serial, "Desconhecido", endpoint, is_teoria_flag, escala_atual)
+
                     if code is None:
                         print(f"   ❌ ERRO DE ENVIO: {text}")
                         beep("long")
+                    elif code == 200:
+                        print("   ✅ PONTO REGISTRADO (como Desconhecido)")
+                        beep("short")
                     else:
-                        if code == 200:
-                            print("   ✅ PONTO REGISTRADO (como Desconhecido)")
-                            beep("short")
-                        else:
-                            print(f"   ⚠️  Resposta do servidor: {code}")
-                            beep("long")
-                
+                        print(f"   ⚠️  Resposta do servidor: {code}")
+                        beep("long")
+
                 print("   " + "─" * 50)
-    
+
     except KeyboardInterrupt:
         print("\n\n   👋 Sistema encerrado pelo usuário.")
         print("   Até logo!\n")
+
 
 def main(config):
     """Loop principal do programa."""

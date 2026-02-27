@@ -2,11 +2,17 @@
   "endpoint": "https://script.google.com/macros/s/AKfycbxF39enADoiGglxeCOzQbjlrc8CWoWn7eHP2OzyuNiqaD4wiAhnkE57NEGhnl81tC3h/exec",
   "debounce_seconds": 1.2,
   "nomes": {
-    "1601873172": "Thiago Dias Santos"
+    "1601873172": "Thiago Dias Santos",
+    "2983757711": "Aluno 2983757711"
   },
   "alunos": {
     "1601873172": {
       "nome": "Thiago Dias Santos",
+      "email": "",
+      "data_cadastro": ""
+    },
+    "2983757711": {
+      "nome": "Aluno 2983757711",
       "email": "",
       "data_cadastro": ""
     }
@@ -17,5 +23,8 @@
   ],
   "dias_especiais_teoria": [],
   "escala_atual": "9",
-  "log_file": "logs/sistema_ponto.log"
+  "log_file": "logs/sistema_ponto.log",
+  "hora_inicio_teoria": "18:00",
+  "hora_transicao_teoria": "17:30",
+  "max_pontos_por_modalidade": 2
 }
