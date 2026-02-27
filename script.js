@@ -2541,6 +2541,7 @@ function extractTimeFromISO(isoString) {
                 document.getElementById('reposicao-curso').value = selectedOption.dataset.curso;
                 document.getElementById('reposicao-escala').value = selectedOption.dataset.escala;
                 populateAusenciaOptions(selectedOption.value);
+                document.getElementById('reposicao-ausencia-row').style.display = 'flex';
             } else {
                 document.getElementById('reposicao-nome').value = '';
                 document.getElementById('reposicao-email').value = '';
@@ -2551,6 +2552,7 @@ function extractTimeFromISO(isoString) {
                 if (ausenciaSelect) {
                     ausenciaSelect.innerHTML = '<option value=\"\">Selecione uma ausência...</option>';
                 }
+                document.getElementById('reposicao-ausencia-row').style.display = 'none';
             }
         });
 
@@ -2778,7 +2780,25 @@ function extractTimeFromISO(isoString) {
             if (!select) return;
             select.innerHTML = '<option value=\"\">Selecione uma ausência...</option>';
             if (!email) return;
-            const ausencias = getAusenciasSource().filter(a => normalizeString(a.EmailHC || a.Email) === normalizeString(email) && (a.DataAusenciaISO || a.DataAusencia));
+            const emailNorm = normalizeString(email);
+            let ausencias;
+            if (appState.ausenciasReposicoes && appState.ausenciasReposicoes.length > 0) {
+                // Combined sheet: use getPendingAbsences to exclude already-covered absences
+                const studentRecords = appState.ausenciasReposicoes.filter(
+                    r => normalizeString(getRecordEmail(r)) === emailNorm
+                );
+                ausencias = getPendingAbsences(studentRecords);
+            } else {
+                // Separate sheets: filter ausencias against reposicoes
+                const coveredDates = new Set(
+                    (appState.reposicoes || [])
+                        .filter(r => normalizeString(getRecordEmail(r)) === emailNorm && r.DataAusenciaISO)
+                        .map(r => r.DataAusenciaISO)
+                );
+                ausencias = (appState.ausencias || [])
+                    .filter(a => normalizeString(getRecordEmail(a)) === emailNorm &&
+                        a.DataAusenciaISO && !coveredDates.has(a.DataAusenciaISO));
+            }
             ausencias.sort((a, b) => (a.DataAusenciaISO || a.DataAusencia || '').localeCompare(b.DataAusenciaISO || b.DataAusencia || ''));
             ausencias.forEach(a => {
                 const option = document.createElement('option');
