@@ -25,7 +25,8 @@ import json
 import logging
 import argparse
 import platform
-from datetime import datetime, date
+import unicodedata
+from datetime import datetime, date, time as dtime
 from pathlib import Path
 
 # Tenta importar requests, se não existir, mostra instrução
@@ -57,9 +58,24 @@ NOMES = {
     # "1601901111": "Maria Souza",
 }
 
-# Dias padrão para aulas de teoria (0=Segunda, 1=Terça, ..., 6=Domingo)
-# Por padrão: Terça (1) e Quinta (3) - note que weekday() usa 0=Segunda
-DIAS_TEORIA_PADRAO = [1, 3]  # Terça e Quinta
+# Dias padrão para aulas de teoria com horários por dia da semana.
+# Cada entrada: {"dia": <0-6>, "hora_transicao": "HH:MM", "hora_inicio": "HH:MM"}
+# 0=Segunda, 1=Terça, ..., 6=Domingo
+HORARIOS_TEORIA_PADRAO = [
+    {"dia": 1, "hora_transicao": "17:30", "hora_inicio": "18:00"},  # Terça
+    {"dia": 3, "hora_transicao": "17:30", "hora_inicio": "18:00"},  # Quinta
+]
+
+# Mantido para leitura de configs antigas (backward compat)
+DIAS_TEORIA_PADRAO = [1, 3]
+HORA_TRANSICAO_TEORIA_PADRAO = "17:30"
+HORA_INICIO_TEORIA_PADRAO = "18:00"
+
+# Horário de encerramento da teoria (meia-noite)
+HORA_FIM_TEORIA_PADRAO = "00:00"
+
+# Número máximo de pontos por modalidade por dia (entrada + saída = 2)
+MAX_PONTOS_POR_MODALIDADE = 2
 # ===========================
 
 _last_time = 0.0
@@ -72,10 +88,12 @@ def get_default_config():
         "debounce_seconds": DEBOUNCE_SECONDS,
         "nomes": NOMES.copy(),
         "alunos": {},  # Cadastro de alunos
-        "dias_teoria": DIAS_TEORIA_PADRAO.copy(),
+        "horarios_teoria": [dict(h) for h in HORARIOS_TEORIA_PADRAO],
         "dias_especiais_teoria": [],
+        "hora_fim_teoria": HORA_FIM_TEORIA_PADRAO,
         "escala_atual": "9",  # Escala atual para registro de ponto (1-12)
-        "log_file": None
+        "log_file": None,
+        "max_pontos_por_modalidade": MAX_PONTOS_POR_MODALIDADE
     }
 
 # Configurar logging
@@ -142,26 +160,183 @@ def save_default_config(path=None):
 def is_dia_teoria(config):
     """
     Verifica se hoje é um dia de teoria.
+
+    Suporta dois formatos de configuração:
+    - Novo: "horarios_teoria": [{"dia": 1, "hora_transicao": "17:30", "hora_inicio": "18:00"}, ...]
+    - Legado: "dias_teoria": [1, 3]
+
     Retorna True se:
-    - O dia da semana está na lista de dias de teoria (terça/quinta por padrão)
-    - OU a data de hoje está na lista de dias especiais de teoria
+    - O dia da semana consta em horarios_teoria (ou dias_teoria legado)
+    - OU a data de hoje está na lista dias_especiais_teoria
     """
     hoje = date.today()
     dia_semana = hoje.weekday()  # 0=Segunda, 1=Terça, ..., 6=Domingo
-    
-    # Verifica se é um dia padrão de teoria
-    if dia_semana in config.get("dias_teoria", DIAS_TEORIA_PADRAO):
-        return True
-    
+
+    # Verifica no novo formato horarios_teoria
+    horarios = config.get("horarios_teoria")
+    if horarios:
+        for h in horarios:
+            if isinstance(h, dict) and h.get("dia") == dia_semana:
+                return True
+    else:
+        # Fallback para formato legado
+        if dia_semana in config.get("dias_teoria", DIAS_TEORIA_PADRAO):
+            return True
+
     # Verifica se é um dia especial de teoria
     data_hoje_str = hoje.strftime("%d/%m/%Y")
     dias_especiais = config.get("dias_especiais_teoria", [])
-    
-    if data_hoje_str in dias_especiais:
-        logging.info(f"Dia especial de teoria: {data_hoje_str}")
-        return True
-    
+
+    for item in dias_especiais:
+        data_item = item.get("data", item) if isinstance(item, dict) else item
+        if data_item == data_hoje_str:
+            logging.info(f"Dia especial de teoria: {data_hoje_str}")
+            return True
+
     return False
+
+def _parse_hhmm(hhmm_str):
+    """Converte string 'HH:MM' para objeto datetime.time. Retorna None se inválido."""
+    try:
+        h, m = hhmm_str.split(":")
+        return dtime(int(h), int(m))
+    except (ValueError, AttributeError):
+        return None
+
+def _normalizar_texto(texto):
+    """Remove acentos e converte para minúsculas para comparação resiliente."""
+    return unicodedata.normalize("NFD", texto).encode("ascii", "ignore").decode("ascii").lower()
+
+def get_horario_teoria_hoje(config):
+    """
+    Retorna o horário de teoria para hoje como dict:
+        {"hora_transicao": "17:30", "hora_inicio": "18:00"}
+
+    Prioridade de busca:
+    1. dias_especiais_teoria (por data específica, no novo formato dict)
+    2. horarios_teoria (por dia da semana)
+    3. Fallback: campos legados hora_transicao_teoria / hora_inicio_teoria
+    4. Constantes padrão
+
+    Retorna None se hoje não é dia de teoria.
+    """
+    if not is_dia_teoria(config):
+        return None
+
+    hoje = date.today()
+    dia_semana = hoje.weekday()
+    data_hoje_str = hoje.strftime("%d/%m/%Y")
+
+    # 1. Dia especial com horário próprio
+    for item in config.get("dias_especiais_teoria", []):
+        if isinstance(item, dict) and item.get("data") == data_hoje_str:
+            return {
+                "hora_transicao": item.get("hora_transicao", HORA_TRANSICAO_TEORIA_PADRAO),
+                "hora_inicio": item.get("hora_inicio", HORA_INICIO_TEORIA_PADRAO),
+            }
+
+    # 2. horarios_teoria por dia da semana
+    for h in config.get("horarios_teoria", []):
+        if isinstance(h, dict) and h.get("dia") == dia_semana:
+            return {
+                "hora_transicao": h.get("hora_transicao", HORA_TRANSICAO_TEORIA_PADRAO),
+                "hora_inicio": h.get("hora_inicio", HORA_INICIO_TEORIA_PADRAO),
+            }
+
+    # 3. Campos legados / constantes
+    return {
+        "hora_transicao": config.get("hora_transicao_teoria", HORA_TRANSICAO_TEORIA_PADRAO),
+        "hora_inicio": config.get("hora_inicio_teoria", HORA_INICIO_TEORIA_PADRAO),
+    }
+
+def determinar_modalidade(config):
+    """
+    Determina a modalidade do ponto atual: 'Teoria' ou 'Prática'.
+
+    Regras:
+    - Se hoje NÃO é dia de teoria → sempre 'Prática'
+    - Se hoje É dia de teoria E hora atual >= hora_transicao → 'Teoria'
+    - Caso contrário → 'Prática'
+    """
+    horario = get_horario_teoria_hoje(config)
+    if horario is None:
+        return 'Prática'
+
+    hora_transicao = _parse_hhmm(horario["hora_transicao"])
+    hora_atual = _parse_hhmm(datetime.now().strftime("%H:%M"))
+
+    if hora_transicao is None or hora_atual is None:
+        return 'Prática'
+
+    return 'Teoria' if hora_atual >= hora_transicao else 'Prática'
+
+def consultar_pontos_do_dia(serial, data_iso, endpoint):
+    """
+    Consulta o endpoint via GET para verificar pontos já registrados
+    para o aluno no dia informado.
+
+    Retorna lista de registros ou None em caso de erro / sem suporte.
+    Formato esperado da resposta: {"pontos": [...]} ou lista direta [...].
+    """
+    try:
+        params = {
+            "action": "getPontos",
+            "serial": serial,
+            "data": data_iso,
+        }
+        r = requests.get(endpoint, params=params, timeout=5)
+        if r.status_code == 200:
+            try:
+                data = r.json()
+                if isinstance(data, list):
+                    return data
+                if isinstance(data, dict):
+                    for key in ("pontos", "registros", "data", "records"):
+                        if key in data and isinstance(data[key], list):
+                            return data[key]
+            except ValueError:
+                pass
+    except Exception as e:
+        logging.debug(f"Erro ao consultar pontos do dia: {e}")
+    return None
+
+def verificar_ponto_duplicado(serial, data_iso, modalidade, endpoint, config):
+    """
+    Verifica se o aluno já atingiu o limite de pontos para a modalidade no dia.
+
+    Retorna tupla (bloqueado: bool, contagem: int, mensagem: str).
+    - bloqueado=True  → não deve registrar ponto
+    - bloqueado=False → pode registrar (ou não foi possível verificar)
+    """
+    max_pontos = config.get("max_pontos_por_modalidade", MAX_PONTOS_POR_MODALIDADE)
+    pontos = consultar_pontos_do_dia(serial, data_iso, endpoint)
+
+    if pontos is None:
+        return False, 0, "⚠️  Não foi possível verificar duplicatas (servidor sem suporte a consulta)."
+
+    # Filtra registros da modalidade atual (aceita variações de campo e normaliza acentos)
+    modalidade_norm = _normalizar_texto(modalidade)
+
+    def _modalidade_match(p):
+        for key in ("modalidade", "Pratica_Teorica", "Pratica/Teorica", "tipo"):
+            val = p.get(key, "")
+            if val and _normalizar_texto(val) == modalidade_norm:
+                return True
+        return False
+
+    pontos_modalidade = [p for p in pontos if _modalidade_match(p)]
+    contagem = len(pontos_modalidade)
+
+    if contagem >= max_pontos:
+        msg = (
+            f"🚫 PONTO JÁ REGISTRADO!\n"
+            f"   O aluno já possui {contagem} registro(s) de {modalidade} hoje\n"
+            f"   (máximo: {max_pontos} por modalidade por dia)."
+        )
+        return True, contagem, msg
+
+    return False, contagem, f"Pontos de {modalidade} hoje: {contagem}/{max_pontos}"
+
 
 def beep(kind="short"):
     """Feedback sonoro simples (works on Windows via winsound, else fallback to terminal bell)."""
@@ -192,24 +367,79 @@ def send_to_endpoint(serial, nome, endpoint, is_teoria_day=False, escala="", ema
         "IsDiaTeoria": is_teoria_day,
         "Escala": escala
     }
+    if modalidade is not None:
+        payload["Modalidade"] = modalidade
+    if tipo_registro is not None:
+        payload["TipoRegistro"] = tipo_registro
     try:
         r = requests.post(endpoint, json=payload, timeout=10)
         return r.status_code, r.text
     except Exception as e:
         return None, str(e)
 
-def add_dia_especial(data_str, config_path=None):
-    """Adiciona um dia especial de teoria."""
+def registrar_transicao_ponto(serial, nome, endpoint, escala, config):
+    """
+    Registra o duplo ponto de transição (Terça/Quinta partir da hora_transicao):
+      1. Saída da Prática
+      2. Entrada da Teoria
+
+    Ambos enviados com a mesma hora (hora atual).
+
+    Retorna:
+      (ok_pratica: bool, ok_teoria: bool, msg_pratica: str, msg_teoria: str)
+    """
+    hora_fim_teoria = config.get("hora_fim_teoria", HORA_FIM_TEORIA_PADRAO)
+
+    # 1 — Saída da Prática
+    code1, text1 = send_to_endpoint(
+        serial, nome, endpoint,
+        is_teoria_day=True,
+        escala=escala,
+        modalidade="Prática",
+        tipo_registro="Saída"
+    )
+    ok_pratica = code1 == 200
+    msg_pratica = (
+        "✅ Saída da Prática registrada!"
+        if ok_pratica
+        else f"⚠️  Saída Prática: {code1} — {text1}"
+    )
+
+    # 2 — Entrada da Teoria
+    code2, text2 = send_to_endpoint(
+        serial, nome, endpoint,
+        is_teoria_day=True,
+        escala=escala,
+        modalidade="Teoria",
+        tipo_registro="Entrada",
+    )
+    ok_teoria = code2 == 200
+    msg_teoria = (
+        f"✅ Entrada da Teoria registrada! (até {hora_fim_teoria})"
+        if ok_teoria
+        else f"⚠️  Entrada Teoria: {code2} — {text2}"
+    )
+
+    return ok_pratica, ok_teoria, msg_pratica, msg_teoria
+
+def add_dia_especial(data_str, hora_transicao=None, hora_inicio=None, config_path=None):
+    """Adiciona um dia especial de teoria.
+
+    Aceita:
+      data_str       - DD/MM/YYYY
+      hora_transicao - HH:MM (opcional, usa padrão se omitido)
+      hora_inicio    - HH:MM (opcional, usa padrão se omitido)
+    """
     if config_path is None:
         config_path = Path(CONFIG_FILE)
-    
+
     # Valida o formato da data
     try:
         datetime.strptime(data_str, "%d/%m/%Y")
     except ValueError:
         print(f"Erro: Data inválida '{data_str}'. Use o formato dd/mm/yyyy")
         return False
-    
+
     # Carrega a configuração existente ou cria uma nova
     config = {}
     if config_path.exists():
@@ -221,95 +451,132 @@ def add_dia_especial(data_str, config_path=None):
             print("Criando nova configuração...")
         except IOError as e:
             print(f"Aviso: Erro ao ler arquivo de configuração: {e}")
-    
-    # Adiciona o dia especial
+
     if "dias_especiais_teoria" not in config:
         config["dias_especiais_teoria"] = []
-    
-    if data_str not in config["dias_especiais_teoria"]:
-        config["dias_especiais_teoria"].append(data_str)
-        config["dias_especiais_teoria"].sort(
-            key=lambda x: datetime.strptime(x, "%d/%m/%Y")
-        )
-        
-        try:
-            with open(config_path, 'w', encoding='utf-8') as f:
-                json.dump(config, f, indent=2, ensure_ascii=False)
-            print(f"Dia especial de teoria adicionado: {data_str}")
-            return True
-        except IOError as e:
-            print(f"Erro ao salvar configuração: {e}")
-            return False
-    else:
-        print(f"Data {data_str} já está na lista de dias especiais.")
+
+    # Normaliza entradas antigas (strings) para dicts e remove a data se existir
+    novos = []
+    for item in config["dias_especiais_teoria"]:
+        data_item = item.get("data", item) if isinstance(item, dict) else item
+        if data_item != data_str:
+            novos.append(item)
+
+    novo_item = {"data": data_str}
+    if hora_transicao:
+        novo_item["hora_transicao"] = hora_transicao
+    if hora_inicio:
+        novo_item["hora_inicio"] = hora_inicio
+
+    novos.append(novo_item)
+    novos.sort(key=lambda x: datetime.strptime(
+        x.get("data", x) if isinstance(x, dict) else x, "%d/%m/%Y"
+    ))
+    config["dias_especiais_teoria"] = novos
+
+    try:
+        with open(config_path, 'w', encoding='utf-8') as f:
+            json.dump(config, f, indent=2, ensure_ascii=False)
+        print(f"Dia especial de teoria adicionado: {data_str}" +
+              (f" (transição: {hora_transicao})" if hora_transicao else ""))
         return True
+    except IOError as e:
+        print(f"Erro ao salvar configuração: {e}")
+        return False
 
 def remove_dia_especial(data_str, config_path=None):
-    """Remove um dia especial de teoria."""
+    """Remove um dia especial de teoria (suporta formato string e dict)."""
     if config_path is None:
         config_path = Path(CONFIG_FILE)
-    
+
     if not config_path.exists():
         print("Arquivo de configuração não encontrado.")
         return False
-    
+
     try:
         with open(config_path, 'r', encoding='utf-8') as f:
             config = json.load(f)
     except (json.JSONDecodeError, IOError) as e:
         print(f"Erro ao ler configuração: {e}")
         return False
-    
+
     dias_especiais = config.get("dias_especiais_teoria", [])
-    if data_str in dias_especiais:
-        dias_especiais.remove(data_str)
-        config["dias_especiais_teoria"] = dias_especiais
-        
-        try:
-            with open(config_path, 'w', encoding='utf-8') as f:
-                json.dump(config, f, indent=2, ensure_ascii=False)
-            print(f"Dia especial de teoria removido: {data_str}")
-            return True
-        except IOError as e:
-            print(f"Erro ao salvar configuração: {e}")
-            return False
-    else:
+    novos = [
+        item for item in dias_especiais
+        if (item.get("data", item) if isinstance(item, dict) else item) != data_str
+    ]
+
+    if len(novos) == len(dias_especiais):
         print(f"Data {data_str} não encontrada na lista de dias especiais.")
         return False
 
+    config["dias_especiais_teoria"] = novos
+
+    try:
+        with open(config_path, 'w', encoding='utf-8') as f:
+            json.dump(config, f, indent=2, ensure_ascii=False)
+        print(f"Dia especial de teoria removido: {data_str}")
+        return True
+    except IOError as e:
+        print(f"Erro ao salvar configuração: {e}")
+        return False
+
 def list_dias_especiais(config_path=None):
-    """Lista todos os dias especiais de teoria."""
+    """Lista todos os dias e horários de teoria configurados."""
     if config_path is None:
         config_path = Path(CONFIG_FILE)
-    
+
+    dias_semana = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"]
+
     if not config_path.exists():
         print("Nenhum arquivo de configuração encontrado.")
-        print("Dias padrão de teoria: Terça-feira e Quinta-feira")
+        print("Configuração padrão:")
+        for h in HORARIOS_TEORIA_PADRAO:
+            print(f"  - {dias_semana[h['dia']]}-feira | transição: {h['hora_transicao']} | início: {h['hora_inicio']}")
         return
-    
+
     try:
         with open(config_path, 'r', encoding='utf-8') as f:
             config = json.load(f)
     except (json.JSONDecodeError, IOError) as e:
         print(f"Erro ao ler configuração: {e}")
         return
-    
-    dias_teoria = config.get("dias_teoria", DIAS_TEORIA_PADRAO)
-    dias_semana = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"]
-    
+
     print("\n=== Configuração de Dias de Teoria ===")
-    print("\nDias fixos semanais:")
-    for dia in dias_teoria:
-        print(f"  - {dias_semana[dia]}-feira")
-    
+
+    # Novo formato horarios_teoria
+    horarios = config.get("horarios_teoria")
+    if horarios:
+        print("\nDias fixos semanais (horarios_teoria):")
+        for h in sorted(horarios, key=lambda x: x.get("dia", 0)):
+            dia_nome = dias_semana[h["dia"]] if 0 <= h.get("dia", -1) <= 6 else f"dia {h.get('dia')}"
+            print(f"  - {dia_nome}-feira | transição: {h.get('hora_transicao','?')} | início: {h.get('hora_inicio','?')}")
+    else:
+        # Legado
+        dias_teoria = config.get("dias_teoria", DIAS_TEORIA_PADRAO)
+        hora_t = config.get("hora_transicao_teoria", HORA_TRANSICAO_TEORIA_PADRAO)
+        hora_i = config.get("hora_inicio_teoria", HORA_INICIO_TEORIA_PADRAO)
+        print("\nDias fixos semanais (formato legado):")
+        for dia in dias_teoria:
+            print(f"  - {dias_semana[dia]}-feira | transição: {hora_t} | início: {hora_i}")
+
+    hora_fim = config.get("hora_fim_teoria", HORA_FIM_TEORIA_PADRAO)
+    print(f"\nEncerramento da teoria: {hora_fim} (meia-noite)")
+
     dias_especiais = config.get("dias_especiais_teoria", [])
     print("\nDias especiais:")
     if dias_especiais:
-        for data in dias_especiais:
-            print(f"  - {data}")
+        for item in dias_especiais:
+            if isinstance(item, dict):
+                data = item.get("data", "?")
+                ht = item.get("hora_transicao", HORA_TRANSICAO_TEORIA_PADRAO)
+                hi = item.get("hora_inicio", HORA_INICIO_TEORIA_PADRAO)
+                print(f"  - {data} | transição: {ht} | início: {hi}")
+            else:
+                print(f"  - {item}")
     else:
         print("  (nenhum dia especial configurado)")
-    
+
     print("")
 
 def set_escala_atual(escala_str, config_path=None):
@@ -619,88 +886,98 @@ def listar_alunos_cadastrados(config):
     return todos_alunos
 
 def main_interativo(config):
-    """Loop principal interativo com detecção automática de cadastro."""
+    """Loop principal interativo com detecção automática de cadastro e anti-duplicata."""
     global _last_time
-    
+
     clear_screen()
     print_header()
-    
-    print("┌─────────────────────────────────────────────────────────┐")
-    print("│              ⏰ SISTEMA DE PONTO NFC                    │")
-    print("└─────────────────────────────────────────────────────────┘")
-    
+
     endpoint = get_endpoint_for_config(config)
     debounce = config.get("debounce_seconds", DEBOUNCE_SECONDS)
     escala_atual = config.get("escala_atual", "9")
-    
-    # Verifica se hoje é dia de teoria
+
+    # Verifica status do dia
     is_teoria = is_dia_teoria(config)
-    
-    print("\n   📅 Status do dia:")
+    horario_hoje = get_horario_teoria_hoje(config)
+    hora_transicao = horario_hoje["hora_transicao"] if horario_hoje else HORA_TRANSICAO_TEORIA_PADRAO
+    hora_inicio = horario_hoje["hora_inicio"] if horario_hoje else HORA_INICIO_TEORIA_PADRAO
+    hora_fim_teoria = config.get("hora_fim_teoria", HORA_FIM_TEORIA_PADRAO)
+    modalidade = determinar_modalidade(config)
+
+    # Cabeçalho informativo do dia
+    print("┌─────────────────────────────────────────────────────────┐")
     if is_teoria:
-        print("   ✅ Hoje é dia de TEORIA (aulas teóricas permitidas)")
+        print("│         📅 HOJE É DIA DE TEORIA + PRÁTICA               │")
+        print(f"│  Prática → antes das {hora_transicao}  |  Teoria → {hora_inicio} até {hora_fim_teoria}    │")
     else:
-        print("   📚 Hoje NÃO é dia de teoria (apenas prática)")
-    
-    # Mostra a escala atual
-    print(f"\n   📊 Escala Atual: {escala_atual}")
-    
-    # Mostra alunos cadastrados
+        print("│         📅 HOJE É DIA DE PRÁTICA                        │")
+    print("└─────────────────────────────────────────────────────────┘")
+    print(f"\n   🕐 Modalidade atual: {modalidade}")
+    print(f"   📊 Escala Atual:    {escala_atual}")
+
     alunos = listar_alunos_cadastrados(config)
-    print(f"\n   👥 Alunos cadastrados: {len(alunos)}")
-    
+    print(f"   👥 Alunos cadastrados: {len(alunos)}")
+
     print("\n" + "═" * 60)
     print("   👆 APROXIME O CRACHÁ DO LEITOR PARA BATER PONTO")
     print("      • Aluno cadastrado → Ponto registrado automaticamente")
-    print("      • Aluno novo → Cadastro será solicitado")
+    print("      • Aluno novo       → Cadastro será solicitado")
+    if is_teoria:
+        print(f"      • A partir das {hora_transicao}: registra Saída Prática + Entrada Teoria")
     print("   (Ctrl+C para sair)")
     print("═" * 60)
-    
+
     # Controle de data para recarregar config apenas uma vez por dia
     last_config_date = date.today()
-    
+
     try:
         while True:
             print("\n   ⏳ Aguardando leitura do crachá...")
-            
-            # Lê linha do stdin
+
             line = sys.stdin.readline()
             if not line:
                 break
-            
+
             serial = line.strip()
-            
             if not serial:
                 continue
-            
+
             # Validação: espera 8+ dígitos numéricos
             if not (serial.isdigit() and len(serial) >= 8):
                 if serial:
                     print(f"   ⚠️  Leitura não reconhecida: '{serial}'")
                 continue
-            
+
             now = time.time()
             if now - _last_time < debounce:
-                # debounce para evitar duplicados
                 continue
             _last_time = now
-            
+
             # Recarrega configuração se mudou o dia
             current_date = date.today()
             if current_date != last_config_date:
                 config = load_config()
                 is_teoria = is_dia_teoria(config)
+                horario_hoje = get_horario_teoria_hoje(config)
+                hora_transicao = horario_hoje["hora_transicao"] if horario_hoje else HORA_TRANSICAO_TEORIA_PADRAO
+                hora_inicio = horario_hoje["hora_inicio"] if horario_hoje else HORA_INICIO_TEORIA_PADRAO
+                hora_fim_teoria = config.get("hora_fim_teoria", HORA_FIM_TEORIA_PADRAO)
                 escala_atual = config.get("escala_atual", "9")
                 endpoint = get_endpoint_for_config(config)
                 last_config_date = current_date
                 print(f"\n   🔄 Novo dia detectado. Dia de teoria: {is_teoria}")
-            
+
             hora = datetime.now().strftime("%H:%M:%S")
-            data = datetime.now().strftime("%d/%m/%Y")
-            
-            # Verifica se o aluno já está cadastrado
+            data_br = datetime.now().strftime("%d/%m/%Y")
+            data_iso = datetime.now().strftime("%Y-%m-%d")
+
+            # Determina modalidade baseada na hora atual
+            modalidade = determinar_modalidade(config)
+            # True quando está no momento de transição (>= hora_transicao em dia de teoria)
+            em_transicao = is_teoria and (modalidade == 'Teoria')
+
+            # Resolve o nome do aluno (cadastrando se necessário)
             if aluno_existe(serial, config):
-                # ALUNO EXISTE - Bater ponto normalmente
                 nome = get_nome_aluno(serial, config)
                 email = get_email_aluno(serial, config)
                 
@@ -722,6 +999,9 @@ def main_interativo(config):
                 if code is None:
                     print(f"   ❌ ERRO DE ENVIO: {text}")
                     beep("long")
+                elif code == 200:
+                    print("   ✅ PONTO REGISTRADO COM SUCESSO!")
+                    beep("short")
                 else:
                     if code == 200:
                         print("   ✅ PONTO REGISTRADO COM SUCESSO!")
@@ -774,6 +1054,7 @@ def main_interativo(config):
     except KeyboardInterrupt:
         print("\n\n   👋 Sistema encerrado pelo usuário.")
         print("   Até logo!\n")
+
 
 def main(config):
     """Loop principal do programa."""
@@ -861,34 +1142,41 @@ if __name__ == "__main__":
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Exemplos de uso:
-  python SistemaPonto.py                          # Execução interativa (padrão)
-  python SistemaPonto.py --background             # Executar em segundo plano (Windows)
-  python SistemaPonto.py --add-dia 25/12/2024     # Adicionar dia especial de teoria
-  python SistemaPonto.py --remove-dia 25/12/2024  # Remover dia especial
-  python SistemaPonto.py --list-dias              # Listar dias configurados
-  python SistemaPonto.py --list-alunos            # Listar alunos cadastrados
-  python SistemaPonto.py --set-escala 9           # Definir escala atual como 9
-  python SistemaPonto.py --show-escala            # Mostrar escala atual
-  python SistemaPonto.py --install-startup        # Instalar para iniciar com Windows
-  python SistemaPonto.py --create-config          # Criar arquivo de configuração padrão
+  python SistemaPonto.py                                    # Execução interativa (padrão)
+  python SistemaPonto.py --background                       # Executar em segundo plano (Windows)
+  python SistemaPonto.py --add-dia 25/12/2024               # Dia especial (horários padrão)
+  python SistemaPonto.py --add-dia 25/12/2024 --hora-transicao 16:30 --hora-inicio 17:00
+  python SistemaPonto.py --remove-dia 25/12/2024            # Remover dia especial
+  python SistemaPonto.py --list-dias                        # Listar dias/horários configurados
+  python SistemaPonto.py --list-alunos                      # Listar alunos cadastrados
+  python SistemaPonto.py --set-escala 9                     # Definir escala atual como 9
+  python SistemaPonto.py --show-escala                      # Mostrar escala atual
+  python SistemaPonto.py --install-startup                  # Instalar para iniciar com Windows
+  python SistemaPonto.py --create-config                    # Criar arquivo de configuração padrão
 
 Funcionamento:
-  - Ao aproximar um crachá, o sistema verifica se o aluno está cadastrado
-  - Se cadastrado: registra o ponto automaticamente
-  - Se não cadastrado: solicita o nome para cadastro
+  - Ao aproximar um crachá antes de hora_transicao → registra Prática (entrada ou saída)
+  - Ao aproximar a partir de hora_transicao em dia de teoria →
+      registra automaticamente: Saída da Prática + Entrada da Teoria (1 tap = 2 registros)
+  - Teoria encerra às hora_fim_teoria (padrão: 00:00 / meia-noite)
+  - Horários configuráveis por dia da semana em horarios_teoria no config_ponto.json
         """
     )
     parser.add_argument("--endpoint", "-e", help="URL do Apps Script endpoint")
-    parser.add_argument("--background", "-b", action="store_true", 
+    parser.add_argument("--background", "-b", action="store_true",
                         help="Executar em segundo plano (esconde janela no Windows)")
     parser.add_argument("--create-config", action="store_true",
                         help="Criar arquivo de configuração padrão")
     parser.add_argument("--add-dia", metavar="DD/MM/YYYY",
                         help="Adicionar um dia especial de teoria")
+    parser.add_argument("--hora-transicao", metavar="HH:MM",
+                        help="Hora de transição Prática→Teoria para --add-dia (ex: 17:30)")
+    parser.add_argument("--hora-inicio", metavar="HH:MM",
+                        help="Hora de início da teoria para --add-dia (ex: 18:00)")
     parser.add_argument("--remove-dia", metavar="DD/MM/YYYY",
                         help="Remover um dia especial de teoria")
     parser.add_argument("--list-dias", action="store_true",
-                        help="Listar dias de teoria configurados")
+                        help="Listar dias e horários de teoria configurados")
     parser.add_argument("--list-alunos", action="store_true",
                         help="Listar alunos cadastrados")
     parser.add_argument("--set-escala", metavar="N",
@@ -899,26 +1187,30 @@ Funcionamento:
                         help="Instalar para iniciar com o Windows")
     parser.add_argument("--uninstall-startup", action="store_true",
                         help="Remover da inicialização do Windows")
-    
+
     args = parser.parse_args()
-    
+
     # Comandos de gerenciamento
     if args.create_config:
         save_default_config()
         sys.exit(0)
-    
+
     if args.add_dia:
-        add_dia_especial(args.add_dia)
+        add_dia_especial(
+            args.add_dia,
+            hora_transicao=getattr(args, 'hora_transicao', None),
+            hora_inicio=getattr(args, 'hora_inicio', None),
+        )
         sys.exit(0)
-    
+
     if args.remove_dia:
         remove_dia_especial(args.remove_dia)
         sys.exit(0)
-    
+
     if args.list_dias:
         list_dias_especiais()
         sys.exit(0)
-    
+
     if args.list_alunos:
         config = load_config()
         alunos = listar_alunos_cadastrados(config)
@@ -932,7 +1224,7 @@ Funcionamento:
                 print(f"  {uid}: {nome} - {email}")
         print("")
         sys.exit(0)
-    
+
     if args.show_escala:
         config = load_config()
         escala = config.get("escala_atual", "9")
@@ -940,19 +1232,19 @@ Funcionamento:
         print(f"  Escala configurada: {escala}")
         print("")
         sys.exit(0)
-    
+
     if args.set_escala:
         set_escala_atual(args.set_escala)
         sys.exit(0)
-    
+
     if args.install_startup:
         install_windows_startup()
         sys.exit(0)
-    
+
     if args.uninstall_startup:
         uninstall_windows_startup()
         sys.exit(0)
-    
+
     # Carrega configuração
     config = load_config()
     
