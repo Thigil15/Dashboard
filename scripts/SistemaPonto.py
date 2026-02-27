@@ -358,7 +358,7 @@ def beep(kind="short"):
     except Exception:
         pass
 
-def send_to_endpoint(serial, nome, endpoint, is_teoria_day=False, escala="", email=""):
+def send_to_endpoint(serial, nome, endpoint, is_teoria_day=False, escala="", email="", modalidade=None, tipo_registro=None):
     """Envia POST JSON para o Apps Script."""
     payload = {
         "SerialNumber": serial,
@@ -986,7 +986,7 @@ def main_interativo(config):
                 print("   " + "─" * 50)
                 print(f"   📛 Nome: {nome}")
                 print(f"   🔢 UID: {serial}")
-                print(f"   📅 Data: {data}")
+                print(f"   📅 Data: {data_br}")
                 print(f"   ⏰ Hora: {hora}")
                 print(f"   📚 Tipo: {'Teoria' if is_teoria else 'Prática'}")
                 print(f"   📊 Escala: {escala_atual}")
@@ -1003,12 +1003,8 @@ def main_interativo(config):
                     print("   ✅ PONTO REGISTRADO COM SUCESSO!")
                     beep("short")
                 else:
-                    if code == 200:
-                        print("   ✅ PONTO REGISTRADO COM SUCESSO!")
-                        beep("short")
-                    else:
-                        print(f"   ⚠️  Resposta do servidor: {code}")
-                        beep("long")
+                    print(f"   ⚠️  Resposta do servidor: {code}")
+                    beep("long")
                 
                 print("   " + "─" * 50)
             
